@@ -1,0 +1,7 @@
+# pip-audit configuration
+# Run: pip-audit --strict --desc on
+[tool.pip-audit]
+strict = true
+desc = "on"
+format = "json"
+output = "audit-results.json"

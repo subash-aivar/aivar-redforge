@@ -1,0 +1,14 @@
+services:
+  backend:
+    build:
+      target: base
+    command: >
+      sh -c "pip install -e . &&
+             uvicorn redforge.app:create_app --factory --reload --host 0.0.0.0 --port 8000"
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/alembic.ini:/app/alembic.ini
+    environment:
+      REDFORGE_DEBUG: "true"
+      REDFORGE_LOG_FORMAT: "console"
+      REDFORGE_LOG_LEVEL: "DEBUG"

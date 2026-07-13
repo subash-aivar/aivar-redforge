@@ -1,0 +1,117 @@
+[project]
+name = "redforge"
+version = "0.1.0"
+description = "AIVAR RedForge — Continuous AI Security Validation Platform"
+requires-python = ">=3.12"
+license = { text = "Proprietary" }
+authors = [{ name = "AIVAR", email = "engineering@aivar.io" }]
+dependencies = [
+    "fastapi>=0.115,<1.0",
+    "uvicorn[standard]>=0.34,<1.0",
+    "pydantic>=2.10,<3.0",
+    "pydantic-settings>=2.7,<3.0",
+    "structlog>=24.4,<27.0",
+    "httpx>=0.28,<1.0",
+    "python-ulid>=3.0,<4.0",
+    "sqlalchemy[asyncio]>=2.0,<3.0",
+    "asyncpg>=0.30,<1.0",
+    "alembic>=1.14,<2.0",
+    "prometheus-client>=0.20,<1.0",
+    "argon2-cffi>=25.1,<26.0",
+    "PyJWT[crypto]>=2.8,<3.0",
+    "pyotp>=2.9,<3.0",
+    "cryptography>=43.0,<50.0",
+    "opentelemetry-api>=1.20,<2.0",
+    "opentelemetry-sdk>=1.20,<2.0",
+    "opentelemetry-exporter-otlp-proto-grpc>=1.20,<2.0",
+    "opentelemetry-instrumentation-fastapi>=0.40b0",
+    "opentelemetry-instrumentation-sqlalchemy>=0.40b0",
+    "opentelemetry-instrumentation-httpx>=0.40b0",
+    "ldap3>=2.9,<3.0",
+    "pyasn1>=0.4,<0.5",  # ldap3 2.9's asn1 encoder uses pyasn1's pre-0.5 tagMap/typeMap API
+    "boto3>=1.34,<2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3,<10.0",
+    "pytest-asyncio>=0.25,<2.0",
+    "pytest-cov>=6.0,<7.0",
+    "httpx>=0.28,<1.0",
+    "aiosqlite>=0.20,<1.0",
+    "ruff>=0.8,<1.0",
+    "mypy>=1.14,<2.0",
+]
+
+[build-system]
+requires = ["setuptools>=75.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+filterwarnings = [
+    "error",
+    "ignore::starlette.exceptions.StarletteDeprecationWarning",
+    "ignore::DeprecationWarning:pytest_asyncio",
+    "ignore::jwt.warnings.InsecureKeyLengthWarning",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "N",    # pep8-naming
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+    "SIM",  # flake8-simplify
+    "TCH",  # flake8-type-checking
+    "RUF",  # ruff-specific
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["redforge"]
+
+[tool.ruff.lint.per-file-ignores]
+"src/redforge/api/**" = ["B008"]  # FastAPI Depends() in defaults is intentional
+"src/redforge/application/**" = ["TCH001", "TCH004"]  # Application services use domain types at runtime
+"src/redforge/infrastructure/**" = ["TCH001", "TCH003"]  # Infrastructure uses types at runtime
+"tests/**" = ["TCH001", "TCH002", "TCH003", "E501", "N806", "E711"]  # Test doubles use domain types at runtime; line length and naming relaxed in tests
+
+[tool.mypy]
+python_version = "3.14"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = [
+    "redforge.infrastructure.database.migrations.*",
+    "redforge.application.auth",
+    "redforge.application.ai_targets",
+    "redforge.application.organizations",
+]
+disallow_untyped_defs = false
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "ldap3.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["boto3.*", "botocore.*"]
+ignore_missing_imports = true

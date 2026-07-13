@@ -1,0 +1,19 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "frontend",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd frontend && npm run dev"],
+      "port": 3000,
+      "autoPort": true
+    },
+    {
+      "name": "redforge-backend",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd backend && .venv/bin/uvicorn redforge.app:create_app --factory --host 0.0.0.0 --port 8000"],
+      "port": 8000,
+      "autoPort": true
+    }
+  ]
+}
