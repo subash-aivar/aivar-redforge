@@ -18,6 +18,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from redforge.api.dependencies import (
     get_assurance_service,
     get_auth_service,
+    get_effective_access_service,
     get_mfa_service,
     get_organization_service,
     get_platform_access_service,
@@ -97,6 +98,22 @@ class _AlwaysActiveUserStatusService:
         return "active"
 
 
+class _NoOpEffectiveAccessService:
+    """M17 regression shim for isolated test apps that build their own
+    minimal FastAPI app without a real database engine: these tests
+    never configure custom RBAC roles/groups, so the additive
+    effective-access lookup is a no-op and the membership is always
+    treated as active (each test asserts its own suspension/removal
+    behavior through the real membership endpoints, not through this
+    stub)."""
+
+    async def get_additional_permissions(self, organization_id: str, user_id: str) -> frozenset:
+        return frozenset()
+
+    async def is_membership_active(self, organization_id: str, user_id: str) -> bool:
+        return True
+
+
 def _settings(bootstrap_enabled: bool = True) -> Settings:
     return Settings(
         environment="test",
@@ -133,6 +150,7 @@ def app(factory):
     test_app.dependency_overrides[get_auth_service] = lambda: auth_svc
     test_app.dependency_overrides[get_organization_service] = lambda: org_svc
     test_app.dependency_overrides[get_user_status_service] = lambda: _AlwaysActiveUserStatusService()
+    test_app.dependency_overrides[get_effective_access_service] = lambda: _NoOpEffectiveAccessService()
     test_app.dependency_overrides[get_platform_access_service] = lambda: platform_access_svc
     test_app.dependency_overrides[get_platform_query_service] = lambda: platform_query_svc
     test_app.dependency_overrides[get_platform_governance_service] = lambda: platform_governance_svc

@@ -30,6 +30,7 @@ from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from redforge.api.dependencies import (
+    get_effective_access_service,
     get_organization_service,
     get_platform_access_service,
     get_token_service,
@@ -50,6 +51,7 @@ if TYPE_CHECKING:
     from redforge.application.mfa import PrivilegedAssuranceService
     from redforge.application.organizations import OrganizationService
     from redforge.application.platform_identity import PlatformAccessService
+    from redforge.application.rbac import EffectiveAccessService
     from redforge.domain.platform_identity.value_objects import PlatformPermission
     from redforge.infrastructure.auth.contracts import TokenPayload, TokenService
 
@@ -114,9 +116,21 @@ async def get_tenant_context(
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
     token_service: TokenService = Depends(get_token_service),
     user_status_service: UserStatusService = Depends(get_user_status_service),
+    effective_access_service: EffectiveAccessService = Depends(get_effective_access_service),
 ) -> TenantContext:
     """Require a valid access token that also carries a selected
     organization (see module docstring for how that claim is minted).
+
+    Permissions are the fixed-role set (ROLE_PERMISSIONS[role], exactly
+    as before M17) UNION any M17 custom-role permissions granted to
+    this user directly or through group membership in this
+    organization (application.rbac.EffectiveAccessService.
+    get_additional_permissions — a fresh, live query on every request,
+    the same "never cache authorization-critical state in the JWT"
+    discipline this function already applies to suspension). This is
+    purely ADDITIVE: for the overwhelming majority of organizations
+    with no M17 custom roles/groups configured, the additional set is
+    empty and behavior is unchanged from pre-M17.
     """
     payload = _decode_or_raise(credentials, token_service)
     await _ensure_user_active(payload.sub, user_status_service)
@@ -131,12 +145,23 @@ async def get_tenant_context(
     except ValueError as exc:
         raise AuthenticationError("Token carries an unrecognized role") from exc
 
+    if not await effective_access_service.is_membership_active(
+        payload.organization_id, payload.sub,
+    ):
+        raise AuthorizationError(
+            "This membership is no longer active in the selected organization."
+        )
+
+    additional = await effective_access_service.get_additional_permissions(
+        payload.organization_id, payload.sub,
+    )
+
     return TenantContext(
         user_id=payload.sub,
         email=payload.email,
         organization_id=payload.organization_id,
         role=role,
-        permissions=ROLE_PERMISSIONS[role],
+        permissions=ROLE_PERMISSIONS[role] | additional,
     )
 
 

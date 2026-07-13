@@ -80,6 +80,18 @@ class _FakeActiveUserStatusService:
         return "active"
 
 
+class _FakeEffectiveAccessService:
+    """No M17 custom roles/groups and an always-active membership —
+    membership-suspension-specific behavior is covered by
+    tests/integration/test_rbac_live_acceptance.py's live tests."""
+
+    async def get_additional_permissions(self, organization_id: str, user_id: str) -> frozenset:
+        return frozenset()
+
+    async def is_membership_active(self, organization_id: str, user_id: str) -> bool:
+        return True
+
+
 class TestGetCurrentPrincipal:
     async def test_valid_token_returns_principal(self) -> None:
         payload = TokenPayload(sub="user-1", email="a@test.com")
@@ -129,6 +141,7 @@ class TestGetTenantContext:
             credentials=_credentials(),
             token_service=_FakeTokenService(payload),
             user_status_service=_FakeActiveUserStatusService(),
+            effective_access_service=_FakeEffectiveAccessService(),
         )
         assert isinstance(tenant, TenantContext)
         assert tenant.organization_id == "org-1"
@@ -145,6 +158,7 @@ class TestGetTenantContext:
                 credentials=_credentials(),
                 token_service=_FakeTokenService(payload),
                 user_status_service=_FakeActiveUserStatusService(),
+                effective_access_service=_FakeEffectiveAccessService(),
             )
 
     async def test_partial_claims_raises_authorization_error(self) -> None:
@@ -161,6 +175,7 @@ class TestGetTenantContext:
                 credentials=_credentials(),
                 token_service=_FakeTokenService(payload),
                 user_status_service=_FakeActiveUserStatusService(),
+                effective_access_service=_FakeEffectiveAccessService(),
             )
 
     async def test_unrecognized_role_raises_authentication_error(self) -> None:
@@ -175,6 +190,7 @@ class TestGetTenantContext:
                 credentials=_credentials(),
                 token_service=_FakeTokenService(payload),
                 user_status_service=_FakeActiveUserStatusService(),
+                effective_access_service=_FakeEffectiveAccessService(),
             )
 
     async def test_missing_token_raises_authentication_before_authorization(self) -> None:
@@ -186,6 +202,7 @@ class TestGetTenantContext:
                 credentials=None,
                 token_service=_FakeTokenService(None),
                 user_status_service=_FakeActiveUserStatusService(),
+                effective_access_service=_FakeEffectiveAccessService(),
             )
 
 

@@ -16,7 +16,11 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from redforge.api.dependencies import get_organization_service, get_user_status_service
+from redforge.api.dependencies import (
+    get_effective_access_service,
+    get_organization_service,
+    get_user_status_service,
+)
 from redforge.api.security import get_tenant_context
 from redforge.app import create_app
 from redforge.application.platform.runtime_container import build_runtime_container
@@ -65,6 +69,22 @@ class _AlwaysActiveUserStatusService:
         return "active"
 
 
+class _NoOpEffectiveAccessService:
+    """M17 regression shim for isolated test apps that build their own
+    minimal FastAPI app without a real database engine: these tests
+    never configure custom RBAC roles/groups, so the additive
+    effective-access lookup is a no-op and the membership is always
+    treated as active (each test asserts its own suspension/removal
+    behavior through the real membership endpoints, not through this
+    stub)."""
+
+    async def get_additional_permissions(self, organization_id: str, user_id: str) -> frozenset:
+        return frozenset()
+
+    async def is_membership_active(self, organization_id: str, user_id: str) -> bool:
+        return True
+
+
 @pytest.fixture
 def mock_tenant() -> object:
     return _make_tenant("admin")
@@ -83,6 +103,7 @@ async def authed_client(mock_tenant: object) -> AsyncGenerator[tuple[AsyncClient
     ):
         app = create_app(settings=settings)
         app.dependency_overrides[get_user_status_service] = lambda: _AlwaysActiveUserStatusService()
+        app.dependency_overrides[get_effective_access_service] = lambda: _NoOpEffectiveAccessService()
         app.state.runtime = runtime
         app.dependency_overrides[get_tenant_context] = lambda: mock_tenant
         app.dependency_overrides[get_organization_service] = lambda: _make_org_service_mock()
@@ -104,6 +125,7 @@ async def unauthed_client() -> AsyncGenerator[AsyncClient, None]:
     ):
         app = create_app(settings=settings)
         app.dependency_overrides[get_user_status_service] = lambda: _AlwaysActiveUserStatusService()
+        app.dependency_overrides[get_effective_access_service] = lambda: _NoOpEffectiveAccessService()
         app.state.runtime = runtime
         transport = ASGITransport(app=app, raise_app_exceptions=False)
         async with AsyncClient(transport=transport, base_url="http://test") as ac:
@@ -137,6 +159,7 @@ async def test_reset_insufficient_role_returns_403(role: str) -> None:
     ):
         app = create_app(settings=settings)
         app.dependency_overrides[get_user_status_service] = lambda: _AlwaysActiveUserStatusService()
+        app.dependency_overrides[get_effective_access_service] = lambda: _NoOpEffectiveAccessService()
         app.state.runtime = runtime
         app.dependency_overrides[get_tenant_context] = lambda: low_priv_tenant
         app.dependency_overrides[get_organization_service] = lambda: _make_org_service_mock()
@@ -161,6 +184,7 @@ async def test_reset_admin_role_succeeds() -> None:
     ):
         app = create_app(settings=settings)
         app.dependency_overrides[get_user_status_service] = lambda: _AlwaysActiveUserStatusService()
+        app.dependency_overrides[get_effective_access_service] = lambda: _NoOpEffectiveAccessService()
         app.state.runtime = runtime
         app.dependency_overrides[get_tenant_context] = lambda: admin_tenant
         app.dependency_overrides[get_organization_service] = lambda: _make_org_service_mock()
@@ -185,6 +209,7 @@ async def test_reset_owner_role_succeeds() -> None:
     ):
         app = create_app(settings=settings)
         app.dependency_overrides[get_user_status_service] = lambda: _AlwaysActiveUserStatusService()
+        app.dependency_overrides[get_effective_access_service] = lambda: _NoOpEffectiveAccessService()
         app.state.runtime = runtime
         app.dependency_overrides[get_tenant_context] = lambda: owner_tenant
         app.dependency_overrides[get_organization_service] = lambda: _make_org_service_mock()

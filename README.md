@@ -4,9 +4,9 @@ Enterprise Continuous AI Security Validation and AI Red Teaming Platform — not
 
 ## Current Status
 
-**Milestones M1–M16 are COMPLETE** (verified baseline at commit `0682c23`, migration head `0025`). Full detail and per-milestone proof live in [`docs/PROJECT_CONTEXT.md`](docs/PROJECT_CONTEXT.md) and the milestone-specific reports/checkpoints under [`docs/`](docs/). This README is a high-level orientation, not a milestone log — do not add per-milestone history here.
+**Milestones M1–M17 are COMPLETE** (migration head `0026`). Full detail and per-milestone proof live in [`docs/PROJECT_CONTEXT.md`](docs/PROJECT_CONTEXT.md) and the milestone-specific reports/checkpoints under [`docs/`](docs/). This README is a high-level orientation, not a milestone log — do not add per-milestone history here.
 
-## Platform Capabilities (through M16)
+## Platform Capabilities (through M17)
 
 - **Platform identity & governance** — super-admin bootstrap, privileged access security, real TOTP MFA with step-up assurance, platform RBAC, tenant/organization governance.
 - **Asset, connector & Security Graph foundation** — a unified canonical asset model (`AIAsset`) and connector framework backed by real PostgreSQL persistence, projected into a versioned Security Graph ontology (node/edge kinds for assets, identities, services, conditions, correlations).
@@ -19,6 +19,7 @@ Enterprise Continuous AI Security Validation and AI Red Teaming Platform — not
 - **Continuous validation, drift detection & revalidation** — a scheduler that re-validates authorized targets on a cadence and raises deterministic drift/security-condition events.
 - **Security Operations Command Center** — a unified, read-only, real-time execution telemetry feed across every validation-producing bounded context.
 - **Advanced network security & continuous network monitoring** — network/IP-CIDR scoped continuous monitoring with mid-run cancellation, restart-durable cancellation state, and scheduler-dispatched execution, all gated by the same M10 authorization plane.
+- **Enterprise identity, Super Admin & RBAC control plane** — organization-scoped custom roles and groups on top of the fixed platform RBAC table, a canonical effective-access explain view, and a centralized bounded-delegation grant policy that structurally prevents privilege self-escalation. Platform Super Admin authority (M1/M2) is a separate, non-forgeable authorization plane, never mixed with organization-scoped permissions.
 
 **What this platform intentionally does not do**, by design, everywhere in the architecture: no arbitrary command execution, no shell/subprocess execution, no exploit or credential-attack tooling, no unrestricted or unbounded scanning, no DNS resolution or redirect-following inside the network validation path, and no "attack path"/exploitability scoring anywhere in the Security Graph or Attack Surface views.
 

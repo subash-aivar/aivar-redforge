@@ -2,6 +2,7 @@
 
 from fastapi import APIRouter
 
+from redforge.api.v1.admin_rbac import router as admin_rbac_router
 from redforge.api.v1.ai_targets import router as ai_targets_router
 from redforge.api.v1.assets import router as assets_router
 from redforge.api.v1.attack_library import router as attack_library_router
@@ -74,3 +75,4 @@ router.include_router(authorizations_router, tags=["authorizations"])
 router.include_router(validation_executions_router, tags=["validation-executions"])
 router.include_router(security_operations_router, tags=["security-operations"])
 router.include_router(network_security_router, tags=["network-security"])
+router.include_router(admin_rbac_router, tags=["admin-rbac"])

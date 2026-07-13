@@ -29,6 +29,9 @@ const NAV = [
   { label: "Continuous Validation", href: "/continuous-validation", icon: "↻" },
   { label: "Risk", href: "/risk", icon: "△" },
   { label: "Health", href: "/health", icon: "♥" },
+  { label: "Roles & Permissions", href: "/roles", icon: "🛡" },
+  { label: "Groups", href: "/groups-rbac", icon: "◫" },
+  { label: "Access Explorer", href: "/access-explorer", icon: "🔍" },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {

@@ -101,6 +101,24 @@ class AuditAction(StrEnum):
     AUTHORIZATION_REVOKED = "authorization.revoked"
     EXECUTION_POLICY_DECIDED = "execution_policy.decided"
 
+    # Enterprise Identity, Super Admin & RBAC Control Plane (M17).
+    # Organization-scoped administrative mutations — distinct from the
+    # PLATFORM_* actions above, which are platform-wide and unaffected
+    # by this milestone.
+    RBAC_ROLE_CREATED = "rbac.role_created"
+    RBAC_ROLE_UPDATED = "rbac.role_updated"
+    RBAC_ROLE_DELETED = "rbac.role_deleted"
+    RBAC_ROLE_PERMISSIONS_CHANGED = "rbac.role_permissions_changed"
+    RBAC_GROUP_CREATED = "rbac.group_created"
+    RBAC_GROUP_UPDATED = "rbac.group_updated"
+    RBAC_GROUP_DELETED = "rbac.group_deleted"
+    RBAC_GROUP_MEMBER_ADDED = "rbac.group_member_added"
+    RBAC_GROUP_MEMBER_REMOVED = "rbac.group_member_removed"
+    RBAC_GROUP_ROLE_ASSIGNED = "rbac.group_role_assigned"
+    RBAC_GROUP_ROLE_REVOKED = "rbac.group_role_revoked"
+    RBAC_USER_ROLE_ASSIGNED = "rbac.user_role_assigned"
+    RBAC_USER_ROLE_REVOKED = "rbac.user_role_revoked"
+
 
 @dataclass(frozen=True, slots=True)
 class AuditEntry:

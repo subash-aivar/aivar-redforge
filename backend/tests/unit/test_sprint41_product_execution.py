@@ -42,6 +42,7 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 
 from redforge.api.dependencies import (
+    get_effective_access_service,
     get_organization_service,
     get_token_service,
     get_user_status_service,
@@ -98,6 +99,22 @@ class _AlwaysActiveUserStatusService:
 
     async def get_status(self, user_id: str) -> str:
         return "active"
+
+
+class _NoOpEffectiveAccessService:
+    """M17 regression shim for isolated test apps that build their own
+    minimal FastAPI app without a real database engine: these tests
+    never configure custom RBAC roles/groups, so the additive
+    effective-access lookup is a no-op and the membership is always
+    treated as active (each test asserts its own suspension/removal
+    behavior through the real membership endpoints, not through this
+    stub)."""
+
+    async def get_additional_permissions(self, organization_id: str, user_id: str) -> frozenset:
+        return frozenset()
+
+    async def is_membership_active(self, organization_id: str, user_id: str) -> bool:
+        return True
 
 
 def _mint_token(
@@ -289,6 +306,7 @@ def _make_app_with_runtime(settings: Settings) -> Any:
     app.dependency_overrides[get_token_service] = lambda: token_svc
     app.dependency_overrides[get_organization_service] = lambda: _mock_org_svc()
     app.dependency_overrides[get_user_status_service] = lambda: _AlwaysActiveUserStatusService()
+    app.dependency_overrides[get_effective_access_service] = lambda: _NoOpEffectiveAccessService()
     return app
 
 

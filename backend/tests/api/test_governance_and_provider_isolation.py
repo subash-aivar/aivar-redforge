@@ -24,6 +24,7 @@ from redforge.api.dependencies import (
     get_ai_target_service,
     get_assurance_service,
     get_auth_service,
+    get_effective_access_service,
     get_mfa_service,
     get_organization_service,
     get_platform_access_service,
@@ -50,6 +51,7 @@ from redforge.application.platform_identity.governance_service import (
     PlatformGovernanceService,
 )
 from redforge.application.providers import ProviderService
+from redforge.application.rbac import EffectiveAccessService
 from redforge.core.config import Settings
 from redforge.infrastructure.auth.password import Argon2PasswordHasher
 from redforge.infrastructure.auth.tokens import JWTTokenService
@@ -141,6 +143,7 @@ def app(factory):
     test_app.dependency_overrides[get_auth_service] = lambda: auth_svc
     test_app.dependency_overrides[get_organization_service] = lambda: org_svc
     test_app.dependency_overrides[get_user_status_service] = lambda: user_status_svc
+    test_app.dependency_overrides[get_effective_access_service] = lambda: EffectiveAccessService(factory)
     test_app.dependency_overrides[get_platform_access_service] = lambda: platform_access_svc
     test_app.dependency_overrides[get_platform_query_service] = lambda: platform_query_svc
     test_app.dependency_overrides[get_platform_governance_service] = lambda: platform_governance_svc

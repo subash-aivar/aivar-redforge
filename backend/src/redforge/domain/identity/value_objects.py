@@ -87,6 +87,21 @@ class Permission(StrEnum):
     NETWORK_SECURITY_READ = "network_security:read"
     NETWORK_SECURITY_MANAGE = "network_security:manage"
 
+    # Enterprise Identity, Super Admin & RBAC Control Plane (M17).
+    # Gates the ORGANIZATION-scoped custom role/group administration
+    # surface (application/rbac/, api/v1/admin_rbac.py) — entirely
+    # distinct from platform-wide PlatformPermission (domain.
+    # platform_identity), which no organization role can ever hold or
+    # grant. ROLES_MANAGE/GROUPS_MANAGE additionally gate every mutation
+    # through the canonical grant-policy check (application.rbac.
+    # grant_policy.assert_can_grant) — holding this permission lets an
+    # actor administer roles/groups, but never lets them grant a
+    # permission they do not themselves already hold.
+    ROLES_READ = "roles:read"
+    ROLES_MANAGE = "roles:manage"
+    GROUPS_READ = "groups:read"
+    GROUPS_MANAGE = "groups:manage"
+
 
 @unique
 class MembershipRole(StrEnum):
@@ -162,6 +177,10 @@ ROLE_PERMISSIONS: dict[MembershipRole, frozenset[Permission]] = {
         Permission.SECURITY_OPERATIONS_READ,
         Permission.NETWORK_SECURITY_READ,
         Permission.NETWORK_SECURITY_MANAGE,
+        Permission.ROLES_READ,
+        Permission.ROLES_MANAGE,
+        Permission.GROUPS_READ,
+        Permission.GROUPS_MANAGE,
     }),
     MembershipRole.SECURITY_MANAGER: frozenset({
         Permission.ORG_READ,

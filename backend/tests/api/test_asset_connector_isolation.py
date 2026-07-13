@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from redforge.api.dependencies import (
     get_ai_target_service,
     get_auth_service,
+    get_effective_access_service,
     get_organization_service,
     get_tenant_asset_service,
     get_tenant_connector_service,
@@ -46,6 +47,22 @@ from redforge.infrastructure.middleware.error_handler import ErrorHandlerMiddlew
 class _AlwaysActiveUserStatusService:
     async def get_status(self, user_id: str) -> str:
         return "active"
+
+
+class _NoOpEffectiveAccessService:
+    """M17 regression shim for isolated test apps that build their own
+    minimal FastAPI app without a real database engine: these tests
+    never configure custom RBAC roles/groups, so the additive
+    effective-access lookup is a no-op and the membership is always
+    treated as active (each test asserts its own suspension/removal
+    behavior through the real membership endpoints, not through this
+    stub)."""
+
+    async def get_additional_permissions(self, organization_id: str, user_id: str) -> frozenset:
+        return frozenset()
+
+    async def is_membership_active(self, organization_id: str, user_id: str) -> bool:
+        return True
 
 
 @pytest.fixture
@@ -86,6 +103,7 @@ def app(factory):
     test_app.dependency_overrides[get_auth_service] = lambda: auth_service
     test_app.dependency_overrides[get_organization_service] = lambda: org_service
     test_app.dependency_overrides[get_user_status_service] = lambda: _AlwaysActiveUserStatusService()
+    test_app.dependency_overrides[get_effective_access_service] = lambda: _NoOpEffectiveAccessService()
     test_app.dependency_overrides[get_token_service] = lambda: tokens
     test_app.dependency_overrides[get_ai_target_service] = lambda: target_service
     test_app.dependency_overrides[get_tenant_asset_service] = lambda: asset_service

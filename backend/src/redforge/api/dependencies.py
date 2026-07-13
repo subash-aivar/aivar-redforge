@@ -41,6 +41,7 @@ from redforge.application.organizations import OrganizationService
 from redforge.application.payloads import PayloadTemplateService
 from redforge.application.policies import PolicyService
 from redforge.application.providers import ProviderService
+from redforge.application.rbac import EffectiveAccessService, GroupService, RoleService
 from redforge.application.risk_engine import RiskCorrelationEngine
 from redforge.application.validations import ValidationRunService
 from redforge.infrastructure.audit.logger import StructlogAuditLog
@@ -415,6 +416,28 @@ def get_invitation_service() -> InvitationService:
     return InvitationService(
         _session_factory(), _event_publisher(), _audit_log(), _invitation_notifier(),
     )
+
+
+# ─── RBAC: custom Roles & Groups (M17) ─────────────────────────────────────────
+
+
+def get_role_service() -> RoleService:
+    return RoleService(_session_factory())
+
+
+def get_group_service() -> GroupService:
+    return GroupService(_session_factory())
+
+
+def get_effective_access_service() -> EffectiveAccessService:
+    return EffectiveAccessService(_session_factory())
+
+
+def get_session_factory() -> async_sessionmaker[AsyncSession]:
+    """Public accessor for the shared session factory — used by routes
+    that need a one-off repository/adapter not worth its own DI
+    function (e.g. the M17 organization admin audit reader)."""
+    return _session_factory()
 
 
 def get_knowledge_graph() -> KnowledgeGraph:
