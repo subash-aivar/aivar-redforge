@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { isAuthenticated, getOrganizationId } from "@/lib/api";
+import { isAuthenticated, getOrganizationId, clearSession } from "@/lib/api";
 import { getMe, logout, type UserProfile } from "@/lib/auth";
 import { getPlatformAccess } from "@/lib/platform";
 
@@ -48,6 +48,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       return;
     }
     getMe().then(setUser).catch(() => {
+      // An invalid/expired token must never linger — otherwise every
+      // subsequent page load reads isAuthenticated()=true, skips the
+      // login redirect's own token check, and can only fail the exact
+      // same way again on next render.
+      clearSession();
       router.push("/login");
     });
     // Platform link visibility is determined ENTIRELY by the backend's

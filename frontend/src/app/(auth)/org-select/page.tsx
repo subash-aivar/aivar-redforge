@@ -8,7 +8,7 @@ import {
   createOrganization,
   type AccessibleOrganization,
 } from "@/lib/auth";
-import { isAuthenticated, ApiError } from "@/lib/api";
+import { isAuthenticated, ApiError, clearSession } from "@/lib/api";
 
 type Phase = "loading" | "select" | "setup" | "error";
 
@@ -41,6 +41,14 @@ export default function OrgSelectPage() {
         }
       })
       .catch((err) => {
+        // An expired/invalid token surfaces here as a 401 — clear it and
+        // return to login immediately rather than showing a dead-end
+        // error screen for a session that can never recover on its own.
+        if (err instanceof ApiError && err.status === 401) {
+          clearSession();
+          router.replace("/login");
+          return;
+        }
         setError(err instanceof ApiError ? err.message : "Failed to load organizations");
         setPhase("error");
       });

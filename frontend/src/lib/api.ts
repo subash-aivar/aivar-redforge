@@ -5,7 +5,18 @@
  * Handles: authentication headers, error normalization, token lifecycle.
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+// Canonical API-origin model (see next.config.ts's rewrites()): same-origin
+// by default. Every request goes to a *relative* path, which the browser
+// resolves against whatever host/port it loaded the frontend from —
+// localhost, a LAN IP, anything — and Next.js's own server-side rewrite
+// proxies it to the real backend. This is what makes this app work
+// identically on http://localhost:3000 and http://<lan-ip>:3000 with zero
+// configuration. NEXT_PUBLIC_API_URL remains a supported explicit
+// override (e.g. a backend deployed on a different origin entirely,
+// where no same-origin proxy is possible) — set it only when the
+// same-origin proxy genuinely cannot apply. Do not introduce a second,
+// conflicting API-origin strategy.
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 
 export class ApiError extends Error {
   constructor(

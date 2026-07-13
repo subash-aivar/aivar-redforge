@@ -37,16 +37,16 @@ backend-typecheck: ## Run mypy type checking
 # === Frontend ===
 
 frontend-install: ## Install frontend dependencies
-	cd frontend && corepack enable pnpm && pnpm install
+	cd frontend && npm install
 
 frontend-dev: ## Run frontend locally
-	cd frontend && pnpm dev
+	cd frontend && npm run dev
 
 frontend-build: ## Build frontend
-	cd frontend && pnpm build
+	cd frontend && npm run build
 
 frontend-lint: ## Lint frontend code
-	cd frontend && pnpm lint
+	cd frontend && npm run lint
 
 frontend-typecheck: ## Run TypeScript type checking
-	cd frontend && pnpm typecheck
+	cd frontend && npm run typecheck
