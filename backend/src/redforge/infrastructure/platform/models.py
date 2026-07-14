@@ -19,11 +19,19 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import BigInteger, Index, Integer, Text, UniqueConstraint
+from sqlalchemy import JSON, BigInteger, Index, Integer, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from redforge.infrastructure.database.base import Base
+
+# JSONB on PostgreSQL (production), plain JSON on any other dialect. This is
+# the codebase's established idiom (see models/campaign_result.py) and is
+# what lets a SQLite-backed unit/integration test do
+# `Base.metadata.create_all()` over the full metadata without the SQLite
+# type compiler choking on a Postgres-only JSONB column — the effective
+# production type is unchanged (JSONB), the migrations (0007) are unchanged.
+_JSONB_PORTABLE = JSON().with_variant(JSONB, "postgresql")
 
 
 class PlatformEventModel(Base):
@@ -54,9 +62,9 @@ class PlatformEventModel(Base):
     aggregate_type: Mapped[str] = mapped_column(Text, nullable=False)
     aggregate_id: Mapped[str] = mapped_column(Text, nullable=False)
     organization_id: Mapped[str] = mapped_column(Text, nullable=False)
-    payload: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    payload: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
     metadata_: Mapped[dict[str, Any]] = mapped_column(
-        "metadata", JSONB, nullable=False
+        "metadata", _JSONB_PORTABLE, nullable=False
     )
     occurred_at: Mapped[datetime] = mapped_column(nullable=False)
     recorded_at: Mapped[datetime] = mapped_column(nullable=False)
@@ -93,7 +101,7 @@ class PlatformSnapshotModel(Base):
     aggregate_type: Mapped[str] = mapped_column(Text, nullable=False)
     aggregate_id: Mapped[str] = mapped_column(Text, nullable=False)
     organization_id: Mapped[str] = mapped_column(Text, nullable=False)
-    state: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    state: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
     stream_version_at_snapshot: Mapped[int] = mapped_column(Integer, nullable=False)
     global_position_at_snapshot: Mapped[int] = mapped_column(BigInteger, nullable=False)
     schema_version: Mapped[str] = mapped_column(Text, nullable=False, default="1.0")
@@ -145,7 +153,7 @@ class PlatformReadModelModel(Base):
 
     model_type: Mapped[str] = mapped_column(Text, primary_key=True)
     organization_id: Mapped[str] = mapped_column(Text, primary_key=True)
-    data: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    data: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
     last_updated_at: Mapped[datetime] = mapped_column(nullable=False)
     last_event_position: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
 
@@ -170,7 +178,7 @@ class DeadLetterEntryModel(Base):
     source_projection: Mapped[str] = mapped_column(Text, nullable=False)
     event_id: Mapped[str] = mapped_column(Text, nullable=False)
     event_type: Mapped[str] = mapped_column(Text, nullable=False)
-    payload: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    payload: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
     error_message: Mapped[str] = mapped_column(Text, nullable=False)
     retry_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     status: Mapped[str] = mapped_column(Text, nullable=False, default="pending")

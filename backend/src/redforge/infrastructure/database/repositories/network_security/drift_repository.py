@@ -80,6 +80,20 @@ class SqlAlchemyNetworkDriftEventRepository:
         result = await self._session.execute(stmt)
         return [_to_entity(m) for m in result.scalars().all()]
 
+    async def list_for_organization(
+        self, organization_id: EntityId, limit: int, offset: int,
+    ) -> list[NetworkDriftEvent]:
+        """Most-recent-first, paginated org-wide drift feed — the read
+        surface for the M18 GET /network-security/drift endpoint."""
+        stmt = (
+            select(NetworkDriftEventModel)
+            .where(NetworkDriftEventModel.organization_id == str(organization_id))
+            .order_by(NetworkDriftEventModel.detected_at.desc())
+            .limit(limit).offset(offset)
+        )
+        result = await self._session.execute(stmt)
+        return [_to_entity(m) for m in result.scalars().all()]
+
     async def list_for_organization_since(
         self, organization_id: EntityId, since: datetime, limit: int,
     ) -> list[NetworkDriftEvent]:

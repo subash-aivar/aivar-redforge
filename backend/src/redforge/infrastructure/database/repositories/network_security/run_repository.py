@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 
 from redforge.domain.network_security.entity import NetworkValidationRun
 from redforge.domain.network_security.value_objects import (
@@ -93,6 +93,19 @@ class SqlAlchemyNetworkValidationRunRepository:
         )
         result = await self._session.execute(stmt)
         return [_to_entity(m) for m in result.scalars().all()]
+
+    async def count_by_status(self, organization_id: EntityId) -> dict[str, int]:
+        """Real `GROUP BY status COUNT(*)` for an org — mirrors
+        AssetRepository.count_by_type()'s aggregate idiom. Backs the
+        Command Center's "network validation activity" panel; never a
+        frontend tally over one paginated page."""
+        stmt = (
+            select(NetworkValidationRunModel.status, func.count(NetworkValidationRunModel.id))
+            .where(NetworkValidationRunModel.organization_id == str(organization_id))
+            .group_by(NetworkValidationRunModel.status)
+        )
+        result = await self._session.execute(stmt)
+        return {status: count for status, count in result.all()}
 
     async def save(self, run: NetworkValidationRun) -> None:
         existing = await self._get_model(str(run.id), str(run.organization_id))

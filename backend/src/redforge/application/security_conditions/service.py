@@ -71,6 +71,13 @@ class SecurityConditionDTO:
     first_observed_at: str
     last_observed_at: str
     identity_key: str = ""
+    # Real, already-persisted qualifier column (e.g. the port for a
+    # network-sourced condition, set at ingestion — see
+    # application/network_security/orchestrator.py's
+    # _ingest_condition_best_effort()) that was previously written to the
+    # model but never mapped back out to callers. Empty string, never
+    # fabricated, when the ingesting rule didn't set one.
+    qualifier: str = ""
 
 
 def _to_dto(m: SecurityConditionModel) -> SecurityConditionDTO:
@@ -84,6 +91,7 @@ def _to_dto(m: SecurityConditionModel) -> SecurityConditionDTO:
         first_observed_at=m.first_observed_at.isoformat(),
         last_observed_at=m.last_observed_at.isoformat(),
         identity_key=m.identity_key,
+        qualifier=m.qualifier,
     )
 
 
@@ -154,6 +162,7 @@ class TenantSecurityConditionService:
         severity: str | None = None,
         source_category: str | None = None,
         asset_kind: str | None = None,
+        lifecycle: str | None = None,
         limit: int = 100,
         offset: int = 0,
     ) -> list[SecurityConditionDTO]:
@@ -161,7 +170,7 @@ class TenantSecurityConditionService:
             repo = SecurityConditionRepository(uow.session)
             rows = await repo.list_for_org(
                 organization_id, evidence_state, severity, source_category,
-                asset_kind, limit, offset,
+                asset_kind, lifecycle, limit, offset,
             )
         return [_to_dto(r) for r in rows]
 

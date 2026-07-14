@@ -13,7 +13,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from redforge.domain.inventory.entity import AIAsset
 from redforge.domain.inventory.value_objects import (
@@ -263,6 +263,17 @@ class SqlAlchemyAssetRepository:
         stmt = stmt.order_by(AIAssetModel.created_at.desc()).limit(limit).offset(offset)
         result = await self._session.execute(stmt)
         return [_model_to_asset(m) for m in result.scalars().all()]
+
+    async def count_by_type(self, organization_id: str) -> dict[str, int]:
+        """Real `GROUP BY asset_type COUNT(*)` for the command-center
+        inventory panel — never a client-side tally over a page of rows."""
+        stmt = (
+            select(AIAssetModel.asset_type, func.count(AIAssetModel.id))
+            .where(AIAssetModel.organization_id == organization_id)
+            .group_by(AIAssetModel.asset_type)
+        )
+        result = await self._session.execute(stmt)
+        return {asset_type: count for asset_type, count in result.all()}
 
     async def delete(self, asset_id: str) -> None:
         model = await self._session.get(AIAssetModel, asset_id)

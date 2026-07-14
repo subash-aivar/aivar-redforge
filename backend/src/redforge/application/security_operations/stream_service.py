@@ -1,14 +1,18 @@
-"""SecurityOperationsStreamService — M15.
+"""SecurityOperationsStreamService — M15 (extended M16, M18).
 
-Merges four durable, already-existing per-bounded-context append-only
-logs into one tenant-safe, cursor-resumable operational event stream:
+Merges seven durable, already-existing per-bounded-context append-only
+logs into one tenant-safe, cursor-resumable operational event stream
+(source tag in parentheses is the cursor's middle component):
 
-  - validation_execution_events (M11)   — tenant-scoped
-  - security_drift_events (M14)         — tenant-scoped
-  - continuous_validation_policy_lifecycle_events (M15) — tenant-scoped
-  - runtime_component_health_transitions (M15) — PLATFORM-WIDE, broadcast
+  - validation_execution_events (M11 · "E")   — tenant-scoped
+  - security_drift_events (M14 · "D")          — tenant-scoped
+  - continuous_validation_policy_lifecycle_events (M15 · "P") — tenant-scoped
+  - runtime_component_health_transitions (M15 · "R") — PLATFORM-WIDE, broadcast
     to every organization's stream (runtime components are not
     per-tenant data)
+  - network_validation_run_events (M16 · "N")  — tenant-scoped
+  - network_monitoring_policy_lifecycle_events (M16 · "M") — tenant-scoped
+  - network_drift_events (M16, surfaced M18 · "K") — tenant-scoped
 
 Why a query-time merge instead of one physical event table: see
 migration 0023's own docstring for the full reconnaissance finding
@@ -48,6 +52,7 @@ from typing import TYPE_CHECKING
 from redforge.application.security_operations.projection_registry import (
     project_drift_event,
     project_execution_event,
+    project_network_drift_event,
     project_network_policy_lifecycle_event,
     project_network_run_event,
     project_policy_lifecycle_event,
@@ -106,6 +111,9 @@ async def fetch_merged_candidates(
     both build on."""
     from redforge.infrastructure.database.repositories.continuous_validation.drift_repository import (  # noqa: E501
         SqlAlchemySecurityDriftEventRepository,
+    )
+    from redforge.infrastructure.database.repositories.network_security.drift_repository import (
+        SqlAlchemyNetworkDriftEventRepository,
     )
     from redforge.infrastructure.database.repositories.network_security.event_repository import (
         SqlAlchemyNetworkPolicyLifecycleEventRepository,
@@ -214,6 +222,23 @@ async def fetch_merged_candidates(
                 organization_id=organization_id, occurred_at=npe.occurred_at.isoformat(),
             )
             cursor = make_cursor(npe.occurred_at, "M", npe.id)
+            candidates.append(projected.with_cursor(cursor))
+
+        # M16 network_drift_events — persisted+deduped since M16 but had no
+        # consumer until M18 wired it here (source tag "K"). This is the
+        # canonical deterministic evidence for HBA/NBA behavior signals.
+        network_drift_repo = SqlAlchemyNetworkDriftEventRepository(session)
+        for nde in await network_drift_repo.list_for_organization_since(
+            org_id, query_since, per_source_limit,
+        ):
+            if nde.detected_at >= visibility_cutoff:
+                continue
+            projected = project_network_drift_event(
+                drift_event_id=str(nde.id), category=str(nde.category), summary=nde.summary,
+                policy_id=str(nde.policy_id), organization_id=organization_id,
+                occurred_at=nde.detected_at.isoformat(),
+            )
+            cursor = make_cursor(nde.detected_at, "K", str(nde.id))
             candidates.append(projected.with_cursor(cursor))
 
     candidates.sort(key=lambda e: e.cursor)

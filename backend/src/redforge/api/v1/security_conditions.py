@@ -43,6 +43,7 @@ class SecurityConditionResponse(BaseModel):
     lifecycle: str
     first_observed_at: str
     last_observed_at: str
+    qualifier: str = ""
 
 
 class SecurityConditionSummaryResponse(BaseModel):
@@ -71,6 +72,7 @@ async def list_security_conditions(
     severity: str | None = Query(default=None),
     source_category: str | None = Query(default=None),
     asset_kind: str | None = Query(default=None),
+    lifecycle: str | None = Query(default=None),
     limit: int = Query(default=100, le=500),
     offset: int = Query(default=0, ge=0),
     tenant: TenantContext = Depends(require_permission(Permission.TARGETS_READ)),
@@ -78,7 +80,7 @@ async def list_security_conditions(
 ) -> list[SecurityConditionResponse]:
     conditions = await service.list_for_org(
         tenant.organization_id, evidence_state, severity, source_category,
-        asset_kind, limit, offset,
+        asset_kind, lifecycle, limit, offset,
     )
     return [SecurityConditionResponse(**dataclasses.asdict(c)) for c in conditions]
 

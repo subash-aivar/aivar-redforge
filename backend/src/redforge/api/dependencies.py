@@ -60,7 +60,9 @@ from redforge.infrastructure.notifications.logging_notifier import (
 @lru_cache
 def _session_factory() -> async_sessionmaker[AsyncSession]:
     return async_sessionmaker(
-        bind=get_engine(), class_=AsyncSession, expire_on_commit=False,
+        bind=get_engine(),
+        class_=AsyncSession,
+        expire_on_commit=False,
     )
 
 
@@ -77,6 +79,7 @@ def _password_hasher() -> Argon2PasswordHasher:
 @lru_cache
 def _token_service() -> JWTTokenService:
     from redforge.core.config import get_settings
+
     settings = get_settings()
     return JWTTokenService(
         secret_key=settings.jwt_secret,
@@ -312,7 +315,8 @@ def _correlation_rule_registry() -> object:
     registry = CorrelationRuleRegistry()
     registry.register(
         PublicSensitiveServiceContextRule(
-            cast("Any", _tenant_asset_service()), cast("Any", _tenant_security_condition_service()),
+            cast("Any", _tenant_asset_service()),
+            cast("Any", _tenant_security_condition_service()),
         )
     )
     registry.register(
@@ -328,7 +332,8 @@ def _tenant_security_correlation_service() -> object:
     from redforge.application.security_correlation.service import TenantSecurityCorrelationService
 
     return TenantSecurityCorrelationService(
-        _session_factory(), cast("Any", _correlation_rule_registry()),
+        _session_factory(),
+        cast("Any", _correlation_rule_registry()),
     )
 
 
@@ -376,7 +381,10 @@ def get_security_graph_projector_session_factory() -> object:
 
 def get_auth_service() -> AuthService:
     return AuthService(
-        _session_factory(), _password_hasher(), _token_service(), _event_publisher(),
+        _session_factory(),
+        _password_hasher(),
+        _token_service(),
+        _event_publisher(),
     )
 
 
@@ -414,7 +422,10 @@ def get_membership_service() -> MembershipService:
 
 def get_invitation_service() -> InvitationService:
     return InvitationService(
-        _session_factory(), _event_publisher(), _audit_log(), _invitation_notifier(),
+        _session_factory(),
+        _event_publisher(),
+        _audit_log(),
+        _invitation_notifier(),
     )
 
 
@@ -463,7 +474,9 @@ def _security_authorization_service() -> object:
     from redforge.application.authorization import SecurityAuthorizationService
 
     return SecurityAuthorizationService(
-        _session_factory(), _event_publisher(), _audit_log(),
+        _session_factory(),
+        _event_publisher(),
+        _audit_log(),
         ownership_checker=_entity_ownership_checker(),  # type: ignore[arg-type]
     )
 
@@ -477,7 +490,8 @@ def _execution_policy_service() -> object:
     from redforge.application.authorization import ExecutionPolicyService
 
     return ExecutionPolicyService(
-        _session_factory(), ownership_checker=_entity_ownership_checker(),  # type: ignore[arg-type]
+        _session_factory(),
+        ownership_checker=_entity_ownership_checker(),  # type: ignore[arg-type]
     )
 
 
@@ -735,6 +749,7 @@ def _evaluation_intelligence_adapter() -> object:
     from redforge.application.red_team.evaluation_intelligence import (
         EvaluationDrivenIntelligenceAdapter,
     )
+
     return EvaluationDrivenIntelligenceAdapter()
 
 
@@ -744,6 +759,7 @@ def _campaign_intelligence_service() -> object:
     from redforge.application.red_team.campaign_intelligence import (
         RuleBasedCampaignIntelligenceService,
     )
+
     return RuleBasedCampaignIntelligenceService()
 
 
@@ -825,7 +841,8 @@ def _network_monitoring_processor() -> object:
     from redforge.application.network_security.scheduler import NetworkMonitoringProcessor
 
     return NetworkMonitoringProcessor(
-        _session_factory(), cast("Any", _network_validation_orchestrator()),
+        _session_factory(),
+        cast("Any", _network_validation_orchestrator()),
     )
 
 
@@ -857,6 +874,106 @@ def _network_validation_run_query_service() -> object:
 
 def get_network_validation_run_query_service() -> object:
     return _network_validation_run_query_service()
+
+
+# ─── Command Center (M18) ──────────────────────────────────────────────────
+# Not @lru_cache'd: each returns a light stateless service wrapping the
+# shared session factory; constructing one per request is cheap and keeps
+# these off the cache-clear path (they hold no engine-bound state beyond
+# _session_factory() itself, which IS cache-managed).
+
+
+def get_command_overview_service() -> object:
+    from redforge.application.command_center.overview_service import CommandOverviewService
+
+    return CommandOverviewService(_session_factory())
+
+
+def get_network_exposure_service() -> object:
+    from redforge.application.command_center.exposure_service import NetworkExposureService
+
+    return NetworkExposureService(_session_factory())
+
+
+def get_network_drift_query_service() -> object:
+    from redforge.application.command_center.drift_query_service import NetworkDriftQueryService
+
+    return NetworkDriftQueryService(_session_factory())
+
+
+def get_behavior_analytics_service() -> object:
+    from redforge.application.command_center.behavior_service import BehaviorAnalyticsService
+
+    return BehaviorAnalyticsService(_session_factory())
+
+
+def get_integration_status_service() -> object:
+    from redforge.application.command_center.integration_service import IntegrationStatusService
+
+    return IntegrationStatusService(_session_factory())
+
+
+def get_network_zone_service() -> object:
+    from redforge.application.command_center.zone_service import NetworkZoneService
+
+    return NetworkZoneService(_session_factory())
+
+
+# ─── Threat Intelligence (M18 expansion pass) ──────────────────────────────
+# The HTTP client IS cached: its circuit breakers and self-imposed rate
+# limiters must persist across requests within a process, or "one
+# provider failure must never break the Command Center" would reset on
+# every call. It holds no database/engine state, so it is NOT cleared
+# by clear_cached_dependencies() below.
+
+
+@lru_cache
+def _threat_intel_http_client() -> object:
+    from redforge.infrastructure.threat_intel.http_client import ThreatIntelHttpClient
+
+    return ThreatIntelHttpClient()
+
+
+def get_threat_intel_config_service() -> object:
+    from redforge.application.threat_intel.config_service import (
+        ThreatIntelProviderConfigService,
+    )
+
+    return ThreatIntelProviderConfigService(_session_factory())
+
+
+def get_threat_intel_enrichment_service() -> object:
+    from typing import Any, cast
+
+    from redforge.application.threat_intel.enrichment_service import (
+        IndicatorEnrichmentService,
+    )
+
+    return IndicatorEnrichmentService(_session_factory(), cast("Any", _threat_intel_http_client()))
+
+
+def get_ioc_correlation_service() -> object:
+    from typing import Any, cast
+
+    from redforge.application.threat_intel.correlation_service import IocCorrelationService
+
+    return IocCorrelationService(_session_factory(), cast("Any", _threat_intel_http_client()))
+
+
+def get_provider_health_service() -> object:
+    from typing import Any, cast
+
+    from redforge.application.threat_intel.health_service import ProviderHealthService
+
+    return ProviderHealthService(_session_factory(), cast("Any", _threat_intel_http_client()))
+
+
+def get_threat_intel_indicator_query_service() -> object:
+    from redforge.application.threat_intel.indicator_query_service import (
+        IndicatorQueryService,
+    )
+
+    return IndicatorQueryService(_session_factory())
 
 
 def clear_cached_dependencies() -> None:

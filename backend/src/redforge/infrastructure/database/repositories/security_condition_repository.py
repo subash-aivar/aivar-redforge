@@ -127,6 +127,7 @@ class SecurityConditionRepository:
         severity: str | None = None,
         source_category: str | None = None,
         asset_kind: str | None = None,
+        lifecycle: str | None = None,
         limit: int = 100,
         offset: int = 0,
     ) -> list[SecurityConditionModel]:
@@ -139,6 +140,8 @@ class SecurityConditionRepository:
             stmt = stmt.where(SecurityConditionModel.severity == severity)
         if source_category is not None:
             stmt = stmt.where(SecurityConditionModel.source_category == source_category)
+        if lifecycle is not None:
+            stmt = stmt.where(SecurityConditionModel.lifecycle == lifecycle)
         if asset_kind is not None:
             from redforge.infrastructure.database.models.asset_connector import AIAssetModel
 
@@ -225,6 +228,22 @@ class SecurityConditionRepository:
         if resolved_count:
             await self._session.flush()
         return resolved_count
+
+    async def count_active_by_severity(self, organization_id: str) -> dict[str, int]:
+        """Counts of currently-ACTIVE conditions grouped by severity — a
+        real `GROUP BY COUNT(*) WHERE lifecycle='active'` query, the
+        deterministic input to the M18 posture score. Never a
+        client-side tally, never includes resolved conditions."""
+        stmt = (
+            select(SecurityConditionModel.severity, func.count(SecurityConditionModel.id))
+            .where(
+                SecurityConditionModel.organization_id == organization_id,
+                SecurityConditionModel.lifecycle == "active",
+            )
+            .group_by(SecurityConditionModel.severity)
+        )
+        result = await self._session.execute(stmt)
+        return {severity: count for severity, count in result.all()}
 
     async def count_by_dimension(
         self, organization_id: str, column_name: str

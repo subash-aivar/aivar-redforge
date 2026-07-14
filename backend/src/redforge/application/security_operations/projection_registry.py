@@ -142,6 +142,35 @@ def project_drift_event(
     )
 
 
+# ─── Network drift events (M16 → surfaced M18) ─────────────────────────────
+
+
+def project_network_drift_event(
+    *, drift_event_id: str, category: str, summary: str, policy_id: str,
+    organization_id: str, occurred_at: str,
+) -> OperationalEvent:
+    """Projects a NetworkDriftEvent (M16) onto the cross-domain feed.
+
+    NetworkDriftEvent reuses the shared `SecurityDriftCategory` enum, so
+    the same title/importance maps used for M14 security drift apply
+    verbatim — only the source_domain (NETWORK_SECURITY) and the linked
+    entity (the network monitoring policy) differ. This is the read
+    surface for the previously write-only `network_drift_events` table
+    and is the deterministic evidence source for HBA/NBA signals."""
+    return OperationalEvent(
+        cursor="",
+        event_id=f"network_drift:{drift_event_id}",
+        organization_id=organization_id,
+        source_domain=SourceDomain.NETWORK_SECURITY,
+        importance=_DRIFT_IMPORTANCE.get(category, OperationalImportance.NOTICE),
+        title=_DRIFT_TITLES.get(category, category),
+        summary=summary,
+        entity_type="network_monitoring_policy",
+        entity_id=policy_id,
+        occurred_at=occurred_at,
+    )
+
+
 # ─── Continuous validation policy lifecycle events ─────────────────────────
 
 _POLICY_LIFECYCLE_TITLES: dict[str, str] = {
@@ -279,3 +308,12 @@ def project_runtime_transition(
         entity_id=component_id,
         occurred_at=occurred_at,
     )
+
+
+def drift_importance_for_category(category: str) -> OperationalImportance:
+    """Public accessor for the same canonical drift-category-to-importance
+    mapping the live feed projector uses (`_DRIFT_IMPORTANCE` above) — so a
+    second read surface (M18's drift query service) can label a drift row
+    with the platform's one, single, already-server-decided importance
+    rather than re-deriving or fabricating a second severity scheme."""
+    return _DRIFT_IMPORTANCE.get(category, OperationalImportance.NOTICE)

@@ -32,6 +32,7 @@ function makeCondition(overrides: Partial<SecurityCondition> = {}): SecurityCond
     lifecycle: "active",
     first_observed_at: new Date(0).toISOString(),
     last_observed_at: new Date(0).toISOString(),
+    qualifier: "",
     ...overrides,
   };
 }

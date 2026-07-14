@@ -16,18 +16,27 @@ Route ordering matters: literal-path routes are registered before
 
 from __future__ import annotations
 
+from dataclasses import asdict
 from typing import TYPE_CHECKING, Literal
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
 
 from redforge.api.dependencies import (
+    get_network_drift_query_service,
+    get_network_exposure_service,
     get_network_inventory_service,
     get_network_monitoring_policy_service,
     get_network_monitoring_processor,
     get_network_validation_run_query_service,
 )
 from redforge.api.security import TenantContext, require_permission
+from redforge.application.command_center.drift_query_service import (
+    NetworkDriftQueryService,  # noqa: TC001
+)
+from redforge.application.command_center.exposure_service import (
+    NetworkExposureService,  # noqa: TC001
+)
 from redforge.application.network_security.inventory_service import (
     NetworkInventoryService,  # noqa: TC001
 )
@@ -355,3 +364,96 @@ async def cancel_run(
     cannot distinguish "doesn't exist" from "exists but isn't yours"."""
     dto = await service.request_cancellation(run_id, tenant.organization_id)
     return RunDetailResponse.from_dto(dto)
+
+
+# ─── Exposure & drift read surfaces (M18) ──────────────────────────────────
+# All strictly tenant-scoped reads over real M16 observations/drift; no
+# new authoritative truth. Every route is gated by NETWORK_SECURITY_READ.
+
+
+class NetworkDriftEventResponse(BaseModel):
+    id: str
+    category: str
+    summary: str
+    policy_id: str
+    run_id: str
+    detected_at: str
+    severity: str = "notice"
+    target_asset_id: str = ""
+    target_asset_name: str = ""
+
+
+class PortExposureResponse(BaseModel):
+    port: int
+    transport: str
+    asset_count: int
+    observation_count: int
+    last_observed_at: str
+
+
+class PortAssetResponse(BaseModel):
+    asset_id: str
+    observation_count: int
+    last_observed_at: str
+    asset_name: str = ""
+
+
+class ServiceExposureResponse(BaseModel):
+    service: str
+    validator_id: str
+    asset_count: int
+    observation_count: int
+    last_observed_at: str
+
+
+@router.get("/drift", response_model=list[NetworkDriftEventResponse])
+async def list_network_drift(
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    tenant: TenantContext = Depends(require_permission(Permission.NETWORK_SECURITY_READ)),
+    service: NetworkDriftQueryService = Depends(get_network_drift_query_service),
+) -> list[NetworkDriftEventResponse]:
+    """Org-scoped network drift feed — the read surface for the M16
+    `network_drift_events` table (which is also now surfaced in the M15
+    live operations feed)."""
+    events = await service.list_for_org(tenant.organization_id, limit, offset)
+    return [NetworkDriftEventResponse(**asdict(e)) for e in events]
+
+
+@router.get("/top-ports", response_model=list[PortExposureResponse])
+async def list_top_open_ports(
+    limit: int = Query(default=25, ge=1, le=200),
+    tenant: TenantContext = Depends(require_permission(Permission.NETWORK_SECURITY_READ)),
+    service: NetworkExposureService = Depends(get_network_exposure_service),
+) -> list[PortExposureResponse]:
+    """Real aggregate over `tcp_reachability` observations that were
+    actually reachable. A port only appears if it was genuinely observed
+    open; transport is TCP because that is what was observed, not a guess."""
+    rows = await service.top_open_ports(tenant.organization_id, limit)
+    return [PortExposureResponse(**asdict(r)) for r in rows]
+
+
+@router.get("/top-ports/{port}/assets", response_model=list[PortAssetResponse])
+async def list_assets_for_port(
+    port: int,
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    tenant: TenantContext = Depends(require_permission(Permission.NETWORK_SECURITY_READ)),
+    service: NetworkExposureService = Depends(get_network_exposure_service),
+) -> list[PortAssetResponse]:
+    """Drill-down: which assets have this port observed reachable."""
+    rows = await service.assets_for_port(tenant.organization_id, port, limit, offset)
+    return [PortAssetResponse(**asdict(r)) for r in rows]
+
+
+@router.get("/service-exposure", response_model=list[ServiceExposureResponse])
+async def list_service_exposure(
+    limit: int = Query(default=50, ge=1, le=200),
+    tenant: TenantContext = Depends(require_permission(Permission.NETWORK_SECURITY_READ)),
+    service: NetworkExposureService = Depends(get_network_exposure_service),
+) -> list[ServiceExposureResponse]:
+    """Validated services observed across the org — grouped by the
+    protocol a validator actually confirmed, never guessed from a port
+    number or banner."""
+    rows = await service.validated_services(tenant.organization_id, limit)
+    return [ServiceExposureResponse(**asdict(r)) for r in rows]

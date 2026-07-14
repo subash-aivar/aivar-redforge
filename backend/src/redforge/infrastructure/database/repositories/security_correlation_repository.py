@@ -15,7 +15,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 
 from redforge.infrastructure.database.models.security_correlation import (
@@ -184,6 +184,17 @@ class SecurityCorrelationRepository:
         stmt = stmt.order_by(SecurityCorrelationModel.id).limit(limit).offset(offset)
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
+
+    async def count_active(self, organization_id: str) -> int:
+        """Count of currently-ACTIVE correlations — a real
+        `COUNT(*) WHERE lifecycle='active'` query, the deterministic
+        correlation input to the M18 posture score."""
+        stmt = select(func.count(SecurityCorrelationModel.id)).where(
+            SecurityCorrelationModel.organization_id == organization_id,
+            SecurityCorrelationModel.lifecycle == "active",
+        )
+        result = await self._session.execute(stmt)
+        return int(result.scalar_one())
 
     async def get_condition_ids(
         self, correlation_id: str, organization_id: str

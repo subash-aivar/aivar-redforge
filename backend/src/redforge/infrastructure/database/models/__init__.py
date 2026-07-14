@@ -12,6 +12,10 @@ from redforge.infrastructure.database.models.authorization import (
     SecurityAuthorizationScopeModel,
 )
 from redforge.infrastructure.database.models.campaign_result import CampaignResultModel
+from redforge.infrastructure.database.models.command_center import (
+    IntegrationProviderModel,
+    NetworkZoneAssignmentModel,
+)
 from redforge.infrastructure.database.models.continuous_validation import (
     ContinuousValidationPolicyModel,
     SecurityDriftEventModel,
@@ -75,6 +79,7 @@ __all__ = [
     "DirectoryGroupModel",
     "DirectoryIdentityModel",
     "DirectoryMembershipModel",
+    "IntegrationProviderModel",
     "InvitationModel",
     "MFAFactorModel",
     "MembershipModel",
@@ -85,6 +90,7 @@ __all__ = [
     "NetworkStateSnapshotModel",
     "NetworkValidationRunEventModel",
     "NetworkValidationRunModel",
+    "NetworkZoneAssignmentModel",
     "OrganizationModel",
     "PlatformAssignmentModel",
     "PlatformAuditLogModel",

@@ -17,6 +17,10 @@ export type SourceDomain =
   | "security_condition"
   | "security_correlation"
   | "runtime"
+  // network_security is emitted by the backend (M16 network run/policy
+  // lifecycle events and, since M18, network drift events merged into the
+  // feed); the client union previously omitted it.
+  | "network_security"
   | "unknown";
 
 export type OperationalImportance = "info" | "notice" | "warning" | "high" | "critical";

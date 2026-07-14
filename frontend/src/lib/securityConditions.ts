@@ -30,6 +30,7 @@ export interface SecurityCondition {
   lifecycle: string;
   first_observed_at: string;
   last_observed_at: string;
+  qualifier: string;
 }
 
 export interface SecurityConditionSummary {
@@ -44,6 +45,7 @@ export interface ListSecurityConditionsParams {
   severity?: string;
   source_category?: string;
   asset_kind?: string;
+  lifecycle?: string;
   limit?: number;
   offset?: number;
 }

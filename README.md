@@ -4,9 +4,9 @@ Enterprise Continuous AI Security Validation and AI Red Teaming Platform — not
 
 ## Current Status
 
-**Milestones M1–M17 are COMPLETE** (migration head `0027`). Full detail and per-milestone proof live in [`docs/PROJECT_CONTEXT.md`](docs/PROJECT_CONTEXT.md) and the milestone-specific reports/checkpoints under [`docs/`](docs/). This README is a high-level orientation, not a milestone log — do not add per-milestone history here.
+**Milestones M1–M18 are COMPLETE** (migration head `0030`). Full detail and per-milestone proof live in [`docs/PROJECT_CONTEXT.md`](docs/PROJECT_CONTEXT.md) and the milestone-specific reports/checkpoints under [`docs/`](docs/). This README is a high-level orientation, not a milestone log — do not add per-milestone history here.
 
-## Platform Capabilities (through M17)
+## Platform Capabilities (through M18)
 
 - **Platform identity & governance** — super-admin bootstrap, privileged access security, real TOTP MFA with step-up assurance, platform RBAC, tenant/organization governance.
 - **Asset, connector & Security Graph foundation** — a unified canonical asset model (`AIAsset`) and connector framework backed by real PostgreSQL persistence, projected into a versioned Security Graph ontology (node/edge kinds for assets, identities, services, conditions, correlations).
@@ -17,9 +17,10 @@ Enterprise Continuous AI Security Validation and AI Red Teaming Platform — not
 - **Authorized validation scope & execution policy control plane** — a `SecurityAuthorization` aggregate with an ALLOW/DENY/APPROVAL_REQUIRED policy engine gating every active validation action. No active validation of any kind occurs outside an explicit, time-bounded, tenant-scoped authorization.
 - **Gated, safe active validation orchestration** — real (not simulated) active network and service validation, always behind the M10 authorization gate, always bounded (connect timeouts, concurrency limits, address-space limits).
 - **Continuous validation, drift detection & revalidation** — a scheduler that re-validates authorized targets on a cadence and raises deterministic drift/security-condition events.
-- **Security Operations Command Center** — a unified, read-only, real-time execution telemetry feed across every validation-producing bounded context.
 - **Advanced network security & continuous network monitoring** — network/IP-CIDR scoped continuous monitoring with mid-run cancellation, restart-durable cancellation state, and scheduler-dispatched execution, all gated by the same M10 authorization plane.
 - **Enterprise identity, Super Admin & RBAC control plane** — organization-scoped custom roles and groups on top of the fixed platform RBAC table, a canonical effective-access explain view, and a centralized bounded-delegation grant policy that structurally prevents privilege self-escalation. Platform Super Admin authority (M1/M2) is a separate, non-forgeable authorization plane, never mixed with organization-scoped permissions.
+- **Security Operations Command Center** — a premium, real-time, evidence-backed operational surface over every prior context: a deterministic and fully-explainable security-posture score, a live cross-domain activity feed (SSE), top open ports and validated-service exposure, deterministic UEBA/HBA/NBA behavior signals that link to their exact source records (no ML, no opaque scoring), explicit admin-authored network-zone/DMZ classification, an exposure-relationship network map (not an attack path), and provider-neutral boundaries for firewall/bandwidth/ISP/backup-DR/threat-intel/geolocation telemetry that honestly report **NOT CONFIGURED** until a real provider is wired — the platform never fabricates telemetry.
+- **Customer-owned telemetry ingestion & geo-enrichment intelligence** — Suricata EVE JSON and Zeek JSON parsers, sensor management, idempotent batch ingest with source deduplication, canonical IP classification (`is_public_ip()`) gating all enrichment egress, keyless RDAP ASN/network-owner enrichment (IANA bootstrap + `_RIR_HOST_ALLOWLIST` SSRF defense), threat intelligence enrichment service with provider-neutral abstraction, and a real-time geo security activity map showing only genuine enriched public IPs — never fabricated coordinates or invented attack arcs. Migration head `0030`.
 
 **What this platform intentionally does not do**, by design, everywhere in the architecture: no arbitrary command execution, no shell/subprocess execution, no exploit or credential-attack tooling, no unrestricted or unbounded scanning, no DNS resolution or redirect-following inside the network validation path, and no "attack path"/exploitability scoring anywhere in the Security Graph or Attack Surface views.
 
@@ -112,7 +113,7 @@ npm run dev
 
 ```bash
 cd backend
-alembic upgrade head       # apply all migrations — current head: 0025
+alembic upgrade head       # apply all migrations — current head: 0030
 alembic current            # show applied head
 alembic downgrade -1       # roll back one migration
 ```

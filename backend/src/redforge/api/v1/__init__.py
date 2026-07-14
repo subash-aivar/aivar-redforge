@@ -10,6 +10,7 @@ from redforge.api.v1.attack_surface import router as attack_surface_router
 from redforge.api.v1.auth import router as auth_router
 from redforge.api.v1.authorizations import router as authorizations_router
 from redforge.api.v1.cloud_security import router as cloud_security_router
+from redforge.api.v1.command_center import router as command_center_router
 from redforge.api.v1.connectors import router as connectors_router
 from redforge.api.v1.continuous_validation import router as continuous_validation_router
 from redforge.api.v1.directory_security import router as directory_security_router
@@ -36,6 +37,8 @@ from redforge.api.v1.security_conditions import router as security_conditions_ro
 from redforge.api.v1.security_correlations import router as security_correlations_router
 from redforge.api.v1.security_graph import router as security_graph_router
 from redforge.api.v1.security_operations import router as security_operations_router
+from redforge.api.v1.telemetry import router as telemetry_router
+from redforge.api.v1.threat_intel import router as threat_intel_router
 from redforge.api.v1.validation_executions import router as validation_executions_router
 from redforge.api.v1.validations import router as validations_router
 
@@ -76,3 +79,6 @@ router.include_router(validation_executions_router, tags=["validation-executions
 router.include_router(security_operations_router, tags=["security-operations"])
 router.include_router(network_security_router, tags=["network-security"])
 router.include_router(admin_rbac_router, tags=["admin-rbac"])
+router.include_router(command_center_router, tags=["command-center"])
+router.include_router(threat_intel_router, tags=["threat-intel"])
+router.include_router(telemetry_router, tags=["telemetry"])

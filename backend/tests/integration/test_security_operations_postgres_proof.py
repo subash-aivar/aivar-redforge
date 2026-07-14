@@ -83,7 +83,9 @@ from redforge.infrastructure.database.models.continuous_validation import (
     ValidationStateSnapshotModel,
 )
 from redforge.infrastructure.database.models.network_security import (
+    NetworkDriftEventModel,
     NetworkMonitoringPolicyLifecycleEventModel,
+    NetworkMonitoringPolicyModel,
     NetworkValidationRunEventModel,
 )
 from redforge.infrastructure.database.models.security_conditions import SecurityConditionModel
@@ -147,9 +149,16 @@ _TABLES = [
     RuntimeComponentHealthTransitionModel.__table__,
     NetworkValidationRunEventModel.__table__,
     NetworkMonitoringPolicyLifecycleEventModel.__table__,
+    # M18 wired network_drift_events into the M15 merged feed, so the
+    # feed's poll()/fetch_merged_candidates now queries it — the fixture
+    # must create it (and its FK parent network_monitoring_policies).
+    NetworkMonitoringPolicyModel.__table__,
+    NetworkDriftEventModel.__table__,
 ]
 
 _ALL_TABLE_NAMES = (
+    "network_drift_events",
+    "network_monitoring_policies",
     "network_validation_run_events",
     "network_monitoring_policy_lifecycle_events",
     "runtime_component_health_transitions",
