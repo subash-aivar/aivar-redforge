@@ -82,6 +82,10 @@ from redforge.infrastructure.database.models.continuous_validation import (
     SecurityDriftEventModel,
     ValidationStateSnapshotModel,
 )
+from redforge.infrastructure.database.models.network_security import (
+    NetworkMonitoringPolicyLifecycleEventModel,
+    NetworkValidationRunEventModel,
+)
 from redforge.infrastructure.database.models.security_conditions import SecurityConditionModel
 from redforge.infrastructure.database.models.security_correlation import (
     SecurityCorrelationConditionModel,
@@ -141,9 +145,13 @@ _TABLES = [
     ContinuousValidationPolicyLifecycleEventModel.__table__,
     RuntimeComponentHealthStateModel.__table__,
     RuntimeComponentHealthTransitionModel.__table__,
+    NetworkValidationRunEventModel.__table__,
+    NetworkMonitoringPolicyLifecycleEventModel.__table__,
 ]
 
 _ALL_TABLE_NAMES = (
+    "network_validation_run_events",
+    "network_monitoring_policy_lifecycle_events",
     "runtime_component_health_transitions",
     "runtime_component_health_state",
     "continuous_validation_policy_lifecycle_events",

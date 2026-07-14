@@ -857,3 +857,33 @@ def _network_validation_run_query_service() -> object:
 
 def get_network_validation_run_query_service() -> object:
     return _network_validation_run_query_service()
+
+
+def clear_cached_dependencies() -> None:
+    """Clear every `@lru_cache`-memoized provider in this module.
+
+    Every cached provider here is transitively bound to the database
+    engine live at its first call (directly via `_session_factory()`,
+    or indirectly by holding a service instance constructed from it).
+    `@lru_cache` has no expiry, so these caches silently outlive a
+    `create_engine()`/`dispose_engine()` cycle — the next engine
+    lifecycle in the same process (a real scenario whenever more than
+    one `create_app()` lifespan runs in one interpreter, e.g. the
+    backend's own test suite) would otherwise keep serving service
+    objects wired to a disposed engine's connection pool, bound to
+    that engine's own now-dead event loop. Must be called immediately
+    after `dispose_engine()` on every shutdown so the next startup's
+    `create_engine()` gets picked up by every provider, not just
+    `_session_factory()` itself.
+
+    Discovers cached providers by introspecting this module's own
+    globals for the `cache_clear` attribute `functools.lru_cache`
+    attaches, rather than an explicit list — so a newly added
+    `@lru_cache` provider is covered automatically, with nothing to
+    remember to update here.
+    """
+    module_globals = globals()
+    for value in module_globals.values():
+        cache_clear = getattr(value, "cache_clear", None)
+        if callable(cache_clear):
+            cache_clear()

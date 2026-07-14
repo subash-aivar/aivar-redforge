@@ -85,6 +85,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             )
 
             nonlocal _session_factory
+            # Defense in depth: guarantees every DB-bound dependency
+            # provider picks up THIS engine even if a previous app
+            # instance's shutdown hook didn't run to completion in this
+            # same process (e.g. an aborted lifespan) — see
+            # clear_cached_dependencies()'s own docstring for why this
+            # matters whenever more than one create_app() lifespan runs
+            # in one interpreter.
+            from redforge.api.dependencies import clear_cached_dependencies
+
+            clear_cached_dependencies()
             engine = create_engine(
                 database_url=settings.database_url,
                 echo=settings.debug,
@@ -488,6 +498,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
         async def _shutdown_database() -> None:
             await dispose_engine()
+            from redforge.api.dependencies import clear_cached_dependencies
+
+            clear_cached_dependencies()
             logger.info("database_engine_disposed")
 
         coordinator.register_shutdown(

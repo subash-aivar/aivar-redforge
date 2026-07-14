@@ -4,7 +4,7 @@ Enterprise Continuous AI Security Validation and AI Red Teaming Platform — not
 
 ## Current Status
 
-**Milestones M1–M17 are COMPLETE** (migration head `0026`). Full detail and per-milestone proof live in [`docs/PROJECT_CONTEXT.md`](docs/PROJECT_CONTEXT.md) and the milestone-specific reports/checkpoints under [`docs/`](docs/). This README is a high-level orientation, not a milestone log — do not add per-milestone history here.
+**Milestones M1–M17 are COMPLETE** (migration head `0027`). Full detail and per-milestone proof live in [`docs/PROJECT_CONTEXT.md`](docs/PROJECT_CONTEXT.md) and the milestone-specific reports/checkpoints under [`docs/`](docs/). This README is a high-level orientation, not a milestone log — do not add per-milestone history here.
 
 ## Platform Capabilities (through M17)
 

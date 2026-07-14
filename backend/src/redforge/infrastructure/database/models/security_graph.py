@@ -18,7 +18,13 @@ from redforge.infrastructure.database.base import Base
 
 class SecurityGraphNodeModel(Base):
     __tablename__ = "security_graph_nodes"
-    __table_args__ = (UniqueConstraint("id", "organization_id", name="ux_sg_nodes_id_org"),)
+    __table_args__ = (
+        UniqueConstraint("id", "organization_id", name="ux_sg_nodes_id_org"),
+        UniqueConstraint(
+            "organization_id", "source_domain", "source_entity_id",
+            name="ux_sg_nodes_org_domain_entity",
+        ),
+    )
 
     id: Mapped[str] = mapped_column(String(26), primary_key=True)
     organization_id: Mapped[str] = mapped_column(String(26), nullable=False)

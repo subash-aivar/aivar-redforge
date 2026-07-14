@@ -106,6 +106,10 @@ from redforge.infrastructure.database.models.security_correlation import (
     SecurityCorrelationEntityModel,
     SecurityCorrelationModel,
 )
+from redforge.infrastructure.database.models.security_graph import (
+    SecurityGraphEdgeModel,
+    SecurityGraphNodeModel,
+)
 from redforge.infrastructure.database.models.validation_execution import (
     ValidationExecutionEventModel,
     ValidationExecutionModel,
@@ -136,6 +140,8 @@ _TABLES = [
     ValidationExecutionModel.__table__,
     ValidationExecutionStepModel.__table__,
     ValidationExecutionEventModel.__table__,
+    SecurityGraphNodeModel.__table__,
+    SecurityGraphEdgeModel.__table__,
 ]
 
 
@@ -185,6 +191,19 @@ async def pg_factory():
         await conn.execute(text(
             "ALTER TABLE ai_assets ADD CONSTRAINT ux_ai_assets_id_org "
             "UNIQUE (id, organization_id)"
+        ))
+        # This partial unique index is created via raw Alembic op.create_index()
+        # in migration 0013 — it is NOT declared in AIAssetModel.__table_args__,
+        # so Base.metadata.create_all() has no knowledge of it and never
+        # creates it. Without it, TenantAssetService.resolve_asset()'s
+        # INSERT-then-catch-IntegrityError race-safety pattern has nothing
+        # to catch, silently allowing duplicate canonical assets under
+        # concurrent discovery — the real defect this file's own
+        # test_concurrent_execution_converges_on_one_canonical_service_asset
+        # exists to catch, which it could not until this index was added here.
+        await conn.execute(text(
+            "CREATE UNIQUE INDEX ux_ai_assets_org_external_id ON ai_assets "
+            "(organization_id, external_id) WHERE external_id != ''"
         ))
         await conn.run_sync(Base.metadata.create_all, tables=_TABLES[2:])
         for table in (
