@@ -14,6 +14,7 @@ from __future__ import annotations
 import asyncio
 
 import pytest
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from redforge.application.inventory.tenant_asset_service import TenantAssetService
@@ -32,7 +33,8 @@ from redforge.shared.timestamps import utc_now
 
 pytestmark = pytest.mark.asyncio
 
-_DB_URL = "postgresql+asyncpg://redforge:redforge@localhost:5432/redforge_test"
+_TEST_DB_NAME = "redforge_test"
+_DB_URL = f"postgresql+asyncpg://redforge:redforge@localhost:5432/{_TEST_DB_NAME}"
 
 
 @pytest.fixture
@@ -41,6 +43,44 @@ async def session_factory():
     factory = async_sessionmaker(engine, expire_on_commit=False)
     yield factory
     await engine.dispose()
+
+
+@pytest.fixture(autouse=True)
+async def _clean_policies(session_factory):
+    """Delete all network_monitoring_policy rows (and FK dependents) before
+    each test.
+
+    This file asserts global scheduler claim behaviour (SKIP LOCKED across the
+    whole table).  Without this cleanup, active due rows left by previous test
+    runs accumulate in redforge_test and either steal the claim from the
+    test-owned policy (causing the exactly-one-winner assertion to see 0
+    winners) or cause the paused/disabled tests to get a non-None result.
+
+    FK dependency order must be respected so no constraint is violated:
+    children are deleted before parents.
+    """
+    async with session_factory() as session:
+        # Validate the ACTUAL connected database identity before any DELETE.
+        # This catches environment-variable or config mistakes that would
+        # otherwise run destructive cleanup against a non-test database.
+        _result = await session.execute(text("SELECT current_database()"))
+        _actual_db = _result.scalar_one()
+        assert _actual_db == _TEST_DB_NAME, (
+            f"REFUSING destructive cleanup: connected database is {_actual_db!r}, "
+            f"not the approved integration-test database {_TEST_DB_NAME!r}"
+        )
+        for _tbl in (
+            "network_validation_run_events",
+            "network_state_snapshots",
+            "network_drift_events",
+            "network_observations",
+            "network_monitoring_policy_lifecycle_events",
+            "network_validation_runs",
+            "network_monitoring_policies",
+        ):
+            await session.execute(text(f"DELETE FROM {_tbl}"))
+        await session.commit()
+    yield
 
 
 async def _create_target_asset(session_factory, organization_id: str, ip: str) -> EntityId:

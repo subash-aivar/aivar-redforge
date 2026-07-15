@@ -35,6 +35,7 @@ import os
 
 import pytest
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from redforge.application.inventory.tenant_asset_service import TenantAssetService
@@ -261,6 +262,45 @@ async def test_cancellation_request_survives_two_simulated_process_restarts() ->
                 "originally called start()"
             )
     await _settle_after_simulated_process_exit()
+
+    # Remove stale network_monitoring_policies (and their FK dependents) left
+    # by previous runs of this test in the isolated proof database.
+    #
+    # claim_one_due_policy selects globally by next_due_at ASC; without this
+    # cleanup a policy row from a prior run whose lease has expired
+    # (> CLAIM_LEASE_SECONDS) is claimed instead of the fresh policy created
+    # just below, making the assertion observe a wrong id.
+    #
+    # Deletion is scoped to organization_id != org_id so the current test's
+    # own RUNNING validation run (org_id) is never touched.  FK dependency
+    # order: children must be deleted before their parents.
+    async with factory_c() as session:
+        # Validate the ACTUAL connected database identity before any DELETE.
+        # _assert_isolated_proof_database(_TEST_DB_NAME) is a tautological
+        # string guard only; this query proves the live connection resolves to
+        # the approved proof database, catching REDFORGE_TEST_DATABASE_URL
+        # overrides that would otherwise redirect destructive cleanup to a
+        # non-test database.
+        _result = await session.execute(text("SELECT current_database()"))
+        _actual_db = _result.scalar_one()
+        assert _actual_db == _TEST_DB_NAME, (
+            f"REFUSING destructive cleanup: connected database is {_actual_db!r}, "
+            f"not the approved proof database {_TEST_DB_NAME!r}"
+        )
+        for _tbl in (
+            "network_validation_run_events",
+            "network_state_snapshots",
+            "network_drift_events",
+            "network_observations",
+            "network_monitoring_policy_lifecycle_events",
+            "network_validation_runs",
+            "network_monitoring_policies",
+        ):
+            await session.execute(
+                text(f"DELETE FROM {_tbl} WHERE organization_id != :oid"),
+                {"oid": org_id},
+            )
+        await session.commit()
 
     # Scheduler not corrupted by the abandoned run: an unrelated fresh
     # ACTIVE policy is still claimable via the real SKIP LOCKED path.
