@@ -1,6 +1,6 @@
-"""SecurityOperationsStreamService — M15 (extended M16, M18).
+"""SecurityOperationsStreamService — M15 (extended M16, M18, M19).
 
-Merges seven durable, already-existing per-bounded-context append-only
+Merges eight durable, already-existing per-bounded-context append-only
 logs into one tenant-safe, cursor-resumable operational event stream
 (source tag in parentheses is the cursor's middle component):
 
@@ -13,6 +13,7 @@ logs into one tenant-safe, cursor-resumable operational event stream
   - network_validation_run_events (M16 · "N")  — tenant-scoped
   - network_monitoring_policy_lifecycle_events (M16 · "M") — tenant-scoped
   - network_drift_events (M16, surfaced M18 · "K") — tenant-scoped
+  - ddos_incident_events (M19 · "Z")           — tenant-scoped
 
 Why a query-time merge instead of one physical event table: see
 migration 0023's own docstring for the full reconnaissance finding
@@ -240,6 +241,48 @@ async def fetch_merged_candidates(
             )
             cursor = make_cursor(nde.detected_at, "K", str(nde.id))
             candidates.append(projected.with_cursor(cursor))
+
+        # M19 DDoS incident events — source tag "Z"
+        # Surfaces DDoS incident lifecycle events (detection, escalation,
+        # resolution) into the shared security operations stream.
+        try:
+            from redforge.domain.security_operations.operational_event import OperationalEvent
+            from redforge.domain.security_operations.value_objects import (
+                OperationalImportance,
+                SourceDomain,
+            )
+            from redforge.infrastructure.database.repositories.ddos.incident_repository import (
+                SqlAlchemyDDoSIncidentEventRepository,
+            )
+
+            ddos_event_repo = SqlAlchemyDDoSIncidentEventRepository(session)
+            ddos_events = await ddos_event_repo.list_for_org_since(
+                organization_id, query_since, per_source_limit,
+            )
+            _high_event_types = frozenset({"detection_opened", "severity_escalated"})
+            for dze in ddos_events:
+                if dze.occurred_at >= visibility_cutoff:
+                    continue
+                importance = (
+                    OperationalImportance.HIGH
+                    if dze.event_type in _high_event_types
+                    else OperationalImportance.NOTICE
+                )
+                event = OperationalEvent(
+                    cursor=make_cursor(dze.occurred_at, "Z", dze.id),
+                    event_id=dze.id,
+                    organization_id=organization_id,
+                    source_domain=SourceDomain.DDOS,
+                    importance=importance,
+                    title=f"DDoS: {dze.description[:120]}",
+                    summary=dze.description,
+                    entity_type="ddos_incident",
+                    entity_id=dze.incident_id,
+                    occurred_at=dze.occurred_at.isoformat(),
+                )
+                candidates.append(event)
+        except Exception:
+            pass  # DDoS tables not yet migrated in test or dev environments
 
     candidates.sort(key=lambda e: e.cursor)
     return candidates

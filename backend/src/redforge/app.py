@@ -475,7 +475,30 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "network_monitoring_scheduler", _start_network_monitoring_scheduler,
         )
 
+        async def _start_ddos_detection_worker() -> None:
+            if _session_factory is None:
+                logger.warning("ddos_detection_worker_no_session_factory")
+                return
+            from redforge.application.ddos.detection_worker import DDoSDetectionWorker
+
+            worker = DDoSDetectionWorker(
+                session_factory=_session_factory,
+                poll_seconds=getattr(settings, "runtime_ddos_detection_poll_seconds", 60),
+            )
+            worker.start()
+            runtime.ddos_detection_worker = worker  # type: ignore[attr-defined]
+            app.state.ddos_detection_worker = worker
+            logger.info("ddos_detection_worker_started")
+
+        coordinator.register_startup("ddos_detection_worker", _start_ddos_detection_worker)
+
         # Register shutdown hooks (run in reverse registration order)
+        async def _shutdown_ddos_detection_worker() -> None:
+            worker = getattr(runtime, "ddos_detection_worker", None)
+            if worker is not None:
+                await worker.stop()
+                logger.info("ddos_detection_worker_stopped")
+
         async def _shutdown_network_monitoring_scheduler() -> None:
             if runtime.network_monitoring_scheduler is not None:
                 await runtime.network_monitoring_scheduler.stop()
@@ -503,6 +526,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             clear_cached_dependencies()
             logger.info("database_engine_disposed")
 
+        coordinator.register_shutdown(
+            "ddos_detection_worker",
+            _shutdown_ddos_detection_worker,
+            timeout_s=settings.runtime_shutdown_timeout_s,
+        )
         coordinator.register_shutdown(
             "network_monitoring_scheduler",
             _shutdown_network_monitoring_scheduler,

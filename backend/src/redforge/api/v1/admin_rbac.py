@@ -79,6 +79,9 @@ _DESCRIPTIONS: dict[Permission, str] = {
     Permission.ROLES_MANAGE: "Create, edit, and assign custom roles",
     Permission.GROUPS_READ: "View security groups",
     Permission.GROUPS_MANAGE: "Create, edit, and manage security groups",
+    Permission.DDOS_READ: "View DDoS incidents, traffic analytics, and detection policies",
+    Permission.DDOS_MANAGE: "Configure DDoS protected resources and detection policies",
+    Permission.DDOS_MITIGATION_APPROVE: "Approve DDoS mitigation recommendations for execution",
 }
 
 

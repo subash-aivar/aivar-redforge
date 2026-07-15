@@ -33,6 +33,8 @@ class SourceDomain(StrEnum):
     # network_monitoring_policy_lifecycle_events (see
     # infrastructure/database/repositories/network_security/event_repository.py).
     NETWORK_SECURITY = "network_security"
+    # M19 — DDoS incident events from ddos_incident_events table
+    DDOS = "ddos"
     UNKNOWN = "unknown"
 
 

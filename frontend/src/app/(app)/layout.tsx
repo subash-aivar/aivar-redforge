@@ -52,6 +52,16 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    title: "DDoS Defense",
+    items: [
+      { label: "DDoS Overview", href: "/ddos", icon: "⛨", perm: "ddos:read" },
+      { label: "Active Incidents", href: "/ddos/incidents", icon: "⚡", perm: "ddos:read" },
+      { label: "Traffic Analytics", href: "/ddos/traffic", icon: "〰", perm: "ddos:read" },
+      { label: "Protected Resources", href: "/ddos/protected-resources", icon: "▣", perm: "ddos:manage" },
+      { label: "Mitigation Center", href: "/ddos/mitigation", icon: "🛡", perm: "ddos:mitigation_approve" },
+    ],
+  },
+  {
     title: "Detection & Response",
     items: [
       { label: "Exposure Management", href: "/exposure-management", icon: "◉" },

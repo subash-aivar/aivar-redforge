@@ -16,6 +16,22 @@ from redforge.infrastructure.database.models.command_center import (
     IntegrationProviderModel,
     NetworkZoneAssignmentModel,
 )
+from redforge.infrastructure.database.models.ddos import (
+    DDoSDetectionPolicyModel,
+    DDoSIncidentEventModel,
+    DDoSIncidentModel,
+    DDoSMitigationRecommendationModel,
+    DDoSObservationWindowModel,
+    DDoSProtectedResourceModel,
+)
+from redforge.infrastructure.database.models.telemetry import (
+    TelemetryEventModel,
+    TelemetrySensorModel,
+)
+from redforge.infrastructure.database.models.threat_intel import (
+    ThreatIntelEnrichmentModel,
+    ThreatIntelIndicatorModel,
+)
 from redforge.infrastructure.database.models.continuous_validation import (
     ContinuousValidationPolicyModel,
     SecurityDriftEventModel,
@@ -72,6 +88,16 @@ from redforge.infrastructure.database.models.validation_execution import (
 __all__ = [
     "AIAssetModel",
     "AITargetModel",
+    "DDoSDetectionPolicyModel",
+    "DDoSIncidentEventModel",
+    "DDoSIncidentModel",
+    "DDoSMitigationRecommendationModel",
+    "DDoSObservationWindowModel",
+    "DDoSProtectedResourceModel",
+    "TelemetryEventModel",
+    "TelemetrySensorModel",
+    "ThreatIntelEnrichmentModel",
+    "ThreatIntelIndicatorModel",
     "CampaignResultModel",
     "ConnectorModel",
     "ContinuousValidationPolicyLifecycleEventModel",

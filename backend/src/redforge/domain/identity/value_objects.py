@@ -102,6 +102,20 @@ class Permission(StrEnum):
     GROUPS_READ = "groups:read"
     GROUPS_MANAGE = "groups:manage"
 
+    # Advanced DDoS Detection & Defense Center (M19).
+    # READ — view incidents, detections, protected resources, policies,
+    #   traffic analytics, mitigation recommendations, history.
+    # MANAGE — configure protected resources and detection policies,
+    #   register/update resources, manage suppression windows.
+    # MITIGATION_APPROVE — explicitly approve a mitigation recommendation
+    #   for execution. Separated from MANAGE so that policy administrators
+    #   and mitigation approvers can be different personnel (two-person
+    #   integrity). Approval NEVER bypasses tenant isolation or provider
+    #   safety contracts — it is a gate, not an execution bypass.
+    DDOS_READ = "ddos:read"
+    DDOS_MANAGE = "ddos:manage"
+    DDOS_MITIGATION_APPROVE = "ddos:mitigation_approve"
+
 
 @unique
 class MembershipRole(StrEnum):
@@ -181,6 +195,9 @@ ROLE_PERMISSIONS: dict[MembershipRole, frozenset[Permission]] = {
         Permission.ROLES_MANAGE,
         Permission.GROUPS_READ,
         Permission.GROUPS_MANAGE,
+        Permission.DDOS_READ,
+        Permission.DDOS_MANAGE,
+        Permission.DDOS_MITIGATION_APPROVE,
     }),
     MembershipRole.SECURITY_MANAGER: frozenset({
         Permission.ORG_READ,
@@ -200,6 +217,9 @@ ROLE_PERMISSIONS: dict[MembershipRole, frozenset[Permission]] = {
         Permission.SECURITY_OPERATIONS_READ,
         Permission.NETWORK_SECURITY_READ,
         Permission.NETWORK_SECURITY_MANAGE,
+        Permission.DDOS_READ,
+        Permission.DDOS_MANAGE,
+        Permission.DDOS_MITIGATION_APPROVE,
     }),
     MembershipRole.ANALYST: frozenset({
         Permission.ORG_READ,
@@ -214,6 +234,7 @@ ROLE_PERMISSIONS: dict[MembershipRole, frozenset[Permission]] = {
         Permission.AUTHORIZATIONS_EVALUATE,
         Permission.SECURITY_OPERATIONS_READ,
         Permission.NETWORK_SECURITY_READ,
+        Permission.DDOS_READ,
     }),
     MembershipRole.MEMBER: frozenset({
         Permission.ORG_READ,
@@ -229,6 +250,7 @@ ROLE_PERMISSIONS: dict[MembershipRole, frozenset[Permission]] = {
         Permission.AUTHORIZATIONS_EVALUATE,
         Permission.SECURITY_OPERATIONS_READ,
         Permission.NETWORK_SECURITY_READ,
+        Permission.DDOS_READ,
     }),
     MembershipRole.VIEWER: frozenset({
         Permission.ORG_READ,
@@ -240,6 +262,7 @@ ROLE_PERMISSIONS: dict[MembershipRole, frozenset[Permission]] = {
         Permission.AUTHORIZATIONS_READ,
         Permission.SECURITY_OPERATIONS_READ,
         Permission.NETWORK_SECURITY_READ,
+        Permission.DDOS_READ,
     }),
 }
 
