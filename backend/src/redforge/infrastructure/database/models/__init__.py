@@ -11,10 +11,21 @@ from redforge.infrastructure.database.models.authorization import (
     SecurityAuthorizationModel,
     SecurityAuthorizationScopeModel,
 )
+from redforge.infrastructure.database.models.behavior import (
+    BehaviorDetectionEventModel,
+    BehaviorDetectionModel,
+    BehaviorEntityBaselineModel,
+    BehaviorObservationModel,
+)
 from redforge.infrastructure.database.models.campaign_result import CampaignResultModel
 from redforge.infrastructure.database.models.command_center import (
     IntegrationProviderModel,
     NetworkZoneAssignmentModel,
+)
+from redforge.infrastructure.database.models.continuous_validation import (
+    ContinuousValidationPolicyModel,
+    SecurityDriftEventModel,
+    ValidationStateSnapshotModel,
 )
 from redforge.infrastructure.database.models.ddos import (
     DDoSDetectionPolicyModel,
@@ -23,19 +34,6 @@ from redforge.infrastructure.database.models.ddos import (
     DDoSMitigationRecommendationModel,
     DDoSObservationWindowModel,
     DDoSProtectedResourceModel,
-)
-from redforge.infrastructure.database.models.telemetry import (
-    TelemetryEventModel,
-    TelemetrySensorModel,
-)
-from redforge.infrastructure.database.models.threat_intel import (
-    ThreatIntelEnrichmentModel,
-    ThreatIntelIndicatorModel,
-)
-from redforge.infrastructure.database.models.continuous_validation import (
-    ContinuousValidationPolicyModel,
-    SecurityDriftEventModel,
-    ValidationStateSnapshotModel,
 )
 from redforge.infrastructure.database.models.directory_security import (
     DirectoryGroupModel,
@@ -78,6 +76,14 @@ from redforge.infrastructure.database.models.security_operations import (
     RuntimeComponentHealthStateModel,
     RuntimeComponentHealthTransitionModel,
 )
+from redforge.infrastructure.database.models.telemetry import (
+    TelemetryEventModel,
+    TelemetrySensorModel,
+)
+from redforge.infrastructure.database.models.threat_intel import (
+    ThreatIntelEnrichmentModel,
+    ThreatIntelIndicatorModel,
+)
 from redforge.infrastructure.database.models.user import UserModel
 from redforge.infrastructure.database.models.validation_execution import (
     ValidationExecutionEventModel,
@@ -88,20 +94,20 @@ from redforge.infrastructure.database.models.validation_execution import (
 __all__ = [
     "AIAssetModel",
     "AITargetModel",
+    "BehaviorDetectionEventModel",
+    "BehaviorDetectionModel",
+    "BehaviorEntityBaselineModel",
+    "BehaviorObservationModel",
+    "CampaignResultModel",
+    "ConnectorModel",
+    "ContinuousValidationPolicyLifecycleEventModel",
+    "ContinuousValidationPolicyModel",
     "DDoSDetectionPolicyModel",
     "DDoSIncidentEventModel",
     "DDoSIncidentModel",
     "DDoSMitigationRecommendationModel",
     "DDoSObservationWindowModel",
     "DDoSProtectedResourceModel",
-    "TelemetryEventModel",
-    "TelemetrySensorModel",
-    "ThreatIntelEnrichmentModel",
-    "ThreatIntelIndicatorModel",
-    "CampaignResultModel",
-    "ConnectorModel",
-    "ContinuousValidationPolicyLifecycleEventModel",
-    "ContinuousValidationPolicyModel",
     "DirectoryGroupModel",
     "DirectoryIdentityModel",
     "DirectoryMembershipModel",
@@ -135,6 +141,10 @@ __all__ = [
     "SecurityDriftEventModel",
     "SecurityGraphEdgeModel",
     "SecurityGraphNodeModel",
+    "TelemetryEventModel",
+    "TelemetrySensorModel",
+    "ThreatIntelEnrichmentModel",
+    "ThreatIntelIndicatorModel",
     "UserModel",
     "ValidationExecutionEventModel",
     "ValidationExecutionModel",

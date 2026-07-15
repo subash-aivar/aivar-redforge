@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 from redforge.domain.ddos.value_objects import (
     AttackClassification,
     BaselineConfidence,
@@ -12,9 +10,7 @@ from redforge.domain.ddos.value_objects import (
     MitigationApprovalStatus,
     MitigationExecutionStatus,
     MitigationMode,
-    MitigationRecommendationType,
 )
-
 
 # ── IncidentStatus ────────────────────────────────────────────────────────────
 

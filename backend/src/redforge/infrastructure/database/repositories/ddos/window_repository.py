@@ -274,7 +274,9 @@ class SqlAlchemyObservationWindowRepository:
             "total_bytes_in": int(agg_row.total_bytes_in) if agg_row.total_bytes_in else None,
             "total_bytes_out": int(agg_row.total_bytes_out) if agg_row.total_bytes_out else None,
             "total_packets_in": int(agg_row.total_packets_in) if agg_row.total_packets_in else None,
-            "total_packets_out": int(agg_row.total_packets_out) if agg_row.total_packets_out else None,
+            "total_packets_out": (
+                int(agg_row.total_packets_out) if agg_row.total_packets_out else None
+            ),
             "unique_src_ips": int(src_row.unique_src_ips or 0),
             "unique_dst_ports": int(dst_row.unique_dst_ports or 0),
             "protocol_counts": protocol_counts,

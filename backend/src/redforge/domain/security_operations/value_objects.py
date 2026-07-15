@@ -35,6 +35,8 @@ class SourceDomain(StrEnum):
     NETWORK_SECURITY = "network_security"
     # M19 — DDoS incident events from ddos_incident_events table
     DDOS = "ddos"
+    # M20 — Behavioral NDR detection events from behavior_detection_events table
+    BEHAVIOR = "behavior"
     UNKNOWN = "unknown"
 
 

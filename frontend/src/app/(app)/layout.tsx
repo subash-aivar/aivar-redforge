@@ -52,6 +52,15 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    title: "Behavioral NDR",
+    items: [
+      { label: "NDR Operations Center", href: "/behavior", icon: "⬡", perm: "behavior:read" },
+      { label: "Live Detections", href: "/behavior/detections", icon: "◈", perm: "behavior:read" },
+      { label: "Entity Risk", href: "/behavior/entities", icon: "◉", perm: "behavior:read" },
+      { label: "Network Graph", href: "/behavior/network", icon: "⬡", perm: "behavior:read" },
+    ],
+  },
+  {
     title: "DDoS Defense",
     items: [
       { label: "DDoS Overview", href: "/ddos", icon: "⛨", perm: "ddos:read" },

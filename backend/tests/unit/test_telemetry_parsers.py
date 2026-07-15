@@ -15,10 +15,7 @@ from __future__ import annotations
 
 import json
 
-import pytest
-
 from redforge.infrastructure.telemetry.parsers import suricata_eve, zeek_json
-
 
 # ── Suricata EVE JSON ──────────────────────────────────────────────────────
 
@@ -143,22 +140,22 @@ class TestSuricataMalformed:
         assert err == 0
 
     def test_invalid_json_counted_as_error(self) -> None:
-        ev, sk, err = suricata_eve.parse_batch(["not json"])
+        ev, _sk, err = suricata_eve.parse_batch(["not json"])
         assert err == 1
         assert len(ev) == 0
 
     def test_missing_event_type_is_error(self) -> None:
-        ev, sk, err = suricata_eve.parse_batch(['{"src_ip":"1.2.3.4"}'])
+        _ev, _sk, err = suricata_eve.parse_batch(['{"src_ip":"1.2.3.4"}'])
         assert err == 1
 
     def test_oversized_record_is_error(self) -> None:
         big = "x" * (65 * 1024)
-        ev, sk, err = suricata_eve.parse_batch([big])
+        _ev, _sk, err = suricata_eve.parse_batch([big])
         assert err == 1
 
     def test_batch_continues_after_malformed(self) -> None:
         records = ["not json", _alert(), "also not json", _alert()]
-        ev, sk, err = suricata_eve.parse_batch(records)
+        ev, _sk, err = suricata_eve.parse_batch(records)
         assert len(ev) == 2
         assert err == 2
 
@@ -219,7 +216,7 @@ def _zeek_conn(extra: dict | None = None) -> str:
 
 class TestZeekConn:
     def test_parses_basic_conn(self) -> None:
-        ev, sk, err = zeek_json.parse_batch([_zeek_conn()])
+        ev, _sk, _err = zeek_json.parse_batch([_zeek_conn()])
         assert len(ev) == 1
         e = ev[0]
         assert e.format == "zeek_json"
@@ -281,35 +278,35 @@ class TestZeekUnsupported:
 
     def test_missing_path_and_no_hint_skipped(self) -> None:
         rec = json.dumps({"ts": 1705312800.0, "uid": "CXX"})
-        ev, sk, err = zeek_json.parse_batch([rec])
+        _ev, sk, _err = zeek_json.parse_batch([rec])
         assert sk == 1
 
     def test_unknown_hint_skipped(self) -> None:
         rec = json.dumps({"ts": 1705312800.0, "uid": "CXX"})
-        ev, sk, err = zeek_json.parse_batch([rec], log_type="weird")
+        _ev, sk, _err = zeek_json.parse_batch([rec], log_type="weird")
         assert sk == 1
 
 
 class TestZeekMalformed:
     def test_invalid_json_is_error(self) -> None:
-        ev, sk, err = zeek_json.parse_batch(["not json"])
+        ev, _sk, err = zeek_json.parse_batch(["not json"])
         assert err == 1
         assert len(ev) == 0
 
     def test_missing_ts_is_error(self) -> None:
         rec = json.dumps({"_path": "conn", "uid": "X"})
-        ev, sk, err = zeek_json.parse_batch([rec])
+        _ev, _sk, err = zeek_json.parse_batch([rec])
         assert err == 1
 
     def test_batch_continues_after_malformed(self) -> None:
         records = ["not json", _zeek_conn(), "bad", _zeek_conn()]
-        ev, sk, err = zeek_json.parse_batch(records)
+        ev, _sk, err = zeek_json.parse_batch(records)
         assert len(ev) == 2
         assert err == 2
 
     def test_oversized_record_is_error(self) -> None:
         big = "z" * (65 * 1024)
-        ev, sk, err = zeek_json.parse_batch([big])
+        _ev, _sk, err = zeek_json.parse_batch([big])
         assert err == 1
 
 

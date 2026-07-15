@@ -21,18 +21,12 @@ from redforge.domain.ddos.detection import (
     evaluate_window,
 )
 from redforge.domain.ddos.value_objects import (
-    AttackClassification,
-    BaselineConfidence,
     DISTRIBUTED_THRESHOLD_UNIQUE_SOURCES,
-    ICMP_FLOOD_PROTOCOL_FRACTION,
-    IncidentSeverity,
     MIN_BASELINE_WINDOWS,
     SEVERITY_CRITICAL_BPS,
     SEVERITY_HIGH_PPS,
-    SEVERITY_THRESHOLD_CRITICAL_DEVIATION,
-    SEVERITY_THRESHOLD_HIGH_DEVIATION,
-    SYN_FLOOD_ALERT_FRACTION,
-    UDP_FLOOD_PROTOCOL_FRACTION,
+    BaselineConfidence,
+    IncidentSeverity,
 )
 
 # ── Fixture builders ──────────────────────────────────────────────────────────
@@ -485,7 +479,7 @@ def test_severity_low_from_2x_single_signal() -> None:
 def test_severity_medium_from_5x_single_signal() -> None:
     metrics = make_metrics(
         event_count=50,
-        total_bytes_in=int(25_000 * 6 * 60),  # 6x baseline
+        total_bytes_in=(25_000 * 6 * 60),  # 6x baseline
         total_bytes_out=0,
     )
     baseline = make_established_baseline(p75_bps=25_000.0)
@@ -497,7 +491,7 @@ def test_severity_medium_from_5x_single_signal() -> None:
 def test_severity_high_from_10x_single_signal() -> None:
     metrics = make_metrics(
         event_count=50,
-        total_bytes_in=int(25_000 * 11 * 60),  # 11x baseline
+        total_bytes_in=(25_000 * 11 * 60),  # 11x baseline
         total_bytes_out=0,
     )
     baseline = make_established_baseline(p75_bps=25_000.0)

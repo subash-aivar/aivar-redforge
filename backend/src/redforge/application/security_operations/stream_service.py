@@ -284,6 +284,53 @@ async def fetch_merged_candidates(
         except Exception:
             pass  # DDoS tables not yet migrated in test or dev environments
 
+        # M20 Behavioral NDR detection events — source tag "W"
+        # Surfaces DETECTION_OPENED events from the behavior bounded context
+        # into the shared security operations stream. Re-observation updates
+        # are not surfaced — only new detection openings.
+        try:
+            from redforge.domain.security_operations.operational_event import OperationalEvent
+            from redforge.domain.security_operations.value_objects import (
+                OperationalImportance,
+                SourceDomain,
+            )
+            from redforge.infrastructure.database.repositories.behavior.detection_repository import (  # noqa: E501
+                SqlAlchemyBehaviorDetectionRepository,
+            )
+
+            beh_det_repo = SqlAlchemyBehaviorDetectionRepository(session)
+            beh_events = await beh_det_repo.list_detection_events_since(
+                organization_id, query_since, per_source_limit,
+            )
+            _high_behavior_types = frozenset({
+                "BEACONING_SUSPECTED", "HIGH_FAN_OUT",
+                "PORT_SCAN_SUSPECTED", "ABNORMAL_OUTBOUND_TRANSFER",
+            })
+            for be in beh_events:
+                if be.created_at >= visibility_cutoff:
+                    continue
+                # Determine importance from detection type embedded in event detail
+                importance = (
+                    OperationalImportance.HIGH
+                    if any(t in be.detail for t in _high_behavior_types)
+                    else OperationalImportance.NOTICE
+                )
+                event = OperationalEvent(
+                    cursor=make_cursor(be.created_at, "W", be.id),
+                    event_id=be.id,
+                    organization_id=organization_id,
+                    source_domain=SourceDomain.BEHAVIOR,
+                    importance=importance,
+                    title=f"Behavioral Detection: {be.detail[:120]}",
+                    summary=be.detail,
+                    entity_type="behavior_detection",
+                    entity_id=be.detection_id,
+                    occurred_at=be.created_at.isoformat(),
+                )
+                candidates.append(event)
+        except Exception:
+            pass  # Behavior tables not yet migrated in test or dev environments
+
     candidates.sort(key=lambda e: e.cursor)
     return candidates
 

@@ -115,6 +115,8 @@ class Permission(StrEnum):
     DDOS_READ = "ddos:read"
     DDOS_MANAGE = "ddos:manage"
     DDOS_MITIGATION_APPROVE = "ddos:mitigation_approve"
+    BEHAVIOR_READ = "behavior:read"
+    BEHAVIOR_MANAGE = "behavior:manage"
 
 
 @unique
@@ -198,6 +200,8 @@ ROLE_PERMISSIONS: dict[MembershipRole, frozenset[Permission]] = {
         Permission.DDOS_READ,
         Permission.DDOS_MANAGE,
         Permission.DDOS_MITIGATION_APPROVE,
+        Permission.BEHAVIOR_READ,
+        Permission.BEHAVIOR_MANAGE,
     }),
     MembershipRole.SECURITY_MANAGER: frozenset({
         Permission.ORG_READ,
@@ -220,6 +224,8 @@ ROLE_PERMISSIONS: dict[MembershipRole, frozenset[Permission]] = {
         Permission.DDOS_READ,
         Permission.DDOS_MANAGE,
         Permission.DDOS_MITIGATION_APPROVE,
+        Permission.BEHAVIOR_READ,
+        Permission.BEHAVIOR_MANAGE,
     }),
     MembershipRole.ANALYST: frozenset({
         Permission.ORG_READ,
@@ -235,6 +241,7 @@ ROLE_PERMISSIONS: dict[MembershipRole, frozenset[Permission]] = {
         Permission.SECURITY_OPERATIONS_READ,
         Permission.NETWORK_SECURITY_READ,
         Permission.DDOS_READ,
+        Permission.BEHAVIOR_READ,
     }),
     MembershipRole.MEMBER: frozenset({
         Permission.ORG_READ,
@@ -251,6 +258,7 @@ ROLE_PERMISSIONS: dict[MembershipRole, frozenset[Permission]] = {
         Permission.SECURITY_OPERATIONS_READ,
         Permission.NETWORK_SECURITY_READ,
         Permission.DDOS_READ,
+        Permission.BEHAVIOR_READ,
     }),
     MembershipRole.VIEWER: frozenset({
         Permission.ORG_READ,
@@ -263,6 +271,7 @@ ROLE_PERMISSIONS: dict[MembershipRole, frozenset[Permission]] = {
         Permission.SECURITY_OPERATIONS_READ,
         Permission.NETWORK_SECURITY_READ,
         Permission.DDOS_READ,
+        Permission.BEHAVIOR_READ,
     }),
 }
 

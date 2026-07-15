@@ -235,7 +235,7 @@ class SqlAlchemyThreatIntelEnrichmentRepository:
             .limit(limit)
         )
         result = await self._session.execute(stmt)
-        return list(result.all())
+        return list(result.all())  # type: ignore[arg-type]
 
     async def upsert(self, model: ThreatIntelEnrichmentModel) -> ThreatIntelEnrichmentModel:
         """Race-safe upsert on (organization_id, indicator_id,
