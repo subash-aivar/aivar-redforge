@@ -42,6 +42,9 @@ from redforge.api.v1.security_graph import router as security_graph_router
 from redforge.api.v1.security_operations import router as security_operations_router
 from redforge.api.v1.telemetry import router as telemetry_router
 from redforge.api.v1.threat_intel import router as threat_intel_router
+from redforge.api.v1.threat_intel_reference_data import (
+    router as threat_intel_reference_data_router,
+)
 from redforge.api.v1.validation_executions import router as validation_executions_router
 from redforge.api.v1.validations import router as validations_router
 
@@ -84,6 +87,9 @@ router.include_router(network_security_router, tags=["network-security"])
 router.include_router(admin_rbac_router, tags=["admin-rbac"])
 router.include_router(command_center_router, tags=["command-center"])
 router.include_router(threat_intel_router, tags=["threat-intel"])
+router.include_router(
+    threat_intel_reference_data_router, tags=["threat-intel-reference-data"]
+)
 router.include_router(telemetry_router, tags=["telemetry"])
 router.include_router(ddos_router, tags=["ddos"])
 router.include_router(behavior_router, tags=["behavior"])

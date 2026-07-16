@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>M22 Architecture Hardening Review</title>
+<style>
+:root {
+  --bg:        #080D12;
+  --surface:   #0F1520;
+  --surface2:  #182030;
+  --surface3:  #1E293A;
+  --border:    #263347;
+  --text:      #B8C9D9;
+  --muted:     #5E7A96;
+  --heading:   #D9E8F5;
+  --accent:    #3D85C0;
+  --accent-lo: #102035;
+  --p0:        #D94040;
+  --p0-lo:     #2A0B0B;
+  --p1:        #D98A20;
+  --p1-lo:     #2A1A06;
+  --p2:        #C4A020;
+  --p2-lo:     #28200A;
+  --p3:        #4D9E6A;
+  --p3-lo:     #0A2016;
+  --good:      #4D9E6A;
+  --good-lo:   #0A2016;
+  --code-bg:   #060A0F;
+  --code:      #6BB3E8;
+}
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg:#EEF3F8;--surface:#FFFFFF;--surface2:#E4EBF3;--surface3:#D8E2EE;
+    --border:#B8CAE0;--text:#1E2E3E;--muted:#4A6480;--heading:#0A1929;
+    --accent:#1A5EA8;--accent-lo:#D0E3F5;--p0:#A02020;--p0-lo:#FADDDD;
+    --p1:#8A5000;--p1-lo:#FFF0D0;--p2:#7A6000;--p2-lo:#FFF8D0;
+    --p3:#1A6A40;--p3-lo:#D0F0E0;--good:#1A6A40;--good-lo:#D0F0E0;
+    --code-bg:#1C2838;--code:#5BB0FF;
+  }
+}
+:root[data-theme="dark"]{--bg:#080D12;--surface:#0F1520;--surface2:#182030;--surface3:#1E293A;--border:#263347;--text:#B8C9D9;--muted:#5E7A96;--heading:#D9E8F5;--accent:#3D85C0;--accent-lo:#102035;--p0:#D94040;--p0-lo:#2A0B0B;--p1:#D98A20;--p1-lo:#2A1A06;--p2:#C4A020;--p2-lo:#28200A;--p3:#4D9E6A;--p3-lo:#0A2016;--good:#4D9E6A;--good-lo:#0A2016;--code-bg:#060A0F;--code:#6BB3E8;}
+:root[data-theme="light"]{--bg:#EEF3F8;--surface:#FFFFFF;--surface2:#E4EBF3;--surface3:#D8E2EE;--border:#B8CAE0;--text:#1E2E3E;--muted:#4A6480;--heading:#0A1929;--accent:#1A5EA8;--accent-lo:#D0E3F5;--p0:#A02020;--p0-lo:#FADDDD;--p1:#8A5000;--p1-lo:#FFF0D0;--p2:#7A6000;--p2-lo:#FFF8D0;--p3:#1A6A40;--p3-lo:#D0F0E0;--good:#1A6A40;--good-lo:#D0F0E0;--code-bg:#1C2838;--code:#5BB0FF;}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:14px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;line-height:1.65;}
+
+.layout{display:grid;grid-template-columns:220px 1fr;min-height:100vh;max-width:1360px;margin:0 auto;}
+
+/* Sidebar */
+.nav{position:sticky;top:0;height:100vh;overflow-y:auto;border-right:1px solid var(--border);padding:1.5rem 1rem;font-size:0.74rem;}
+.nav-brand{display:flex;align-items:center;gap:0.5rem;margin-bottom:1.75rem;padding-bottom:1rem;border-bottom:1px solid var(--border);}
+.nav-mark{width:26px;height:26px;background:var(--p0);border-radius:4px;display:grid;place-items:center;font-size:0.55rem;font-weight:900;color:#fff;letter-spacing:0.03em;}
+.nav-title{font-weight:700;color:var(--heading);font-size:0.76rem;line-height:1.3;}
+.nav-subtitle{font-size:0.62rem;color:var(--muted);}
+.nav-group{margin-bottom:1.25rem;}
+.nav-group-label{text-transform:uppercase;letter-spacing:0.1em;font-size:0.6rem;font-weight:700;color:var(--muted);margin-bottom:0.4rem;padding-left:0.4rem;}
+.nav-item{display:flex;align-items:center;gap:0.4rem;padding:0.28rem 0.4rem;border-radius:3px;color:var(--muted);text-decoration:none;transition:color 0.12s,background 0.12s;line-height:1.3;}
+.nav-item:hover{color:var(--text);background:var(--surface2);}
+.nav-part{font-size:0.6rem;font-weight:800;color:var(--accent);min-width:1.5rem;letter-spacing:0.04em;}
+
+/* Main */
+main{padding:2.5rem 3.5rem;max-width:980px;}
+
+/* Doc header */
+.doc-header{padding-bottom:2rem;margin-bottom:2.5rem;border-bottom:2px solid var(--border);}
+.header-eyebrow{display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem;}
+.badge{display:inline-flex;align-items:center;gap:0.3rem;font-size:0.62rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:0.2rem 0.55rem;border-radius:3px;}
+.badge-review{background:var(--accent-lo);color:var(--accent);}
+.badge-arch{background:var(--surface3);color:var(--muted);}
+h1{font-size:1.85rem;font-weight:800;color:var(--heading);line-height:1.15;letter-spacing:-0.025em;text-wrap:balance;margin-bottom:0.6rem;}
+.doc-meta{display:flex;flex-wrap:wrap;gap:1.5rem;font-size:0.74rem;color:var(--muted);}
+.doc-meta strong{color:var(--text);}
+
+/* Parts */
+.part{margin-bottom:3rem;scroll-margin-top:1.5rem;}
+.part-header{display:flex;align-items:baseline;gap:0.75rem;margin-bottom:1.5rem;padding-bottom:0.6rem;border-bottom:1px solid var(--border);}
+.part-num{font-size:0.62rem;font-weight:900;color:var(--accent);letter-spacing:0.12em;text-transform:uppercase;min-width:2.5rem;}
+h2{font-size:1.15rem;font-weight:800;color:var(--heading);letter-spacing:-0.01em;}
+h3{font-size:0.9rem;font-weight:700;color:var(--heading);margin:1.4rem 0 0.55rem;letter-spacing:-0.005em;}
+h4{font-size:0.74rem;font-weight:700;color:var(--muted);letter-spacing:0.07em;text-transform:uppercase;margin:1.1rem 0 0.3rem;}
+p{font-size:0.86rem;margin-bottom:0.7rem;}
+p:last-child{margin-bottom:0;}
+
+/* Findings */
+.finding{border-left:3px solid;border-radius:0 5px 5px 0;padding:0.85rem 1rem;margin:0.75rem 0;font-size:0.84rem;}
+.finding-p0{border-color:var(--p0);background:var(--p0-lo);}
+.finding-p1{border-color:var(--p1);background:var(--p1-lo);}
+.finding-p2{border-color:var(--p2);background:var(--p2-lo);}
+.finding-p3{border-color:var(--p3);background:var(--p3-lo);}
+.finding-good{border-color:var(--good);background:var(--good-lo);}
+.finding-neutral{border-color:var(--border);background:var(--surface2);}
+.finding-header{display:flex;align-items:center;gap:0.6rem;margin-bottom:0.4rem;}
+.sev{font-size:0.58rem;font-weight:900;letter-spacing:0.12em;text-transform:uppercase;padding:0.15rem 0.45rem;border-radius:3px;}
+.sev-p0{background:var(--p0);color:#fff;}
+.sev-p1{background:var(--p1);color:#fff;}
+.sev-p2{background:var(--p2);color:#111;}
+.sev-p3{background:var(--p3);color:#fff;}
+.finding-title{font-weight:700;color:var(--heading);font-size:0.85rem;}
+.finding ul{margin-top:0.35rem;padding-left:1.2rem;}
+.finding li{margin-bottom:0.2rem;}
+
+/* Tables */
+.tw{overflow-x:auto;margin:0.75rem 0;}
+table{width:100%;border-collapse:collapse;font-size:0.8rem;}
+th{text-align:left;font-size:0.62rem;font-weight:700;letter-spacing:0.09em;text-transform:uppercase;color:var(--muted);padding:0.45rem 0.7rem;border-bottom:1px solid var(--border);background:var(--surface2);}
+td{padding:0.45rem 0.7rem;border-bottom:1px solid var(--border);vertical-align:top;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface2);}
+
+/* Code */
+code{font-family:"SF Mono","Cascadia Code","Fira Code",ui-monospace,monospace;font-size:0.78em;background:var(--code-bg);color:var(--code);padding:0.1em 0.3em;border-radius:3px;border:1px solid var(--border);}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:5px;padding:0.9rem 1.1rem;overflow-x:auto;font-size:0.74rem;line-height:1.55;margin:0.7rem 0;}
+pre code{background:none;border:none;padding:0;color:var(--code);}
+
+/* Chips */
+.chip{display:inline-block;font-size:0.6rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:0.12rem 0.4rem;border-radius:3px;}
+.chip-ok{background:var(--good-lo);color:var(--good);}
+.chip-warn{background:var(--p1-lo);color:var(--p1);}
+.chip-bad{background:var(--p0-lo);color:var(--p0);}
+.chip-neutral{background:var(--surface3);color:var(--muted);}
+
+/* Lists */
+ul,ol{padding-left:1.3rem;font-size:0.86rem;}
+li{margin-bottom:0.3rem;}
+li:last-child{margin-bottom:0;}
+
+/* Section divider */
+.divider{border:none;border-top:1px solid var(--border);margin:2rem 0;}
+
+/* Verdict grid */
+.verdict-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin:1rem 0;}
+.verdict-card{background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:0.9rem 1rem;}
+.verdict-card h4{margin:0 0 0.5rem;font-size:0.68rem;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;}
+.vc-p0 h4{color:var(--p0);}
+.vc-p1 h4{color:var(--p1);}
+.vc-p2 h4{color:var(--p2);}
+.vc-p3 h4{color:var(--p3);}
+.vc-good h4{color:var(--good);}
+.verdict-card ul{font-size:0.78rem;}
+.verdict-card li{margin-bottom:0.25rem;}
+
+/* Final verdict banner */
+.final-verdict{background:var(--surface);border:2px solid var(--p1);border-radius:6px;padding:1.25rem 1.5rem;margin:1.5rem 0;}
+.final-verdict .fv-label{font-size:0.62rem;font-weight:900;letter-spacing:0.12em;text-transform:uppercase;color:var(--p1);margin-bottom:0.5rem;}
+.final-verdict p{font-size:0.92rem;color:var(--heading);font-weight:600;margin-bottom:0;}
+
+/* Responsive */
+@media(max-width:820px){.layout{grid-template-columns:1fr;}.nav{display:none;}main{padding:1.5rem 1rem;}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;}}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- NAV -->
+<nav class="nav" aria-label="Review navigation">
+  <div class="nav-brand">
+    <div class="nav-mark">RF</div>
+    <div>
+      <div class="nav-title">M22 Review</div>
+      <div class="nav-subtitle">Principal Architect</div>
+    </div>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-label">Review Parts</div>
+    <a class="nav-item" href="#p1"><span class="nav-part">P1</span>Architecture Stress</a>
+    <a class="nav-item" href="#p2"><span class="nav-part">P2</span>DDD Validation</a>
+    <a class="nav-item" href="#p3"><span class="nav-part">P3</span>Database Review</a>
+    <a class="nav-item" href="#p4"><span class="nav-part">P4</span>Security Review</a>
+    <a class="nav-item" href="#p5"><span class="nav-part">P5</span>Performance</a>
+    <a class="nav-item" href="#p6"><span class="nav-part">P6</span>Enterprise Gap</a>
+    <a class="nav-item" href="#p7"><span class="nav-part">P7</span>Implementation Risk</a>
+    <a class="nav-item" href="#p8"><span class="nav-part">P8</span>Final Verdict</a>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<main>
+<header class="doc-header">
+  <div class="header-eyebrow">
+    <span class="badge badge-review">Architecture Hardening Review</span>
+    <span class="badge badge-arch">Pre-Implementation</span>
+  </div>
+  <h1>M22 — Threat Intelligence Fusion &amp;<br>Attack Path Analysis</h1>
+  <div class="doc-meta">
+    <span>Migration head: <strong>0034_unified_investigation</strong></span>
+    <span>Review scope: <strong>Architecture only — no code written</strong></span>
+    <span>Reviewer role: <strong>Principal Security Architect</strong></span>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<section class="part" id="p1">
+  <div class="part-header">
+    <span class="part-num">PART 1</span>
+    <h2>Architecture Stress Review</h2>
+  </div>
+
+  <h3>Threat Intelligence Domain</h3>
+
+  <div class="finding finding-p0">
+    <div class="finding-header"><span class="sev sev-p0">P0</span><span class="finding-title">Dual graph model — in-memory KnowledgeGraph vs. PostgreSQL security_graph are not reconciled</span></div>
+    The architecture draft references wiring threat intel nodes into "the security graph." The repository contains <em>two distinct graph implementations</em>: (a) the production-grade <code>domain/security_graph/ontology.py</code> backed by PostgreSQL with strict ontology enforcement (ONTOLOGY_VERSION=6, closed <code>NodeKind</code>/<code>EdgeKind</code> enums, pair-validation in <code>validate_edge()</code>); and (b) an in-memory <code>KnowledgeGraph</code> application service with its own node/edge model that explicitly acknowledges "state is lost on process restart." The draft does not state which graph is the integration target. If M22 projects threat intel nodes into the in-memory graph, they will disappear on restart. If M22 extends the PostgreSQL ontology, it must define new <code>NodeKind</code> and <code>EdgeKind</code> values, which requires bumping <code>ONTOLOGY_VERSION</code> and updating all callers of <code>validate_edge()</code>. This ambiguity must be resolved before any implementation begins.
+    <ul>
+      <li><strong>Decision required:</strong> M22 threat intel nodes go into the PostgreSQL-backed security graph (ontology v7), not the in-memory KnowledgeGraph.</li>
+      <li><strong>Required:</strong> Define exactly which new <code>NodeKind</code> values are needed (e.g. <code>ATTACK_TECHNIQUE</code>, <code>THREAT_ACTOR</code>, <code>VULNERABILITY</code>) and which new <code>EdgeKind</code> values (e.g. <code>USES_TECHNIQUE</code>, <code>EXPLOITS_VULNERABILITY</code>, <code>ATTRIBUTED_TO</code>, <code>PRECEDES</code>) before implementation, with valid pair constraints.</li>
+    </ul>
+  </div>
+
+  <div class="finding finding-p1">
+    <div class="finding-header"><span class="sev sev-p1">P1</span><span class="finding-title">SourceDomain enum is not extensible — THREAT_INTEL source registration has no clear path</span></div>
+    The M21 correlation engine uses <code>SourceDomain</code> from <code>domain/investigations/value_objects.py</code> as a closed <code>StrEnum</code>. The architecture proposes registering threat intel as a correlation source via a <code>ThreatIntelInvestigationAdapter</code>. Adding <code>SourceDomain.THREAT_INTEL</code> to the enum is a domain model change that also touches <code>RULE_VERSIONS</code>, <code>evaluate_pair()</code>'s source-domain logic, and the <code>source_adapters.py</code> module. This is manageable but must be planned explicitly — it is not just "add an adapter."
+  </div>
+
+  <div class="finding finding-p1">
+    <div class="finding-header"><span class="sev sev-p1">P1</span><span class="finding-title">STIX ingestion has no size or schema validation gate defined</span></div>
+    The architecture permits ingesting STIX 2.1 bundles via file upload or TAXII pull. A STIX bundle from a misconfigured or malicious source can be arbitrarily large (MITRE ATT&amp;CK Enterprise STIX bundle alone is ~15MB; third-party feeds can be hundreds of MB). No maximum bundle size, no object-count cap, and no schema validation strategy (beyond "the <code>stix2</code> library handles it") are defined. The <code>stix2</code> library validates schema but does not bound memory usage during parsing of maliciously crafted deeply-nested bundles.
+  </div>
+
+  <div class="finding finding-p2">
+    <div class="finding-header"><span class="sev sev-p2">P2</span><span class="finding-title">TAXII pull frequency is "admin-configurable" with no floor or circuit breaker defined</span></div>
+    An admin who sets a TAXII pull interval to 30 seconds against an external endpoint could generate egress throttling, get the RedForge instance blocked, or exhaust the database with duplicate ingestion attempts. The architecture must define a minimum poll interval floor (e.g. 1 hour) and a back-off policy when the TAXII endpoint is unavailable.
+  </div>
+
+  <div class="finding finding-p2">
+    <div class="finding-header"><span class="sev sev-p2">P2</span><span class="finding-title">No idempotency key defined for STIX object upsert across multi-tenant orgs</span></div>
+    ATT&amp;CK techniques are global (not per-tenant). The proposed <code>stix_ingestion_log</code> with a unique index on <code>(org, source, stix_id)</code> implies per-org tracking, but ATT&amp;CK technique rows are global — they must NOT be per-org. The architecture conflates two different idempotency contracts: (a) global static data (ATT&amp;CK techniques, CVEs, KEV list) which is seeded once and upserted on sync, and (b) org-scoped STIX bundles (from TAXII or upload) which are per-tenant. These require different idempotency strategies and must not use the same table.
+  </div>
+
+  <h3>Threat Fusion Engine</h3>
+
+  <div class="finding finding-p0">
+    <div class="finding-header"><span class="sev sev-p0">P0</span><span class="finding-title">AggregatedRisk VO semantics are undefined — what happens when all providers fail?</span></div>
+    The fusion layer must produce an <code>AggregatedRisk</code> for each indicator. If all configured providers return failures (rate-limited, auth failure, timeout), the aggregate has no constituent evidence. The architecture does not define whether <code>AggregatedRisk</code> in this state is: (a) absent (no record produced), (b) a sentinel "no data" state, or (c) inherits the cached stale values. If (c), stale evidence from an expired enrichment could be used as current investigation evidence — a correctness defect.
+  </div>
+
+  <div class="finding finding-p1">
+    <div class="finding-header"><span class="sev sev-p1">P1</span><span class="finding-title">FusionConflictPolicy weight table has no defined default — new tenants will have undefined behavior</span></div>
+    Source weights are "admin-configurable per org" in a proposed <code>threat_intel_fusion_config</code> table. What happens for a new tenant with no weight configuration? If weights default to 1.0 for all providers, a provider with a history of false positives (e.g. aggressive AbuseIPDB scoring) gets equal trust as a high-fidelity source. The default weight table must be defined and documented before implementation.
+  </div>
+
+  <h3>Attack Path Engine</h3>
+
+  <div class="finding finding-p0">
+    <div class="finding-header"><span class="sev sev-p0">P0</span><span class="finding-title">PathExplosionPolicy caps are hardcoded in the architecture but not tested against real graph density</span></div>
+    The architecture specifies "max depth 12, max fan-out 8." These numbers are asserted without validation against the actual PostgreSQL-backed security graph schema. The existing graph stores edges in the <code>knowledge_graph_edges</code> table (or equivalent). At depth 12 with fan-out 8 in a large graph, the worst case is 8^12 = 68 billion potential paths before pruning. Even with aggressive pruning, this traversal against a PostgreSQL table with millions of edge rows will produce timeouts at realistic tenant scale. The depth cap should be validated with explain-analyze queries on representative data before being committed to the domain model.
+  </div>
+
+  <div class="finding finding-p1">
+    <div class="finding-header"><span class="sev sev-p1">P1</span><span class="finding-title">Attack path seed entity selection is undefined — who triggers computation and when?</span></div>
+    The architecture describes BFS "from a seed entity (typically an IP flagged as an IOC, or an entity involved in a behavioral detection)" but does not define: (a) when path computation is triggered (on investigation open? on IOC match? on schedule?); (b) who selects the seed entity from potentially many IOC-flagged IPs in a large investigation; (c) whether paths are computed proactively for all active investigations or only on demand. Without this, P5 implementers have no contract to build against.
+  </div>
+
+  <div class="finding finding-p1">
+    <div class="finding-header"><span class="sev sev-p1">P1</span><span class="finding-title">PathStatus lifecycle is undefined</span></div>
+    The <code>AttackPath</code> aggregate has a <code>status: PathStatus</code> field with values ACTIVE | CONTAINED | HISTORICAL but no transition rules are defined. Who transitions a path from ACTIVE to CONTAINED? What evidence triggers HISTORICAL? Without a state machine, the status is meaningless metadata.
+  </div>
+
+  <div class="finding finding-p2">
+    <div class="finding-header"><span class="sev sev-p2">P2</span><span class="finding-title">InferenceGatePolicy's "adjacent observed step" requirement is ambiguous</span></div>
+    The policy states "an inferred step is allowed only if at least one <em>adjacent</em> step is OBSERVED." "Adjacent" means the immediately preceding or following step in the path sequence. However, if the BFS visits non-sequential hops (as is common in real attack paths where lateral movement skips intermediate nodes), the adjacency requirement might be satisfied by a step that is structurally adjacent in the array but not actually causally related. The policy needs a precise definition: "adjacent" means step sequence number ±1, not graph-distance.
+  </div>
+
+  <h3>Background Workers</h3>
+
+  <div class="finding finding-p1">
+    <div class="finding-header"><span class="sev sev-p1">P1</span><span class="finding-title">Worker pattern assumes single-process deployment — no distributed lock for global sync workers</span></div>
+    The existing <code>BehaviorDetectionWorker</code> uses a PostgreSQL advisory lock (<code>pg_try_advisory_xact_lock</code>) with a hardcoded hash (<code>0x42424242BEEF0001</code>) to prevent duplicate processing. The M22 global sync workers (<code>AttackTechniqueSyncWorker</code>, <code>VulnerabilitySyncWorker</code>) operate on global data, not per-org data, so the existing per-org lock pattern does not apply. These workers need their own advisory lock hashes that are globally unique and documented. If two horizontally-scaled instances both run the sync worker simultaneously, one will overwrite ATT&amp;CK technique rows with identical data (idempotent via upsert) but may cause unnecessary load on NVD API and hit rate limits.
+  </div>
+
+  <div class="finding finding-p2">
+    <div class="finding-header"><span class="sev sev-p2">P2</span><span class="finding-title">MAX_ORGS_PER_CYCLE = 50 cap in existing workers creates a fairness starvation problem at scale</span></div>
+    The existing detection workers cap at 50 orgs per cycle. <code>IndicatorRefreshWorker</code> will process active investigations' indicators. At 1,000 tenants, the bottom 950 orgs get no indicator refresh in the current cycle. This is acceptable for detection workers (5-minute windows) but unacceptable for active investigation enrichment where SLA expectations are higher. The refresh worker needs a priority-queue model based on investigation recency, not a simple org-list head.
+  </div>
+
+  <h3>API Layer</h3>
+
+  <div class="finding finding-p1">
+    <div class="finding-header"><span class="sev sev-p1">P1</span><span class="finding-title">Attack path compute endpoint has no timeout, quota, or cost throttle</span></div>
+    <code>POST /attack-paths/compute</code> triggers a BFS traversal over the security graph. This is an expensive operation. The architecture does not define: per-tenant rate limits, maximum concurrency, request timeout, or cost accounting. A single API call could trigger a multi-second graph traversal that blocks the async event loop or consumes significant DB connection time.
+  </div>
+
+  <div class="finding finding-p2">
+    <div class="finding-header"><span class="sev sev-p2">P2</span><span class="finding-title">ATT&CK Navigator JSON export — no size cap or pagination defined</span></div>
+    An ATT&amp;CK Navigator layer JSON export for a tenant with all 700+ techniques mapped could be a multi-MB synchronous response. No streaming, no background job, no size limit is defined.
+  </div>
+
+  <h3>Frontend Architecture</h3>
+
+  <div class="finding finding-p2">
+    <div class="finding-header"><span class="sev sev-p2">P2</span><span class="finding-title">Attack path visualization strategy not defined — graph rendering at depth 12 is non-trivial</span></div>
+    A path with 12 steps and branching is a directed acyclic graph, not a simple list. The architecture assumes a Next.js page but does not specify: (a) whether the visualization is a static timeline, a force-directed graph, or a swimlane diagram; (b) what library is used (D3, React Flow, Cytoscape.js all have different bundle size and CSP implications); (c) how to handle paths with more than 20 nodes without overwhelming the user. This is a UX architecture gap, not just a styling choice.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<section class="part" id="p2">
+  <div class="part-header">
+    <span class="part-num">PART 2</span>
+    <h2>DDD Validation</h2>
+  </div>
+
+  <h3>Aggregate Boundary Violations</h3>
+
+  <div class="finding finding-p0">
+    <div class="finding-header"><span class="sev sev-p0">P0</span><span class="finding-title">AttackPath aggregate contains a list[AttackStep] — this is an unbounded collection anti-pattern</span></div>
+    The proposed <code>AttackPath</code> aggregate holds <code>steps: list[AttackStep]</code> directly on the aggregate root. In DDD, aggregates should have small, bounded collections. An attack path at max depth 12 with branching could contain dozens of steps, each with an <code>evidence_ids: list[str]</code>. Loading the entire aggregate for every query — including simple status checks — loads all steps and all evidence references. The correct pattern (following the existing <code>InvestigationCase</code> design) is: the aggregate root holds <em>summary state</em> (step count, technique coverage, confidence) and steps are a separate, lazily-loaded collection fetched via a dedicated repository query. The draft violates this pattern.
+  </div>
+
+  <div class="finding finding-p1">
+    <div class="finding-header"><span class="sev sev-p1">P1</span><span class="finding-title">AttackTechniqueNode is named as an "aggregate" but is a read-only reference data object</span></div>
+    ATT&amp;CK technique records are globally seeded, never mutated by business logic, and have no lifecycle or invariants to protect. Calling them aggregates is incorrect DDD. They are reference data — effectively a read-only projection of an external standard. The correct modeling is: an <code>AttackTechnique</code> entity (not aggregate) loaded via a dedicated <code>AttackTechniqueRepository</code> that is read-only. Elevating them to aggregate status imposes unnecessary overhead (version columns, optimistic concurrency) on data that never changes concurrently.
+  </div>
+
+  <div class="finding finding-p1">
+    <div class="finding-header"><span class="sev sev-p1">P1</span><span class="finding-title">VulnerabilityRecord has the same reference-data problem as AttackTechniqueNode</span></div>
+    CVE records are externally owned, globally seeded, and updated only by the sync worker. They are not tenant-owned business objects. Modeling them as aggregates implies they can be created, modified, and versioned by business logic — none of which is true. They are reference data entities.
+  </div>
+
+  <div class="finding finding-p1">
+    <div class="finding-header"><span class="sev sev-p1">P1</span><span class="finding-title">ThreatActorProfile — the boundary between global and tenant-scoped actor data is undefined</span></div>
+    Some threat actor data is globally sourced (from MITRE ATT&amp;CK groups, from an organization's TAXII subscription), while some is tenant-specific (a tenant's own analyst attribution notes). The architecture does not define this boundary. A global <code>ThreatActorProfile</code> is reference data. A tenant's attribution of a specific incident to that actor is a relationship, not a modification of the actor profile. Mixing these two concerns in one aggregate will cause cross-tenant data leakage if not carefully partitioned.
+  </div>
+
+  <h3>Value Object Issues</h3>
+
+  <div class="finding finding-p2">
+    <div class="finding-header"><span class="sev sev-p2">P2</span><span class="finding-title">FusionWeight is a VO on the aggregate but represents configuration — it belongs in a policy, not data</span></div>
+    <code>FusionWeight</code> (per-source trust weight) is described as a VO on the fusion config. In practice it is a policy parameter read from a config table. Encoding it as a VO inside the aggregated risk implies it travels with every indicator — which bloats every fusion result with weight metadata. The weight should remain in the <code>FusionConflictPolicy</code>, not in the <code>AggregatedRisk</code> VO. The <code>AggregatedRisk</code> VO should record the <em>weights that were applied</em> as audit-trail metadata, but not own the weight configuration.
+  </div>
+
+  <div class="finding finding-p2">
+    <div class="finding-header"><span class="sev sev-p2">P2</span><span class="finding-title">PathConfidence is described as "weakest link" — this needs explicit domain modeling</span></div>
+    <code>PathConfidence</code> deriving from the weakest step is a good rule, but it reuses <code>CorrelationConfidence</code> from M21. There is a semantic risk: M21's <code>CorrelationConfidence</code> was designed for investigation evidence correlation; applying it to attack path steps conflates two different confidence domains. A path step's confidence is about the quality of evidence for that specific step; an investigation's confidence is about the strength of cross-domain correlation. They may happen to use the same four-level enum now, but future calibration of one should not automatically recalibrate the other. Even if the enum values are identical, they should be separate types.
+  </div>
+
+  <h3>Repository Boundaries</h3>
+
+  <div class="finding finding-p1">
+    <div class="finding-header"><span class="sev sev-p1">P1</span><span class="finding-title">AttackPathRepository query "by root technique" crosses aggregate boundaries</span></div>
+    The proposed <code>AttackPathRepository.find_by_root_technique(technique_id)</code> query implies a join from <code>attack_paths</code> to <code>attack_path_steps</code> to <code>attack_techniques</code>. This is a cross-aggregate query implemented in a repository — which is correct — but the result set can be enormous in a large tenant (many paths share the same root technique). This query needs a mandatory tenant-scoped filter and a pagination contract at the repository interface level, not left to the caller.
+  </div>
+
+  <h3>Domain Events</h3>
+
+  <div class="finding finding-p1">
+    <div class="finding-header"><span class="sev sev-p1">P1</span><span class="finding-title">No domain events defined for M22 — the entire bounded context is event-silent</span></div>
+    The existing M21 <code>InvestigationCase</code> produces domain events (<code>InvestigationCaseOpened</code>, <code>EvidenceAttached</code>, <code>SeverityEscalated</code>, etc.) that drive projections, audit, and downstream subscribers. The M22 draft defines zero domain events. At minimum the following should be defined: <code>AttackPathComputed</code>, <code>AttackPathUpdated</code>, <code>ThreatActorAttributed</code>, <code>TechniqueSyncCompleted</code>, <code>IndicatorFused</code>. Without events, downstream integration (e.g. investigation update on new path, SSE notifications, audit log) requires synchronous coupling instead of event-driven decoupling.
+  </div>
+
+  <h3>CQRS Boundaries</h3>
+
+  <div class="finding finding-p2">
+    <div class="finding-header"><span class="sev sev-p2">P2</span><span class="finding-title">Attack path computation straddles the command/query boundary — no CQRS split defined</span></div>
+    <code>AttackPathService.compute()</code> is both a command (it writes a new <code>AttackPath</code> to the database) and a query (it reads the security graph, reads enrichments, reads techniques). Without an explicit CQRS boundary, this service will accumulate read-side logic that makes testing the write side difficult. The compute operation should be: (a) a command that schedules or triggers path computation; (b) a separate query service that reads the precomputed path. This matches the existing <code>IndicatorQueryService</code> / <code>IndicatorEnrichmentService</code> split already established in M18.
+  </div>
+
+  <h3>Anti-Corruption Layer</h3>
+
+  <div class="finding finding-p1">
+    <div class="finding-header"><span class="sev sev-p1">P1</span><span class="finding-title">No ACL defined between STIX object model and RedForge domain model</span></div>
+    The <code>StixIngestionService</code> will parse STIX 2.1 objects (using the <code>stix2</code> Python library) and map them to domain objects (<code>ThreatActorProfile</code>, <code>AttackTechniqueNode</code>, etc.). This mapping is an anti-corruption layer and must be explicitly defined. The architecture refers to "maps to domain objects" without specifying how STIX relationships, confidence scores (which are 0–100 in STIX), and STIX object versioning (<code>modified</code>, <code>spec_version</code>) are translated into RedForge's four-level confidence enum and domain model. A STIXToDomain translator class must be defined with explicit field mappings before implementation.
+  </div>
+
+  <h3>Shared Kernel</h3>
+
+  <div class="finding finding-p2">
+    <div class="finding-header"><span class="sev sev-p2">P2</span><span class="finding-title">EvidenceCandidate / NormalizedEntity reuse from M21 may create inappropriate coupling</span></div>
+    The threat intel investigation adapter will produce <code>EvidenceCandidate</code> objects (from M21's domain). This creates a direct dependency from the <code>threat_intel</code> bounded context to the <code>investigations</code> bounded context. In strict DDD, bounded contexts should not import each other's domain objects. The adapter should operate at the application layer and use an explicitly defined shared kernel or ACL — not import domain value objects across context boundaries.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<section class="part" id="p3">
+  <div class="part-header">
+    <span class="part-num">PART 3</span>
+    <h2>Database Review</h2>
+  </div>
+
+  <h3>Table Design Issues</h3>
+
+  <div class="finding finding-p0">
+    <div class="finding-header"><span class="sev sev-p0">P0</span><span class="finding-title">Global reference tables (attack_techniques, vulnerabilities) must NOT carry organization_id</span></div>
+    ATT&amp;CK techniques and CVE records are global. If these tables carry an <code>organization_id</code> column (following the pattern of every other table in the codebase), the sync worker will need to insert a separate row per tenant for every technique and CVE, scaling storage O(tenants × techniques × CVEs). At 1,000 tenants × 700 techniques × 200,000 CVEs = 140 billion rows. This is architecturally catastrophic. These must be true global tables with no <code>organization_id</code>. The <em>association</em> between a tenant and their relevant techniques is a separate join table (<code>org_technique_observations</code> or similar), not duplication of the reference data.
+  </div>
+
+  <div class="finding finding-p0">
+    <div class="finding-header"><span class="sev sev-p0">P0</span><span class="finding-title">attack_path_steps as a child table needs a migration-time ordering clarification</span></div>
+    The draft puts <code>attack_path_steps</code> in migration <code>0038</code> alongside <code>attack_paths</code>. However, if <code>attack_path_steps.attack_path_id</code> FKs to <code>attack_paths.id</code>, both must be in the same migration (or <code>attack_paths</code> must precede). This is correct as stated, but the migration must also define: (a) whether <code>sequence</code> is enforced unique per path at the DB level (partial unique index on <code>(attack_path_id, sequence)</code>); (b) whether the <code>evidence_ids</code> column is a PostgreSQL array or a separate <code>attack_path_step_evidence</code> join table. An array of FK-like strings is not referentially integrity-enforced — a join table is safer.
+  </div>
+
+  <div class="finding finding-p1">
+    <div class="finding-header"><span class="sev sev-p1">P1</span><span class="finding-title">stix_ingestion_log — the (org, source, stix_id) unique index conflates global and tenant data</span></div>
+    If ATT&amp;CK STIX objects are global (no org_id), the ingestion log's unique key cannot include <code>org_id</code> for global objects. But for tenant-specific TAXII bundles, <code>org_id</code> IS required. The log needs two distinct unique constraints: <code>(source_type='global', stix_id)</code> for global syncs and <code>(org_id, source_type='taxii', stix_id)</code> for tenant TAXII. A single unique constraint cannot serve both.
+  </div>
+
+  <div class="finding finding-p1">
+    <div class="finding-header"><span class="sev sev-p1">P1</span><span class="finding-title">No partitioning strategy for threat_intel_enrichments growth</span></div>
+    The existing <code>threat_intel_enrichments</code> table (migration <code>0029</code>) will grow continuously as M22 adds more indicator types and auto-enrichment. At 1,000 tenants × 10,000 indicators per tenant × 8 providers = 80 million enrichment rows. An index on <code>(organization_id, last_seen_at)</code> helps for single-tenant queries but a full-table TTL cleanup scan becomes expensive. Consider range partitioning by <code>expires_at</code> month to allow partition-drop for expired data instead of row-level DELETE.
+  </div>
+
+  <h3>Index Strategy</h3>
+
+  <div class="finding finding-p1">
+    <div class="finding-header"><span class="sev sev-p1">P1</span><span class="finding-title">attack_techniques full-text search requires a GIN index — not mentioned in the architecture</span></div>
+    The architecture specifies <code>AttackTechniqueRepository.search_by_name(query)</code>. A LIKE or ILIKE query on <code>name</code> without an index performs a full table scan. With 700+ techniques today and growth from CAPEC/ATT&amp;CK for ICS/ATT&amp;CK for Mobile, a GIN index on a <code>tsvector</code> column is required. This must be in the migration definition.
+  </div>
+
+  <div class="finding finding-p2">
+    <div class="finding-header"><span class="sev sev-p2">P2</span><span class="finding-title">Composite index order matters for fusion query pattern — not specified</span></div>
+    The primary query pattern for the fusion layer is: "for this org, fetch all enrichments for this indicator that are not yet expired, ordered by provider." The index must be <code>(organization_id, indicator_id, expires_at DESC)</code> — not just <code>(organization_id, indicator_id)</code> — to support the TTL filter efficiently. The existing <code>0029</code> migration's indexes may need extension.
+  </div>
+
+  <h3>Migration Safety</h3>
+
+  <div class="finding finding-p1">
+    <div class="finding-header"><span class="sev sev-p1">P1</span><span class="finding-title">Four migrations (0035–0038) are planned but only one was budgeted for global sync tables</span></div>
+    Migrations <code>0035</code> (ATT&amp;CK + CVE), <code>0036</code> (threat actors + TAXII), <code>0037</code> (fusion config), <code>0038</code> (attack paths) are proposed. The initial bulk load of ATT&amp;CK techniques in migration <code>0035</code> — if it includes <code>INSERT</code> statements — will make the migration non-transactional if the insert count is large. Alembic's migration runner wraps DDL in transactions, but bulk data inserts should be deferred to the application sync worker, not embedded in the migration. Migration <code>0035</code> should only create the schema; data is seeded by the sync worker on first startup.
+  </div>
+
+  <div class="finding finding-p2">
+    <div class="finding-header"><span class="sev sev-p2">P2</span><span class="finding-title">Rollback from 0035 will leave orphaned global data if the sync worker has run</span></div>
+    If migration <code>0035</code> is applied and the ATT&amp;CK sync worker runs, then migration <code>0035</code> is rolled back, the tables are dropped but the sync worker's external state (advisory lock hash, last-sync timestamp) may still be in the system. The <code>down_revision</code> function in the migration must also account for cleaning up any data that the sync worker may have written. Since sync worker state is not in the migration schema, this is an operational risk that must be documented.
+  </div>
+
+  <h3>Deadlock Analysis</h3>
+
+  <div class="finding finding-p1">
+    <div class="finding-header"><span class="sev sev-p1">P1</span><span class="finding-title">Attack path computation + enrichment refresh on the same indicator can deadlock</span></div>
+    If <code>AttackPathService</code> reads enrichments for an indicator (shared lock) while <code>IndicatorRefreshWorker</code> upserts new enrichments for the same indicator (exclusive lock) within the same transaction, a lock ordering issue can occur if these operations span two sessions with different lock acquisition order. The existing enrichment upsert pattern uses <code>INSERT ... ON CONFLICT</code>, which PostgreSQL handles atomically, but the attack path service's transaction may hold a read lock on the same row. Define lock ordering explicitly.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<section class="part" id="p4">
+  <div class="part-header">
+    <span class="part-num">PART 4</span>
+    <h2>Security Review</h2>
+  </div>
+
+  <h3>SSRF</h3>
+
+  <div class="finding finding-p0">
+    <div class="finding-header"><span class="sev sev-p0">P0</span><span class="finding-title">TAXII endpoint URL is admin-configurable — classic SSRF vector</span></div>
+    The architecture allows per-org admins to configure a TAXII 2.1 endpoint URL. If this URL is not validated, a malicious or compromised admin can set the TAXII URL to an internal network resource (e.g. <code>http://169.254.169.254/latest/meta-data/</code> for AWS metadata, or <code>http://internal-postgres:5432</code>). RedForge will then fetch that URL using the server's outbound HTTP client. This is a textbook SSRF vulnerability. Mitigations required before implementation: (a) URL scheme restriction to <code>https://</code> only; (b) DNS resolution of the hostname must not resolve to RFC-1918, link-local, or loopback addresses; (c) TAXII fetch must use a dedicated HTTP client with explicit no-redirect policy.
+  </div>
+
+  <h3>STIX Parsing Risks</h3>
+
+  <div class="finding finding-p0">
+    <div class="finding-header"><span class="sev sev-p0">P0</span><span class="finding-title">Malicious STIX bundle can trigger object graph explosion during parsing</span></div>
+    The <code>stix2</code> Python library resolves STIX relationships by building an in-memory object graph. A crafted STIX bundle with thousands of self-referential or circular <code>relationship</code> objects can cause memory exhaustion during <code>Bundle.parse()</code>. Before calling any <code>stix2</code> parse function, the raw JSON must be pre-validated for: (a) object count cap; (b) relationship count cap; (c) nesting depth cap. The pre-validation must happen at the <em>raw bytes / JSON level</em>, before the stix2 library is invoked.
+  </div>
+
+  <div class="finding finding-p1">
+    <div class="finding-header"><span class="sev sev-p1">P1</span><span class="finding-title">STIX external references contain arbitrary URLs — secondary SSRF via reference resolution</span></div>
+    STIX 2.1 objects carry <code>external_references</code> with <code>url</code> fields. If the ingestion service ever attempts to resolve these URLs (for context enrichment or validation), this creates a secondary SSRF vector from STIX bundle content. The architecture must explicitly state that external reference URLs from STIX bundles are stored as text metadata and never resolved by the server.
+  </div>
+
+  <h3>Tenant Isolation</h3>
+
+  <div class="finding finding-p0">
+    <div class="finding-header"><span class="sev sev-p0">P0</span><span class="finding-title">Global tables (attack_techniques, vulnerabilities) must have a read-only RBAC policy that prevents tenant modification</span></div>
+    If <code>attack_techniques</code> and <code>vulnerabilities</code> are global tables, any SQL injection in the application layer that bypasses the application's read-only access pattern can allow a tenant to modify global reference data — corrupting ATT&amp;CK technique records for all tenants. The application service layer must use a read-only database role (or schema permission) for all queries against global tables. Only the sync worker (running under a privileged role) may write to these tables.
+  </div>
+
+  <div class="finding finding-p1">
+    <div class="finding-header"><span class="sev sev-p1">P1</span><span class="finding-title">Cross-tenant attack path construction via shared global technique nodes</span></div>
+    If <code>AttackPathService</code> traverses from an entity to an <code>ATTACK_TECHNIQUE</code> node (global), then to another entity via that technique, it could potentially traverse into another tenant's graph if the join condition does not enforce <code>organization_id</code> on every hop through entity nodes. Every graph traversal hop that passes through a global node (technique, CVE) must re-assert the tenant filter on the next hop's entity side.
+  </div>
+
+  <h3>Credential Storage</h3>
+
+  <div class="finding finding-neutral">
+    <div class="finding-header"><span class="finding-title">Credential handling — existing pattern is sound</span></div>
+    The existing <code>credential_ref</code> pattern (an env-var name, never a secret value) is the correct approach. M22 must extend it for any new providers (NVD API key, TAXII auth tokens) using exactly this pattern. The <code>CredentialResolutionError</code> exception ensures the actual credential value never appears in exception messages. This is correctly designed and must be preserved.
+  </div>
+
+  <h3>API Abuse</h3>
+
+  <div class="finding finding-p1">
+    <div class="finding-header"><span class="sev sev-p1">P1</span><span class="finding-title">STIX bundle file upload needs a hard byte-size limit enforced at the HTTP layer, not the application layer</span></div>
+    The architecture describes STIX bundle upload without specifying where the size limit is enforced. Application-layer size checks happen after the web framework has already buffered the request body — a 500MB upload still reaches memory. The limit must be configured at the FastAPI/uvicorn/nginx layer (<code>max_request_body_size</code>) before the route handler is invoked.
+  </div>
+
+  <div class="finding finding-p2">
+    <div class="finding-header"><span class="sev sev-p2">P2</span><span class="finding-title">Attack path compute can be abused as a resource-exhaustion vector by authenticated tenants</span></div>
+    Any authenticated user with <code>SECURITY_OPERATIONS_READ</code> permission could submit many <code>POST /attack-paths/compute</code> requests concurrently, triggering parallel BFS traversals. A per-tenant concurrency limit and per-tenant daily compute-budget (number of paths computed per day) must be defined and enforced.
+  </div>
+
+  <h3>Graph Traversal Abuse</h3>
+
+  <div class="finding finding-p1">
+    <div class="finding-header"><span class="sev sev-p1">P1</span><span class="finding-title">PathExplosionPolicy is enforced in application code — a bypassed policy allows unbounded DB queries</span></div>
+    <code>PathExplosionPolicy</code> caps depth and fan-out in application code. But the underlying PostgreSQL recursive CTE (if used for graph traversal) does not have this cap at the DB layer. A bug in policy enforcement allows a single query to generate millions of intermediate rows. The PostgreSQL query itself should have a <code>LIMIT</code> or a <code>RECURSIVE ... CYCLE</code> clause as a defense-in-depth cap, independent of application-level enforcement.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<section class="part" id="p5">
+  <div class="part-header">
+    <span class="part-num">PART 5</span>
+    <h2>Performance Review</h2>
+  </div>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>Scale point</th><th>Bottleneck</th><th>Expected behavior</th><th>Mitigation required</th></tr></thead>
+      <tbody>
+        <tr><td><strong>100 tenants</strong></td><td>Baseline; no structural bottleneck</td><td>All operations complete within acceptable latency</td><td>None — standard PostgreSQL load</td></tr>
+        <tr><td><strong>1,000 tenants</strong></td><td><code>IndicatorRefreshWorker</code> MAX_ORGS cap (50)</td><td>950 tenants get no indicator refresh per cycle</td><td>Priority-queue scheduler by investigation recency</td></tr>
+        <tr><td><strong>10,000 tenants</strong></td><td>Background worker cycles; ATT&amp;CK sync; enrichment table size</td><td>Worker cycles exceed poll interval; full-table scans on enrichments degrade</td><td>Partition <code>threat_intel_enrichments</code> by month; horizontal worker sharding by org_id range</td></tr>
+        <tr><td><strong>100M indicators</strong></td><td><code>threat_intel_indicators</code> table scan for expired TTL cleanup; GIN index on indicator text</td><td>TTL cleanup queries lock rows for minutes; duplicate check scans large index</td><td>Partition by <code>last_seen_at</code>; use partial index on <code>WHERE expires_at &lt; NOW()</code></td></tr>
+        <tr><td><strong>10B graph edges</strong></td><td>BFS traversal in PostgreSQL at depth &gt;4; recursive CTEs on 10B row table</td><td>Path compute query times out (PostgreSQL statement_timeout)</td><td>At this scale, PostgreSQL-backed graph traversal is architecturally insufficient. Pre-materialized adjacency lists or a dedicated graph store (Apache AGE, FalkorDB, or Neo4j) are required. This is a future architectural decision that should be documented as a known scaling boundary now.</td></tr>
+        <tr><td><strong>Daily ATT&amp;CK sync</strong></td><td>700+ upserts per sync cycle</td><td>Negligible — fast upsert on small global table</td><td>None</td></tr>
+        <tr><td><strong>Daily CVE sync</strong></td><td>NVD incremental API: up to 2,000 new/modified CVEs per day; 200,000 total CVEs</td><td>Batch upsert of 2,000 rows is fast; initial bulk load of 200,000 rows needs batching</td><td>Batch initial load in groups of 500 with explicit commit; incremental sync is fine</td></tr>
+        <tr><td><strong>Continuous enrichment</strong></td><td>Provider rate limits (AbuseIPDB: 1,000/day; GreyNoise: 5,000/day)</td><td>Large tenants exhaust provider quotas within hours</td><td>TTL-aware enrichment scheduling: do not re-enrich until within 10% of TTL expiry; provider quota tracking in <code>threat_intel_providers</code> config</td></tr>
+        <tr><td><strong>Continuous investigations</strong></td><td>Correlation worker processes all active orgs; at 10,000 orgs with active investigations, cycle time &gt; poll interval</td><td>Detection lag grows; stale correlation decisions</td><td>Sharded correlation workers by org_id hash; separate "high-activity" queue</td></tr>
+        <tr><td><strong>Continuous attack-path generation</strong></td><td>Path compute on investigation update triggers BFS for every new piece of evidence</td><td>A single busy investigation can trigger hundreds of path recomputes per hour</td><td>Debounce path recomputation: only recompute if &gt;N new evidence items arrived since last compute, or after a minimum interval (e.g. 5 minutes)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Hot Paths</h3>
+  <ul>
+    <li><strong>Enrichment cache lookup</strong> — every investigation correlation check hits <code>threat_intel_enrichments</code> for each involved IP. Must be a single indexed read, not a multi-join query.</li>
+    <li><strong>STIX ingestion parse</strong> — synchronous during file upload; must be moved to a background task for bundles &gt;1MB.</li>
+    <li><strong>Attack path BFS</strong> — must never run in the API request path for large graphs. Must always be a background task with a job ID returned immediately.</li>
+  </ul>
+
+  <h3>Memory Pressure</h3>
+  <ul>
+    <li>STIX bundle parsing via <code>stix2</code> library builds an in-memory object graph. A 50MB bundle can consume &gt;500MB of memory during parsing due to Python object overhead. The uvicorn worker process will OOM if multiple concurrent uploads are not throttled.</li>
+    <li>ATT&amp;CK STIX bundle (Enterprise) is currently ~15MB JSON, yielding ~200MB in-memory during parse. This is safe for a single worker process but unsafe if concurrent.</li>
+  </ul>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<section class="part" id="p6">
+  <div class="part-header">
+    <span class="part-num">PART 6</span>
+    <h2>Enterprise Gap Review</h2>
+  </div>
+
+  <p>Baseline comparison: Microsoft Defender XDR, CrowdStrike Falcon, SentinelOne, Palo Alto Cortex XSIAM, Google Security Operations (Chronicle), Elastic Security, Wiz.</p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>Capability</th><th>Enterprise standard</th><th>M22 status</th><th>Gap severity</th></tr></thead>
+      <tbody>
+        <tr><td>MITRE ATT&amp;CK technique coverage</td><td>Full Enterprise + ICS + Mobile matrix</td><td>Enterprise only planned</td><td><span class="chip chip-warn">Medium</span></td></tr>
+        <tr><td>Threat intelligence platform (TIP) integration</td><td>Native bidirectional sync with major TIPs</td><td>STIX file/TAXII import only; no export</td><td><span class="chip chip-warn">Medium</span></td></tr>
+        <tr><td>Diamond Model of Intrusion Analysis</td><td>Common in enterprise TI platforms</td><td>Not in scope</td><td><span class="chip chip-neutral">Low</span></td></tr>
+        <tr><td>Kill chain mapping (Lockheed Martin)</td><td>Supported alongside ATT&amp;CK</td><td>Not planned</td><td><span class="chip chip-neutral">Low</span></td></tr>
+        <tr><td>Threat intelligence sharing (ISAC feeds)</td><td>TAXII consumer + STIX export to peers</td><td>Consumer only; no export/sharing</td><td><span class="chip chip-warn">Medium</span></td></tr>
+        <tr><td>Automated playbook/SOAR integration</td><td>SOAR connectors (Splunk SOAR, Palo Alto XSOAR)</td><td>Not planned in M22</td><td><span class="chip chip-warn">Medium</span></td></tr>
+        <tr><td>CVE patch prioritization workflow</td><td>CVE → affected asset → patch ticket creation</td><td>CVE storage only; no asset linkage or ticket workflow</td><td><span class="chip chip-bad">High</span></td></tr>
+        <tr><td>Threat actor TTP timeline</td><td>Timeline of known actor activity against the tenant</td><td>Not planned</td><td><span class="chip chip-warn">Medium</span></td></tr>
+        <tr><td>Threat intel health dashboard</td><td>Provider freshness, coverage, enrichment rate</td><td>Provider health exists; coverage metrics missing</td><td><span class="chip chip-warn">Medium</span></td></tr>
+        <tr><td>False positive feedback loop</td><td>Analyst can mark IOC as false positive; feeds back to scoring</td><td>Not planned in M22</td><td><span class="chip chip-bad">High</span></td></tr>
+        <tr><td>IOC lifecycle management (watchlists)</td><td>Org-curated watchlists with priority tiers</td><td>Not planned</td><td><span class="chip chip-warn">Medium</span></td></tr>
+        <tr><td>Bulk IOC upload (CSV/JSON)</td><td>Standard import from threat intel tools</td><td>Not planned (only STIX bundle)</td><td><span class="chip chip-warn">Medium</span></td></tr>
+        <tr><td>Attack path PDF/report export</td><td>Standard in enterprise IR tools</td><td>Not planned in M22</td><td><span class="chip chip-neutral">Low</span></td></tr>
+        <tr><td>SLA-driven enrichment (priority indicators)</td><td>Indicators in active cases enriched within minutes</td><td>No priority enrichment queue defined</td><td><span class="chip chip-bad">High</span></td></tr>
+        <tr><td>Threat intelligence scoring explainability</td><td>Why is this IP scored HIGH? Breakdown by source</td><td>AggregatedRisk VO design supports this but no UI designed</td><td><span class="chip chip-warn">Medium</span></td></tr>
+        <tr><td>ATT&amp;CK coverage gap analysis</td><td>Which techniques are we NOT detecting?</td><td>Not planned in M22</td><td><span class="chip chip-warn">Medium</span></td></tr>
+        <tr><td>Malware family clustering</td><td>Group indicators by malware family for context</td><td>Abuse.ch provides family tags; no clustering model</td><td><span class="chip chip-neutral">Low</span></td></tr>
+        <tr><td>Geopolitical threat context</td><td>Actor country attribution, geopolitical risk scoring</td><td>Geo data exists; no geopolitical risk layer</td><td><span class="chip chip-neutral">Low</span></td></tr>
+        <tr><td>API for external SIEM consumption</td><td>Webhooks or Kafka push for threat intel to SIEM</td><td>Not planned</td><td><span class="chip chip-warn">Medium</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="finding finding-p1">
+    <div class="finding-header"><span class="sev sev-p1">P1</span><span class="finding-title">Missing: False positive feedback loop — this is a critical enterprise usability requirement</span></div>
+    Every major enterprise TI platform allows analysts to mark an IOC as a false positive, which (a) suppresses future alerts for that indicator, (b) optionally feeds back to provider scoring, and (c) is tracked in the audit log. Without this, RedForge will generate alert fatigue as benign IPs in shared hosting environments (CDNs, Cloudflare, AWS ranges) accumulate AbuseIPDB reports and continuously appear as threats. This should be designed in M22 even if deferred to M23 for full implementation.
+  </div>
+
+  <div class="finding finding-p1">
+    <div class="finding-header"><span class="sev sev-p1">P1</span><span class="finding-title">Missing: CVE-to-asset linkage — CVE without affected asset context has limited operational value</span></div>
+    Storing CVE records is a prerequisite. But the enterprise value is knowing <em>which of your assets are affected by which CVEs</em>. The architecture does not define how CVEs are linked to the existing asset/inventory bounded context. A CVE record in isolation is a reference database entry; a CVE linked to a specific <code>AIAsset</code> or <code>AITarget</code> is actionable intelligence. M22 should at minimum define the data model for this linkage, even if the full asset-scan integration is deferred.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<section class="part" id="p7">
+  <div class="part-header">
+    <span class="part-num">PART 7</span>
+    <h2>Implementation Risk</h2>
+  </div>
+
+  <h3>Phase Dependency Analysis</h3>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>Phase</th><th>Depends on</th><th>Blocks</th><th>Risk</th></tr></thead>
+      <tbody>
+        <tr><td><strong>P1</strong> ATT&amp;CK + CVE/KEV</td><td>Nothing (migration 0035)</td><td>P2, P3, P4, P5</td><td><span class="chip chip-warn">Medium</span> — global vs. tenant table design must be decided before P1 begins; wrong decision cannot be fixed without a migration rollback</td></tr>
+        <tr><td><strong>P2</strong> STIX + Threat Actors</td><td>P1 (migration 0035)</td><td>P3 (actor attribution in fusion), P5 (actor attribution in paths)</td><td><span class="chip chip-bad">High</span> — STIX ACL (anti-corruption layer) must be designed before implementation; retrofitting it after is expensive</td></tr>
+        <tr><td><strong>P3</strong> Fusion Layer</td><td>P1, P2</td><td>P5 (fusion provides path evidence confidence)</td><td><span class="chip chip-warn">Medium</span></td></tr>
+        <tr><td><strong>P4</strong> Security Graph Integration</td><td>P1 (new node/edge kinds)</td><td>P5 (path engine traverses the graph)</td><td><span class="chip chip-bad">High</span> — ontology version bump must be correct; ONTOLOGY_VERSION=7 must be backward-compatible with all existing projectors or they break</td></tr>
+        <tr><td><strong>P5</strong> Attack Path Engine</td><td>P1, P2, P3, P4</td><td>P6 (investigation uses paths), P7 (frontend shows paths)</td><td><span class="chip chip-bad">High</span> — BFS traversal at depth 12 must be performance-tested before this phase is marked complete; if it's too slow, P7 frontend waits</td></tr>
+        <tr><td><strong>P6</strong> Investigation Integration</td><td>P5</td><td>P7 (frontend shows linked paths)</td><td><span class="chip chip-warn">Medium</span></td></tr>
+        <tr><td><strong>P7</strong> Frontend</td><td>P5, P6</td><td>Nothing</td><td><span class="chip chip-warn">Medium</span> — attack path visualization library choice blocks this phase; must be decided before P5 completes</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="finding finding-p0">
+    <div class="finding-header"><span class="sev sev-p0">P0</span><span class="finding-title">P4 (Security Graph ontology extension) can silently break all existing M21 graph projectors</span></div>
+    The existing security graph has 6 ontology versions with strict validation in <code>validate_edge()</code>. Adding new node and edge kinds bumps the version to 7. All existing knowledge projectors (agents, campaigns, connectors, conversations, intelligence, inventory, posture — at least 7 projectors) must be reviewed to confirm they do not use hardcoded <code>ONTOLOGY_VERSION</code> checks. If any projector checks the version number directly (rather than relying on <code>validate_edge()</code>), it will silently reject valid edges after the version bump. This review must happen in P4 before any migration is run.
+  </div>
+
+  <div class="finding finding-p1">
+    <div class="finding-header"><span class="sev sev-p1">P1</span><span class="finding-title">P1 migration (global tables) must be decided architecturally before writing a single line of migration SQL</span></div>
+    The decision on whether ATT&amp;CK techniques are in a global table or per-tenant table is the single most consequential architectural decision in M22. It affects: storage scaling, FK design, sync worker logic, RBAC (who can read global tables), tenant isolation proofs, and all downstream phases. This must be explicitly decided and documented before P1 implementation begins — not during it.
+  </div>
+
+  <h3>Recommended Phase Reordering</h3>
+
+  <div class="finding finding-neutral">
+    <div class="finding-header"><span class="finding-title">Recommendation: add a Phase 0 — Architecture Decisions &amp; Proof-of-Concept Queries</span></div>
+    Before any migration, run the following as pre-implementation validation:
+    <ul>
+      <li>Verify PostgreSQL BFS traversal performance at current graph scale with an EXPLAIN ANALYZE on a recursive CTE query representing the deepest expected path.</li>
+      <li>Confirm the ontology extension plan with ONTOLOGY_VERSION=7 node/edge kinds and validate all existing projectors are version-agnostic.</li>
+      <li>Decide global vs. tenant table design and document it in the M22 spec.</li>
+      <li>Select the frontend graph visualization library (React Flow, Cytoscape.js, or D3) and confirm it can be inlined (CSP compliance).</li>
+      <li>Define the STIX ACL translator class interface (input: stix2 Python object → output: domain model VO).</li>
+    </ul>
+    Only after these decisions are documented should P1 migration SQL be written.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<section class="part" id="p8">
+  <div class="part-header">
+    <span class="part-num">PART 8</span>
+    <h2>Final Verdict</h2>
+  </div>
+
+  <div class="verdict-grid">
+    <div class="verdict-card vc-p0">
+      <h4>Critical Issues — P0</h4>
+      <ul>
+        <li>Dual graph model ambiguity (PostgreSQL ontology vs. in-memory KnowledgeGraph)</li>
+        <li>Global vs. per-tenant table design undefined — storage catastrophe at scale if wrong</li>
+        <li>AggregatedRisk when all providers fail — no defined behavior</li>
+        <li>SSRF via admin-configurable TAXII endpoint URL</li>
+        <li>STIX bundle parsing memory exhaustion — no pre-validation gate</li>
+        <li>PathExplosionPolicy not validated against real graph — hardcoded caps may be too large</li>
+        <li>AttackPath aggregate holds unbounded list[AttackStep] — violates aggregate pattern</li>
+        <li>Ontology version bump (v6→v7) may silently break all existing projectors</li>
+      </ul>
+    </div>
+    <div class="verdict-card vc-p1">
+      <h4>High Risks — P1</h4>
+      <ul>
+        <li>SourceDomain enum extension requires domain model surgery</li>
+        <li>No domain events defined — entire context is event-silent</li>
+        <li>AttackTechniqueNode and VulnerabilityRecord misclassified as aggregates (should be reference entities)</li>
+        <li>No ACL defined for STIX-to-domain translation</li>
+        <li>ThreatActorProfile global/tenant boundary undefined</li>
+        <li>No STIX bundle size limit at HTTP layer</li>
+        <li>Global sync worker needs its own advisory lock hashes</li>
+        <li>Attack path compute endpoint has no rate limit or concurrency cap</li>
+        <li>STIX external_references URLs must never be resolved (secondary SSRF)</li>
+        <li>stix_ingestion_log unique index conflates global and tenant data</li>
+        <li>PathStatus lifecycle has no defined state machine</li>
+        <li>P4 ontology extension blocks all existing projectors if not reviewed</li>
+        <li>Missing: false positive feedback loop (enterprise table stakes)</li>
+        <li>Missing: CVE-to-asset linkage model</li>
+        <li>Cross-tenant traversal via shared global technique nodes</li>
+        <li>Global tables need read-only DB role enforcement</li>
+      </ul>
+    </div>
+    <div class="verdict-card vc-p2">
+      <h4>Medium Risks — P2</h4>
+      <ul>
+        <li>TAXII poll frequency has no minimum floor</li>
+        <li>FusionWeight is a VO but should be policy metadata</li>
+        <li>PathConfidence reuses M21 CorrelationConfidence — semantic coupling</li>
+        <li>InferenceGatePolicy adjacency definition ambiguous</li>
+        <li>Attack path compute = command + query with no CQRS split</li>
+        <li>EvidenceCandidate / NormalizedEntity cross-context import</li>
+        <li>Enrichment partitioning not defined (growth unbounded)</li>
+        <li>GIN index for technique full-text search not specified</li>
+        <li>Migration 0035 must not embed bulk data inserts</li>
+        <li>MAX_ORGS_PER_CYCLE starvation for IndicatorRefreshWorker</li>
+        <li>AttackPathRepository.find_by_root_technique needs mandatory tenant scope + pagination</li>
+        <li>ATT&amp;CK Navigator export — no size cap or background job</li>
+        <li>STIX bundles &gt;1MB must trigger background task, not synchronous response</li>
+        <li>Composite index order for enrichment TTL query not specified</li>
+        <li>Attack path visualization library undefined (CSP implications)</li>
+        <li>Deadlock potential: path compute + enrichment refresh on same indicator</li>
+      </ul>
+    </div>
+    <div class="verdict-card vc-p3">
+      <h4>Minor Improvements — P3</h4>
+      <ul>
+        <li>Document the TAXII consumer back-off policy formally</li>
+        <li>Define minimum TAXII poll interval (1 hour recommended)</li>
+        <li>Advisory lock hash values should be in a constants file, not inline</li>
+        <li>Rollback documentation for migration 0035 (sync worker state)</li>
+        <li>Document the in-memory KnowledgeGraph as "not the production security graph" explicitly in CLAUDE.md</li>
+        <li>Define NVD batch initial load size (500 rows per commit recommended)</li>
+        <li>PathConfidence as its own type (even if backed by same enum) for semantic clarity</li>
+        <li>FusionWeight default table should be documented before P3 starts</li>
+      </ul>
+    </div>
+  </div>
+
+  <hr class="divider">
+  <h3>Architecture Strengths</h3>
+
+  <div class="finding finding-good">
+    <div class="finding-header"><span class="finding-title">What is genuinely well-designed</span></div>
+    <ul>
+      <li><strong>Closed ProviderName StrEnum</strong> — no free-text provider strings anywhere is a correct and disciplined pattern that prevents a whole class of bugs and injection risks.</li>
+      <li><strong>Evidence-first attack path design</strong> — the hard invariant "no fabricated steps" with the InferenceGatePolicy is architecturally correct and avoids the AI hallucination problem common in threat intelligence tools that use LLM-generated attack narratives.</li>
+      <li><strong>CorrelationConfidence enum reuse from M21</strong> — a four-level explainable enum (not a mysterious 0–100 score) is the right design for a security product. The principle is sound even if the specific reuse is a semantic coupling risk.</li>
+      <li><strong>Existing PostgreSQL threat_intel foundation (M18)</strong> — migration 0029 established the right patterns: per-org provider config, TTL caching, provider health tracking, and tenant isolation via FK. M22 builds on solid ground.</li>
+      <li><strong>Credential resolution via env-var reference</strong> — the pattern of storing a reference name (never the secret value) and resolving at runtime is correct. The CredentialResolutionError is correctly designed to never expose the credential value.</li>
+      <li><strong>TAXII as consumer only (not hosting)</strong> — correct scoping. Being a TAXII server adds significant compliance and operational surface area that M22 does not need.</li>
+      <li><strong>BFS over PostgreSQL (not a graph DB dependency)</strong> — avoids introducing Neo4j/Neptune as an infrastructure dependency at this scale. The known scaling boundary at 10B edges is correctly acknowledged as a future decision.</li>
+      <li><strong>Phase ordering: static data first (P1)</strong> — starting with ATT&amp;CK and CVE before any live API integration is correct; it enables testing without provider keys and reduces implementation risk.</li>
+    </ul>
+  </div>
+
+  <hr class="divider">
+  <h3>Required Changes Before Implementation</h3>
+
+  <ol>
+    <li><strong>Decide and document: global vs. tenant table architecture</strong> for <code>attack_techniques</code>, <code>vulnerabilities</code>, and <code>stix_ingestion_log</code>. This is the most consequential structural decision in M22.</li>
+    <li><strong>Resolve the dual graph model:</strong> explicitly document that M22 targets the PostgreSQL-backed <code>security_graph</code> (not the in-memory <code>KnowledgeGraph</code>) and define the new <code>NodeKind</code>/<code>EdgeKind</code> values for ontology v7.</li>
+    <li><strong>Run BFS performance proof-of-concept</strong> on the current security graph tables before committing to the depth-12/fan-out-8 caps. Adjust based on EXPLAIN ANALYZE results.</li>
+    <li><strong>Define the STIX ACL translator interface</strong> — field-by-field mapping from stix2 Python objects to RedForge domain VOs, including confidence translation and versioning semantics.</li>
+    <li><strong>Add pre-validation gate for STIX bundle ingestion</strong> — raw JSON object-count cap and nesting-depth cap before passing to stix2 library.</li>
+    <li><strong>Define AggregatedRisk behavior when all providers fail</strong> — explicit sentinel state, not an absent record.</li>
+    <li><strong>Split AttackPath aggregate</strong> — summary state on root, steps as a lazily-loaded child collection.</li>
+    <li><strong>Reclassify AttackTechniqueNode and VulnerabilityRecord</strong> as reference data entities, not aggregates.</li>
+    <li><strong>Define domain events for M22</strong> — at minimum: <code>AttackPathComputed</code>, <code>ThreatActorAttributed</code>, <code>IndicatorFused</code>.</li>
+    <li><strong>Add SSRF mitigation to TAXII endpoint configuration</strong> — URL scheme restriction, RFC-1918 DNS block, no-redirect policy — before any TAXII code is written.</li>
+    <li><strong>Select and document frontend graph visualization library</strong> before P5 begins.</li>
+    <li><strong>Define PathStatus state machine</strong> with transition rules.</li>
+  </ol>
+
+  <hr class="divider">
+
+  <div class="final-verdict">
+    <div class="fv-label">Final Verdict</div>
+    <p>This architecture is <strong>NOT ready for M22 implementation without structural redesign.</strong></p>
+    <p style="margin-top:0.6rem;font-weight:400;font-size:0.88rem;color:var(--text);">The strategic direction is correct and the domain foundation (M18 threat intel, M21 investigation engine, PostgreSQL security graph) is production-grade. However, there are <strong>8 P0 critical issues</strong> — primarily the unresolved dual-graph model, the undefined global vs. tenant table architecture, the SSRF vector in TAXII configuration, and the STIX parsing memory risk — that represent structural defects which will either: (a) produce incorrect implementation if decided ad-hoc during coding, or (b) require migration rollbacks to fix after the fact. Resolving the 12 required pre-implementation decisions listed above and running the BFS performance proof-of-concept should take approximately 2–3 days of design work. After those decisions are documented and approved, M22 implementation can begin with high confidence.</p>
+  </div>
+
+</section>
+</main>
+</div>
+</body>
+</html>

@@ -90,6 +90,13 @@ from redforge.infrastructure.database.models.threat_intel import (
     ThreatIntelEnrichmentModel,
     ThreatIntelIndicatorModel,
 )
+from redforge.infrastructure.database.models.threat_intel_reference_data import (
+    AttackTacticModel,
+    AttackTechniqueModel,
+    AttackTechniqueRelationshipModel,
+    StixIngestionLogModel,
+    VulnerabilityModel,
+)
 from redforge.infrastructure.database.models.user import UserModel
 from redforge.infrastructure.database.models.validation_execution import (
     ValidationExecutionEventModel,
@@ -100,6 +107,9 @@ from redforge.infrastructure.database.models.validation_execution import (
 __all__ = [
     "AIAssetModel",
     "AITargetModel",
+    "AttackTacticModel",
+    "AttackTechniqueModel",
+    "AttackTechniqueRelationshipModel",
     "BehaviorDetectionEventModel",
     "BehaviorDetectionModel",
     "BehaviorEntityBaselineModel",
@@ -151,6 +161,7 @@ __all__ = [
     "SecurityDriftEventModel",
     "SecurityGraphEdgeModel",
     "SecurityGraphNodeModel",
+    "StixIngestionLogModel",
     "TelemetryEventModel",
     "TelemetrySensorModel",
     "ThreatIntelEnrichmentModel",
@@ -160,4 +171,5 @@ __all__ = [
     "ValidationExecutionModel",
     "ValidationExecutionStepModel",
     "ValidationStateSnapshotModel",
+    "VulnerabilityModel",
 ]

@@ -60,6 +60,13 @@ class PlatformPermission(StrEnum):
     PLATFORM_AUDIT_READ = "platform:audit:read"
     PLATFORM_SECURITY_READ = "platform:security:read"
 
+    # Threat Intelligence Reference Data (M22 Phase 1) — the global ATT&CK
+    # / CVE catalog and its ingestion log. Distinct from PLATFORM_SECURITY_
+    # READ: that permission covers MFA/security-posture visibility, this
+    # one covers the threat-intel catalog specifically.
+    PLATFORM_THREAT_INTEL_READ = "platform:threat_intel:read"
+    PLATFORM_THREAT_INTEL_MANAGE = "platform:threat_intel:manage"
+
 
 # Role -> Permission mapping for the platform control plane.
 #
@@ -101,6 +108,8 @@ PLATFORM_ROLE_PERMISSIONS: dict[PlatformRole, frozenset[PlatformPermission]] = {
         PlatformPermission.PLATFORM_ACCESS_READ,
         PlatformPermission.PLATFORM_AUDIT_READ,
         PlatformPermission.PLATFORM_SECURITY_READ,
+        PlatformPermission.PLATFORM_THREAT_INTEL_READ,
+        PlatformPermission.PLATFORM_THREAT_INTEL_MANAGE,
     }),
     PlatformRole.SUPPORT: frozenset({
         PlatformPermission.PLATFORM_USERS_READ,
@@ -113,6 +122,7 @@ PLATFORM_ROLE_PERMISSIONS: dict[PlatformRole, frozenset[PlatformPermission]] = {
         PlatformPermission.PLATFORM_ACCESS_READ,
         PlatformPermission.PLATFORM_AUDIT_READ,
         PlatformPermission.PLATFORM_SECURITY_READ,
+        PlatformPermission.PLATFORM_THREAT_INTEL_READ,
     }),
 }
 

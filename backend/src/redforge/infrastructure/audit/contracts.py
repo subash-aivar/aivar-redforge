@@ -127,6 +127,11 @@ class AuditAction(StrEnum):
     INVESTIGATION_RESOLVED = "investigation.resolved"
     INVESTIGATION_REOPENED = "investigation.reopened"
 
+    # Threat Intelligence Reference Data (M22 Phase 1). Global-catalog
+    # admin loading — never a tenant action, always audited via the
+    # platform audit log rather than the org-scoped one.
+    REFERENCE_DATA_INGESTED = "reference_data.ingested"
+
 
 @dataclass(frozen=True, slots=True)
 class AuditEntry:

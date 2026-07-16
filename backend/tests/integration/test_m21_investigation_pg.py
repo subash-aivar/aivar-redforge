@@ -1968,8 +1968,8 @@ class TestMigrationProof:
         assert result is not None, "Partial unique index ux_inv_org_corr_active not found"
         assert "RESOLVED" in result[1], "Partial index WHERE clause must filter RESOLVED"
 
-    async def test_migration_head_is_0034(self, seed_factory: async_sessionmaker) -> None:
+    async def test_migration_head_is_0035(self, seed_factory: async_sessionmaker) -> None:
         async with seed_factory() as session:
             row = await session.execute(text("SELECT version_num FROM alembic_version"))
             version = row.scalar_one()
-        assert version == "0034"
+        assert version == "0035"

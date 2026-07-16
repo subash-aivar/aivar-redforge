@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>M22 — Threat Intelligence Fusion & Attack Path Analysis</title>
+<style>
+/* ── Token system ─────────────────────────────────────────── */
+:root {
+  --bg:        #0D1117;
+  --surface:   #161B22;
+  --surface2:  #1E2736;
+  --border:    #2A3444;
+  --text:      #CDD9E5;
+  --muted:     #768BA0;
+  --accent:    #3B82C4;
+  --accent-lo: #1A3554;
+  --amber:     #D4941A;
+  --amber-lo:  #3A2A0A;
+  --green:     #3DA676;
+  --green-lo:  #0C2D1E;
+  --red:       #C94040;
+  --red-lo:    #2D0C0C;
+  --yellow:    #C8A82A;
+  --yellow-lo: #2D2610;
+  --heading:   #E6EEF6;
+  --code-bg:   #0A0F15;
+  --code-text: #79C0FF;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg:        #F0F4F8;
+    --surface:   #FFFFFF;
+    --surface2:  #E8EEF5;
+    --border:    #C8D4E0;
+    --text:      #2A3748;
+    --muted:     #5A6F85;
+    --accent:    #1A5EA8;
+    --accent-lo: #D0E3F5;
+    --amber:     #A06A00;
+    --amber-lo:  #FFF3D0;
+    --green:     #1A7A50;
+    --green-lo:  #D0F0E3;
+    --red:       #A02020;
+    --red-lo:    #FADDDD;
+    --yellow:    #8A6800;
+    --yellow-lo: #FFF8D0;
+    --heading:   #0D1929;
+    --code-bg:   #1C2838;
+    --code-text: #5BB0FF;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg:#0D1117;--surface:#161B22;--surface2:#1E2736;--border:#2A3444;
+  --text:#CDD9E5;--muted:#768BA0;--accent:#3B82C4;--accent-lo:#1A3554;
+  --amber:#D4941A;--amber-lo:#3A2A0A;--green:#3DA676;--green-lo:#0C2D1E;
+  --red:#C94040;--red-lo:#2D0C0C;--yellow:#C8A82A;--yellow-lo:#2D2610;
+  --heading:#E6EEF6;--code-bg:#0A0F15;--code-text:#79C0FF;
+}
+:root[data-theme="light"] {
+  --bg:#F0F4F8;--surface:#FFFFFF;--surface2:#E8EEF5;--border:#C8D4E0;
+  --text:#2A3748;--muted:#5A6F85;--accent:#1A5EA8;--accent-lo:#D0E3F5;
+  --amber:#A06A00;--amber-lo:#FFF3D0;--green:#1A7A50;--green-lo:#D0F0E3;
+  --red:#A02020;--red-lo:#FADDDD;--yellow:#8A6800;--yellow-lo:#FFF8D0;
+  --heading:#0D1929;--code-bg:#1C2838;--code-text:#5BB0FF;
+}
+
+/* ── Reset & base ─────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 15px; scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  line-height: 1.65;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Layout ───────────────────────────────────────────────── */
+.shell {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: 100vh;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+/* ── Sidebar nav ──────────────────────────────────────────── */
+.sidenav {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  border-right: 1px solid var(--border);
+  padding: 2rem 1.25rem;
+  font-size: 0.78rem;
+}
+.sidenav-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+}
+.sidenav-logo .mark {
+  width: 28px; height: 28px;
+  background: var(--accent);
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 0.02em;
+}
+.sidenav-logo .product {
+  font-weight: 700;
+  color: var(--heading);
+  font-size: 0.8rem;
+  letter-spacing: 0.01em;
+}
+.nav-group { margin-bottom: 1.5rem; }
+.nav-label {
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+  padding-left: 0.5rem;
+}
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.5rem;
+  color: var(--muted);
+  text-decoration: none;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+  line-height: 1.4;
+}
+.nav-link:hover { color: var(--text); background: var(--surface2); }
+.nav-link .num {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--accent);
+  min-width: 1.2rem;
+  letter-spacing: 0.03em;
+}
+
+/* ── Main content ─────────────────────────────────────────── */
+main {
+  padding: 3rem 3.5rem;
+  max-width: 900px;
+}
+
+/* ── Header ───────────────────────────────────────────────── */
+.doc-header {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 2rem;
+  margin-bottom: 3rem;
+}
+.milestone-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--accent-lo);
+  color: var(--accent);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.65rem;
+  border-radius: 3px;
+  margin-bottom: 1rem;
+}
+.doc-header h1 {
+  font-size: 1.9rem;
+  font-weight: 700;
+  color: var(--heading);
+  line-height: 1.2;
+  text-wrap: balance;
+  margin-bottom: 0.75rem;
+  letter-spacing: -0.02em;
+}
+.doc-meta {
+  display: flex;
+  gap: 2rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.doc-meta span strong { color: var(--text); }
+
+/* ── Section ──────────────────────────────────────────────── */
+.section {
+  margin-bottom: 3.5rem;
+  scroll-margin-top: 2rem;
+}
+.section-header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.75rem;
+}
+.section-num {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  min-width: 2rem;
+}
+.section h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--heading);
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+.section h3 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--heading);
+  margin: 1.5rem 0 0.6rem;
+  letter-spacing: -0.005em;
+}
+.section h4 {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 1.25rem 0 0.4rem;
+}
+p { margin-bottom: 0.85rem; font-size: 0.9rem; }
+p:last-child { margin-bottom: 0; }
+
+/* ── Code & paths ─────────────────────────────────────────── */
+code {
+  font-family: "SF Mono", "Cascadia Code", "Fira Code", ui-monospace, monospace;
+  font-size: 0.8em;
+  background: var(--code-bg);
+  color: var(--code-text);
+  padding: 0.1em 0.35em;
+  border-radius: 3px;
+  border: 1px solid var(--border);
+}
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1rem 1.25rem;
+  overflow-x: auto;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  margin: 1rem 0;
+}
+pre code { background: none; border: none; padding: 0; color: var(--code-text); }
+
+/* ── Tables ───────────────────────────────────────────────── */
+.table-wrap { overflow-x: auto; margin: 1rem 0; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+th {
+  text-align: left;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface2);
+}
+td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--surface2); }
+
+/* ── Status chips ─────────────────────────────────────────── */
+.chip {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.15rem 0.45rem;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+.chip-exists  { background: var(--green-lo);  color: var(--green); }
+.chip-partial { background: var(--yellow-lo); color: var(--yellow); }
+.chip-missing { background: var(--red-lo);    color: var(--red); }
+.chip-na      { background: var(--surface2);  color: var(--muted); }
+.chip-accent  { background: var(--accent-lo); color: var(--accent); }
+.chip-amber   { background: var(--amber-lo);  color: var(--amber); }
+
+/* ── Callout boxes ────────────────────────────────────────── */
+.callout {
+  border-left: 3px solid var(--accent);
+  background: var(--accent-lo);
+  padding: 0.8rem 1rem;
+  border-radius: 0 4px 4px 0;
+  margin: 1rem 0;
+  font-size: 0.85rem;
+}
+.callout.warn {
+  border-color: var(--amber);
+  background: var(--amber-lo);
+}
+.callout.risk {
+  border-color: var(--red);
+  background: var(--red-lo);
+}
+.callout strong { color: var(--heading); }
+
+/* ── Lists ────────────────────────────────────────────────── */
+ul, ol { padding-left: 1.4rem; font-size: 0.9rem; }
+li { margin-bottom: 0.35rem; }
+li:last-child { margin-bottom: 0; }
+
+/* ── Phase cards ──────────────────────────────────────────── */
+.phase-grid {
+  display: grid;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+.phase-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1rem 1.25rem;
+}
+.phase-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+.phase-num {
+  width: 28px; height: 28px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  display: grid;
+  place-items: center;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--accent);
+}
+.phase-title { font-weight: 700; color: var(--heading); font-size: 0.9rem; }
+.phase-card p { font-size: 0.82rem; color: var(--muted); margin-bottom: 0.3rem; }
+.phase-card ul { font-size: 0.82rem; color: var(--text); }
+
+/* ── Architecture diagram (ASCII-style SVG) ───────────────── */
+.arch-block {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1.5rem;
+  font-family: "SF Mono", "Cascadia Code", ui-monospace, monospace;
+  font-size: 0.72rem;
+  color: var(--muted);
+  overflow-x: auto;
+  line-height: 1.6;
+  margin: 1rem 0;
+}
+.arch-block .hl { color: var(--accent); }
+.arch-block .hl2 { color: var(--amber); }
+.arch-block .hl3 { color: var(--green); }
+
+/* ── Risk severity indicators ─────────────────────────────── */
+.risk-row { display: flex; align-items: flex-start; gap: 0.75rem; margin-bottom: 0.75rem; }
+.risk-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  margin-top: 0.35rem; flex-shrink: 0;
+}
+.risk-dot.critical { background: var(--red); }
+.risk-dot.high     { background: var(--amber); }
+.risk-dot.medium   { background: var(--yellow); }
+.risk-body { font-size: 0.85rem; }
+.risk-body strong { color: var(--heading); display: block; margin-bottom: 0.15rem; }
+
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width: 860px) {
+  .shell { grid-template-columns: 1fr; }
+  .sidenav { display: none; }
+  main { padding: 2rem 1.25rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- ── Sidebar ───────────────────────────────────────────── -->
+<nav class="sidenav" aria-label="Document navigation">
+  <div class="sidenav-logo">
+    <div class="mark">RF</div>
+    <div class="product">RedForge</div>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-label">Architecture Review</div>
+    <a class="nav-link" href="#s1"><span class="num">01</span> Repository Truth</a>
+    <a class="nav-link" href="#s2"><span class="num">02</span> Capability Matrix</a>
+    <a class="nav-link" href="#s3"><span class="num">03</span> Gap Analysis</a>
+    <a class="nav-link" href="#s4"><span class="num">04</span> Bounded Context</a>
+    <a class="nav-link" href="#s5"><span class="num">05</span> Enterprise Architecture</a>
+    <a class="nav-link" href="#s6"><span class="num">06</span> Provider Strategy</a>
+    <a class="nav-link" href="#s7"><span class="num">07</span> Attack Path Engine</a>
+    <a class="nav-link" href="#s8"><span class="num">08</span> Milestone Breakdown</a>
+    <a class="nav-link" href="#s9"><span class="num">09</span> Risks</a>
+    <a class="nav-link" href="#s10"><span class="num">10</span> Recommendation</a>
+  </div>
+</nav>
+
+<!-- ── Main ──────────────────────────────────────────────── -->
+<main>
+
+<header class="doc-header">
+  <div class="milestone-badge">M22 · Architecture Review</div>
+  <h1>Threat Intelligence Fusion &amp; Attack Path Analysis</h1>
+  <div class="doc-meta">
+    <span><strong>Migration head:</strong> 0034_unified_investigation</span>
+    <span><strong>Test baseline:</strong> ~4,508 (M21 verified)</span>
+    <span><strong>Status:</strong> Pre-implementation design</span>
+  </div>
+</header>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<section class="section" id="s1">
+  <div class="section-header">
+    <span class="section-num">01</span>
+    <h2>Repository Truth</h2>
+  </div>
+
+  <h3>Migration State</h3>
+  <p>Current migration head is <code>0034_unified_investigation</code>. The full sequence is contiguous from <code>0001</code> to <code>0034</code> with no gaps or branch labels. M22 will target revision <code>0035</code>.</p>
+
+  <h3>Bounded Contexts (verified)</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Context</th><th>Domain path</th><th>Application path</th><th>Milestone</th></tr></thead>
+      <tbody>
+        <tr><td>threat_intel</td><td><code>domain/threat_intel/</code></td><td><code>application/threat_intel/</code></td><td>M18 expansion</td></tr>
+        <tr><td>behavior</td><td><code>domain/behavior/</code></td><td><code>application/behavior/</code></td><td>M20</td></tr>
+        <tr><td>ddos</td><td><code>domain/ddos/</code></td><td><code>application/ddos/</code></td><td>M19</td></tr>
+        <tr><td>investigations</td><td><code>domain/investigations/</code></td><td><code>application/investigations/</code></td><td>M21</td></tr>
+        <tr><td>security_graph</td><td><code>domain/security_graph/</code></td><td><code>application/security_graph/</code></td><td>M14</td></tr>
+        <tr><td>evidence</td><td><code>domain/evidence/</code></td><td><code>application/evidence/</code></td><td>M18</td></tr>
+        <tr><td>intelligence</td><td><code>domain/intelligence/</code></td><td><code>application/intelligence/</code></td><td>M21/Sprint&nbsp;21</td></tr>
+        <tr><td>rbac</td><td><code>domain/rbac/</code></td><td><code>application/rbac/</code></td><td>Sprint&nbsp;26</td></tr>
+        <tr><td>telemetry</td><td>—</td><td><code>application/telemetry/</code></td><td>M18</td></tr>
+        <tr><td>correlation</td><td><code>domain/correlation/</code></td><td><code>application/correlation/</code></td><td>M21</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Existing Threat Intel Infrastructure</h3>
+  <p>Three PostgreSQL tables created in migration <code>0029</code>:</p>
+  <ul>
+    <li><code>threat_intel_providers</code> — per-org admin config + credential reference</li>
+    <li><code>threat_intel_indicators</code> — canonical (org, type, value) identity</li>
+    <li><code>threat_intel_enrichments</code> — TTL-cached evidence per (indicator, provider, kind)</li>
+  </ul>
+
+  <p>Eight provider adapters verified in <code>infrastructure/threat_intel/providers/</code>:</p>
+  <pre><code>abuseipdb.py          greynoise_community.py   rdap.py
+alienvault_otx.py     ipinfo_lite.py           spamhaus_drop.py
+abusech.py            maxmind_geolite_local.py</code></pre>
+
+  <p>Application services verified:</p>
+  <pre><code>enrichment_service.py       indicator_query_service.py
+correlation_service.py      config_service.py
+geo_activity_service.py     health_service.py</code></pre>
+
+  <h3>Telemetry Sources</h3>
+  <p>Two real log parsers exist in <code>infrastructure/telemetry/parsers/</code>:</p>
+  <ul>
+    <li><code>suricata_eve.py</code> — Suricata EVE JSON format</li>
+    <li><code>zeek_json.py</code> — Zeek JSON log format</li>
+  </ul>
+
+  <h3>Security Graph</h3>
+  <p>PostgreSQL-backed. No Neo4j or networkx dependency. Graph operations are implemented via <code>domain/security_graph/ontology.py</code> + <code>application/security_graph/projector.py</code>. Node identity constraint added in migration <code>0027</code>. Knowledge graph projectors exist for: agents, campaigns, connectors, conversations, intelligence, inventory, posture.</p>
+
+  <h3>Investigation Engine (M21)</h3>
+  <p><code>InvestigationCase</code> aggregate with deterministic confidence ladder (<code>CorrelationConfidence</code>: LOW / MEDIUM / HIGH / DEFINITIVE), monotonic severity, cross-tenant FK isolation, and event sourcing via <code>InvestigationDomainEvent</code>. <code>NormalizedEntity</code> value object is the cross-domain correlation key.</p>
+
+  <h3>Frontend</h3>
+  <p>Next.js App Router. Relevant existing routes: <code>/investigations/</code>, <code>/behavior/</code>, <code>/ddos/</code>, <code>/security-graph/</code>, <code>/command-center/intelligence/</code>. API client <code>src/lib/threatIntel.ts</code> already covers provider config, health, indicator list, enrichment drill-down, and IOC correlation trigger endpoints.</p>
+</section>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<section class="section" id="s2">
+  <div class="section-header">
+    <span class="section-num">02</span>
+    <h2>Existing Capability Matrix</h2>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Capability</th><th>Status</th><th>Evidence</th></tr></thead>
+      <tbody>
+        <tr><td>IP reputation lookup</td><td><span class="chip chip-exists">Exists</span></td><td>AbuseIPDB, GreyNoise, Spamhaus adapters</td></tr>
+        <tr><td>Domain reputation</td><td><span class="chip chip-partial">Partial</span></td><td><code>IndicatorType.DOMAIN</code> enum exists; AlienVault OTX adapter handles it; no dedicated domain-only enrichment chain</td></tr>
+        <tr><td>URL IOC matching</td><td><span class="chip chip-partial">Partial</span></td><td><code>IndicatorType.URL</code> defined; Abuse.ch URLhaus adapter exists; not wired to correlation</td></tr>
+        <tr><td>File hash IOC</td><td><span class="chip chip-partial">Partial</span></td><td><code>IndicatorType.HASH</code> in schema; Abuse.ch MalwareBazaar adapter exists; deliberately deferred in domain docs</td></tr>
+        <tr><td>IOC correlation service</td><td><span class="chip chip-exists">Exists</span></td><td><code>correlation_service.py</code> + API trigger</td></tr>
+        <tr><td>Enrichment caching with TTL</td><td><span class="chip chip-exists">Exists</span></td><td><code>threat_intel_enrichments.expires_at</code> column</td></tr>
+        <tr><td>Provider health monitoring</td><td><span class="chip chip-exists">Exists</span></td><td><code>health_service.py</code>, circuit state column</td></tr>
+        <tr><td>Geolocation enrichment</td><td><span class="chip chip-exists">Exists</span></td><td>MaxMind GeoLite2 (local) + IPInfo adapters</td></tr>
+        <tr><td>ASN/RDAP lookup</td><td><span class="chip chip-exists">Exists</span></td><td>RDAP adapter</td></tr>
+        <tr><td>Per-org provider config</td><td><span class="chip chip-exists">Exists</span></td><td><code>threat_intel_providers</code> table + config service</td></tr>
+        <tr><td>Tenant isolation on intelligence</td><td><span class="chip chip-exists">Exists</span></td><td>FK <code>organization_id</code> on all three threat_intel tables; composite unique on (org, type, indicator)</td></tr>
+        <tr><td>Evidence provenance</td><td><span class="chip chip-exists">Exists</span></td><td><code>ProviderCallOutcome</code>; <code>ReputationEvidence.provider</code>; no per-provider aggregation</td></tr>
+        <tr><td>MITRE ATT&amp;CK framework</td><td><span class="chip chip-missing">Missing</span></td><td>Only incidental strings in evaluation taxonomy; no ATT&amp;CK domain model</td></tr>
+        <tr><td>CVE / NVD integration</td><td><span class="chip chip-missing">Missing</span></td><td>Not found</td></tr>
+        <tr><td>CWE taxonomy</td><td><span class="chip chip-missing">Missing</span></td><td>Not found</td></tr>
+        <tr><td>CISA KEV feed</td><td><span class="chip chip-missing">Missing</span></td><td>Not found</td></tr>
+        <tr><td>EPSS scoring</td><td><span class="chip chip-missing">Missing</span></td><td>Not found</td></tr>
+        <tr><td>CAPEC patterns</td><td><span class="chip chip-missing">Missing</span></td><td>Not found</td></tr>
+        <tr><td>STIX/TAXII ingestion</td><td><span class="chip chip-missing">Missing</span></td><td>Not found</td></tr>
+        <tr><td>OpenCTI compatibility</td><td><span class="chip chip-missing">Missing</span></td><td>Not found</td></tr>
+        <tr><td>MISP compatibility</td><td><span class="chip chip-missing">Missing</span></td><td>Not found</td></tr>
+        <tr><td>VirusTotal integration</td><td><span class="chip chip-missing">Missing</span></td><td>Not found (deliberate; commercial license required)</td></tr>
+        <tr><td>Threat actor profiles</td><td><span class="chip chip-missing">Missing</span></td><td>Not found as a domain object</td></tr>
+        <tr><td>Attack path engine</td><td><span class="chip chip-missing">Missing</span></td><td>Not found anywhere in codebase</td></tr>
+        <tr><td>Confidence aggregation across providers</td><td><span class="chip chip-missing">Missing</span></td><td>Each provider's score is stored raw; no cross-provider aggregation model exists</td></tr>
+        <tr><td>Source weighting / conflict resolution</td><td><span class="chip chip-missing">Missing</span></td><td>Not found</td></tr>
+        <tr><td>Background sync / scheduled enrichment</td><td><span class="chip chip-missing">Missing</span></td><td>Enrichment is on-demand only; no background refresh worker</td></tr>
+        <tr><td>ATT&amp;CK Navigator export</td><td><span class="chip chip-missing">Missing</span></td><td>Not found</td></tr>
+        <tr><td>Threat intel → investigation correlation</td><td><span class="chip chip-missing">Missing</span></td><td>M21 investigation source adapters exist; threat intel is not a registered domain source</td></tr>
+        <tr><td>Threat intel → security graph nodes</td><td><span class="chip chip-missing">Missing</span></td><td>No knowledge projector for threat_intel context</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<section class="section" id="s3">
+  <div class="section-header">
+    <span class="section-num">03</span>
+    <h2>Gap Analysis</h2>
+  </div>
+
+  <h3>Already Implemented</h3>
+  <p>The threat_intel bounded context from M18 delivers a solid foundation: per-org provider configuration, TTL-cached enrichment storage, eight real provider adapters, IOC correlation trigger, provider health monitoring, geolocation, ASN, and IP reputation. Tenant isolation is enforced at the database FK level. The evidence domain model, security graph, and investigation engine are all production-grade and ready to integrate with.</p>
+
+  <h3>Partially Implemented</h3>
+  <ul>
+    <li><strong>Domain/URL/hash IOC types</strong> — schema and adapters exist; correlation chain is IP-centric; domain/URL/hash paths are under-tested and not surfaced in the main enrichment flow.</li>
+    <li><strong>Cross-provider confidence aggregation</strong> — each provider's score is stored in its raw semantics (AbuseIPDB 0–100 confidence, GreyNoise noise/riot booleans, Spamhaus DROP list membership). No application-layer aggregation model exists to produce a unified, explainable risk signal from multiple sources.</li>
+    <li><strong>Investigation source integration</strong> — M21's <code>source_adapters.py</code> defines the interface; threat_intel is not registered as a correlation source.</li>
+    <li><strong>Frontend threat intel panel</strong> — indicator list, enrichment drill-down, and provider health exist in the UI; there is no attack surface intelligence view, no MITRE technique mapping, no threat actor profile, no attack path visualization.</li>
+  </ul>
+
+  <h3>Missing (M22 must build)</h3>
+  <ul>
+    <li>MITRE ATT&amp;CK domain model (Techniques, Tactics, Groups, Software) with local caching from the public ATT&amp;CK STIX bundle</li>
+    <li>CVE/NVD feed integration with EPSS scoring and CISA KEV overlay</li>
+    <li>Threat actor profile aggregates</li>
+    <li>STIX 2.1 ingestion pipeline (structured threat intelligence objects)</li>
+    <li>Attack path engine — evidence-backed, graph-traversal-based, no fabricated paths</li>
+    <li>Cross-provider confidence aggregation with source weighting and conflict resolution</li>
+    <li>Background synchronization workers (MITRE ATT&amp;CK, CISA KEV, Spamhaus, Abuse.ch are all static feeds that can be bulk-cached)</li>
+    <li>Threat intel knowledge graph projector (wire threat_intel entities into the security graph)</li>
+    <li>Threat intel → investigation correlation source adapter</li>
+    <li>Frontend: attack path visualization, MITRE heatmap, threat actor profile, CVE panel</li>
+  </ul>
+
+  <h3>Deferred / Not Applicable</h3>
+  <ul>
+    <li><strong>VirusTotal</strong> — commercial API, non-trivial per-query cost. Deferred until commercial tier is established. Provider slot reserved.</li>
+    <li><strong>MISP compatibility</strong> — MISP is a self-hosted platform. M22 will define a STIX-based ingestion interface that MISP exports can be imported through; native MISP API protocol is deferred.</li>
+    <li><strong>OpenCTI compatibility</strong> — same pattern: OpenCTI exports STIX 2.1; the STIX ingestion pipeline covers the import path. Native OpenCTI API integration is deferred.</li>
+    <li><strong>TAXII server (hosting)</strong> — RedForge as a TAXII consumer is in scope. RedForge as a TAXII server (publishing) is out of scope for M22.</li>
+    <li><strong>ATT&amp;CK Navigator compatibility</strong> — the Navigator-compatible JSON export format is achievable as a small export endpoint once the ATT&amp;CK domain model exists; included in M22 as a late-phase deliverable.</li>
+  </ul>
+</section>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<section class="section" id="s4">
+  <div class="section-header">
+    <span class="section-num">04</span>
+    <h2>Proposed Bounded Context</h2>
+  </div>
+
+  <div class="callout">
+    <strong>Design principle:</strong> M22 extends the existing <code>threat_intel</code> bounded context rather than creating a parallel one. A new <code>attack_path</code> context handles attack path aggregates, which are composite read models backed by the security graph and threat intelligence — not raw event sources.
+  </div>
+
+  <h3>Aggregates</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Aggregate</th><th>Context</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>ThreatIndicator</code></td><td>threat_intel</td><td>Already exists. Gains MITRE ATT&amp;CK technique associations and CVE linkage. Existing <code>threat_intel_indicators</code> table extended.</td></tr>
+        <tr><td><code>ThreatActorProfile</code></td><td>threat_intel</td><td>New. Canonical threat actor identity with aliases, attributed techniques (ATT&amp;CK), attributed campaigns, and confidence. Built from STIX <code>threat-actor</code> and <code>intrusion-set</code> objects.</td></tr>
+        <tr><td><code>AttackTechniqueNode</code></td><td>threat_intel</td><td>New. Canonical MITRE ATT&amp;CK technique (T-number, name, tactic, sub-technique parent). Read-only — loaded from the ATT&amp;CK STIX bundle; never mutated by users.</td></tr>
+        <tr><td><code>VulnerabilityRecord</code></td><td>threat_intel</td><td>New. CVE + CVSS + EPSS score + CISA KEV flag. Keyed by CVE ID. Updated from NVD + EPSS API + CISA KEV list.</td></tr>
+        <tr><td><code>AttackPath</code></td><td>attack_path</td><td>New. An evidence-backed traversal: ordered list of <code>AttackStep</code> value objects, each tied to a technique, an observed/inferred flag, confidence, and evidence provenance. Tenant-scoped. No fabricated steps.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Value Objects</h3>
+  <ul>
+    <li><code>TechniqueId</code> — validated ATT&amp;CK T-number (e.g. <code>T1190</code>, <code>T1190.001</code>)</li>
+    <li><code>TacticId</code> — ATT&amp;CK tactic (e.g. <code>TA0001</code>)</li>
+    <li><code>CveId</code> — validated CVE-YYYY-NNNNN format</li>
+    <li><code>EpssScore</code> — 0.0–1.0 probability, with percentile and model date</li>
+    <li><code>AggregatedRisk</code> — cross-provider confidence with per-source breakdown: never a scalar from nowhere</li>
+    <li><code>StixObjectRef</code> — STIX 2.1 object ID (UUIDv4 with type prefix)</li>
+    <li><code>AttackStep</code> — (technique, entity, observed|inferred, confidence, evidence_ids, timestamp)</li>
+    <li><code>PathConfidence</code> — path-level confidence derived from the weakest link in the step chain</li>
+    <li><code>FusionWeight</code> — per-source trust weight used in aggregation, admin-configurable</li>
+  </ul>
+
+  <h3>Repositories</h3>
+  <ul>
+    <li><code>ThreatActorRepository</code> — by org, by STIX ID, by attributed technique</li>
+    <li><code>AttackTechniqueRepository</code> — by ID, by tactic, full-text search by name</li>
+    <li><code>VulnerabilityRepository</code> — by CVE ID, by EPSS threshold, by KEV flag</li>
+    <li><code>AttackPathRepository</code> — by org, by entity ID, by root technique, by confidence floor</li>
+    <li>Extends existing <code>ThreatIntelIndicatorRepository</code> with technique/CVE join queries</li>
+  </ul>
+
+  <h3>Services</h3>
+  <ul>
+    <li><code>AttackTechniqueSyncService</code> — downloads + parses the ATT&amp;CK STIX bundle; idempotent upsert</li>
+    <li><code>VulnerabilitySyncService</code> — NVD API, EPSS API, CISA KEV list; incremental by modified date</li>
+    <li><code>StixIngestionService</code> — accepts a STIX 2.1 bundle (from TAXII pull, file upload, or clipboard); maps to domain objects; validates provenance</li>
+    <li><code>ThreatFusionService</code> — cross-provider aggregation with configurable source weights; produces <code>AggregatedRisk</code></li>
+    <li><code>AttackPathService</code> — builds evidence-backed paths using security graph traversal + threat intel correlation</li>
+    <li><code>ThreatIntelInvestigationAdapter</code> — registers threat intel as a source domain for M21 <code>CorrelationEngine</code></li>
+    <li><code>ThreatIntelKnowledgeProjector</code> — writes threat_intel entities into the security graph as typed nodes</li>
+  </ul>
+
+  <h3>Policies</h3>
+  <ul>
+    <li><code>IndicatorTTLPolicy</code> — expiry rules per provider and indicator type; dynamic refresh on hit-before-expiry</li>
+    <li><code>FusionConflictPolicy</code> — when two providers produce contradictory verdicts, higher-weight provider wins; tie breaks by recency; conflict recorded in <code>AggregatedRisk</code></li>
+    <li><code>InferenceGatePolicy</code> — an attack step may only be marked <code>inferred</code> if at least one adjacent step is <code>observed</code> and confidence ≥ MEDIUM</li>
+    <li><code>PathExplosionPolicy</code> — max depth and max branching factor; caps graph traversal to prevent explosion on large graphs</li>
+  </ul>
+
+  <h3>Background Workers</h3>
+  <ul>
+    <li><code>AttackTechniqueSyncWorker</code> — weekly; MITRE ATT&amp;CK STIX bundle (public, no API key)</li>
+    <li><code>VulnerabilitySyncWorker</code> — daily; NVD modified feed + EPSS + CISA KEV</li>
+    <li><code>IndicatorRefreshWorker</code> — on-demand + scheduled re-enrichment of aging indicators for active investigations</li>
+    <li><code>ThreatIntelProjectionWorker</code> — event-driven; writes new threat actors, techniques to the knowledge graph</li>
+  </ul>
+</section>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<section class="section" id="s5">
+  <div class="section-header">
+    <span class="section-num">05</span>
+    <h2>Enterprise Architecture</h2>
+  </div>
+
+  <div class="arch-block">
+<span class="hl">┌─ External Sources ─────────────────────────────────────────────────────┐</span>
+│  <span class="hl2">MITRE ATT&amp;CK STIX</span>  <span class="hl2">NVD / EPSS</span>  <span class="hl2">CISA KEV</span>  <span class="hl2">AbuseIPDB</span>  <span class="hl2">OTX</span>  <span class="hl2">GreyNoise</span> │
+│  <span class="hl2">Spamhaus DROP</span>  <span class="hl2">Abuse.ch</span>  <span class="hl2">MaxMind GeoLite2</span>  <span class="hl2">TAXII 2.1 endpoint</span>      │
+└────────────────────────┬───────────────────────────────────────────────┘
+                         │ HTTP (rate-limited, circuit-broken)
+┌─ Provider Abstraction ─▼──────────────────────────────────────────────┐
+│  ProviderRegistry          ProviderRouter (tenant config lookup)       │
+│  ProviderHealthMonitor     RateLimitBucket (per provider, per tenant)  │
+│  ProviderCircuitBreaker    CredentialResolver (env-var reference only) │
+└────────────────────────┬──────────────────────────────────────────────┘
+                         │
+┌─ Ingestion Pipeline ───▼──────────────────────────────────────────────┐
+│  StixIngestionService   → ThreatActorProfile, AttackTechniqueNode      │
+│  AttackTechniqueSyncService → AttackTechniqueNode (bulk upsert)        │
+│  VulnerabilitySyncService   → VulnerabilityRecord (incremental)        │
+│  EnrichmentService (existing) — extended with technique/CVE linkage    │
+└────────────────────────┬──────────────────────────────────────────────┘
+                         │
+┌─ Fusion Layer ─────────▼──────────────────────────────────────────────┐
+│  ThreatFusionService   (cross-provider AggregatedRisk)                 │
+│  FusionConflictPolicy  (weight-based resolution, conflict recorded)    │
+│  IndicatorTTLPolicy    (per-provider TTL; refresh-on-read for active)  │
+└────────────────────────┬──────────────────────────────────────────────┘
+                         │
+┌─ Attack Path Engine ───▼──────────────────────────────────────────────┐
+│  AttackPathService     (graph traversal + evidence gating)             │
+│  InferenceGatePolicy   (no step inferred without adjacent observed)    │
+│  PathExplosionPolicy   (depth cap + branching cap)                     │
+└───────────┬──────────────────────────┬────────────────────────────────┘
+            │                          │
+┌─ Integration ─▼──┐   ┌─ Integration ─▼──────────────────────────────┐
+│ M21 Investigation │   │ Security Graph (PostgreSQL-backed ontology)   │
+│ CorrelationEngine │   │ ThreatIntelKnowledgeProjector                 │
+│ (new source       │   │ New node types: TechniqueNode, ActorNode,     │
+│  adapter)         │   │ VulnNode; new edge types: EXPLOITS, USES,     │
+└───────────────────┘   │ ATTRIBUTED_TO                                 │
+                        └──────────────────────────────────────────────┘
+            │
+┌─ Read Models / API ────────────────────────────────────────────────────┐
+│  AttackPathQueryService       ThreatActorQueryService                  │
+│  VulnerabilityQueryService    TechniqueQueryService                    │
+│  ATT&amp;CK Navigator export (JSON)                                        │
+│  FastAPI routers: /threat-intel/*, /attack-paths/*, /vulnerabilities/* │
+└────────────────────────┬──────────────────────────────────────────────┘
+                         │
+┌─ PostgreSQL ───────────▼──────────────────────────────────────────────┐
+│  threat_intel_indicators (existing)   threat_intel_enrichments (exist) │
+│  threat_intel_providers (existing)                                     │
+│  attack_techniques  (new, 0035)       threat_actors      (new, 0035)   │
+│  vulnerabilities    (new, 0035)       attack_paths       (new, 0035)   │
+│  attack_path_steps  (new, 0035)       stix_ingestion_log (new, 0035)   │
+└───────────────────────────────────────────────────────────────────────┘</div>
+
+  <h3>Key Architecture Decisions</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Decision</th><th>Choice</th><th>Rationale</th></tr></thead>
+      <tbody>
+        <tr><td>ATT&amp;CK storage</td><td>PostgreSQL (bulk upsert from STIX)</td><td>No additional infrastructure; idempotent; matches existing pattern from security_graph foundation</td></tr>
+        <tr><td>Caching layer</td><td>PostgreSQL TTL columns (existing pattern)</td><td>Redis not yet in stack; adding it for cache alone violates the "no premature infrastructure" rule. Revisit when Redis is added for other reasons.</td></tr>
+        <tr><td>STIX parsing</td><td><code>stix2</code> Python library (read-only)</td><td>Reference implementation; Apache 2.0 license; read-only use avoids TAXII server complexity</td></tr>
+        <tr><td>Attack path traversal</td><td>Python BFS/DFS over PostgreSQL graph queries</td><td>Consistent with existing security_graph approach; no graph DB dependency</td></tr>
+        <tr><td>Background sync</td><td>APScheduler (already in stack) or asyncio periodic task</td><td>Verify which scheduler is in use before committing; matches existing detection_worker pattern</td></tr>
+        <tr><td>Confidence model</td><td>Extend <code>CorrelationConfidence</code> enum pattern from M21</td><td>Explainable four-level enum; consistent with investigation engine; avoids mysterious 0–100 scores</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<section class="section" id="s6">
+  <div class="section-header">
+    <span class="section-num">06</span>
+    <h2>Provider Strategy</h2>
+  </div>
+
+  <div class="callout warn">
+    <strong>Principle:</strong> All provider names are a closed <code>StrEnum</code> — no free-text provider strings anywhere in the system. A new provider requires a new enum value plus an adapter. This is an existing invariant from M18 that M22 must preserve.
+  </div>
+
+  <h3>Tier 1 — Free, Bulk, No Key Required</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Source</th><th>Data</th><th>Auth</th><th>Rate limit</th><th>Ingestion model</th></tr></thead>
+      <tbody>
+        <tr><td>MITRE ATT&amp;CK STIX bundle</td><td>Techniques, Tactics, Groups, Software, Relationships</td><td>None</td><td>None (static download)</td><td>Weekly bulk download from <code>github.com/mitre/cti</code>; upsert to <code>attack_techniques</code> table</td></tr>
+        <tr><td>CISA KEV</td><td>Known Exploited Vulnerabilities list</td><td>None</td><td>None (JSON file)</td><td>Daily download from <code>cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json</code></td></tr>
+        <tr><td>Spamhaus DROP / EDROP</td><td>Blocklist: netblocks used by threat actors</td><td>None (free tier)</td><td>Respectful polling</td><td>Already implemented; extend with EDROP</td></tr>
+        <tr><td>Abuse.ch (URLhaus, MalwareBazaar)</td><td>Malware URLs, file hashes</td><td>None for bulk; API key for search</td><td>API: 100/day free</td><td>Already implemented; add bulk feed download</td></tr>
+        <tr><td>MaxMind GeoLite2</td><td>IP geolocation (local DB)</td><td>Free account + license key</td><td>None (local)</td><td>Already implemented</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Tier 2 — Free API, Key Required</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Source</th><th>Data</th><th>Auth</th><th>Rate limit (free)</th><th>Ingestion model</th></tr></thead>
+      <tbody>
+        <tr><td>NVD (NIST)</td><td>CVE details, CVSS scores</td><td>API key (recommended; higher rate limit)</td><td>5 req/30s without key; 50 req/30s with key</td><td>Incremental by <code>lastModStartDate</code>; initial bulk load</td></tr>
+        <tr><td>EPSS (FIRST.org)</td><td>Exploit Prediction Scoring (probability + percentile)</td><td>None</td><td>None (CSV file)</td><td>Daily download of EPSS CSV; join to CVE table by ID</td></tr>
+        <tr><td>AbuseIPDB</td><td>IP reputation reports</td><td>API key</td><td>1,000 req/day</td><td>Already implemented; on-demand per indicator</td></tr>
+        <tr><td>AlienVault OTX</td><td>IP/domain/URL/hash IOC pulses</td><td>API key</td><td>Generous free tier</td><td>Already implemented; extend with pulse subscription (pull new pulses)</td></tr>
+        <tr><td>GreyNoise Community</td><td>IP noise/riot classification</td><td>API key</td><td>5,000 IPs/day</td><td>Already implemented</td></tr>
+        <tr><td>AbuseIPDB</td><td>IP blacklist</td><td>API key</td><td>1,000/day</td><td>Already implemented</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Tier 3 — Commercial (reserved slots, not implemented)</h3>
+  <ul>
+    <li><strong>VirusTotal</strong> — reserved <code>ProviderName.VIRUSTOTAL</code> enum slot; adapter skeleton only; requires commercial API agreement</li>
+    <li><strong>Recorded Future / Mandiant Advantage</strong> — ThreatActor enrichment; commercial; reserved as future enterprise add-on</li>
+    <li><strong>Shodan</strong> — asset exposure correlation; commercial; reserved</li>
+  </ul>
+
+  <h3>TAXII 2.1 Consumer</h3>
+  <p>The <code>StixIngestionService</code> will support both file-based STIX bundle import and pull-mode TAXII 2.1 consumption. A TAXII endpoint (URL, auth, collection) is configurable per org via the existing <code>threat_intel_providers</code> table pattern. Pull frequency is admin-configurable. This makes MISP, OpenCTI, and any ISAC TAXII server compatible without native protocol adapters.</p>
+</section>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<section class="section" id="s7">
+  <div class="section-header">
+    <span class="section-num">07</span>
+    <h2>Attack Path Engine</h2>
+  </div>
+
+  <div class="callout risk">
+    <strong>Hard invariant:</strong> No attack step is ever fabricated. Every step in a path must be traceable to: (a) an observed event in the RedForge telemetry pipeline, or (b) a confirmed IOC match, or (c) a security graph edge whose source evidence is recorded. Inferred steps are allowed only when gated by <code>InferenceGatePolicy</code>.
+  </div>
+
+  <h3>Evidence Sources for Path Construction</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Source</th><th>Step type</th><th>How it enters the graph</th></tr></thead>
+      <tbody>
+        <tr><td>Suricata/Zeek alert</td><td>Observed</td><td>Telemetry ingestion → security graph edge (existing flow)</td></tr>
+        <tr><td>DDoS detection (M19)</td><td>Observed</td><td><code>ddos_incidents</code> → security graph node + edge</td></tr>
+        <tr><td>Behavioral anomaly (M20)</td><td>Observed</td><td><code>behavioral_detections</code> → security graph node + edge</td></tr>
+        <tr><td>IOC match (threat_intel)</td><td>Observed</td><td><code>threat_intel_enrichments</code> with <code>IOC_MATCH</code> kind → graph edge</td></tr>
+        <tr><td>MITRE ATT&amp;CK technique relationship</td><td>Inferred</td><td>ATT&amp;CK relationships table: "uses", "subtechnique-of", "mitigates" — provides the inferred step if adjacent observed step exists</td></tr>
+        <tr><td>Threat actor attribution</td><td>Inferred</td><td>ThreatActorProfile → attributed techniques; if an observed technique matches a known actor, subsequent actor-attributed techniques become candidate inferred steps</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Path Model</h3>
+  <pre><code>AttackPath:
+  id: str (ULID)
+  organization_id: str
+  root_entity_id: str       # entity where the path begins
+  terminal_entity_id: str   # entity where path terminates (or None if ongoing)
+  steps: list[AttackStep]
+  path_confidence: PathConfidence   # weakest-link of step confidences
+  technique_coverage: list[TechniqueId]  # deduplicated
+  attributed_actors: list[str]          # threat actor IDs if attribution exists
+  first_step_at: datetime
+  last_step_at: datetime
+  status: PathStatus  # ACTIVE | CONTAINED | HISTORICAL
+  evidence_count: int
+
+AttackStep:
+  sequence: int
+  technique_id: TechniqueId | None   # mapped ATT&CK technique (if known)
+  entity_id: str                     # the entity involved at this step
+  step_type: StepType                # OBSERVED | INFERRED
+  confidence: CorrelationConfidence  # reuses M21 enum (LOW/MEDIUM/HIGH/DEFINITIVE)
+  evidence_ids: list[str]            # FK to domain/evidence/ records
+  source_domain: SourceDomain        # DDOS | BEHAVIOR | THREAT_INTEL | TELEMETRY
+  observed_at: datetime | None
+  inferred_from_step: int | None     # sequence of the observed step that gates this</code></pre>
+
+  <h3>Traversal Algorithm</h3>
+  <p>BFS from a seed entity (typically an IP flagged as an IOC, or an entity involved in a behavioral detection). At each hop:</p>
+  <ol>
+    <li>Query security graph for all edges from the current entity within a configurable time window.</li>
+    <li>For each edge, determine if it maps to an ATT&amp;CK technique via the technique registry.</li>
+    <li>Apply <code>InferenceGatePolicy</code>: a hop may be <code>INFERRED</code> only if the incoming edge is <code>OBSERVED</code> and confidence ≥ MEDIUM.</li>
+    <li>Apply <code>PathExplosionPolicy</code>: max depth 12 hops, max fan-out 8 per node.</li>
+    <li>Record the step with full evidence provenance.</li>
+    <li>Continue BFS until no new nodes qualify or policy caps are hit.</li>
+  </ol>
+
+  <h3>Security Graph Integration</h3>
+  <p>M22 adds three new node types and four new edge types to the security graph ontology:</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Type</th><th>Kind</th><th>Properties</th></tr></thead>
+      <tbody>
+        <tr><td><code>TechniqueNode</code></td><td>Node</td><td>technique_id, tactic, name, is_subtechnique</td></tr>
+        <tr><td><code>ThreatActorNode</code></td><td>Node</td><td>actor_id, name, aliases[], sophistication</td></tr>
+        <tr><td><code>VulnerabilityNode</code></td><td>Node</td><td>cve_id, cvss_score, epss_probability, is_kev</td></tr>
+        <tr><td><code>USES_TECHNIQUE</code></td><td>Edge</td><td>actor → technique; source: STIX attribution</td></tr>
+        <tr><td><code>EXPLOITS_VULNERABILITY</code></td><td>Edge</td><td>technique → vulnerability (CVE); source: NVD</td></tr>
+        <tr><td><code>ATTRIBUTED_TO</code></td><td>Edge</td><td>observed entity → threat actor; source: IOC match + actor profile</td></tr>
+        <tr><td><code>PRECEDES</code></td><td>Edge</td><td>technique → technique; source: ATT&amp;CK procedure examples</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<section class="section" id="s8">
+  <div class="section-header">
+    <span class="section-num">08</span>
+    <h2>Milestone Breakdown</h2>
+  </div>
+
+  <div class="phase-grid">
+
+    <div class="phase-card">
+      <div class="phase-card-header">
+        <div class="phase-num">P1</div>
+        <div class="phase-title">ATT&CK Framework + CVE/KEV Foundation</div>
+      </div>
+      <p><strong>Purpose:</strong> Build the static intelligence data layer — no provider keys required, no live API calls in tests.</p>
+      <ul>
+        <li>Migration <code>0035</code>: <code>attack_techniques</code>, <code>attack_tactics</code>, <code>attack_technique_relationships</code>, <code>vulnerabilities</code>, <code>stix_ingestion_log</code></li>
+        <li>Domain: <code>AttackTechniqueNode</code>, <code>VulnerabilityRecord</code>, all value objects (<code>TechniqueId</code>, <code>CveId</code>, <code>EpssScore</code>)</li>
+        <li>Services: <code>AttackTechniqueSyncService</code>, <code>VulnerabilitySyncService</code></li>
+        <li>Tests: unit (domain VOs), integration (sync + upsert idempotency)</li>
+        <li>No frontend work in this phase</li>
+      </ul>
+    </div>
+
+    <div class="phase-card">
+      <div class="phase-card-header">
+        <div class="phase-num">P2</div>
+        <div class="phase-title">Threat Actor Profiles + STIX Ingestion</div>
+      </div>
+      <p><strong>Purpose:</strong> Ingest structured threat intelligence (STIX 2.1 bundles) and build threat actor profile aggregates.</p>
+      <ul>
+        <li>Migration <code>0036</code>: <code>threat_actors</code>, <code>threat_actor_techniques</code>, <code>taxii_endpoints</code></li>
+        <li>Domain: <code>ThreatActorProfile</code> aggregate, <code>StixObjectRef</code> VO</li>
+        <li>Service: <code>StixIngestionService</code> (file upload + TAXII 2.1 pull)</li>
+        <li>API: <code>POST /threat-intel/stix/ingest</code>, <code>GET /threat-intel/threat-actors</code></li>
+        <li>Tests: unit (STIX object parsing), integration (bundle ingestion idempotency)</li>
+      </ul>
+    </div>
+
+    <div class="phase-card">
+      <div class="phase-card-header">
+        <div class="phase-num">P3</div>
+        <div class="phase-title">Fusion Layer + Cross-Provider Aggregation</div>
+      </div>
+      <p><strong>Purpose:</strong> Replace raw per-provider storage with an aggregated risk signal. Extend existing enrichment service.</p>
+      <ul>
+        <li>Domain: <code>AggregatedRisk</code> VO, <code>FusionWeight</code> VO, <code>FusionConflictPolicy</code></li>
+        <li>Service: <code>ThreatFusionService</code></li>
+        <li>Migration <code>0037</code>: <code>threat_intel_fusion_config</code> (per-org source weights)</li>
+        <li>Extend <code>ThreatIndicator</code> with CVE linkage columns and technique associations</li>
+        <li>API: <code>GET /threat-intel/indicators/{id}/fusion</code></li>
+        <li>Tests: fusion conflict scenarios, weight override tests</li>
+      </ul>
+    </div>
+
+    <div class="phase-card">
+      <div class="phase-card-header">
+        <div class="phase-num">P4</div>
+        <div class="phase-title">Security Graph Integration</div>
+      </div>
+      <p><strong>Purpose:</strong> Wire threat intelligence into the security graph so attack paths can traverse intelligence nodes.</p>
+      <ul>
+        <li>Extend <code>domain/security_graph/ontology.py</code>: <code>TechniqueNode</code>, <code>ThreatActorNode</code>, <code>VulnerabilityNode</code>; new edge types</li>
+        <li>Implement <code>ThreatIntelKnowledgeProjector</code></li>
+        <li>Tests: graph projection idempotency, cross-tenant isolation</li>
+        <li>No new migration (uses existing <code>knowledge_graph_nodes/edges</code> tables via ontology extension)</li>
+      </ul>
+    </div>
+
+    <div class="phase-card">
+      <div class="phase-card-header">
+        <div class="phase-num">P5</div>
+        <div class="phase-title">Attack Path Engine</div>
+      </div>
+      <p><strong>Purpose:</strong> Build the evidence-backed path engine. This is the core M22 deliverable.</p>
+      <ul>
+        <li>Migration <code>0038</code>: <code>attack_paths</code>, <code>attack_path_steps</code></li>
+        <li>Domain: <code>AttackPath</code> aggregate, <code>AttackStep</code> VO, <code>PathConfidence</code>, <code>InferenceGatePolicy</code>, <code>PathExplosionPolicy</code></li>
+        <li>Service: <code>AttackPathService</code> (BFS traversal)</li>
+        <li>API: <code>POST /attack-paths/compute</code>, <code>GET /attack-paths/{id}</code>, <code>GET /attack-paths</code></li>
+        <li>Tests: BFS traversal unit tests with fixture graphs; integration with real PG graph</li>
+      </ul>
+    </div>
+
+    <div class="phase-card">
+      <div class="phase-card-header">
+        <div class="phase-num">P6</div>
+        <div class="phase-title">Investigation Integration + Background Workers</div>
+      </div>
+      <p><strong>Purpose:</strong> Promote threat intel to a first-class M21 correlation source; add background sync.</p>
+      <ul>
+        <li>Implement <code>ThreatIntelInvestigationAdapter</code> (registers threat_intel as correlation source)</li>
+        <li>Background workers: <code>AttackTechniqueSyncWorker</code>, <code>VulnerabilitySyncWorker</code>, <code>IndicatorRefreshWorker</code></li>
+        <li>API: <code>GET /threat-intel/sync-status</code>, <code>POST /threat-intel/sync/trigger</code></li>
+        <li>Tests: worker idempotency, sync replay safety, investigation correlation with TI source</li>
+      </ul>
+    </div>
+
+    <div class="phase-card">
+      <div class="phase-card-header">
+        <div class="phase-num">P7</div>
+        <div class="phase-title">Frontend — Intelligence & Attack Path UI</div>
+      </div>
+      <p><strong>Purpose:</strong> Surface the full intelligence picture in the existing command center and investigation views.</p>
+      <ul>
+        <li>Extend <code>/command-center/intelligence/</code>: threat actor profiles, CVE panel, MITRE heatmap</li>
+        <li>New route: <code>/attack-paths/</code> — path list + drill-down</li>
+        <li>Extend <code>/investigations/[id]/</code> — show linked attack path if one exists</li>
+        <li>ATT&amp;CK Navigator JSON export endpoint + download button</li>
+        <li>Extend <code>src/lib/threatIntel.ts</code> with new resource types</li>
+      </ul>
+    </div>
+
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<section class="section" id="s9">
+  <div class="section-header">
+    <span class="section-num">09</span>
+    <h2>Risks</h2>
+  </div>
+
+  <h3>Scalability</h3>
+  <div class="risk-row">
+    <div class="risk-dot critical"></div>
+    <div class="risk-body">
+      <strong>ATT&amp;CK STIX bundle size</strong>
+      The Enterprise ATT&amp;CK STIX bundle currently contains ~700 techniques, ~14 tactics, ~140 groups, and thousands of relationships. An upsert-on-load strategy without batching will lock the <code>attack_techniques</code> table. Mitigation: batch upsert in transactions of 100; run sync worker at low-traffic hours.
+    </div>
+  </div>
+  <div class="risk-row">
+    <div class="risk-dot high"></div>
+    <div class="risk-body">
+      <strong>Graph explosion in attack path BFS</strong>
+      A dense security graph (large tenant, months of telemetry) can produce exponential fanout. Mitigation: <code>PathExplosionPolicy</code> hard caps (depth 12, fan-out 8) with early termination; precompute paths for active investigations rather than on-demand for all entities.
+    </div>
+  </div>
+
+  <h3>Race Conditions</h3>
+  <div class="risk-row">
+    <div class="risk-dot critical"></div>
+    <div class="risk-body">
+      <strong>Duplicate STIX ingestion</strong>
+      Two concurrent TAXII pulls or two workers running the ATT&amp;CK sync simultaneously will attempt upserts on the same STIX IDs. Mitigation: <code>stix_ingestion_log</code> table with a per-(org, source, stix_id) unique index; upsert with <code>ON CONFLICT DO NOTHING</code>; <code>stix_ingestion_log</code> acts as the idempotency gate.
+    </div>
+  </div>
+  <div class="risk-row">
+    <div class="risk-dot high"></div>
+    <div class="risk-body">
+      <strong>Enrichment race on indicator upsert</strong>
+      Two concurrent enrichment requests for the same (org, type, indicator) triple will race to insert <code>threat_intel_indicators</code>. Existing <code>ux_tii_org_type_indicator</code> unique constraint handles this; the upsert must use <code>ON CONFLICT DO NOTHING RETURNING id</code> and then query for the existing id. This pattern needs to be explicitly verified in the enrichment service before M22.
+    </div>
+  </div>
+
+  <h3>Cross-Tenant Risks</h3>
+  <div class="risk-row">
+    <div class="risk-dot critical"></div>
+    <div class="risk-body">
+      <strong>Shared intelligence bleed</strong>
+      MITRE ATT&amp;CK and CISA KEV are global (not per-tenant). They must be stored as global read-only tables, never in a tenant-scoped table. Attack paths and threat actor attributions that reference these must enforce <code>organization_id</code> isolation at the path/attribution layer, not the technique layer. The technique table must never carry an <code>organization_id</code> column.
+    </div>
+  </div>
+  <div class="risk-row">
+    <div class="risk-dot high"></div>
+    <div class="risk-body">
+      <strong>Indicator enrichment data bleed</strong>
+      Already mitigated by FK isolation in migration 0029. M22 must audit that new fusion tables follow the same pattern.
+    </div>
+  </div>
+
+  <h3>False Correlations</h3>
+  <div class="risk-row">
+    <div class="risk-dot high"></div>
+    <div class="risk-body">
+      <strong>Threat actor attribution over-confidence</strong>
+      A single IOC match to an actor's known infrastructure is weak attribution evidence. The domain must never produce an <code>ATTRIBUTED_TO</code> edge with confidence above MEDIUM unless multiple independent evidence sources corroborate it. The <code>FusionConflictPolicy</code> must include a minimum corroboration count for actor attribution.
+    </div>
+  </div>
+  <div class="risk-row">
+    <div class="risk-dot high"></div>
+    <div class="risk-body">
+      <strong>Path narrative pollution</strong>
+      If inferred steps are allowed too liberally, a path can chain speculative hops into a compelling but false attack narrative. The <code>InferenceGatePolicy</code> must be rigorously tested with adversarial cases where no adjacent observed step exists.
+    </div>
+  </div>
+
+  <h3>Provider Outages</h3>
+  <div class="risk-row">
+    <div class="risk-dot medium"></div>
+    <div class="risk-body">
+      <strong>NVD API instability</strong>
+      NVD has a history of API availability issues and rate limit changes. Mitigation: bulk download with incremental sync; cache CVE records locally; circuit breaker on the NVD adapter; operator alert when last successful sync is &gt;48h old.
+    </div>
+  </div>
+
+  <h3>Cache Poisoning</h3>
+  <div class="risk-row">
+    <div class="risk-dot medium"></div>
+    <div class="risk-body">
+      <strong>Stale cached enrichment used as current evidence</strong>
+      An enrichment cached 90 days ago is returned as current reputation evidence in an active investigation. Mitigation: <code>expires_at</code> is already in the schema; the enrichment service must refuse to return expired records as evidence in investigation correlation (it may serve them in the UI with a staleness warning). M22 must add a freshness check to <code>ThreatIntelInvestigationAdapter</code>.
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<section class="section" id="s10">
+  <div class="section-header">
+    <span class="section-num">10</span>
+    <h2>Recommendation</h2>
+  </div>
+
+  <div class="callout">
+    <strong>Proceed with M22 in seven phases as described.</strong> The existing threat_intel bounded context from M18 provides a production-grade foundation that M22 extends rather than replaces. The security graph, evidence model, and investigation engine from M19–M21 are all ready to integrate with.
+  </div>
+
+  <h3>Prioritized Implementation Order</h3>
+  <ol>
+    <li><strong>P1 first</strong> — ATT&amp;CK + CVE/KEV foundation requires no API keys and no new infrastructure. It unblocks all subsequent phases. Tests are straightforward (static data, idempotent upserts).</li>
+    <li><strong>P2 before P3</strong> — STIX ingestion enables threat actor profiles, which the fusion layer needs for attribution confidence rules.</li>
+    <li><strong>P3 and P4 in parallel</strong> — fusion layer and security graph integration are independent; they only join in P5.</li>
+    <li><strong>P5 (attack path) is the M22 proof milestone</strong> — it is the highest-value deliverable and the one most likely to surface unexpected graph shape issues. Do not defer it to the end.</li>
+    <li><strong>P6 before P7</strong> — background workers need to be operational before the frontend can show meaningful live data.</li>
+  </ol>
+
+  <h3>Items Requiring Decision Before Implementation</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Item</th><th>Question</th><th>Default if undecided</th></tr></thead>
+      <tbody>
+        <tr><td>Background scheduler</td><td>Is APScheduler already in the stack, or do workers use the existing <code>detection_worker</code> asyncio loop pattern?</td><td>Match existing worker pattern; verify before P1</td></tr>
+        <tr><td>TAXII endpoint config</td><td>Should TAXII endpoints be per-org (configurable via admin UI) or global (operator-level env config)?</td><td>Per-org, matching <code>threat_intel_providers</code> pattern</td></tr>
+        <tr><td>Attack path storage</td><td>Precomputed and stored vs. computed on demand per query?</td><td>Precomputed on investigation open/update; invalidated on new evidence</td></tr>
+        <tr><td>ATT&amp;CK version pinning</td><td>Should tenants see a consistent ATT&amp;CK version until an operator upgrades, or always the latest?</td><td>Latest sync; version tag stored in <code>stix_ingestion_log</code> for auditability</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>What M22 Will Not Do</h3>
+  <ul>
+    <li>No fabricated attack paths or AI-generated threat narratives</li>
+    <li>No VirusTotal (reserved slot only)</li>
+    <li>No TAXII server (consumer only)</li>
+    <li>No native MISP or OpenCTI API protocols (STIX export from both is sufficient)</li>
+    <li>No Redis (not yet in stack; PostgreSQL TTL pattern is sufficient for M22 volume)</li>
+    <li>No new infrastructure beyond PostgreSQL tables and a new Python dependency (<code>stix2</code> library)</li>
+  </ul>
+</section>
+
+</main>
+</div>
+</body>
+</html>
