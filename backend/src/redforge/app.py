@@ -523,6 +523,32 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
         coordinator.register_startup("correlation_worker", _start_correlation_worker)
 
+        async def _start_feed_sync_scheduler() -> None:
+            if _session_factory is None:
+                logger.warning("feed_sync_scheduler_no_session_factory")
+                return
+            from redforge.application.threat_intel.feed_sync_orchestration_service import (
+                FeedSyncOrchestrationService,
+            )
+            from redforge.application.threat_intel.feed_sync_worker import (
+                FeedSyncSchedulerWorker,
+            )
+
+            orchestration_service = FeedSyncOrchestrationService(
+                _session_factory, runtime.feed_connector_registry
+            )
+            worker = FeedSyncSchedulerWorker(
+                session_factory=_session_factory,
+                orchestration_service=orchestration_service,
+                poll_seconds=getattr(settings, "runtime_feed_sync_poll_seconds", 60),
+            )
+            worker.start()
+            runtime.feed_sync_scheduler = worker
+            app.state.feed_sync_scheduler = worker
+            logger.info("feed_sync_scheduler_started")
+
+        coordinator.register_startup("feed_sync_scheduler", _start_feed_sync_scheduler)
+
         # Register shutdown hooks (run in reverse registration order)
         async def _shutdown_ddos_detection_worker() -> None:
             worker = getattr(runtime, "ddos_detection_worker", None)
@@ -569,6 +595,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 await worker.stop()
                 logger.info("correlation_worker_stopped")
 
+        async def _shutdown_feed_sync_scheduler() -> None:
+            worker = getattr(runtime, "feed_sync_scheduler", None)
+            if worker is not None:
+                await worker.stop()
+                logger.info("feed_sync_scheduler_stopped")
+
+        coordinator.register_shutdown(
+            "feed_sync_scheduler",
+            _shutdown_feed_sync_scheduler,
+            timeout_s=settings.runtime_shutdown_timeout_s,
+        )
         coordinator.register_shutdown(
             "correlation_worker",
             _shutdown_correlation_worker,

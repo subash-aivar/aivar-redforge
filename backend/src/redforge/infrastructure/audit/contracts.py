@@ -132,6 +132,18 @@ class AuditAction(StrEnum):
     # platform audit log rather than the org-scoped one.
     REFERENCE_DATA_INGESTED = "reference_data.ingested"
 
+    # Feed Synchronization Foundation (M22 Phase 2). Feed lifecycle and
+    # sync-trigger actions are always administrative — audited via the
+    # platform audit log even for a TENANT-scoped feed, matching how
+    # REFERENCE_DATA_INGESTED already treats global-catalog admin
+    # actions above.
+    FEED_REGISTERED = "feed.registered"
+    FEED_CONFIGURATION_UPDATED = "feed.configuration_updated"
+    FEED_ACTIVATED = "feed.activated"
+    FEED_PAUSED = "feed.paused"
+    FEED_DISABLED = "feed.disabled"
+    FEED_SYNC_TRIGGERED = "feed.sync_triggered"
+
 
 @dataclass(frozen=True, slots=True)
 class AuditEntry:

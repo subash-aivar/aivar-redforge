@@ -67,6 +67,14 @@ class PlatformPermission(StrEnum):
     PLATFORM_THREAT_INTEL_READ = "platform:threat_intel:read"
     PLATFORM_THREAT_INTEL_MANAGE = "platform:threat_intel:manage"
 
+    # Feed Synchronization Foundation (M22 Phase 2) — feed registration,
+    # lifecycle, and sync-run history. Distinct from PLATFORM_THREAT_INTEL_*:
+    # that permission covers the reference-data *catalog* (tactics,
+    # techniques, vulnerabilities), this one covers the synchronization
+    # *platform* that will keep future feeds fed into that catalog.
+    PLATFORM_FEED_SYNC_READ = "platform:feed_sync:read"
+    PLATFORM_FEED_SYNC_MANAGE = "platform:feed_sync:manage"
+
 
 # Role -> Permission mapping for the platform control plane.
 #
@@ -110,6 +118,8 @@ PLATFORM_ROLE_PERMISSIONS: dict[PlatformRole, frozenset[PlatformPermission]] = {
         PlatformPermission.PLATFORM_SECURITY_READ,
         PlatformPermission.PLATFORM_THREAT_INTEL_READ,
         PlatformPermission.PLATFORM_THREAT_INTEL_MANAGE,
+        PlatformPermission.PLATFORM_FEED_SYNC_READ,
+        PlatformPermission.PLATFORM_FEED_SYNC_MANAGE,
     }),
     PlatformRole.SUPPORT: frozenset({
         PlatformPermission.PLATFORM_USERS_READ,
@@ -123,6 +133,7 @@ PLATFORM_ROLE_PERMISSIONS: dict[PlatformRole, frozenset[PlatformPermission]] = {
         PlatformPermission.PLATFORM_AUDIT_READ,
         PlatformPermission.PLATFORM_SECURITY_READ,
         PlatformPermission.PLATFORM_THREAT_INTEL_READ,
+        PlatformPermission.PLATFORM_FEED_SYNC_READ,
     }),
 }
 

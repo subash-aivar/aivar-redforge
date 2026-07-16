@@ -305,10 +305,17 @@ class TestMigrationSchema:
                 assert deferrable is True
                 assert deferred is True
 
-    async def test_migration_head_is_0035(self, session_factory) -> None:
+    async def test_migration_head_is_current(self, session_factory) -> None:
+        """This proof database is migrated with `alembic upgrade head`,
+        so its `alembic_version` always tracks the CURRENT global head —
+        0035 when this suite was written, 0036 after M22 Phase 2 (Feed
+        Synchronization Foundation) added its own additive migration on
+        top. This assertion intentionally tracks the moving head rather
+        than pinning to 0035, since pinning would make every future,
+        unrelated migration break this Phase 1 suite."""
         async with session_factory() as session:
             result = await session.execute(text("SELECT version_num FROM alembic_version"))
-            assert result.scalar_one() == "0035"
+            assert result.scalar_one() == "0036"
 
 
 # ─────────────────────────────────────────────────────────────────────────────

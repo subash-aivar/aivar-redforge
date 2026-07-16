@@ -94,6 +94,13 @@ class RuntimeContainer:
     # Resolves provider auth_ref strings to secret values at the infrastructure
     # boundary. The resolved value is never returned to the client or persisted.
     credential_resolver: Any = None  # CredentialResolverPort impl
+    # ── Feed Synchronization Foundation (M22 Phase 2) ─────────────────────────
+    # Empty in Phase 2 — no FeedSyncExecutor is registered for any
+    # FeedSourceKind until a Phase 3 connector calls `.register()`. Shared
+    # between the admin API's sync-trigger endpoint and
+    # FeedSyncSchedulerWorker so both resolve the exact same connector set.
+    feed_connector_registry: Any = None  # FeedConnectorRegistry
+    feed_sync_scheduler: Any = None  # FeedSyncSchedulerWorker, set by app.py
 
 
 def build_runtime_container(settings: Settings) -> RuntimeContainer:
@@ -154,6 +161,10 @@ def build_runtime_container(settings: Settings) -> RuntimeContainer:
     from redforge.infrastructure.credential_resolver import EnvironmentCredentialResolver
     credential_resolver = EnvironmentCredentialResolver()
 
+    # ── Feed Synchronization Foundation (M22 Phase 2) ─────────────────────────
+    from redforge.application.threat_intel.feed_connector import FeedConnectorRegistry
+    feed_connector_registry = FeedConnectorRegistry()
+
     return RuntimeContainer(
         coordinator=coordinator,
         health_engine=health_engine,
@@ -167,6 +178,7 @@ def build_runtime_container(settings: Settings) -> RuntimeContainer:
         projection_registry=projection_registry,
         red_team_factory=red_team_factory,
         credential_resolver=credential_resolver,
+        feed_connector_registry=feed_connector_registry,
     )
 
 

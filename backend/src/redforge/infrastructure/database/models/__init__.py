@@ -40,6 +40,10 @@ from redforge.infrastructure.database.models.directory_security import (
     DirectoryIdentityModel,
     DirectoryMembershipModel,
 )
+from redforge.infrastructure.database.models.feed_sync import (
+    FeedModel,
+    FeedSyncRunModel,
+)
 from redforge.infrastructure.database.models.investigation import (
     CorrelationCursorModel,
     InvestigationEventModel,
@@ -128,6 +132,8 @@ __all__ = [
     "DirectoryGroupModel",
     "DirectoryIdentityModel",
     "DirectoryMembershipModel",
+    "FeedModel",
+    "FeedSyncRunModel",
     "IntegrationProviderModel",
     "InvestigationEventModel",
     "InvestigationEvidenceLinkModel",

@@ -84,7 +84,7 @@ class TestStartupValidatorDBConnectivity:
         mock_conn = AsyncMock()
         # SELECT 1 returns an ignored result; migration check needs fetchone() = head
         migration_result = MagicMock()
-        migration_result.fetchone.return_value = ("0035",)
+        migration_result.fetchone.return_value = ("0036",)
         mock_conn.execute = AsyncMock(side_effect=[None, migration_result])
         cm = AsyncMock()
         cm.__aenter__ = AsyncMock(return_value=mock_conn)

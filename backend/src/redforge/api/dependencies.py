@@ -719,6 +719,12 @@ def get_projection_registry(request: Request) -> object:
     return get_runtime_container(request).projection_registry
 
 
+def get_feed_connector_registry(request: Request) -> object:
+    """M22 Phase 2 — shared `FeedConnectorRegistry` used by both the
+    admin API's sync-trigger endpoint and `FeedSyncSchedulerWorker`."""
+    return get_runtime_container(request).feed_connector_registry
+
+
 # ─── Red Team Orchestrator (Evaluation Control Loop) ─────────────────────────
 #
 # Production composition path (PART 5 — Sprint 40):
