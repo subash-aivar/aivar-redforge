@@ -331,6 +331,51 @@ async def fetch_merged_candidates(
         except Exception:
             pass  # Behavior tables not yet migrated in test or dev environments
 
+        # M21 Investigation case events — source tag "I"
+        # Surfaces CASE_OPENED events from the investigation bounded context.
+        try:
+            from redforge.domain.security_operations.operational_event import OperationalEvent
+            from redforge.domain.security_operations.value_objects import (
+                OperationalImportance,
+                SourceDomain,
+            )
+            from redforge.infrastructure.database.repositories.investigations.case_repository import (  # noqa: E501
+                SqlAlchemyInvestigationEventRepository,
+            )
+
+            inv_event_repo = SqlAlchemyInvestigationEventRepository(session)
+            inv_events = await inv_event_repo.list_opened_events_since(
+                organization_id, query_since, per_source_limit,
+            )
+            for ie in inv_events:
+                if ie.occurred_at >= visibility_cutoff:
+                    continue
+                detail = ie.detail or {}
+                severity = detail.get("severity", "MEDIUM")
+                importance = (
+                    OperationalImportance.CRITICAL
+                    if severity == "CRITICAL"
+                    else OperationalImportance.HIGH
+                    if severity == "HIGH"
+                    else OperationalImportance.WARNING
+                )
+                title = detail.get("title", "New Cross-Domain Investigation")
+                event = OperationalEvent(
+                    cursor=make_cursor(ie.occurred_at, "I", ie.id),
+                    event_id=ie.id,
+                    organization_id=organization_id,
+                    source_domain=SourceDomain.INVESTIGATION,
+                    importance=importance,
+                    title=f"Investigation: {title[:120]}",
+                    summary=detail.get("reason", "Cross-domain security correlation"),
+                    entity_type="investigation_case",
+                    entity_id=ie.case_id,
+                    occurred_at=ie.occurred_at.isoformat(),
+                )
+                candidates.append(event)
+        except Exception:
+            pass  # Investigation tables not yet migrated in test or dev environments
+
     candidates.sort(key=lambda e: e.cursor)
     return candidates
 

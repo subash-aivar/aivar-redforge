@@ -40,6 +40,12 @@ from redforge.infrastructure.database.models.directory_security import (
     DirectoryIdentityModel,
     DirectoryMembershipModel,
 )
+from redforge.infrastructure.database.models.investigation import (
+    CorrelationCursorModel,
+    InvestigationEventModel,
+    InvestigationEvidenceLinkModel,
+    InvestigationModel,
+)
 from redforge.infrastructure.database.models.invitation import InvitationModel
 from redforge.infrastructure.database.models.membership import MembershipModel
 from redforge.infrastructure.database.models.mfa import (
@@ -102,6 +108,7 @@ __all__ = [
     "ConnectorModel",
     "ContinuousValidationPolicyLifecycleEventModel",
     "ContinuousValidationPolicyModel",
+    "CorrelationCursorModel",
     "DDoSDetectionPolicyModel",
     "DDoSIncidentEventModel",
     "DDoSIncidentModel",
@@ -112,6 +119,9 @@ __all__ = [
     "DirectoryIdentityModel",
     "DirectoryMembershipModel",
     "IntegrationProviderModel",
+    "InvestigationEventModel",
+    "InvestigationEvidenceLinkModel",
+    "InvestigationModel",
     "InvitationModel",
     "MFAFactorModel",
     "MembershipModel",

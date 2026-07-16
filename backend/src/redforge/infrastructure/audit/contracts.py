@@ -119,6 +119,14 @@ class AuditAction(StrEnum):
     RBAC_USER_ROLE_ASSIGNED = "rbac.user_role_assigned"
     RBAC_USER_ROLE_REVOKED = "rbac.user_role_revoked"
 
+    # Cross-Domain Security Correlation & Unified Threat Investigation (M21).
+    # Only human lifecycle actions are audited; machine-generated case
+    # creation and evidence attachment use domain events, not audit logs.
+    INVESTIGATION_ACKNOWLEDGED = "investigation.acknowledged"
+    INVESTIGATION_STARTED = "investigation.started"
+    INVESTIGATION_RESOLVED = "investigation.resolved"
+    INVESTIGATION_REOPENED = "investigation.reopened"
+
 
 @dataclass(frozen=True, slots=True)
 class AuditEntry:

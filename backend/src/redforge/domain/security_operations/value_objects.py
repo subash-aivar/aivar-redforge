@@ -37,6 +37,8 @@ class SourceDomain(StrEnum):
     DDOS = "ddos"
     # M20 — Behavioral NDR detection events from behavior_detection_events table
     BEHAVIOR = "behavior"
+    # M21 — Cross-domain investigation case events from investigation_events table
+    INVESTIGATION = "investigation"
     UNKNOWN = "unknown"
 
 

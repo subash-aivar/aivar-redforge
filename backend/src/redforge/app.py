@@ -509,6 +509,20 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
         coordinator.register_startup("behavior_detection_worker", _start_behavior_detection_worker)
 
+        async def _start_correlation_worker() -> None:
+            if _session_factory is None:
+                logger.warning("correlation_worker_no_session_factory")
+                return
+            from redforge.application.investigations.correlation_worker import CorrelationWorker
+
+            worker = CorrelationWorker(session_factory=_session_factory)
+            worker.start()
+            runtime.correlation_worker = worker  # type: ignore[attr-defined]
+            app.state.correlation_worker = worker
+            logger.info("correlation_worker_started")
+
+        coordinator.register_startup("correlation_worker", _start_correlation_worker)
+
         # Register shutdown hooks (run in reverse registration order)
         async def _shutdown_ddos_detection_worker() -> None:
             worker = getattr(runtime, "ddos_detection_worker", None)
@@ -549,6 +563,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 await worker.stop()
                 logger.info("behavior_detection_worker_stopped")
 
+        async def _shutdown_correlation_worker() -> None:
+            worker = getattr(runtime, "correlation_worker", None)
+            if worker is not None:
+                await worker.stop()
+                logger.info("correlation_worker_stopped")
+
+        coordinator.register_shutdown(
+            "correlation_worker",
+            _shutdown_correlation_worker,
+            timeout_s=settings.runtime_shutdown_timeout_s,
+        )
         coordinator.register_shutdown(
             "behavior_detection_worker",
             _shutdown_behavior_detection_worker,

@@ -71,6 +71,12 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    title: "Investigation",
+    items: [
+      { label: "Investigations", href: "/investigations", icon: "⊕", perm: "investigations:read" },
+    ],
+  },
+  {
     title: "Detection & Response",
     items: [
       { label: "Exposure Management", href: "/exposure-management", icon: "◉" },

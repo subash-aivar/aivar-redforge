@@ -20,6 +20,7 @@ from redforge.api.v1.evidence import router as evidence_router
 from redforge.api.v1.execution_plans import router as execution_plans_router
 from redforge.api.v1.findings import router as findings_router
 from redforge.api.v1.health import router as health_router
+from redforge.api.v1.investigations import router as investigations_router
 from redforge.api.v1.invitations import org_scoped_router as invitations_org_router
 from redforge.api.v1.invitations import token_router as invitations_token_router
 from redforge.api.v1.knowledge_graph_api import router as knowledge_graph_router
@@ -86,3 +87,4 @@ router.include_router(threat_intel_router, tags=["threat-intel"])
 router.include_router(telemetry_router, tags=["telemetry"])
 router.include_router(ddos_router, tags=["ddos"])
 router.include_router(behavior_router, tags=["behavior"])
+router.include_router(investigations_router, tags=["investigations"])

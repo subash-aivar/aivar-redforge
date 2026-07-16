@@ -327,6 +327,39 @@ class SecurityGraphProjector:
         )
         return edge.id
 
+    async def project_investigation(
+        self,
+        organization_id: str,
+        case_id: str,
+        title: str,
+        severity: str,
+        status: str,
+        correlation_key: str,
+    ) -> str | None:
+        """Projects a canonical InvestigationCase (M21) as an INVESTIGATION node.
+
+        The node is always created; CORRELATED_WITH edges to existing asset/
+        finding/condition nodes are emitted only when a matching graph node is
+        already projected for a given evidence entity (never fabricated from
+        string labels alone). Idempotent: repeated calls for the same case_id
+        update the node's status/severity attributes.
+        """
+        node = await self._repo.upsert_node(
+            node_id=str(EntityId.generate()),
+            organization_id=organization_id,
+            node_kind=NodeKind.INVESTIGATION.value,
+            source_domain="investigation",
+            source_entity_id=case_id,
+            label=title,
+            attributes={
+                "severity": severity,
+                "status": status,
+                "correlation_key": correlation_key,
+            },
+            ontology_version=ONTOLOGY_VERSION,
+        )
+        return node.id
+
     async def project_security_condition(
         self,
         organization_id: str,

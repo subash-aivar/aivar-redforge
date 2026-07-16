@@ -118,6 +118,12 @@ class Permission(StrEnum):
     BEHAVIOR_READ = "behavior:read"
     BEHAVIOR_MANAGE = "behavior:manage"
 
+    # Cross-Domain Security Correlation & Unified Threat Investigation (M21).
+    # READ — view investigation cases, evidence, timeline, graph, posture.
+    # MANAGE — acknowledge, start-investigation, resolve cases.
+    INVESTIGATIONS_READ = "investigations:read"
+    INVESTIGATIONS_MANAGE = "investigations:manage"
+
 
 @unique
 class MembershipRole(StrEnum):
@@ -202,6 +208,8 @@ ROLE_PERMISSIONS: dict[MembershipRole, frozenset[Permission]] = {
         Permission.DDOS_MITIGATION_APPROVE,
         Permission.BEHAVIOR_READ,
         Permission.BEHAVIOR_MANAGE,
+        Permission.INVESTIGATIONS_READ,
+        Permission.INVESTIGATIONS_MANAGE,
     }),
     MembershipRole.SECURITY_MANAGER: frozenset({
         Permission.ORG_READ,
@@ -226,6 +234,8 @@ ROLE_PERMISSIONS: dict[MembershipRole, frozenset[Permission]] = {
         Permission.DDOS_MITIGATION_APPROVE,
         Permission.BEHAVIOR_READ,
         Permission.BEHAVIOR_MANAGE,
+        Permission.INVESTIGATIONS_READ,
+        Permission.INVESTIGATIONS_MANAGE,
     }),
     MembershipRole.ANALYST: frozenset({
         Permission.ORG_READ,
@@ -242,6 +252,7 @@ ROLE_PERMISSIONS: dict[MembershipRole, frozenset[Permission]] = {
         Permission.NETWORK_SECURITY_READ,
         Permission.DDOS_READ,
         Permission.BEHAVIOR_READ,
+        Permission.INVESTIGATIONS_READ,
     }),
     MembershipRole.MEMBER: frozenset({
         Permission.ORG_READ,
@@ -259,6 +270,7 @@ ROLE_PERMISSIONS: dict[MembershipRole, frozenset[Permission]] = {
         Permission.NETWORK_SECURITY_READ,
         Permission.DDOS_READ,
         Permission.BEHAVIOR_READ,
+        Permission.INVESTIGATIONS_READ,
     }),
     MembershipRole.VIEWER: frozenset({
         Permission.ORG_READ,
@@ -272,6 +284,7 @@ ROLE_PERMISSIONS: dict[MembershipRole, frozenset[Permission]] = {
         Permission.NETWORK_SECURITY_READ,
         Permission.DDOS_READ,
         Permission.BEHAVIOR_READ,
+        Permission.INVESTIGATIONS_READ,
     }),
 }
 

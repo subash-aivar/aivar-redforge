@@ -13,7 +13,7 @@ old projection state from new.
 
 from enum import StrEnum, unique
 
-ONTOLOGY_VERSION = 5
+ONTOLOGY_VERSION = 6
 # v2 (M5): added IDENTITY/SERVICE_IDENTITY/GROUP node kinds and the
 # MEMBER_OF edge kind, backed by the new Directory Security bounded
 # context's real LDAP-derived identities/groups/direct memberships —
@@ -41,6 +41,12 @@ ONTOLOGY_VERSION = 5
 # were deliberately NOT added to the ontology at all — Security Graph
 # represents security entities/relationships, not control-plane state
 # (see the M10 report's explicit boundary decision).
+# v6 (M21): added INVESTIGATION node kind and the CORRELATED_WITH edge
+# kind (ASSET_KINDS|FINDING|SECURITY_CONDITION -> INVESTIGATION),
+# backed by the canonical InvestigationCase aggregate — cross-domain
+# correlation evidence with deterministic observability annotation
+# (OBSERVED/INFERRED/SUSPECTED). Only evidence-backed relationships
+# are ever expressed; speculative links are prohibited.
 
 
 @unique
@@ -63,6 +69,7 @@ class NodeKind(StrEnum):
     SERVICE = "service"
     CLOUD_ACCOUNT = "cloud_account"
     SECURITY_CONDITION = "security_condition"
+    INVESTIGATION = "investigation"
 
 
 @unique
@@ -80,6 +87,7 @@ class EdgeKind(StrEnum):
     MEMBER_OF_NETWORK = "member_of_network"
     CONTAINS = "contains"
     HAS_SECURITY_CONDITION = "has_security_condition"
+    CORRELATED_WITH = "correlated_with"
     CUSTOM = "custom"
 
 
@@ -146,6 +154,16 @@ _CLOUD_RESOURCE = frozenset({NodeKind.CLOUD_RESOURCE})
 _CONDITION_SOURCE_KINDS = _ASSET_KINDS | _CLOUD_ACCOUNT
 _SECURITY_CONDITION = frozenset({NodeKind.SECURITY_CONDITION})
 
+# M21 investigation kinds.
+_INVESTIGATION = frozenset({NodeKind.INVESTIGATION})
+# Sources that can be correlated with an investigation: any canonical asset,
+# finding, or security condition node already in the graph.
+_CORRELATED_WITH_SOURCE = (
+    _ASSET_KINDS
+    | frozenset({NodeKind.FINDING})
+    | frozenset({NodeKind.SECURITY_CONDITION})
+)
+
 EDGE_ONTOLOGY: dict[EdgeKind, tuple[frozenset[NodeKind], frozenset[NodeKind]]] = {
     EdgeKind.RUNS_ON: (_APP_AGENT, _HOST),
     EdgeKind.USES_MODEL: (_AGENT_SYSTEM, _MODEL),
@@ -162,6 +180,7 @@ EDGE_ONTOLOGY: dict[EdgeKind, tuple[frozenset[NodeKind], frozenset[NodeKind]]] =
     EdgeKind.MEMBER_OF_NETWORK: (_IP_ADDRESS, _NETWORK),
     EdgeKind.CONTAINS: (_CLOUD_ACCOUNT, _CLOUD_RESOURCE),
     EdgeKind.HAS_SECURITY_CONDITION: (_CONDITION_SOURCE_KINDS, _SECURITY_CONDITION),
+    EdgeKind.CORRELATED_WITH: (_CORRELATED_WITH_SOURCE, _INVESTIGATION),
     EdgeKind.CUSTOM: (_ASSET_KINDS, _ASSET_KINDS),
 }
 
