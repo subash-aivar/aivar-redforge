@@ -130,16 +130,23 @@ class CorrelationWorker:
         from redforge.application.investigations.source_adapters import (
             adapt_behavior_detection,
             adapt_ddos_incident,
+            adapt_threat_intel_enrichment,
         )
         from redforge.infrastructure.database.models.behavior import (
             BehaviorDetectionModel,
         )
         from redforge.infrastructure.database.models.ddos import DDoSIncidentModel
+        from redforge.infrastructure.database.models.threat_intel import (
+            ThreatIntelIndicatorModel,
+        )
         from redforge.infrastructure.database.repositories.investigations.case_repository import (
             SqlAlchemyCorrelationCursorRepository,
             SqlAlchemyEvidenceLinkRepository,
             SqlAlchemyInvestigationEventRepository,
             SqlAlchemyInvestigationRepository,
+        )
+        from redforge.infrastructure.database.repositories.threat_intel_repository import (
+            SqlAlchemyThreatIntelEnrichmentRepository,
         )
 
         stats = {"candidates": 0, "cases_opened": 0, "evidence_attached": 0}
@@ -150,13 +157,16 @@ class CorrelationWorker:
             evidence_repo = SqlAlchemyEvidenceLinkRepository(session)
             event_repo = SqlAlchemyInvestigationEventRepository(session)
             svc = InvestigationCaseService(session, case_repo, evidence_repo, event_repo)
+            ti_enrichment_repo = SqlAlchemyThreatIntelEnrichmentRepository(session)
 
             # Get cursors
             behavior_since, _ = await cursor_repo.get_cursor("behavior")
             ddos_since, _ = await cursor_repo.get_cursor("ddos")
+            ti_since, _ = await cursor_repo.get_cursor("threat_intel")
             default_since = now - timedelta(hours=_INITIAL_LOOKBACK_HOURS)
             behavior_since = behavior_since or default_since
             ddos_since = ddos_since or default_since
+            ti_since = ti_since or default_since
 
             # Fetch recent behavior detections (opened or updated)
             behavior_result = await session.execute(
@@ -221,26 +231,78 @@ class CorrelationWorker:
                 if candidate:
                     ddos_candidates.append(candidate)
 
-            stats["candidates"] = len(behavior_candidates) + len(ddos_candidates)
+            # M22 Phase 6 — fresh threat-intel enrichments
+            enrichment_rows = await ti_enrichment_repo.list_since(
+                org_id,
+                since=ti_since,
+                kinds=["reputation", "ioc_match"],
+                limit=self._batch_size,
+            )
+            indicator_ids = {row.indicator_id for row in enrichment_rows}
+            indicators_by_id: dict[str, ThreatIntelIndicatorModel] = {}
+            if indicator_ids:
+                ind_result = await session.execute(
+                    select(ThreatIntelIndicatorModel).where(
+                        ThreatIntelIndicatorModel.organization_id == org_id,
+                        ThreatIntelIndicatorModel.id.in_(indicator_ids),
+                    )
+                )
+                indicators_by_id = {
+                    m.id: m for m in ind_result.scalars().all()
+                }
 
-            # Cross-domain correlation: behavior x ddos pairs
-            for beh in behavior_candidates:
-                for ddos in ddos_candidates:
-                    try:
-                        result_dict = await svc.correlate_pair(beh, ddos)
-                        if result_dict:
-                            if result_dict["created"]:
-                                stats["cases_opened"] += 1
-                            stats["evidence_attached"] += 1
-                    except Exception:
-                        log.exception(
-                            "CorrelationWorker: pair correlation error "
-                            "org=%s beh=%s ddos=%s",
-                            org_id, beh.source_entity_id, ddos.source_entity_id,
-                        )
+            ti_candidates = []
+            for row in enrichment_rows:
+                indicator = indicators_by_id.get(row.indicator_id)
+                if indicator is None:
+                    continue
+                candidate = adapt_threat_intel_enrichment(
+                    org_id,
+                    indicator_id=indicator.id,
+                    indicator=indicator.indicator,
+                    indicator_type=indicator.indicator_type,
+                    enrichment_id=row.id,
+                    provider_name=row.provider_name,
+                    kind=row.kind,
+                    success=row.success,
+                    data=row.data or {},
+                    fetched_at=row.fetched_at,
+                    expires_at=row.expires_at,
+                    now=now,
+                )
+                if candidate:
+                    ti_candidates.append(candidate)
+
+            stats["candidates"] = (
+                len(behavior_candidates) + len(ddos_candidates) + len(ti_candidates)
+            )
+
+            # Cross-domain correlation: behavior x ddos, TI x behavior, TI x ddos
+            pair_groups = (
+                (behavior_candidates, ddos_candidates),
+                (ti_candidates, behavior_candidates),
+                (ti_candidates, ddos_candidates),
+            )
+            for left_group, right_group in pair_groups:
+                for left in left_group:
+                    for right in right_group:
+                        try:
+                            result_dict = await svc.correlate_pair(left, right)
+                            if result_dict:
+                                if result_dict["created"]:
+                                    stats["cases_opened"] += 1
+                                stats["evidence_attached"] += 1
+                        except Exception:
+                            log.exception(
+                                "CorrelationWorker: pair correlation error "
+                                "org=%s left=%s right=%s",
+                                org_id,
+                                left.source_entity_id,
+                                right.source_entity_id,
+                            )
 
             # Recurrence: check each new candidate against existing active cases
-            all_candidates = behavior_candidates + ddos_candidates
+            all_candidates = behavior_candidates + ddos_candidates + ti_candidates
             for candidate in all_candidates:
                 try:
                     # Find active cases with shared entities
@@ -307,6 +369,11 @@ class CorrelationWorker:
                 latest_ddos = max(r.first_detected_at for r in ddos_rows)
                 await cursor_repo.set_cursor(
                     "ddos", latest_ddos, ddos_rows[-1].id
+                )
+            if enrichment_rows:
+                latest_ti = max(r.fetched_at for r in enrichment_rows)
+                await cursor_repo.set_cursor(
+                    "threat_intel", latest_ti, enrichment_rows[-1].id
                 )
 
         return stats

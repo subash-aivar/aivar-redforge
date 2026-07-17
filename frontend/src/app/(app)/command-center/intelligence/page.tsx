@@ -4,14 +4,20 @@ import { useState } from "react";
 import {
   configureProvider,
   enrichIp,
+  exportAttackNavigatorLayer,
   getIndicatorEnrichments,
   getProviderHealth,
+  getSyncStatus,
+  listCatalogIndicators,
   listIndicators,
   listProviders,
   PROVIDER_LABELS,
   runCorrelation,
+  triggerSync,
+  type CatalogIndicator,
   type Enrichment,
   type Indicator,
+  type SyncJobStatus,
 } from "@/lib/threatIntel";
 import { ApiError } from "@/lib/api";
 import {
@@ -120,6 +126,10 @@ export default function ThreatIntelligencePage() {
   const providers = useAsync(listProviders, []);
   const health = useAsync(getProviderHealth, []);
   const indicators = useAsync(() => listIndicators(50, 0), []);
+  const techniques = useAsync(() => listCatalogIndicators("technique", 80), []);
+  const vulnerabilities = useAsync(() => listCatalogIndicators("vulnerability", 40), []);
+  const actors = useAsync(() => listCatalogIndicators("group", 40), []);
+  const syncJobs = useAsync(getSyncStatus, []);
 
   const [lookupIp, setLookupIp] = useState("");
   const [lookupBusy, setLookupBusy] = useState(false);
@@ -127,6 +137,8 @@ export default function ThreatIntelligencePage() {
   const [lookupResult, setLookupResult] = useState<Record<string, unknown> | null>(null);
   const [correlateBusy, setCorrelateBusy] = useState(false);
   const [correlateResult, setCorrelateResult] = useState<{ indicators_checked: number; matches_found: number } | null>(null);
+  const [navBusy, setNavBusy] = useState(false);
+  const [syncBusy, setSyncBusy] = useState<string | null>(null);
 
   const [selectedIndicator, setSelectedIndicator] = useState<Indicator | null>(null);
   const enrichments = useAsync<Enrichment[]>(
@@ -135,6 +147,44 @@ export default function ThreatIntelligencePage() {
   );
 
   const healthByProvider = new Map((health.data ?? []).map((h) => [h.provider_name, h]));
+
+  async function downloadNavigator() {
+    setNavBusy(true);
+    try {
+      const layer = await exportAttackNavigatorLayer();
+      const blob = new Blob([JSON.stringify(layer, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "redforge-attack-navigator-layer.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setNavBusy(false);
+    }
+  }
+
+  async function runSync(jobKey: string) {
+    setSyncBusy(jobKey);
+    try {
+      await triggerSync(jobKey);
+      syncJobs.reload();
+      techniques.reload();
+      vulnerabilities.reload();
+      actors.reload();
+    } finally {
+      setSyncBusy(null);
+    }
+  }
+
+  function heatTone(item: CatalogIndicator): string {
+    const c = item.confidence ?? "LOW";
+    if (c === "VERY_HIGH" || c === "HIGH") return "bg-red-900/50 border-red-800 text-red-200";
+    if (c === "MEDIUM") return "bg-amber-950/40 border-amber-900 text-amber-200";
+    return "bg-gray-900 border-gray-800 text-gray-400";
+  }
 
   async function doLookup() {
     if (!lookupIp.trim()) return;
@@ -187,6 +237,119 @@ export default function ThreatIntelligencePage() {
           tone="ok"
         />
         <KpiTile label="Indicators tracked" value={indicators.data?.length ?? 0} />
+      </div>
+
+      <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <Panel
+          title="MITRE technique heatmap"
+          right={
+            <button
+              type="button"
+              disabled={navBusy}
+              onClick={downloadNavigator}
+              className="rounded border border-gray-800 px-2 py-1 text-[10px] text-gray-300 hover:border-red-900"
+            >
+              {navBusy ? "Exporting…" : "ATT&CK Navigator JSON"}
+            </button>
+          }
+        >
+          <AsyncContent
+            state={techniques}
+            empty={(rows) => rows.length === 0}
+            emptyLabel="No fused techniques yet — run attack_technique_sync / fusion."
+          >
+            {(rows) => (
+              <div className="flex max-h-56 flex-wrap gap-1 overflow-auto">
+                {rows.map((t) => (
+                  <span
+                    key={t.id}
+                    title={`${t.display_name} · ${t.confidence ?? "NO_EVIDENCE"}`}
+                    className={`rounded border px-1.5 py-0.5 font-mono text-[10px] ${heatTone(t)}`}
+                  >
+                    {t.canonical_key.replace(/^technique:/i, "").toUpperCase()}
+                  </span>
+                ))}
+              </div>
+            )}
+          </AsyncContent>
+        </Panel>
+
+        <Panel title="CVE panel">
+          <AsyncContent
+            state={vulnerabilities}
+            empty={(rows) => rows.length === 0}
+            emptyLabel="No fused vulnerabilities in catalog."
+          >
+            {(rows) => (
+              <ul className="max-h-56 space-y-1 overflow-auto text-xs">
+                {rows.map((v) => (
+                  <li key={v.id} className="flex justify-between gap-2 border-b border-gray-900 py-1">
+                    <span className="font-mono text-gray-200">{v.display_name}</span>
+                    <span className="text-gray-500">
+                      {v.metadata.is_kev === "True" ? "KEV" : v.confidence ?? "—"}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </AsyncContent>
+        </Panel>
+
+        <Panel title="Threat actor profiles">
+          <AsyncContent
+            state={actors}
+            empty={(rows) => rows.length === 0}
+            emptyLabel="No fused group/actor stubs yet (from ATT&CK relationships)."
+          >
+            {(rows) => (
+              <ul className="max-h-56 space-y-1 overflow-auto text-xs">
+                {rows.map((a) => (
+                  <li key={a.id} className="border-b border-gray-900 py-1 text-gray-200">
+                    {a.display_name}
+                    <span className="ml-2 text-gray-600">{a.confidence ?? "—"}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </AsyncContent>
+        </Panel>
+      </div>
+
+      <div className="mb-4">
+        <Panel title="Intelligence sync jobs">
+          <AsyncContent
+            state={syncJobs}
+            empty={(rows) => rows.length === 0}
+            emptyLabel="No sync jobs recorded yet."
+          >
+            {(rows: SyncJobStatus[]) => (
+              <div className="space-y-2">
+                {rows.map((job) => (
+                  <div
+                    key={job.job_key}
+                    className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-900 py-2 text-xs"
+                  >
+                    <div>
+                      <span className="font-mono text-gray-200">{job.job_key}</span>
+                      <span className="ml-2 text-gray-500">{job.last_status}</span>
+                      {job.last_error && (
+                        <span className="ml-2 text-red-400">{job.last_error}</span>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      disabled={syncBusy === job.job_key}
+                      onClick={() => runSync(job.job_key)}
+                      className="rounded border border-gray-800 px-2 py-1 text-gray-300 hover:border-red-900 disabled:opacity-40"
+                    >
+                      {syncBusy === job.job_key ? "Running…" : "Trigger"}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </AsyncContent>
+        </Panel>
       </div>
 
       <Panel title="On-demand IP lookup">

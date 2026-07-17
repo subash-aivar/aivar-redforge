@@ -32,6 +32,7 @@ const NAV_GROUPS: NavGroup[] = [
       { label: "Live Security", href: "/security-operations", icon: "⌘", perm: "security_operations:read" },
       { label: "Behavior Analytics", href: "/command-center/behavior", icon: "🧭", perm: "security_operations:read" },
       { label: "Threat Intelligence", href: "/command-center/intelligence", icon: "🛡", perm: "security_operations:read" },
+      { label: "Attack Paths", href: "/attack-paths", icon: "⇉", perm: "security_operations:read" },
       { label: "Findings", href: "/findings", icon: "⚠", perm: "findings:read" },
       { label: "Risk", href: "/risk", icon: "△" },
     ],

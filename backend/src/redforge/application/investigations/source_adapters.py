@@ -11,7 +11,8 @@ Adapter contract:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from datetime import UTC, datetime
+from typing import Any
 
 from redforge.domain.investigations.value_objects import (
     EvidenceCandidate,
@@ -22,9 +23,6 @@ from redforge.domain.investigations.value_objects import (
     normalize_ip,
     normalize_resource_id,
 )
-
-if TYPE_CHECKING:
-    from datetime import datetime
 
 # ── Severity mapping ──────────────────────────────────────────────────────────
 
@@ -205,4 +203,103 @@ def adapt_behavior_detection(
         normalized_entities=tuple(entities),
         evidence_snapshot=snapshot,
         dedup_key=f"behavior:detection:{detection_id}",
+    )
+
+
+# ── M22 Phase 6 — Threat Intel Enrichment Adapter ────────────────────────────
+
+_TI_EVIDENCE_KINDS = frozenset({"reputation", "ioc_match"})
+
+
+def _map_ti_severity(
+    *,
+    kind: str,
+    confidence_score: float | None,
+    success: bool,
+) -> InvestigationSeverity:
+    if not success:
+        return InvestigationSeverity.LOW
+    if kind == "ioc_match":
+        return InvestigationSeverity.HIGH
+    if confidence_score is None:
+        return InvestigationSeverity.MEDIUM
+    if confidence_score >= 75:
+        return InvestigationSeverity.HIGH
+    if confidence_score >= 40:
+        return InvestigationSeverity.MEDIUM
+    return InvestigationSeverity.LOW
+
+
+def adapt_threat_intel_enrichment(
+    org_id: str,
+    *,
+    indicator_id: str,
+    indicator: str,
+    indicator_type: str,
+    enrichment_id: str,
+    provider_name: str,
+    kind: str,
+    success: bool,
+    data: dict[str, Any],
+    fetched_at: datetime,
+    expires_at: datetime,
+    now: datetime | None = None,
+) -> EvidenceCandidate | None:
+    """Translate a fresh, successful threat-intel enrichment into a candidate.
+
+    Hardening / freeze constraints:
+    - Expired enrichments are refused as investigation evidence (staleness gate).
+    - Only reputation / ioc_match kinds are correlation-eligible.
+    - Adapter lives in the investigations application layer (ACL) and emits
+      investigations-domain `EvidenceCandidate` only — no threat_intel domain
+      imports.
+    """
+    clock = now or datetime.now(UTC)
+    expires = expires_at if expires_at.tzinfo else expires_at.replace(tzinfo=UTC)
+    if expires <= clock:
+        return None
+    if not success:
+        return None
+    if kind not in _TI_EVIDENCE_KINDS:
+        return None
+
+    entities: list[NormalizedEntity] = []
+    if indicator_type.lower() == "ip":
+        ip_entity = normalize_ip(indicator)
+        if ip_entity:
+            entities.append(ip_entity)
+    if not entities:
+        return None
+
+    confidence_score = data.get("confidence_score")
+    score: float | None
+    try:
+        score = float(confidence_score) if confidence_score is not None else None
+    except (TypeError, ValueError):
+        score = None
+
+    severity = _map_ti_severity(
+        kind=kind, confidence_score=score, success=success
+    )
+    snapshot: dict[str, object] = {
+        "indicator_id": indicator_id,
+        "indicator": indicator,
+        "indicator_type": indicator_type,
+        "provider_name": provider_name,
+        "kind": kind,
+        "confidence_score": score,
+        "fetched_at": fetched_at.isoformat(),
+        "expires_at": expires.isoformat(),
+    }
+    return EvidenceCandidate(
+        organization_id=org_id,
+        source_domain=SourceDomain.THREAT_INTEL,
+        source_entity_type="threat_intel_enrichment",
+        source_entity_id=enrichment_id,
+        event_type="ENRICHMENT_FRESH",
+        severity=severity,
+        observed_at=fetched_at if fetched_at.tzinfo else fetched_at.replace(tzinfo=UTC),
+        normalized_entities=tuple(entities),
+        evidence_snapshot=snapshot,
+        dedup_key=f"threat_intel:enrichment:{enrichment_id}",
     )

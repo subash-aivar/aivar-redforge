@@ -170,6 +170,41 @@ export function resolveInvestigation(
   return api.post(`/api/v1/investigations/${caseId}/resolve`, { resolution_reason, notes });
 }
 
+export interface LinkedAttackPath {
+  id: string;
+  organization_id: string;
+  root_entity_id: string;
+  root_canonical_key: string;
+  terminal_entity_id: string | null;
+  path_confidence: string;
+  technique_coverage: string[];
+  attributed_actors: string[];
+  step_count: number;
+  evidence_count: number;
+  max_exposure_score: number;
+  status: string;
+  investigation_id: string | null;
+}
+
+export function listInvestigationAttackPaths(
+  caseId: string,
+): Promise<LinkedAttackPath[]> {
+  return api.get<LinkedAttackPath[]>(
+    `/api/v1/investigations/${encodeURIComponent(caseId)}/attack-paths`,
+  );
+}
+
+export function recomputeInvestigationAttackPath(
+  caseId: string,
+  force = false,
+): Promise<Record<string, unknown>> {
+  const q = force ? "?force=true" : "";
+  return api.post(
+    `/api/v1/investigations/${encodeURIComponent(caseId)}/attack-paths/recompute${q}`,
+    {},
+  );
+}
+
 // ── Display helpers ───────────────────────────────────────────────────────────
 
 export function severityColor(severity: string): string {

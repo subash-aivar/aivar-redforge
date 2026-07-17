@@ -153,7 +153,7 @@ class TestFusionThenAttackPath:
     async def test_migration_head_is_current(self, session_factory) -> None:
         async with session_factory() as session:
             result = await session.execute(text("SELECT version_num FROM alembic_version"))
-            assert result.scalar_one() == "0038"
+            assert result.scalar_one() == "0039"
 
     async def test_fusion_weight_override_persists(self, session_factory) -> None:
         fusion = ThreatFusionService(session_factory)

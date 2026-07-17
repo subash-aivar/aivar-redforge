@@ -533,6 +533,24 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             from redforge.application.threat_intel.feed_sync_worker import (
                 FeedSyncSchedulerWorker,
             )
+            from redforge.application.threat_intel.stix_taxii_connector import (
+                StixTaxiiFeedConnector,
+            )
+            from redforge.domain.threat_intel.feed_value_objects import FeedSourceKind
+
+            # M22 Phase 3 (STIX/TAXII Integration): the only connector
+            # registered so far. Every other `FeedSourceKind` still has
+            # no executor, so triggering a sync for a feed of that kind
+            # continues to fail honestly with `UnknownFeedConnectorError`
+            # (see `feed_connector.py`'s module docstring).
+            runtime.feed_connector_registry.register(
+                FeedSourceKind.STIX_TAXII_PULL,
+                StixTaxiiFeedConnector(
+                    session_factory=_session_factory,
+                    credential_resolver=runtime.credential_resolver,
+                    metrics=runtime.metrics,
+                ),
+            )
 
             orchestration_service = FeedSyncOrchestrationService(
                 _session_factory, runtime.feed_connector_registry
@@ -548,6 +566,63 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             logger.info("feed_sync_scheduler_started")
 
         coordinator.register_startup("feed_sync_scheduler", _start_feed_sync_scheduler)
+
+        async def _start_m22_ti_sync_workers() -> None:
+            """M22 Phase 6 — ATT&CK/vuln sync + indicator refresh workers."""
+            if _session_factory is None:
+                logger.warning("m22_ti_sync_workers_no_session_factory")
+                return
+            from redforge.application.threat_intel.attack_technique_sync_worker import (
+                AttackTechniqueSyncWorker,
+            )
+            from redforge.application.threat_intel.enrichment_service import (
+                IndicatorEnrichmentService,
+            )
+            from redforge.application.threat_intel.feed_sync_orchestration_service import (
+                FeedSyncOrchestrationService,
+            )
+            from redforge.application.threat_intel.indicator_refresh_worker import (
+                IndicatorRefreshWorker,
+            )
+            from redforge.application.threat_intel.sync_orchestration_service import (
+                ThreatIntelSyncOrchestrationService,
+            )
+            from redforge.application.threat_intel.threat_fusion_service import (
+                ThreatFusionService,
+            )
+            from redforge.application.threat_intel.vulnerability_sync_worker import (
+                VulnerabilitySyncWorker,
+            )
+
+            feed_orch = FeedSyncOrchestrationService(
+                _session_factory, runtime.feed_connector_registry
+            )
+            sync_service = ThreatIntelSyncOrchestrationService(
+                _session_factory,
+                feed_orchestration=feed_orch,
+                fusion_service=ThreatFusionService(_session_factory),
+            )
+            tech_worker = AttackTechniqueSyncWorker(
+                sync_service, session_factory=_session_factory
+            )
+            vuln_worker = VulnerabilitySyncWorker(
+                sync_service, session_factory=_session_factory
+            )
+            refresh_worker = IndicatorRefreshWorker(
+                _session_factory, IndicatorEnrichmentService(_session_factory)
+            )
+            tech_worker.start()
+            vuln_worker.start()
+            refresh_worker.start()
+            runtime.attack_technique_sync_worker = tech_worker  # type: ignore[attr-defined]
+            runtime.vulnerability_sync_worker = vuln_worker  # type: ignore[attr-defined]
+            runtime.indicator_refresh_worker = refresh_worker  # type: ignore[attr-defined]
+            app.state.attack_technique_sync_worker = tech_worker
+            app.state.vulnerability_sync_worker = vuln_worker
+            app.state.indicator_refresh_worker = refresh_worker
+            logger.info("m22_ti_sync_workers_started")
+
+        coordinator.register_startup("m22_ti_sync_workers", _start_m22_ti_sync_workers)
 
         # Register shutdown hooks (run in reverse registration order)
         async def _shutdown_ddos_detection_worker() -> None:

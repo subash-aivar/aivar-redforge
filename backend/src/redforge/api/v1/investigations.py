@@ -403,3 +403,63 @@ async def resolve_investigation(
     except InvalidStatusTransitionError as e:
         raise HTTPException(status_code=422, detail=str(e)) from e
     return {"case_id": case_id, "status": "RESOLVED"}
+
+
+# ─── M22 Phase 6 — Investigation ↔ Attack Path linkage ─────────────────────
+
+
+@router.get("/{case_id}/attack-paths")
+async def list_investigation_attack_paths(
+    case_id: str,
+    tenant: Annotated[
+        TenantContext, Depends(require_permission(Permission.INVESTIGATIONS_READ))
+    ],
+) -> list[dict[str, Any]]:
+    from redforge.application.investigations.investigation_path_service import (
+        InvestigationPathService,
+    )
+
+    service = InvestigationPathService(_get_session_factory())
+    paths = await service.list_linked_paths(
+        organization_id=tenant.organization_id,
+        investigation_id=case_id,
+    )
+    return [
+        {
+            "id": p.id,
+            "organization_id": p.organization_id,
+            "root_entity_id": p.root_entity_id,
+            "root_canonical_key": p.root_canonical_key,
+            "terminal_entity_id": p.terminal_entity_id,
+            "path_confidence": p.path_confidence.value,
+            "technique_coverage": list(p.technique_coverage),
+            "attributed_actors": list(p.attributed_actors),
+            "step_count": p.step_count,
+            "evidence_count": p.evidence_count,
+            "max_exposure_score": p.max_exposure_score,
+            "status": p.status.value,
+            "investigation_id": p.investigation_id,
+        }
+        for p in paths
+    ]
+
+
+@router.post("/{case_id}/attack-paths/recompute")
+async def recompute_investigation_attack_path(
+    case_id: str,
+    tenant: Annotated[
+        TenantContext, Depends(require_permission(Permission.INVESTIGATIONS_MANAGE))
+    ],
+    force: bool = Query(default=False),
+) -> dict[str, Any]:
+    from redforge.application.investigations.investigation_path_service import (
+        InvestigationPathService,
+    )
+
+    service = InvestigationPathService(_get_session_factory())
+    return await service.maybe_recompute_for_investigation(
+        organization_id=tenant.organization_id,
+        investigation_id=case_id,
+        actor_id=tenant.user_id,
+        force=force,
+    )

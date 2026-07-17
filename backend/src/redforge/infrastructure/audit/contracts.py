@@ -152,6 +152,10 @@ class AuditAction(StrEnum):
     ATTACK_PATH_COMPUTED = "attack_path.computed"
     ATTACK_PATH_UPDATED = "attack_path.updated"
 
+    # Investigation Integration — M22 Phase 6
+    THREAT_INTEL_SYNC_TRIGGERED = "threat_intel.sync_triggered"
+    INVESTIGATION_ATTACK_PATH_LINKED = "investigation.attack_path_linked"
+
 
 @dataclass(frozen=True, slots=True)
 class AuditEntry:

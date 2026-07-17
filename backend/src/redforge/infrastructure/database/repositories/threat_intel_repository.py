@@ -183,6 +183,33 @@ class SqlAlchemyThreatIntelEnrichmentRepository:
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
 
+    async def list_since(
+        self,
+        organization_id: str,
+        *,
+        since: object,
+        kinds: list[str],
+        limit: int,
+    ) -> list[ThreatIntelEnrichmentModel]:
+        """Incremental feed for investigation correlation (M22 Phase 6)."""
+        from datetime import datetime
+
+        if not isinstance(since, datetime):
+            raise TypeError("since must be datetime")
+        stmt = (
+            select(ThreatIntelEnrichmentModel)
+            .where(
+                ThreatIntelEnrichmentModel.organization_id == organization_id,
+                ThreatIntelEnrichmentModel.fetched_at > since,
+                ThreatIntelEnrichmentModel.kind.in_(kinds),
+                ThreatIntelEnrichmentModel.success.is_(True),
+            )
+            .order_by(ThreatIntelEnrichmentModel.fetched_at.asc())
+            .limit(limit)
+        )
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all())
+
     async def list_recent_for_provider(
         self,
         organization_id: str,

@@ -101,6 +101,10 @@ from redforge.infrastructure.database.models.threat_fusion import (
     FusedRelationshipModel,
     ThreatIntelFusionConfigModel,
 )
+from redforge.infrastructure.database.models.threat_intel_sync import (
+    InvestigationPathComputeStateModel,
+    ThreatIntelSyncStateModel,
+)
 from redforge.infrastructure.database.models.threat_intel import (
     ThreatIntelEnrichmentModel,
     ThreatIntelIndicatorModel,
@@ -155,6 +159,7 @@ __all__ = [
     "InvestigationEventModel",
     "InvestigationEvidenceLinkModel",
     "InvestigationModel",
+    "InvestigationPathComputeStateModel",
     "InvitationModel",
     "MFAFactorModel",
     "MembershipModel",
@@ -189,6 +194,7 @@ __all__ = [
     "TelemetrySensorModel",
     "ThreatIntelEnrichmentModel",
     "ThreatIntelFusionConfigModel",
+    "ThreatIntelSyncStateModel",
     "ThreatIntelIndicatorModel",
     "UserModel",
     "ValidationExecutionEventModel",

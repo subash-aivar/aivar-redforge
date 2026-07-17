@@ -10,6 +10,8 @@ import {
   acknowledgeInvestigation,
   startInvestigation,
   resolveInvestigation,
+  listInvestigationAttackPaths,
+  recomputeInvestigationAttackPath,
   severityColor,
   confidenceColor,
   statusColor,
@@ -19,9 +21,10 @@ import {
   type InvestigationCase,
   type EvidenceLink,
   type InvestigationTimelineEvent,
+  type LinkedAttackPath,
 } from "@/lib/investigations";
 
-type Tab = "timeline" | "evidence";
+type Tab = "timeline" | "evidence" | "paths";
 
 const RESOLUTION_REASONS = [
   "TRUE_POSITIVE_REMEDIATED",
@@ -40,6 +43,7 @@ export default function InvestigationDetailPage() {
   const [inv, setInv] = useState<InvestigationCase | null>(null);
   const [timeline, setTimeline] = useState<InvestigationTimelineEvent[]>([]);
   const [evidence, setEvidence] = useState<EvidenceLink[]>([]);
+  const [paths, setPaths] = useState<LinkedAttackPath[]>([]);
   const [tab, setTab] = useState<Tab>("timeline");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -52,14 +56,16 @@ export default function InvestigationDetailPage() {
     setLoading(true);
     setError(null);
     try {
-      const [c, tl, ev] = await Promise.all([
+      const [c, tl, ev, ap] = await Promise.all([
         getInvestigation(id),
         getInvestigationTimeline(id),
         getInvestigationEvidence(id),
+        listInvestigationAttackPaths(id).catch(() => [] as LinkedAttackPath[]),
       ]);
       setInv(c);
       setTimeline(tl);
       setEvidence(ev);
+      setPaths(ap);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load investigation");
     } finally {
@@ -211,7 +217,7 @@ export default function InvestigationDetailPage() {
 
       {/* Tabs */}
       <div className="flex gap-1 border-b border-gray-800">
-        {(["timeline", "evidence"] as Tab[]).map((t) => (
+        {(["timeline", "evidence", "paths"] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -221,10 +227,60 @@ export default function InvestigationDetailPage() {
                 : "text-gray-500 hover:text-gray-300"
             }`}
           >
-            {t} {t === "evidence" ? `(${evidence.length})` : `(${timeline.length})`}
+            {t === "paths"
+              ? `attack paths (${paths.length})`
+              : t === "evidence"
+                ? `evidence (${evidence.length})`
+                : `timeline (${timeline.length})`}
           </button>
         ))}
       </div>
+
+      {tab === "paths" && (
+        <div className="space-y-3">
+          <div className="flex justify-end">
+            <button
+              type="button"
+              disabled={actioning}
+              onClick={async () => {
+                setActioning(true);
+                try {
+                  await recomputeInvestigationAttackPath(id, true);
+                  await load();
+                } finally {
+                  setActioning(false);
+                }
+              }}
+              className="rounded border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs text-gray-300 hover:bg-gray-700 disabled:opacity-50"
+            >
+              Recompute path
+            </button>
+          </div>
+          {paths.length === 0 ? (
+            <div className="py-8 text-center text-sm text-gray-500">
+              No linked attack paths yet
+            </div>
+          ) : (
+            paths.map((p) => (
+              <Link
+                key={p.id}
+                href={`/attack-paths/${p.id}`}
+                className="block rounded-lg border border-gray-800 bg-gray-900 p-4 hover:border-gray-700"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-medium text-white">
+                    {p.root_canonical_key}
+                  </span>
+                  <span className="text-xs text-gray-400">{p.path_confidence}</span>
+                </div>
+                <div className="mt-1 text-xs text-gray-500">
+                  {p.step_count} steps · {p.technique_coverage.join(", ") || "no techniques"}
+                </div>
+              </Link>
+            ))
+          )}
+        </div>
+      )}
 
       {/* Timeline */}
       {tab === "timeline" && (

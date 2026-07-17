@@ -43,6 +43,7 @@ def _path_to_domain(model: AttackPathModel) -> AttackPath:
         status=PathStatus(model.status),
         created_at=model.created_at,
         updated_at=model.updated_at,
+        investigation_id=getattr(model, "investigation_id", None),
     )
 
 
@@ -61,6 +62,7 @@ def _apply_path(model: AttackPathModel, path: AttackPath) -> None:
     model.first_step_at = path.first_step_at
     model.last_step_at = path.last_step_at
     model.status = path.status.value
+    model.investigation_id = path.investigation_id
     model.created_at = path.created_at
     model.updated_at = path.updated_at
 
@@ -156,6 +158,25 @@ class SqlAlchemyAttackPathRepository:
             AttackPathModel.organization_id == organization_id,
             AttackPathModel.root_entity_id == root_entity_id,
             AttackPathModel.status == PathStatus.ACTIVE.value,
+        )
+        result = await self._session.execute(stmt)
+        return [_path_to_domain(m) for m in result.scalars().all()]
+
+    async def list_for_investigation(
+        self,
+        organization_id: str,
+        investigation_id: str,
+        *,
+        limit: int = 20,
+    ) -> list[AttackPath]:
+        stmt = (
+            select(AttackPathModel)
+            .where(
+                AttackPathModel.organization_id == organization_id,
+                AttackPathModel.investigation_id == investigation_id,
+            )
+            .order_by(AttackPathModel.created_at.desc())
+            .limit(limit)
         )
         result = await self._session.execute(stmt)
         return [_path_to_domain(m) for m in result.scalars().all()]

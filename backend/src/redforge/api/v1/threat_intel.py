@@ -15,7 +15,7 @@ from __future__ import annotations
 from dataclasses import asdict
 from typing import TYPE_CHECKING, Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel, Field
 
 from redforge.api.dependencies import (
@@ -253,3 +253,240 @@ async def list_geo_activity(
         service = GeoActivityService(session)
         points = await service.list_geo_activity(tenant.organization_id, limit)
     return [GeoActivityPointResponse(**dataclasses.asdict(p)) for p in points]
+
+
+# ─── M22 Phase 6 — Sync status / trigger + Navigator + catalog ─────────────
+
+
+class SyncJobStatusResponse(BaseModel):
+    job_key: str
+    last_status: str
+    last_started_at: str | None
+    last_finished_at: str | None
+    last_error: str | None
+    last_result: dict[str, Any]
+
+
+class SyncTriggerRequest(BaseModel):
+    job_key: str = Field(
+        ...,
+        pattern="^(attack_technique_sync|vulnerability_sync|indicator_refresh)$",
+    )
+
+
+class CatalogIndicatorResponse(BaseModel):
+    id: str
+    canonical_key: str
+    indicator_type: str
+    display_name: str
+    confidence: str | None
+    risk_state: str
+    metadata: dict[str, Any]
+
+
+@router.get("/sync-status", response_model=list[SyncJobStatusResponse])
+async def get_sync_status(
+    _tenant: TenantContext = Depends(
+        require_permission(Permission.SECURITY_OPERATIONS_READ)
+    ),
+) -> list[SyncJobStatusResponse]:
+    from redforge.api.dependencies import _session_factory
+    from redforge.application.threat_intel.sync_orchestration_service import (
+        ThreatIntelSyncOrchestrationService,
+    )
+
+    service = ThreatIntelSyncOrchestrationService(_session_factory())
+    rows = await service.list_status()
+    return [SyncJobStatusResponse(**asdict(r)) for r in rows]
+
+
+@router.post("/sync/trigger", response_model=dict[str, Any])
+async def trigger_sync(
+    body: SyncTriggerRequest,
+    request: Request,
+    tenant: TenantContext = Depends(
+        require_permission(Permission.NETWORK_SECURITY_MANAGE)
+    ),
+) -> dict[str, Any]:
+    from redforge.api.dependencies import _session_factory, get_feed_connector_registry
+    from redforge.application.threat_intel.enrichment_service import (
+        IndicatorEnrichmentService,
+    )
+    from redforge.application.threat_intel.feed_sync_orchestration_service import (
+        FeedSyncOrchestrationService,
+    )
+    from redforge.application.threat_intel.indicator_refresh_worker import (
+        IndicatorRefreshWorker,
+    )
+    from redforge.application.threat_intel.sync_orchestration_service import (
+        JOB_ATTACK_TECHNIQUE,
+        JOB_INDICATOR_REFRESH,
+        JOB_VULNERABILITY,
+        ThreatIntelSyncOrchestrationService,
+    )
+    from redforge.application.threat_intel.threat_fusion_service import (
+        ThreatFusionService,
+    )
+
+    factory = _session_factory()
+    fusion = ThreatFusionService(factory)
+    feed_orch = None
+    try:
+        registry = get_feed_connector_registry(request)
+        feed_orch = FeedSyncOrchestrationService(
+            factory,
+            registry,  # type: ignore[arg-type]
+        )
+    except Exception:
+        feed_orch = None
+
+    service = ThreatIntelSyncOrchestrationService(
+        factory,
+        feed_orchestration=feed_orch,
+        fusion_service=fusion,
+    )
+    actor = tenant.user_id
+    if body.job_key == JOB_ATTACK_TECHNIQUE:
+        return await service.run_attack_technique_sync(actor_id=actor)
+    if body.job_key == JOB_VULNERABILITY:
+        return await service.run_vulnerability_sync(actor_id=actor)
+    if body.job_key == JOB_INDICATOR_REFRESH:
+        worker = IndicatorRefreshWorker(factory, IndicatorEnrichmentService(factory))
+        return await worker.run_once()
+    raise HTTPException(status_code=422, detail="Unknown job_key")
+
+
+@router.get("/catalog/{indicator_type}", response_model=list[CatalogIndicatorResponse])
+async def list_catalog_indicators(
+    indicator_type: str,
+    limit: int = Query(default=100, ge=1, le=400),
+    offset: int = Query(default=0, ge=0),
+    _tenant: TenantContext = Depends(
+        require_permission(Permission.SECURITY_OPERATIONS_READ)
+    ),
+) -> list[CatalogIndicatorResponse]:
+    from redforge.api.dependencies import _session_factory
+    from redforge.application.threat_intel.intelligence_catalog_query_service import (
+        IntelligenceCatalogQueryService,
+    )
+    from redforge.domain.threat_intel.fusion_value_objects import FusedIndicatorType
+
+    try:
+        kind = FusedIndicatorType(indicator_type)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Invalid indicator_type: {indicator_type}",
+        ) from exc
+    service = IntelligenceCatalogQueryService(_session_factory())
+    rows = await service.list_by_type(kind, limit=limit, offset=offset)
+    return [CatalogIndicatorResponse(**asdict(r)) for r in rows]
+
+
+@router.get("/attack-navigator-layer")
+async def export_attack_navigator_layer(
+    investigation_id: str | None = Query(default=None, min_length=26, max_length=26),
+    tenant: TenantContext = Depends(
+        require_permission(Permission.SECURITY_OPERATIONS_READ)
+    ),
+) -> dict[str, Any]:
+    from redforge.api.dependencies import _session_factory
+    from redforge.application.threat_intel.navigator_export_service import (
+        AttackNavigatorExportService,
+    )
+
+    service = AttackNavigatorExportService(_session_factory())
+    layer = await service.export_layer(
+        organization_id=tenant.organization_id,
+        investigation_id=investigation_id,
+    )
+    return service.to_navigator_json(layer)
+
+
+@router.get("/attack-paths", response_model=list[dict[str, Any]])
+async def list_tenant_attack_paths(
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    tenant: TenantContext = Depends(
+        require_permission(Permission.SECURITY_OPERATIONS_READ)
+    ),
+) -> list[dict[str, Any]]:
+    """Tenant-scoped attack-path list (Hardening: ops-read, not platform-only)."""
+    from redforge.api.dependencies import _session_factory
+    from redforge.application.attack_path.attack_path_service import AttackPathQueryService
+
+    query = AttackPathQueryService(_session_factory())
+    paths = await query.list_paths(
+        organization_id=tenant.organization_id,
+        limit=limit,
+        offset=offset,
+    )
+    return [
+        {
+            "id": p.id,
+            "organization_id": p.organization_id,
+            "root_entity_id": p.root_entity_id,
+            "root_canonical_key": p.root_canonical_key,
+            "terminal_entity_id": p.terminal_entity_id,
+            "path_confidence": p.path_confidence.value,
+            "technique_coverage": list(p.technique_coverage),
+            "attributed_actors": list(p.attributed_actors),
+            "step_count": p.step_count,
+            "evidence_count": p.evidence_count,
+            "max_exposure_score": p.max_exposure_score,
+            "status": p.status.value,
+            "investigation_id": p.investigation_id,
+        }
+        for p in paths
+    ]
+
+
+@router.get("/attack-paths/{path_id}", response_model=dict[str, Any])
+async def get_tenant_attack_path(
+    path_id: str,
+    tenant: TenantContext = Depends(
+        require_permission(Permission.SECURITY_OPERATIONS_READ)
+    ),
+) -> dict[str, Any]:
+    from redforge.api.dependencies import _session_factory
+    from redforge.application.attack_path.attack_path_service import AttackPathQueryService
+    from redforge.core.exceptions import NotFoundError
+
+    query = AttackPathQueryService(_session_factory())
+    result = await query.get_path(
+        organization_id=tenant.organization_id, path_id=path_id
+    )
+    if result is None:
+        raise NotFoundError("AttackPath", path_id)
+    path, steps = result
+    return {
+        "id": path.id,
+        "organization_id": path.organization_id,
+        "root_entity_id": path.root_entity_id,
+        "root_canonical_key": path.root_canonical_key,
+        "terminal_entity_id": path.terminal_entity_id,
+        "path_confidence": path.path_confidence.value,
+        "technique_coverage": list(path.technique_coverage),
+        "attributed_actors": list(path.attributed_actors),
+        "step_count": path.step_count,
+        "evidence_count": path.evidence_count,
+        "max_exposure_score": path.max_exposure_score,
+        "status": path.status.value,
+        "investigation_id": path.investigation_id,
+        "steps": [
+            {
+                "sequence": s.sequence,
+                "entity_id": s.entity_id,
+                "canonical_key": s.canonical_key,
+                "step_type": s.step_type.value,
+                "confidence": s.confidence.value,
+                "technique_id": s.technique_id,
+                "evidence_refs": list(s.evidence_refs),
+                "relationship_type": s.relationship_type,
+                "kill_chain_phase": s.kill_chain_phase,
+                "inferred_from_step": s.inferred_from_step,
+                "exposure_score": s.exposure_score,
+            }
+            for s in steps
+        ],
+    }

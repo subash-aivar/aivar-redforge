@@ -76,6 +76,7 @@ class AttackPathService:
         organization_id: str,
         seed_indicator_id: str,
         actor_id: str,
+        investigation_id: str | None = None,
     ) -> AttackPathComputeResult:
         """On-demand path compute (Hardening Review: seed + trigger contract).
 
@@ -209,6 +210,7 @@ class AttackPathService:
                 first_step_at=now,
                 last_step_at=now,
                 now=now,
+                investigation_id=investigation_id,
             )
             await path_repo.add(path)
             await step_repo.replace_steps(

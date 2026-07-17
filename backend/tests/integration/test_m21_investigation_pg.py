@@ -1050,20 +1050,16 @@ class TestAuditWiring:
 
 
 class TestSafeLabA:
-    async def test_threat_intel_domain_has_no_canonical_identity_contract(self) -> None:
-        """THREAT_INTEL has no adapt_* function in source_adapters.py.
+    async def test_threat_intel_adapter_is_registered_for_m22(self) -> None:
+        """M22 Phase 6 promotes THREAT_INTEL to a first-class correlation source.
 
-        Classification: NOT APPLICABLE — M21 does not implement deterministic
-        canonical entity extraction from threat intel events. Fabricating an
-        adapter solely to increase domain count is explicitly prohibited.
-        The THREAT_INTEL value exists in SourceDomain for future use only.
+        M21 left THREAT_INTEL reserved without an adapter. Phase 6 adds
+        `adapt_threat_intel_enrichment` with an explicit freshness gate.
         """
         import redforge.application.investigations.source_adapters as adapters
 
         exported = [name for name in dir(adapters) if name.startswith("adapt_")]
-        assert "adapt_threat_intel" not in exported, (
-            "adapt_threat_intel must not exist — THREAT_INTEL is NOT APPLICABLE in M21"
-        )
+        assert "adapt_threat_intel_enrichment" in exported
 
     async def test_evaluate_pair_returns_none_for_threat_intel_source(self) -> None:
         """Constructing a candidate with THREAT_INTEL domain and passing to

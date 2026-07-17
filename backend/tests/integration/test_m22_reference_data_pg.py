@@ -315,7 +315,7 @@ class TestMigrationSchema:
         unrelated migration break this Phase 1 suite."""
         async with session_factory() as session:
             result = await session.execute(text("SELECT version_num FROM alembic_version"))
-            assert result.scalar_one() == "0038"
+            assert result.scalar_one() == "0039"
 
 
 # ─────────────────────────────────────────────────────────────────────────────

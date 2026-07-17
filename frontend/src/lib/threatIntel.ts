@@ -112,3 +112,97 @@ export function enrichIp(ip: string): Promise<EnrichIpResult> {
 export function runCorrelation(limit = 50): Promise<CorrelationRunResult> {
   return api.post<CorrelationRunResult>(`/api/v1/threat-intel/correlate?limit=${limit}`);
 }
+
+// ── M22 Phase 6/7 — catalog, sync, navigator, attack paths ─────────────────
+
+export interface CatalogIndicator {
+  id: string;
+  canonical_key: string;
+  indicator_type: string;
+  display_name: string;
+  confidence: string | null;
+  risk_state: string;
+  metadata: Record<string, unknown>;
+}
+
+export interface SyncJobStatus {
+  job_key: string;
+  last_status: string;
+  last_started_at: string | null;
+  last_finished_at: string | null;
+  last_error: string | null;
+  last_result: Record<string, unknown>;
+}
+
+export interface AttackPathSummary {
+  id: string;
+  organization_id: string;
+  root_entity_id: string;
+  root_canonical_key: string;
+  terminal_entity_id: string | null;
+  path_confidence: string;
+  technique_coverage: string[];
+  attributed_actors: string[];
+  step_count: number;
+  evidence_count: number;
+  max_exposure_score: number;
+  status: string;
+  investigation_id?: string | null;
+  steps?: AttackPathStep[] | null;
+  alternate_path_count?: number | null;
+}
+
+export interface AttackPathStep {
+  sequence: number;
+  entity_id: string;
+  canonical_key: string;
+  step_type: string;
+  confidence: string;
+  technique_id: string | null;
+  evidence_refs: string[];
+  relationship_type: string | null;
+  kill_chain_phase: string | null;
+  inferred_from_step: number | null;
+  exposure_score: number;
+}
+
+export function listCatalogIndicators(
+  indicatorType: string,
+  limit = 100,
+  offset = 0,
+): Promise<CatalogIndicator[]> {
+  return api.get<CatalogIndicator[]>(
+    `/api/v1/threat-intel/catalog/${encodeURIComponent(indicatorType)}?limit=${limit}&offset=${offset}`,
+  );
+}
+
+export function getSyncStatus(): Promise<SyncJobStatus[]> {
+  return api.get<SyncJobStatus[]>("/api/v1/threat-intel/sync-status");
+}
+
+export function triggerSync(jobKey: string): Promise<Record<string, unknown>> {
+  return api.post<Record<string, unknown>>("/api/v1/threat-intel/sync/trigger", {
+    job_key: jobKey,
+  });
+}
+
+export function exportAttackNavigatorLayer(
+  investigationId?: string,
+): Promise<Record<string, unknown>> {
+  const q = investigationId
+    ? `?investigation_id=${encodeURIComponent(investigationId)}`
+    : "";
+  return api.get<Record<string, unknown>>(`/api/v1/threat-intel/attack-navigator-layer${q}`);
+}
+
+export function listAttackPaths(limit = 50): Promise<AttackPathSummary[]> {
+  return api.get<AttackPathSummary[]>(
+    `/api/v1/threat-intel/attack-paths?limit=${limit}`,
+  );
+}
+
+export function getAttackPath(pathId: string): Promise<AttackPathSummary> {
+  return api.get<AttackPathSummary>(
+    `/api/v1/threat-intel/attack-paths/${encodeURIComponent(pathId)}`,
+  );
+}

@@ -34,6 +34,7 @@ class AttackPath:
         "_evidence_count",
         "_first_step_at",
         "_id",
+        "_investigation_id",
         "_last_step_at",
         "_max_exposure_score",
         "_organization_id",
@@ -66,6 +67,7 @@ class AttackPath:
         status: PathStatus,
         created_at: datetime,
         updated_at: datetime,
+        investigation_id: str | None = None,
     ) -> None:
         self._id = id
         self._organization_id = organization_id
@@ -81,6 +83,7 @@ class AttackPath:
         self._first_step_at = first_step_at
         self._last_step_at = last_step_at
         self._status = status
+        self._investigation_id = investigation_id
         self._created_at = created_at
         self._updated_at = updated_at
         self._events: list[AttackPathDomainEvent] = []
@@ -103,6 +106,7 @@ class AttackPath:
         first_step_at: datetime | None,
         last_step_at: datetime | None,
         now: datetime | None = None,
+        investigation_id: str | None = None,
     ) -> AttackPath:
         computed_at = now or datetime.now(UTC)
         path = cls(
@@ -122,6 +126,7 @@ class AttackPath:
             status=PathStatus.ACTIVE,
             created_at=computed_at,
             updated_at=computed_at,
+            investigation_id=investigation_id,
         )
         path._events.append(
             AttackPathComputed(
@@ -190,6 +195,10 @@ class AttackPath:
     @property
     def status(self) -> PathStatus:
         return self._status
+
+    @property
+    def investigation_id(self) -> str | None:
+        return self._investigation_id
 
     @property
     def created_at(self) -> datetime:

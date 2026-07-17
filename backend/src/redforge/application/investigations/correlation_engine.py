@@ -102,7 +102,6 @@ def evaluate_pair(
     domains = {a.source_domain, b.source_domain}
     if domains == {SourceDomain.DDOS, SourceDomain.BEHAVIOR}:
         rule = CorrelationRuleId.DDOS_PLUS_BEHAVIOR
-        [str(e) for e in shared_entities]
         reason = (
             f"DDoS incident and behavioral detection share {len(shared_entities)} "
             f"canonical entit{'y' if len(shared_entities) == 1 else 'ies'} "
@@ -124,9 +123,37 @@ def evaluate_pair(
             observability=EvidenceObservability.OBSERVED,
         )
 
+    # R05 — Threat-intel enrichment corroborates another domain on same entity
+    if SourceDomain.THREAT_INTEL in domains:
+        rule = CorrelationRuleId.THREAT_INTEL_ENRICHMENT
+        other = (
+            b.source_domain
+            if a.source_domain is SourceDomain.THREAT_INTEL
+            else a.source_domain
+        )
+        reason = (
+            f"Fresh threat-intelligence enrichment corroborates "
+            f"{other.value} activity on the same canonical entit"
+            f"{'y' if len(shared_entities) == 1 else 'ies'} "
+            f"({', '.join(e.entity_id for e in shared_entities[:3])}) "
+            f"within the {window_seconds // 3600}h correlation window."
+        )
+        severity = max_severity(a.severity, b.severity)
+        confidence = CorrelationConfidence.HIGH
+        return CorrelationDecision(
+            rule_id=rule,
+            rule_version=RULE_VERSIONS[rule],
+            shared_entities=tuple(shared_entities),
+            source_domains=(a.source_domain, b.source_domain),
+            correlation_window_seconds=window_seconds,
+            confidence=confidence,
+            severity=severity,
+            reason=reason,
+            observability=EvidenceObservability.OBSERVED,
+        )
+
     # R01 — Same entity, cross domain (generic)
     rule = CorrelationRuleId.SAME_ENTITY_CROSS_DOMAIN
-    [str(e) for e in shared_entities]
     reason = (
         f"Independent {a.source_domain.value} and {b.source_domain.value} signals "
         f"affect the same canonical entit{'y' if len(shared_entities) == 1 else 'ies'} "
@@ -262,6 +289,8 @@ def generate_case_title(
 
     if decision.rule_id == CorrelationRuleId.DDOS_PLUS_BEHAVIOR:
         return f"DDoS + Behavioral Anomaly: {entity_str}"
+    if decision.rule_id == CorrelationRuleId.THREAT_INTEL_ENRICHMENT:
+        return f"Threat Intel Corroboration: {entity_str}"
     if decision.rule_id == CorrelationRuleId.MULTI_DOMAIN_ESCALATION:
         return f"Multi-Domain Threat: {entity_str}"
     if decision.rule_id == CorrelationRuleId.SAME_ENTITY_CROSS_DOMAIN:
