@@ -124,6 +124,8 @@ from redforge.infrastructure.database.models.compliance import (
     ComplianceProfileModel,
     ComplianceRequirementModel,
     ControlAssessmentModel,
+    EvidenceRecommendationModel,
+    RecommendationBatchModel,
 )
 from redforge.infrastructure.database.models.user import UserModel
 from redforge.infrastructure.database.models.validation_execution import (
@@ -141,6 +143,8 @@ __all__ = [
     "ComplianceProfileModel",
     "ComplianceRequirementModel",
     "ControlAssessmentModel",
+    "EvidenceRecommendationModel",
+    "RecommendationBatchModel",
     "AITargetModel",
     "AttackPathModel",
     "AttackPathStepEvidenceModel",

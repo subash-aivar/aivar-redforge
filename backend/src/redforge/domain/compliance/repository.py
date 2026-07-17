@@ -15,6 +15,10 @@ from redforge.domain.compliance.entity import (  # noqa: TC001
     ControlRequirement,
     FrameworkDefinition,
 )
+from redforge.domain.compliance.recommendation import (  # noqa: TC001
+    EvidenceRecommendation,
+    RecommendationBatch,
+)
 from redforge.domain.compliance.value_objects import FrameworkKey, FrameworkStatus  # noqa: TC001
 from redforge.shared.identifiers import EntityId  # noqa: TC001
 
@@ -151,3 +155,57 @@ class OrganizationAssessmentRepository(Protocol):
     async def release_active_framework_claims(
         self, *, organization_id: str, profile_id: EntityId
     ) -> None: ...
+
+
+@runtime_checkable
+class EvidenceRecommendationRepository(Protocol):
+    """Persistence for recommendation aggregates (M24 Phase 3)."""
+
+    async def save_batch(self, batch: RecommendationBatch) -> None: ...
+
+    async def get_batch(
+        self, organization_id: str, batch_id: EntityId
+    ) -> RecommendationBatch | None: ...
+
+    async def get_batch_by_fingerprint(
+        self, organization_id: str, generation_fingerprint: str
+    ) -> RecommendationBatch | None: ...
+
+    async def save_recommendation(
+        self, recommendation: EvidenceRecommendation
+    ) -> None: ...
+
+    async def get_recommendation(
+        self, organization_id: str, recommendation_id: EntityId
+    ) -> EvidenceRecommendation | None: ...
+
+    async def get_recommendation_for_update(
+        self, organization_id: str, recommendation_id: EntityId
+    ) -> EvidenceRecommendation | None: ...
+
+    async def get_by_dedup_key(
+        self, organization_id: str, dedup_key: str
+    ) -> EvidenceRecommendation | None: ...
+
+    async def list_recommendations(
+        self,
+        organization_id: str,
+        *,
+        period_id: EntityId | None = None,
+        assessment_id: EntityId | None = None,
+        status: str | None = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> tuple[list[EvidenceRecommendation], int]: ...
+
+    async def list_history(
+        self,
+        organization_id: str,
+        *,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> tuple[list[EvidenceRecommendation], int]: ...
+
+    async def statistics(
+        self, organization_id: str, *, period_id: EntityId | None = None
+    ) -> dict[str, int]: ...

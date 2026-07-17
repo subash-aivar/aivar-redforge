@@ -86,9 +86,9 @@ class MappingConfidenceHint(StrEnum):
     MEDIUM  — significant overlap but each control has unique elements.
     LOW     — thematic similarity only; controls differ materially.
 
-    In Phase 2, the AutoLinkingEngine will use these hints to decide
-    whether to auto-confirm or require human review of suggested
-    evidence links.
+    In Phase 3, the AutoLinkingEngine uses these hints as a scoring boost
+    when recommending evidence. Recommendations never auto-confirm links —
+    human accept → link is always required.
     """
 
     HIGH = "high"

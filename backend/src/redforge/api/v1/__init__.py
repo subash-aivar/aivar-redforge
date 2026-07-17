@@ -5,6 +5,9 @@ from fastapi import APIRouter
 from redforge.api.v1.admin_rbac import router as admin_rbac_router
 from redforge.api.v1.compliance import router as compliance_router
 from redforge.api.v1.compliance_assessment import router as compliance_assessment_router
+from redforge.api.v1.compliance_recommendations import (
+    router as compliance_recommendations_router,
+)
 from redforge.api.v1.ai_targets import router as ai_targets_router
 from redforge.api.v1.assets import router as assets_router
 from redforge.api.v1.attack_library import router as attack_library_router
@@ -104,3 +107,6 @@ router.include_router(behavior_router, tags=["behavior"])
 router.include_router(investigations_router, tags=["investigations"])
 router.include_router(compliance_router, tags=["compliance"])
 router.include_router(compliance_assessment_router, tags=["compliance-assessment"])
+router.include_router(
+    compliance_recommendations_router, tags=["compliance-recommendations"]
+)

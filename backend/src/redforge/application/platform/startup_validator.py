@@ -79,7 +79,7 @@ def _validate_config(settings: Settings, errors: list[str]) -> None:
         )
 
 
-_EXPECTED_MIGRATION_HEAD = "0042"
+_EXPECTED_MIGRATION_HEAD = "0043"
 
 
 async def _check_database_connectivity(engine: AsyncEngine, errors: list[str]) -> None:

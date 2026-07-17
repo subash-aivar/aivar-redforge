@@ -185,3 +185,71 @@ class DuplicateActiveProfileFrameworkError(ComplianceDomainError):
         self.organization_id = organization_id
         self.framework_key = framework_key
         self.existing_profile_id = existing_profile_id
+
+
+# ─── M24 Phase 3 — Evidence Recommendation ────────────────────────────────────
+
+
+class RecommendationInvariantError(ComplianceDomainError):
+    """Raised when a recommendation aggregate invariant is violated."""
+
+
+class RecommendationNotFoundError(ComplianceDomainError):
+    def __init__(self, recommendation_id: str) -> None:
+        super().__init__(f"EvidenceRecommendation not found: '{recommendation_id}'")
+        self.recommendation_id = recommendation_id
+
+
+class RecommendationBatchNotFoundError(ComplianceDomainError):
+    def __init__(self, batch_id: str) -> None:
+        super().__init__(f"RecommendationBatch not found: '{batch_id}'")
+        self.batch_id = batch_id
+
+
+class InvalidRecommendationTransitionError(ComplianceDomainError):
+    def __init__(
+        self,
+        current: str,
+        target: str,
+        *,
+        reason: str = "",
+    ) -> None:
+        detail = f": {reason}" if reason else ""
+        super().__init__(
+            f"Invalid recommendation transition '{current}' → '{target}'{detail}"
+        )
+        self.current = current
+        self.target = target
+
+
+class DuplicateRecommendationError(ComplianceDomainError):
+    def __init__(self, dedup_key: str, existing_id: str) -> None:
+        super().__init__(
+            f"Active recommendation already exists for '{dedup_key}' "
+            f"(existing id '{existing_id}')"
+        )
+        self.dedup_key = dedup_key
+        self.existing_id = existing_id
+
+
+class RecommendationNotLinkableError(ComplianceDomainError):
+    """Raised when accept→link is requested for a non-linkable source kind."""
+
+    def __init__(self, recommendation_id: str, source_kind: str) -> None:
+        super().__init__(
+            f"Recommendation '{recommendation_id}' source kind '{source_kind}' "
+            "cannot create a ConfirmedEvidenceLink — only validation_evidence "
+            "and confirmed_control_evidence references are linkable"
+        )
+        self.recommendation_id = recommendation_id
+        self.source_kind = source_kind
+
+
+class RecommendationNotAcceptedError(ComplianceDomainError):
+    def __init__(self, recommendation_id: str, status: str) -> None:
+        super().__init__(
+            f"Recommendation '{recommendation_id}' must be accepted before linking "
+            f"(current status: '{status}')"
+        )
+        self.recommendation_id = recommendation_id
+        self.status = status

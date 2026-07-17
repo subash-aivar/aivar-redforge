@@ -1,6 +1,8 @@
 """Organization Assessment application services — M24 Phase 2.
 
-No AutoLinkingEngine, workers, review queue, or analytics.
+Evidence recommendations and AutoLinkingEngine live in
+recommendation_service (M24 Phase 3). This module does not certify
+compliance and does not auto-link evidence.
 """
 
 from __future__ import annotations
@@ -313,34 +315,47 @@ class OrganizationAssessmentService:
     async def confirm_evidence_link(
         self, command: ConfirmEvidenceLinkCommand
     ) -> ControlAssessment:
+        """Confirm evidence inside a dedicated transaction (API / direct callers)."""
         async with self._session_factory() as session, session.begin():
-            repo = self._assessment_repo(session)
-            assessment = await repo.get_assessment(
-                command.organization_id, command.assessment_id
-            )
-            if assessment is None:
-                raise ControlAssessmentNotFoundError(str(command.assessment_id))
-            period = await repo.get_period(
-                command.organization_id, assessment.period_id
-            )
-            if period is None:
-                raise AssessmentPeriodNotFoundError(str(assessment.period_id))
-            period.assert_open()
+            return await self.confirm_evidence_link_in_session(session, command)
 
-            evidence = await self._evidence_repo(session).get_by_id_for_organization(
-                command.evidence_id, command.organization_id
-            )
-            if evidence is None:
-                raise EvidenceReferenceNotFoundError(command.evidence_id)
+    async def confirm_evidence_link_in_session(
+        self,
+        session: AsyncSession,
+        command: ConfirmEvidenceLinkCommand,
+    ) -> ControlAssessment:
+        """Confirm evidence using the caller's session/transaction.
 
-            assessment.confirm_evidence_link(
-                evidence_id=command.evidence_id,
-                confirmed_by=command.confirmed_by,
-                rationale=command.rationale,
-            )
-            await repo.save_assessment(assessment)
-            assessment.collect_events()
-            return assessment
+        Does not begin or commit. Used by the recommendation linking workflow
+        so assessment confirmation and recommendation mark_linked share one TX.
+        """
+        repo = self._assessment_repo(session)
+        assessment = await repo.get_assessment(
+            command.organization_id, command.assessment_id
+        )
+        if assessment is None:
+            raise ControlAssessmentNotFoundError(str(command.assessment_id))
+        period = await repo.get_period(
+            command.organization_id, assessment.period_id
+        )
+        if period is None:
+            raise AssessmentPeriodNotFoundError(str(assessment.period_id))
+        period.assert_open()
+
+        evidence = await self._evidence_repo(session).get_by_id_for_organization(
+            command.evidence_id, command.organization_id
+        )
+        if evidence is None:
+            raise EvidenceReferenceNotFoundError(command.evidence_id)
+
+        assessment.confirm_evidence_link(
+            evidence_id=command.evidence_id,
+            confirmed_by=command.confirmed_by,
+            rationale=command.rationale,
+        )
+        await repo.save_assessment(assessment)
+        assessment.collect_events()
+        return assessment
 
     async def begin_evidence_collection(
         self, command: TransitionAssessmentCommand

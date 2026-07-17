@@ -5,7 +5,17 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import Boolean, DateTime, Index, Integer, String, Text, UniqueConstraint
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    Float,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+    text,
+)
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -171,3 +181,94 @@ class ComplianceActiveFrameworkClaimModel(Base):
     framework_key: Mapped[str] = mapped_column(String(80), primary_key=True)
     profile_id: Mapped[str] = mapped_column(String(26), nullable=False)
     claimed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class RecommendationBatchModel(Base):
+    """Persists RecommendationBatch generation runs (M24 Phase 3)."""
+
+    __tablename__ = "recommendation_batches"
+    __table_args__ = (
+        UniqueConstraint(
+            "organization_id",
+            "generation_fingerprint",
+            name="uq_recommendation_batches_org_fingerprint",
+        ),
+        Index("ix_recommendation_batches_org_period", "organization_id", "period_id"),
+        Index("ix_recommendation_batches_org_created", "organization_id", "created_at"),
+    )
+
+    id: Mapped[str] = mapped_column(String(26), primary_key=True)
+    organization_id: Mapped[str] = mapped_column(String(26), nullable=False)
+    period_id: Mapped[str] = mapped_column(String(26), nullable=False)
+    assessment_id: Mapped[str | None] = mapped_column(String(26), nullable=True)
+    generation_fingerprint: Mapped[str] = mapped_column(String(128), nullable=False)
+    recommendation_ids: Mapped[list[str]] = mapped_column(
+        ARRAY(String), nullable=False, default=list
+    )
+    created_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    updated_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    skipped_duplicate_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0
+    )
+    generated_by: Mapped[str] = mapped_column(String(26), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class EvidenceRecommendationModel(Base):
+    """Persists EvidenceRecommendation aggregates (M24 Phase 3)."""
+
+    __tablename__ = "evidence_recommendations"
+    __table_args__ = (
+        Index(
+            "ix_evidence_recommendations_org_period",
+            "organization_id",
+            "period_id",
+        ),
+        Index(
+            "ix_evidence_recommendations_org_assessment",
+            "organization_id",
+            "assessment_id",
+        ),
+        Index(
+            "ix_evidence_recommendations_org_status",
+            "organization_id",
+            "status",
+        ),
+        Index(
+            "ix_evidence_recommendations_org_updated",
+            "organization_id",
+            "updated_at",
+        ),
+        Index(
+            "uq_evidence_recommendations_org_dedup_active",
+            "organization_id",
+            "dedup_key",
+            unique=True,
+            postgresql_where=text(
+                "status IN ('recommended', 'accepted', 'linked')"
+            ),
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(String(26), primary_key=True)
+    organization_id: Mapped[str] = mapped_column(String(26), nullable=False)
+    batch_id: Mapped[str] = mapped_column(String(26), nullable=False)
+    assessment_id: Mapped[str] = mapped_column(String(26), nullable=False)
+    period_id: Mapped[str] = mapped_column(String(26), nullable=False)
+    requirement_id: Mapped[str] = mapped_column(String(26), nullable=False)
+    framework_key: Mapped[str] = mapped_column(String(80), nullable=False)
+    source_kind: Mapped[str] = mapped_column(String(40), nullable=False)
+    source_entity_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    candidates: Mapped[list[dict[str, Any]]] = mapped_column(
+        JSONB, nullable=False, default=list
+    )
+    confidence: Mapped[str] = mapped_column(String(32), nullable=False)
+    score: Mapped[float] = mapped_column(Float, nullable=False)
+    rationale: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="recommended")
+    dedup_key: Mapped[str] = mapped_column(String(200), nullable=False)
+    decision: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    linked_evidence_id: Mapped[str | None] = mapped_column(String(26), nullable=True)
+    created_by: Mapped[str] = mapped_column(String(26), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

@@ -127,3 +127,62 @@ class ControlStatusChanged:
     new_status: str
     changed_by: str
     occurred_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+
+
+# ─── M24 Phase 3 — Evidence Recommendation events ─────────────────────────────
+
+
+@dataclass(frozen=True, slots=True)
+class RecommendationGenerated:
+    recommendation_id: str
+    organization_id: str
+    batch_id: str
+    assessment_id: str
+    period_id: str
+    requirement_id: str
+    source_kind: str
+    source_entity_id: str
+    confidence: str
+    score: float
+    generated_by: str
+    occurred_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+
+
+@dataclass(frozen=True, slots=True)
+class RecommendationAccepted:
+    recommendation_id: str
+    organization_id: str
+    assessment_id: str
+    accepted_by: str
+    occurred_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+
+
+@dataclass(frozen=True, slots=True)
+class RecommendationRejected:
+    recommendation_id: str
+    organization_id: str
+    assessment_id: str
+    rejected_by: str
+    rationale: str
+    occurred_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+
+
+@dataclass(frozen=True, slots=True)
+class RecommendationLinked:
+    recommendation_id: str
+    organization_id: str
+    assessment_id: str
+    evidence_id: str
+    linked_by: str
+    occurred_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+
+
+@dataclass(frozen=True, slots=True)
+class RecommendationConfidenceChanged:
+    recommendation_id: str
+    organization_id: str
+    previous_confidence: str
+    new_confidence: str
+    score: float
+    changed_by: str
+    occurred_at: datetime = field(default_factory=lambda: datetime.now(UTC))

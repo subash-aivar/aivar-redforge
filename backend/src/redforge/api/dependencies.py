@@ -1051,6 +1051,22 @@ def get_organization_assessment_service() -> OrganizationAssessmentService:
     return _organization_assessment_service()
 
 
+@lru_cache
+def _evidence_recommendation_service() -> object:
+    from redforge.application.compliance.recommendation_service import (
+        EvidenceRecommendationApplicationService,
+    )
+
+    return EvidenceRecommendationApplicationService(
+        _session_factory(),
+        assessment_service=_organization_assessment_service(),
+    )
+
+
+def get_evidence_recommendation_service() -> object:
+    return _evidence_recommendation_service()
+
+
 def clear_cached_dependencies() -> None:
     """Clear every `@lru_cache`-memoized provider in this module.
 

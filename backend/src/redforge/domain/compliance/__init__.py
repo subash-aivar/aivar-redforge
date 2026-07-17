@@ -1,9 +1,10 @@
-"""Compliance bounded context — platform catalog + organization assessment.
+"""Compliance bounded context — catalog, assessment, evidence recommendations.
 
 Phase 1: FrameworkDefinition, ControlRequirement, ControlMapping, ControlCatalog.
 Phase 2: ComplianceProfile, AssessmentPeriod, ControlAssessment,
          ConfirmedEvidenceLink, ControlStatusEvaluator.
+Phase 3: EvidenceRecommendation, RecommendationBatch, AutoLinkingEngine,
+         recommendation scoring / ranking / policy / duplicate resolution.
 
-Phase 3+ (not implemented here): AutoLinkingEngine, workers, review queue,
-recommendation engine, dashboards.
+Phase 4+ (not implemented here): review queue, dashboards, certification.
 """
