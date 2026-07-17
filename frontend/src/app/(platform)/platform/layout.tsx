@@ -6,13 +6,32 @@ import { useEffect, useState } from "react";
 import { isAuthenticated } from "@/lib/api";
 import { getPlatformAccess, type PlatformAccess } from "@/lib/platform";
 
-const NAV = [
-  { label: "Overview", href: "/platform/overview" },
-  { label: "Users", href: "/platform/users" },
-  { label: "Organizations", href: "/platform/organizations" },
-  { label: "Platform Access", href: "/platform/access" },
-  { label: "Audit", href: "/platform/audit" },
-  { label: "Security / MFA", href: "/platform/security" },
+interface NavSection {
+  group: string;
+  items: { label: string; href: string }[];
+}
+
+const NAV_SECTIONS: NavSection[] = [
+  {
+    group: "Administration",
+    items: [
+      { label: "Overview", href: "/platform/overview" },
+      { label: "Users", href: "/platform/users" },
+      { label: "Organizations", href: "/platform/organizations" },
+      { label: "Platform Access", href: "/platform/access" },
+      { label: "Audit", href: "/platform/audit" },
+      { label: "Security / MFA", href: "/platform/security" },
+    ],
+  },
+  {
+    group: "Threat Intelligence",
+    items: [
+      { label: "Reference Data", href: "/platform/threat-intel" },
+      { label: "Feed Management", href: "/platform/threat-intel/feeds" },
+      { label: "Fusion Explorer", href: "/platform/threat-intel/fusion" },
+      { label: "Attack Paths", href: "/platform/threat-intel/attack-paths" },
+    ],
+  },
 ];
 
 export default function PlatformLayout({ children }: { children: React.ReactNode }) {
@@ -81,23 +100,39 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
         <div className="flex h-14 items-center border-b border-gray-800 px-5">
           <span className="text-lg font-bold text-purple-400">Platform</span>
         </div>
-        <nav className="flex-1 space-y-1 px-3 py-4">
-          {NAV.map((item) => {
-            const active = pathname.startsWith(item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`block rounded-lg px-3 py-2 text-sm font-medium transition ${
-                  active
-                    ? "bg-purple-950/50 text-purple-300"
-                    : "text-gray-400 hover:bg-gray-800 hover:text-gray-200"
-                }`}
-              >
-                {item.label}
-              </Link>
-            );
-          })}
+        <nav className="flex-1 space-y-4 overflow-y-auto px-3 py-4">
+          {NAV_SECTIONS.map((section) => (
+            <div key={section.group}>
+              <div className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-widest text-gray-600">
+                {section.group}
+              </div>
+              <div className="space-y-0.5">
+                {section.items.map((item) => {
+                  // Use exact match for index pages, prefix match for sub-pages.
+                  const active =
+                    pathname === item.href ||
+                    (item.href !== "/platform/threat-intel" &&
+                      item.href !== "/platform/overview" &&
+                      pathname.startsWith(item.href + "/")) ||
+                    (item.href === "/platform/threat-intel" &&
+                      pathname === "/platform/threat-intel");
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={`block rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+                        active
+                          ? "bg-purple-950/50 text-purple-300"
+                          : "text-gray-400 hover:bg-gray-800 hover:text-gray-200"
+                      }`}
+                    >
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
         <div className="border-t border-gray-800 px-4 py-3">
           <div className="text-xs text-gray-500">Platform roles</div>
