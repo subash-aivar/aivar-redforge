@@ -14,6 +14,11 @@ from fastapi import Request  # noqa: TC002
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 if TYPE_CHECKING:
+    from redforge.application.compliance.catalog_service import CatalogPublishingService
+    from redforge.application.compliance.mapping_service import (
+        CatalogQueryService,
+        MappingService,
+    )
     from redforge.application.continuous_validation.scheduler_worker import (
         ContinuousValidationSchedulerWorker,
     )
@@ -980,6 +985,54 @@ def get_threat_intel_indicator_query_service() -> object:
     )
 
     return IndicatorQueryService(_session_factory())
+
+
+# ─── Compliance (M24 Phase 1) ─────────────────────────────────────────────────
+
+
+@lru_cache
+def _catalog_publishing_service() -> CatalogPublishingService:
+    from redforge.application.compliance.catalog_service import CatalogPublishingService
+    from redforge.infrastructure.compliance.adapters.cis import CISFrameworkAdapter
+    from redforge.infrastructure.compliance.adapters.hipaa import HIPAAFrameworkAdapter
+    from redforge.infrastructure.compliance.adapters.iso27001 import ISO27001FrameworkAdapter
+    from redforge.infrastructure.compliance.adapters.nist_csf import NistCsfFrameworkAdapter
+    from redforge.infrastructure.compliance.adapters.soc2 import SOC2FrameworkAdapter
+
+    adapters = [
+        SOC2FrameworkAdapter(),
+        ISO27001FrameworkAdapter(),
+        NistCsfFrameworkAdapter(),
+        CISFrameworkAdapter(),
+        HIPAAFrameworkAdapter(),
+    ]
+    return CatalogPublishingService(_session_factory(), adapters)
+
+
+def get_catalog_publishing_service() -> CatalogPublishingService:
+    return _catalog_publishing_service()
+
+
+@lru_cache
+def _catalog_query_service() -> CatalogQueryService:
+    from redforge.application.compliance.mapping_service import CatalogQueryService
+
+    return CatalogQueryService(_session_factory())
+
+
+def get_catalog_query_service() -> CatalogQueryService:
+    return _catalog_query_service()
+
+
+@lru_cache
+def _mapping_service() -> MappingService:
+    from redforge.application.compliance.mapping_service import MappingService
+
+    return MappingService(_session_factory())
+
+
+def get_mapping_service() -> MappingService:
+    return _mapping_service()
 
 
 def clear_cached_dependencies() -> None:

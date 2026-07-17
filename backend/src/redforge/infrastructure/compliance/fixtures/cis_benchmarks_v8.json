@@ -1,0 +1,145 @@
+{
+  "metadata": {
+    "name": "CIS Controls v8",
+    "version": "8.0",
+    "issuing_body": "Center for Internet Security (CIS)",
+    "description": "CIS Controls v8 provides a prioritized set of 18 cybersecurity best practices and 153 Safeguards (formerly Sub-Controls) organized into three Implementation Groups (IG1, IG2, IG3) based on organizational risk profile and resources.",
+    "effective_date": "2021-05-18",
+    "tags": ["cis", "cis-controls", "benchmarks", "safeguards"],
+    "external_url": "https://www.cisecurity.org/controls/v8"
+  },
+  "requirements": [
+    {
+      "requirement_ref": "CIS-1.1",
+      "title": "Establish and Maintain Detailed Enterprise Asset Inventory",
+      "description": "Establish and maintain an accurate, detailed, and up-to-date inventory of all enterprise assets with the potential to store or process data, to include: end-user devices, network devices, non-computing/IoT devices, and servers. Ensure the inventory captures the network address, hardware address, machine name, enterprise asset owner, department for each asset, and whether the asset has been approved to connect to the network.",
+      "domain": "risk_management",
+      "severity": "high",
+      "guidance": "Deploy automated discovery (CMDB + network scanner). Reconcile weekly. Integrate with change management.",
+      "policy_threshold": 85,
+      "tags": ["cis-1", "asset-inventory", "ig1"],
+      "external_ref": "https://www.cisecurity.org/controls/v8"
+    },
+    {
+      "requirement_ref": "CIS-2.1",
+      "title": "Establish and Maintain a Software Inventory",
+      "description": "Establish and maintain a detailed inventory of all licensed software installed on enterprise assets. The software inventory must document the title, publisher, initial install/use date, and business purpose for each entry.",
+      "domain": "risk_management",
+      "severity": "high",
+      "guidance": "Use an automated software inventory tool. Block unauthorized software installation via application control.",
+      "policy_threshold": 80,
+      "tags": ["cis-2", "software-inventory", "ig1"],
+      "external_ref": "https://www.cisecurity.org/controls/v8"
+    },
+    {
+      "requirement_ref": "CIS-3.3",
+      "title": "Configure Data Access Control Lists",
+      "description": "Configure data access control lists based on a user's need to know. Apply data access control lists, also known as access permissions, to local and remote file systems, databases, and applications.",
+      "domain": "access_control",
+      "severity": "high",
+      "guidance": "Implement least-privilege ACLs. Review access control lists quarterly. Automate access reviews.",
+      "policy_threshold": 85,
+      "tags": ["cis-3", "data-protection", "access-control", "ig1"],
+      "external_ref": "https://www.cisecurity.org/controls/v8"
+    },
+    {
+      "requirement_ref": "CIS-4.1",
+      "title": "Establish and Maintain a Secure Configuration Process",
+      "description": "Establish and maintain a secure configuration process for enterprise assets and software. Review and update documentation annually, or when significant enterprise changes occur that could impact this Safeguard.",
+      "domain": "change_management",
+      "severity": "high",
+      "guidance": "Define hardening baselines (CIS Benchmarks per OS/application). Validate via configuration assessment tools.",
+      "policy_threshold": 80,
+      "tags": ["cis-4", "secure-configuration", "hardening", "ig1"],
+      "external_ref": "https://www.cisecurity.org/controls/v8"
+    },
+    {
+      "requirement_ref": "CIS-5.2",
+      "title": "Use Unique Passwords",
+      "description": "Use unique passwords for all enterprise assets. Best practice implementation includes, at minimum, an 8-character password for accounts using MFA and a 14-character password for accounts not using MFA.",
+      "domain": "access_control",
+      "severity": "high",
+      "guidance": "Enforce password complexity and uniqueness via PAM or IdP policy. Prohibit password reuse.",
+      "policy_threshold": 85,
+      "tags": ["cis-5", "account-management", "passwords", "ig1"],
+      "external_ref": "https://www.cisecurity.org/controls/v8"
+    },
+    {
+      "requirement_ref": "CIS-6.3",
+      "title": "Require MFA for Externally-Exposed Applications",
+      "description": "Require all externally-exposed enterprise or third-party applications to enforce MFA, where supported. Enforcing MFA through a directory service or SSO provider is a satisfactory implementation of this Safeguard.",
+      "domain": "access_control",
+      "severity": "critical",
+      "guidance": "Enable MFA on all externally-exposed applications. Use SAML/OIDC with MFA enforcement at IdP level.",
+      "policy_threshold": 95,
+      "tags": ["cis-6", "access-control", "mfa", "ig1"],
+      "external_ref": "https://www.cisecurity.org/controls/v8"
+    },
+    {
+      "requirement_ref": "CIS-7.3",
+      "title": "Perform Automated Operating System Patch Management",
+      "description": "Perform operating system updates on enterprise assets through automated patch management on a monthly, or more frequent, cadence.",
+      "domain": "vulnerability_management",
+      "severity": "high",
+      "guidance": "Deploy automated patch management. Critical patches within 7 days, high within 30 days, medium within 90 days.",
+      "policy_threshold": 85,
+      "tags": ["cis-7", "vulnerability-management", "patching", "ig1"],
+      "external_ref": "https://www.cisecurity.org/controls/v8"
+    },
+    {
+      "requirement_ref": "CIS-8.2",
+      "title": "Collect Audit Logs",
+      "description": "Collect audit logs. Ensure that logging is enabled across enterprise assets.",
+      "domain": "audit_logging",
+      "severity": "high",
+      "guidance": "Enable audit logging on all systems. Centralise to SIEM. Define minimum log retention of 90 days.",
+      "policy_threshold": 80,
+      "tags": ["cis-8", "audit-logging", "siem", "ig1"],
+      "external_ref": "https://www.cisecurity.org/controls/v8"
+    },
+    {
+      "requirement_ref": "CIS-9.2",
+      "title": "Use DNS Filtering Services",
+      "description": "Use DNS filtering services on all enterprise assets to block access to known malicious domains.",
+      "domain": "network_security",
+      "severity": "medium",
+      "guidance": "Deploy enterprise DNS filtering (e.g., Cisco Umbrella, Cloudflare Gateway). Block malicious domains and C2.",
+      "policy_threshold": 75,
+      "tags": ["cis-9", "network-security", "dns", "ig1"],
+      "external_ref": "https://www.cisecurity.org/controls/v8"
+    },
+    {
+      "requirement_ref": "CIS-10.2",
+      "title": "Protect Recovery Data",
+      "description": "Protect recovery data with equivalent controls as the original data. Reference encryption or access controls as applicable.",
+      "domain": "data_protection",
+      "severity": "high",
+      "guidance": "Encrypt backups. Store offsite and air-gapped. Test restores monthly. Protect backup credentials.",
+      "policy_threshold": 85,
+      "tags": ["cis-10", "data-recovery", "backup", "ig1"],
+      "external_ref": "https://www.cisecurity.org/controls/v8"
+    },
+    {
+      "requirement_ref": "CIS-12.1",
+      "title": "Ensure Network Infrastructure is Up-to-Date",
+      "description": "Ensure network infrastructure is kept up-to-date.",
+      "domain": "network_security",
+      "severity": "high",
+      "guidance": "Apply network device patches on the same SLA as server patching. Audit firmware versions quarterly.",
+      "policy_threshold": 80,
+      "tags": ["cis-12", "network-security", "patching", "ig2"],
+      "external_ref": "https://www.cisecurity.org/controls/v8"
+    },
+    {
+      "requirement_ref": "CIS-18.1",
+      "title": "Establish and Maintain a Penetration Testing Program",
+      "description": "Establish and maintain a penetration testing program appropriate to the size, complexity, and maturity of the enterprise. Remediate penetration test findings based on the enterprise's policy for remediation scope and prioritization.",
+      "domain": "vulnerability_management",
+      "severity": "high",
+      "guidance": "Conduct annual external and internal penetration tests. Track findings to remediation. Document scope and results.",
+      "policy_threshold": 80,
+      "tags": ["cis-18", "penetration-testing", "red-team", "ig3"],
+      "external_ref": "https://www.cisecurity.org/controls/v8"
+    }
+  ]
+}

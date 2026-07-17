@@ -116,6 +116,11 @@ from redforge.infrastructure.database.models.threat_intel_reference_data import 
     StixIngestionLogModel,
     VulnerabilityModel,
 )
+from redforge.infrastructure.database.models.compliance import (
+    ComplianceFrameworkModel,
+    ComplianceMappingModel,
+    ComplianceRequirementModel,
+)
 from redforge.infrastructure.database.models.user import UserModel
 from redforge.infrastructure.database.models.validation_execution import (
     ValidationExecutionEventModel,
@@ -125,6 +130,9 @@ from redforge.infrastructure.database.models.validation_execution import (
 
 __all__ = [
     "AIAssetModel",
+    "ComplianceFrameworkModel",
+    "ComplianceMappingModel",
+    "ComplianceRequirementModel",
     "AITargetModel",
     "AttackPathModel",
     "AttackPathStepEvidenceModel",

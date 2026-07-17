@@ -83,6 +83,13 @@ class PlatformPermission(StrEnum):
     PLATFORM_ATTACK_PATH_READ = "platform:attack_path:read"
     PLATFORM_ATTACK_PATH_MANAGE = "platform:attack_path:manage"
 
+    # Compliance Control Catalog (M24 Phase 1) — platform-owned framework
+    # definitions, control requirements, and cross-framework mappings.
+    # PLATFORM_COMPLIANCE_CATALOG_READ  — browse catalog (all platform roles)
+    # PLATFORM_COMPLIANCE_CATALOG_MANAGE — publish/retire/seed (admin roles)
+    PLATFORM_COMPLIANCE_CATALOG_READ = "platform:compliance_catalog:read"
+    PLATFORM_COMPLIANCE_CATALOG_MANAGE = "platform:compliance_catalog:manage"
+
 
 # Role -> Permission mapping for the platform control plane.
 #
@@ -132,6 +139,8 @@ PLATFORM_ROLE_PERMISSIONS: dict[PlatformRole, frozenset[PlatformPermission]] = {
         PlatformPermission.PLATFORM_THREAT_FUSION_MANAGE,
         PlatformPermission.PLATFORM_ATTACK_PATH_READ,
         PlatformPermission.PLATFORM_ATTACK_PATH_MANAGE,
+        PlatformPermission.PLATFORM_COMPLIANCE_CATALOG_READ,
+        PlatformPermission.PLATFORM_COMPLIANCE_CATALOG_MANAGE,
     }),
     PlatformRole.SUPPORT: frozenset({
         PlatformPermission.PLATFORM_USERS_READ,
@@ -148,6 +157,7 @@ PLATFORM_ROLE_PERMISSIONS: dict[PlatformRole, frozenset[PlatformPermission]] = {
         PlatformPermission.PLATFORM_FEED_SYNC_READ,
         PlatformPermission.PLATFORM_THREAT_FUSION_READ,
         PlatformPermission.PLATFORM_ATTACK_PATH_READ,
+        PlatformPermission.PLATFORM_COMPLIANCE_CATALOG_READ,
     }),
 }
 

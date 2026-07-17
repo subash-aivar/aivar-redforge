@@ -1,0 +1,156 @@
+{
+  "metadata": {
+    "name": "SOC 2 Type II",
+    "version": "2017",
+    "issuing_body": "American Institute of CPAs (AICPA)",
+    "description": "System and Organization Controls (SOC) 2 Type II evaluates the design and operating effectiveness of controls relevant to security, availability, processing integrity, confidentiality, and privacy over a defined audit period.",
+    "effective_date": "2017-03-01",
+    "tags": ["soc2", "trust-services", "aicpa", "audit"],
+    "external_url": "https://www.aicpa-cima.com/resources/landing/system-and-organization-controls-soc-suite-of-services"
+  },
+  "requirements": [
+    {
+      "requirement_ref": "CC1.1",
+      "title": "Control Environment — Commitment to Integrity and Ethical Values",
+      "description": "The entity demonstrates a commitment to integrity and ethical values.",
+      "domain": "risk_management",
+      "severity": "high",
+      "guidance": "Management should establish and enforce codes of conduct and communicate ethical expectations to all personnel.",
+      "policy_threshold": 80,
+      "tags": ["cc1", "coso"],
+      "external_ref": "https://www.aicpa-cima.com/resources/landing/soc2-trust-services-criteria"
+    },
+    {
+      "requirement_ref": "CC2.1",
+      "title": "Communication and Information — Internal Communication",
+      "description": "The entity obtains or generates and uses relevant, quality information to support the functioning of internal control.",
+      "domain": "risk_management",
+      "severity": "medium",
+      "guidance": "Establish formal communication channels and processes to ensure information flows to those who need it.",
+      "policy_threshold": 75,
+      "tags": ["cc2", "coso"],
+      "external_ref": "https://www.aicpa-cima.com/resources/landing/soc2-trust-services-criteria"
+    },
+    {
+      "requirement_ref": "CC3.1",
+      "title": "Risk Assessment — Specification of Objectives",
+      "description": "The entity specifies objectives with sufficient clarity to enable the identification and assessment of risks relating to objectives.",
+      "domain": "risk_management",
+      "severity": "high",
+      "guidance": "Define security objectives and risk tolerance. Document risk assessment methodology.",
+      "policy_threshold": 80,
+      "tags": ["cc3", "coso", "risk"],
+      "external_ref": "https://www.aicpa-cima.com/resources/landing/soc2-trust-services-criteria"
+    },
+    {
+      "requirement_ref": "CC6.1",
+      "title": "Logical and Physical Access Controls — Logical Access Security",
+      "description": "The entity implements logical access security software, infrastructure, and architectures over protected information assets to protect them from security events to meet the entity's objectives.",
+      "domain": "access_control",
+      "severity": "critical",
+      "guidance": "Implement role-based access control, least privilege, multi-factor authentication, and regular access reviews.",
+      "policy_threshold": 90,
+      "tags": ["cc6", "access-control", "authentication"],
+      "external_ref": "https://www.aicpa-cima.com/resources/landing/soc2-trust-services-criteria"
+    },
+    {
+      "requirement_ref": "CC6.2",
+      "title": "Logical and Physical Access Controls — Registration and Authorisation",
+      "description": "Prior to issuing system credentials and granting system access, the entity registers and authorizes new internal and external users.",
+      "domain": "access_control",
+      "severity": "high",
+      "guidance": "Establish a formal onboarding process including identity verification and access request approval workflow.",
+      "policy_threshold": 85,
+      "tags": ["cc6", "access-control", "provisioning"],
+      "external_ref": "https://www.aicpa-cima.com/resources/landing/soc2-trust-services-criteria"
+    },
+    {
+      "requirement_ref": "CC6.3",
+      "title": "Logical and Physical Access Controls — Role Changes and Termination",
+      "description": "The entity removes access to protected information assets when appropriate (e.g., change in job responsibilities, termination of employment).",
+      "domain": "access_control",
+      "severity": "high",
+      "guidance": "Implement automated deprovisioning tied to HR systems. Review access quarterly for role changes.",
+      "policy_threshold": 85,
+      "tags": ["cc6", "access-control", "deprovisioning"],
+      "external_ref": "https://www.aicpa-cima.com/resources/landing/soc2-trust-services-criteria"
+    },
+    {
+      "requirement_ref": "CC7.1",
+      "title": "System Operations — Vulnerability Detection",
+      "description": "To meet its objectives, the entity uses detection and monitoring procedures to identify changes to configurations that result in the introduction of new vulnerabilities.",
+      "domain": "vulnerability_management",
+      "severity": "high",
+      "guidance": "Deploy automated vulnerability scanners. Maintain a patching SLA. Track CVE remediation.",
+      "policy_threshold": 80,
+      "tags": ["cc7", "vulnerability", "monitoring"],
+      "external_ref": "https://www.aicpa-cima.com/resources/landing/soc2-trust-services-criteria"
+    },
+    {
+      "requirement_ref": "CC7.2",
+      "title": "System Operations — Monitoring for Anomalous Activity",
+      "description": "The entity monitors system components and the operation of those controls for anomalies that are indicative of malicious acts, natural disasters, and errors affecting the entity's ability to meet its objectives.",
+      "domain": "audit_logging",
+      "severity": "high",
+      "guidance": "Implement SIEM with alerting rules. Define and tune baselines for normal activity.",
+      "policy_threshold": 80,
+      "tags": ["cc7", "monitoring", "siem"],
+      "external_ref": "https://www.aicpa-cima.com/resources/landing/soc2-trust-services-criteria"
+    },
+    {
+      "requirement_ref": "CC8.1",
+      "title": "Change Management — Infrastructure and Software Changes",
+      "description": "The entity authorizes, designs, develops or acquires, configures, documents, tests, approves, and implements changes to infrastructure and software to meet its change management objectives.",
+      "domain": "change_management",
+      "severity": "high",
+      "guidance": "Enforce change control processes with peer review, staging environments, and approval gates.",
+      "policy_threshold": 80,
+      "tags": ["cc8", "change-management", "sdlc"],
+      "external_ref": "https://www.aicpa-cima.com/resources/landing/soc2-trust-services-criteria"
+    },
+    {
+      "requirement_ref": "CC9.1",
+      "title": "Risk Mitigation — Vendor Risk Management",
+      "description": "The entity identifies, selects, and develops risk mitigation activities for risks arising from potential business disruptions.",
+      "domain": "risk_management",
+      "severity": "medium",
+      "guidance": "Conduct vendor due diligence, maintain a vendor inventory, and review supplier SOC 2 reports annually.",
+      "policy_threshold": 75,
+      "tags": ["cc9", "vendor-risk", "supply-chain"],
+      "external_ref": "https://www.aicpa-cima.com/resources/landing/soc2-trust-services-criteria"
+    },
+    {
+      "requirement_ref": "A1.1",
+      "title": "Availability — Capacity Management",
+      "description": "The entity maintains, monitors, and evaluates current processing capacity and use of system components to manage capacity demand and to enable the implementation of additional capacity to help meet its objectives.",
+      "domain": "risk_management",
+      "severity": "medium",
+      "guidance": "Implement capacity planning processes and alerting when thresholds approach capacity limits.",
+      "policy_threshold": 75,
+      "tags": ["availability", "capacity"],
+      "external_ref": "https://www.aicpa-cima.com/resources/landing/soc2-trust-services-criteria"
+    },
+    {
+      "requirement_ref": "C1.1",
+      "title": "Confidentiality — Identification of Confidential Information",
+      "description": "The entity identifies and maintains confidential information to meet the entity's objectives related to confidentiality.",
+      "domain": "data_protection",
+      "severity": "high",
+      "guidance": "Implement data classification policy. Label confidential data and restrict access accordingly.",
+      "policy_threshold": 80,
+      "tags": ["confidentiality", "data-classification"],
+      "external_ref": "https://www.aicpa-cima.com/resources/landing/soc2-trust-services-criteria"
+    },
+    {
+      "requirement_ref": "PI1.1",
+      "title": "Processing Integrity — Complete and Accurate Processing",
+      "description": "The entity obtains or generates, uses, and communicates relevant, quality information to support the functioning of internal control.",
+      "domain": "audit_logging",
+      "severity": "medium",
+      "guidance": "Implement transaction logging, data validation controls, and exception reporting.",
+      "policy_threshold": 75,
+      "tags": ["processing-integrity", "data-quality"],
+      "external_ref": "https://www.aicpa-cima.com/resources/landing/soc2-trust-services-criteria"
+    }
+  ]
+}

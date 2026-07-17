@@ -3,6 +3,7 @@
 from fastapi import APIRouter
 
 from redforge.api.v1.admin_rbac import router as admin_rbac_router
+from redforge.api.v1.compliance import router as compliance_router
 from redforge.api.v1.ai_targets import router as ai_targets_router
 from redforge.api.v1.assets import router as assets_router
 from redforge.api.v1.attack_library import router as attack_library_router
@@ -100,3 +101,4 @@ router.include_router(telemetry_router, tags=["telemetry"])
 router.include_router(ddos_router, tags=["ddos"])
 router.include_router(behavior_router, tags=["behavior"])
 router.include_router(investigations_router, tags=["investigations"])
+router.include_router(compliance_router, tags=["compliance"])

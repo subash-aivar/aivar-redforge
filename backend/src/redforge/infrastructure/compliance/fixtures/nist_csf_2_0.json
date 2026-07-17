@@ -1,0 +1,156 @@
+{
+  "metadata": {
+    "name": "NIST Cybersecurity Framework 2.0",
+    "version": "2.0",
+    "issuing_body": "National Institute of Standards and Technology (NIST)",
+    "description": "The NIST Cybersecurity Framework (CSF) 2.0 provides guidance to industry, government agencies, and other organizations to manage cybersecurity risks. CSF 2.0 adds a sixth function, GOVERN, alongside the original five: IDENTIFY, PROTECT, DETECT, RESPOND, RECOVER.",
+    "effective_date": "2024-02-26",
+    "tags": ["nist-csf", "nist", "framework", "risk-management"],
+    "external_url": "https://www.nist.gov/cyberframework"
+  },
+  "requirements": [
+    {
+      "requirement_ref": "GV.OC-01",
+      "title": "Govern — Organizational Context: Mission Understanding",
+      "description": "The organizational mission is understood and informs cybersecurity risk management decisions.",
+      "domain": "risk_management",
+      "severity": "medium",
+      "guidance": "Align cybersecurity strategy with organizational mission. Document risk appetite and tolerance levels.",
+      "policy_threshold": 70,
+      "tags": ["govern", "organizational-context"],
+      "external_ref": "https://www.nist.gov/cyberframework"
+    },
+    {
+      "requirement_ref": "GV.RM-01",
+      "title": "Govern — Risk Management Strategy: Risk Tolerance",
+      "description": "Risk management objectives are established and agreed to by organizational stakeholders.",
+      "domain": "risk_management",
+      "severity": "high",
+      "guidance": "Define and document organizational risk tolerance. Review with senior leadership annually.",
+      "policy_threshold": 80,
+      "tags": ["govern", "risk-management"],
+      "external_ref": "https://www.nist.gov/cyberframework"
+    },
+    {
+      "requirement_ref": "ID.AM-01",
+      "title": "Identify — Asset Management: Software Inventory",
+      "description": "Inventories of hardware managed by the organization are maintained.",
+      "domain": "risk_management",
+      "severity": "high",
+      "guidance": "Maintain automated asset discovery and inventory. Include cloud workloads and AI systems.",
+      "policy_threshold": 80,
+      "tags": ["identify", "asset-management"],
+      "external_ref": "https://www.nist.gov/cyberframework"
+    },
+    {
+      "requirement_ref": "ID.RA-01",
+      "title": "Identify — Risk Assessment: Vulnerabilities Identified",
+      "description": "Vulnerabilities in assets are identified, validated, and recorded.",
+      "domain": "vulnerability_management",
+      "severity": "high",
+      "guidance": "Run authenticated vulnerability scans. Validate and prioritise findings. Track remediation to closure.",
+      "policy_threshold": 80,
+      "tags": ["identify", "risk-assessment", "vulnerability"],
+      "external_ref": "https://www.nist.gov/cyberframework"
+    },
+    {
+      "requirement_ref": "PR.AA-01",
+      "title": "Protect — Identity Management and Authentication: Identities and Credentials",
+      "description": "Identities and credentials for authorized users, services, and hardware are managed by the organization.",
+      "domain": "access_control",
+      "severity": "critical",
+      "guidance": "Implement centralised identity management. Enforce MFA. Automate credential lifecycle.",
+      "policy_threshold": 90,
+      "tags": ["protect", "access-control", "identity"],
+      "external_ref": "https://www.nist.gov/cyberframework"
+    },
+    {
+      "requirement_ref": "PR.AA-05",
+      "title": "Protect — Identity Management and Authentication: Access Permissions",
+      "description": "Access permissions, entitlements, and authorizations are defined in a policy, managed, enforced, and reviewed, and incorporate the principles of least privilege and separation of duties.",
+      "domain": "access_control",
+      "severity": "critical",
+      "guidance": "Enforce least privilege and separation of duties. Conduct quarterly access certification reviews.",
+      "policy_threshold": 90,
+      "tags": ["protect", "access-control", "least-privilege"],
+      "external_ref": "https://www.nist.gov/cyberframework"
+    },
+    {
+      "requirement_ref": "PR.DS-01",
+      "title": "Protect — Data Security: Data-at-Rest Protection",
+      "description": "The confidentiality, integrity, and availability of data-at-rest are protected.",
+      "domain": "data_protection",
+      "severity": "high",
+      "guidance": "Encrypt data at rest using AES-256 or equivalent. Manage encryption keys centrally.",
+      "policy_threshold": 85,
+      "tags": ["protect", "data-security", "encryption"],
+      "external_ref": "https://www.nist.gov/cyberframework"
+    },
+    {
+      "requirement_ref": "PR.DS-02",
+      "title": "Protect — Data Security: Data-in-Transit Protection",
+      "description": "The confidentiality, integrity, and availability of data-in-transit are protected.",
+      "domain": "data_protection",
+      "severity": "high",
+      "guidance": "Enforce TLS 1.2+ for all in-transit data. Disable weak cipher suites. Monitor certificate expiry.",
+      "policy_threshold": 85,
+      "tags": ["protect", "data-security", "tls"],
+      "external_ref": "https://www.nist.gov/cyberframework"
+    },
+    {
+      "requirement_ref": "PR.IR-01",
+      "title": "Protect — Technology Infrastructure Resilience: Network Integrity",
+      "description": "Networks and environments are protected from unauthorized logical access and usage.",
+      "domain": "network_security",
+      "severity": "high",
+      "guidance": "Segment networks by sensitivity zone. Deploy intrusion prevention. Monitor East-West traffic.",
+      "policy_threshold": 80,
+      "tags": ["protect", "network-security", "segmentation"],
+      "external_ref": "https://www.nist.gov/cyberframework"
+    },
+    {
+      "requirement_ref": "DE.CM-01",
+      "title": "Detect — Continuous Monitoring: Network Monitoring",
+      "description": "Networks and network services are monitored to find potentially adverse events.",
+      "domain": "audit_logging",
+      "severity": "high",
+      "guidance": "Deploy network detection and response (NDR). Baseline normal traffic. Alert on anomalies.",
+      "policy_threshold": 80,
+      "tags": ["detect", "monitoring", "ndr"],
+      "external_ref": "https://www.nist.gov/cyberframework"
+    },
+    {
+      "requirement_ref": "DE.AE-02",
+      "title": "Detect — Adverse Event Analysis: Anomaly Investigation",
+      "description": "Potentially adverse events are analyzed to better characterize the events and detect cybersecurity incidents.",
+      "domain": "incident_response",
+      "severity": "high",
+      "guidance": "Establish SOC triage procedures. Define MTTD and MTTR targets. Use threat intelligence to enrich alerts.",
+      "policy_threshold": 80,
+      "tags": ["detect", "analysis", "triage"],
+      "external_ref": "https://www.nist.gov/cyberframework"
+    },
+    {
+      "requirement_ref": "RS.MA-01",
+      "title": "Respond — Incident Management: Incident Execution",
+      "description": "The incident response plan is executed in coordination with relevant third parties once an incident is declared.",
+      "domain": "incident_response",
+      "severity": "high",
+      "guidance": "Maintain and test incident response plan annually. Define communication trees. Run tabletop exercises.",
+      "policy_threshold": 80,
+      "tags": ["respond", "incident-response"],
+      "external_ref": "https://www.nist.gov/cyberframework"
+    },
+    {
+      "requirement_ref": "RC.RP-01",
+      "title": "Recover — Incident Recovery Plan Execution",
+      "description": "The recovery portion of the incident response plan is executed once initiated from the incident response process.",
+      "domain": "incident_response",
+      "severity": "high",
+      "guidance": "Define RTO and RPO. Test backup and restore procedures quarterly. Document recovery lessons learned.",
+      "policy_threshold": 80,
+      "tags": ["recover", "business-continuity", "backup"],
+      "external_ref": "https://www.nist.gov/cyberframework"
+    }
+  ]
+}

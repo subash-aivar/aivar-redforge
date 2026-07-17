@@ -1,0 +1,134 @@
+{
+  "metadata": {
+    "name": "HIPAA Security Rule",
+    "version": "2013",
+    "issuing_body": "U.S. Department of Health and Human Services (HHS) — Office for Civil Rights (OCR)",
+    "description": "The HIPAA Security Rule establishes national standards to protect individuals' electronic personal health information (ePHI) that is created, received, used, or maintained by a covered entity. The rule requires appropriate administrative, physical, and technical safeguards to ensure the confidentiality, integrity, and security of ePHI.",
+    "effective_date": "2003-04-21",
+    "tags": ["hipaa", "phi", "ephi", "healthcare", "hhs"],
+    "external_url": "https://www.hhs.gov/hipaa/for-professionals/security/index.html"
+  },
+  "requirements": [
+    {
+      "requirement_ref": "164.308(a)(1)",
+      "title": "Administrative Safeguards — Security Management Process",
+      "description": "Implement policies and procedures to prevent, detect, contain, and correct security violations. Includes: risk analysis, risk management, sanction policy, and information system activity review.",
+      "domain": "risk_management",
+      "severity": "critical",
+      "guidance": "Conduct formal risk analysis of ePHI. Document risk management plan. Review activity logs regularly.",
+      "policy_threshold": 90,
+      "tags": ["administrative-safeguards", "risk-management", "required"],
+      "external_ref": "https://www.hhs.gov/hipaa/for-professionals/security/guidance/index.html"
+    },
+    {
+      "requirement_ref": "164.308(a)(3)",
+      "title": "Administrative Safeguards — Workforce Security",
+      "description": "Implement policies and procedures to ensure that all members of the workforce have appropriate access to ePHI, and to prevent those workforce members who do not have access from obtaining access.",
+      "domain": "access_control",
+      "severity": "high",
+      "guidance": "Define access authorisation procedures. Implement workforce clearance processes. Terminate access promptly.",
+      "policy_threshold": 85,
+      "tags": ["administrative-safeguards", "workforce-security", "required"],
+      "external_ref": "https://www.hhs.gov/hipaa/for-professionals/security/guidance/index.html"
+    },
+    {
+      "requirement_ref": "164.308(a)(4)",
+      "title": "Administrative Safeguards — Information Access Management",
+      "description": "Implement policies and procedures for authorizing access to ePHI that are consistent with the applicable requirements of the Privacy Rule.",
+      "domain": "access_control",
+      "severity": "critical",
+      "guidance": "Restrict ePHI access to minimum necessary. Implement role-based access. Review access quarterly.",
+      "policy_threshold": 90,
+      "tags": ["administrative-safeguards", "access-management", "required"],
+      "external_ref": "https://www.hhs.gov/hipaa/for-professionals/security/guidance/index.html"
+    },
+    {
+      "requirement_ref": "164.308(a)(5)",
+      "title": "Administrative Safeguards — Security Awareness and Training",
+      "description": "Implement a security awareness and training program for all members of the workforce, including management.",
+      "domain": "risk_management",
+      "severity": "high",
+      "guidance": "Conduct annual security awareness training. Include phishing simulations. Track completion rates.",
+      "policy_threshold": 85,
+      "tags": ["administrative-safeguards", "training", "awareness", "addressable"],
+      "external_ref": "https://www.hhs.gov/hipaa/for-professionals/security/guidance/index.html"
+    },
+    {
+      "requirement_ref": "164.308(a)(6)",
+      "title": "Administrative Safeguards — Security Incident Procedures",
+      "description": "Implement policies and procedures to address security incidents, including procedures to identify and respond to suspected or known security incidents.",
+      "domain": "incident_response",
+      "severity": "critical",
+      "guidance": "Define and test incident response procedures. Document breach notification requirements. Report to OCR within 60 days.",
+      "policy_threshold": 90,
+      "tags": ["administrative-safeguards", "incident-response", "required"],
+      "external_ref": "https://www.hhs.gov/hipaa/for-professionals/security/guidance/index.html"
+    },
+    {
+      "requirement_ref": "164.308(a)(7)",
+      "title": "Administrative Safeguards — Contingency Plan",
+      "description": "Establish and implement policies and procedures for responding to an emergency or other occurrence that damages systems that contain ePHI.",
+      "domain": "incident_response",
+      "severity": "high",
+      "guidance": "Maintain data backup plan, disaster recovery plan, and emergency mode operation plan. Test annually.",
+      "policy_threshold": 85,
+      "tags": ["administrative-safeguards", "contingency-plan", "required"],
+      "external_ref": "https://www.hhs.gov/hipaa/for-professionals/security/guidance/index.html"
+    },
+    {
+      "requirement_ref": "164.310(a)(1)",
+      "title": "Physical Safeguards — Facility Access Controls",
+      "description": "Implement policies and procedures to limit physical access to electronic information systems and the facility or facilities in which they are housed, while ensuring that properly authorized access is allowed.",
+      "domain": "physical_security",
+      "severity": "high",
+      "guidance": "Restrict physical access to data centers and server rooms. Log and monitor entry. Escort visitors.",
+      "policy_threshold": 85,
+      "tags": ["physical-safeguards", "facility-access", "required"],
+      "external_ref": "https://www.hhs.gov/hipaa/for-professionals/security/guidance/index.html"
+    },
+    {
+      "requirement_ref": "164.312(a)(1)",
+      "title": "Technical Safeguards — Access Control",
+      "description": "Implement technical policies and procedures for electronic information systems that maintain ePHI to allow access only to those persons or software programs that have been granted access rights.",
+      "domain": "access_control",
+      "severity": "critical",
+      "guidance": "Enforce unique user identification. Implement emergency access procedure. Apply automatic logoff.",
+      "policy_threshold": 90,
+      "tags": ["technical-safeguards", "access-control", "required"],
+      "external_ref": "https://www.hhs.gov/hipaa/for-professionals/security/guidance/index.html"
+    },
+    {
+      "requirement_ref": "164.312(b)",
+      "title": "Technical Safeguards — Audit Controls",
+      "description": "Implement hardware, software, and/or procedural mechanisms that record and examine activity in information systems that contain or use ePHI.",
+      "domain": "audit_logging",
+      "severity": "critical",
+      "guidance": "Enable detailed audit logging of all ePHI access and modification. Retain logs for minimum 6 years.",
+      "policy_threshold": 90,
+      "tags": ["technical-safeguards", "audit-controls", "required"],
+      "external_ref": "https://www.hhs.gov/hipaa/for-professionals/security/guidance/index.html"
+    },
+    {
+      "requirement_ref": "164.312(c)(1)",
+      "title": "Technical Safeguards — Integrity",
+      "description": "Implement policies and procedures to protect ePHI from improper alteration or destruction.",
+      "domain": "data_protection",
+      "severity": "high",
+      "guidance": "Implement checksums and digital signatures for ePHI. Monitor for unauthorized modifications.",
+      "policy_threshold": 85,
+      "tags": ["technical-safeguards", "data-integrity", "required"],
+      "external_ref": "https://www.hhs.gov/hipaa/for-professionals/security/guidance/index.html"
+    },
+    {
+      "requirement_ref": "164.312(e)(1)",
+      "title": "Technical Safeguards — Transmission Security",
+      "description": "Implement technical security measures to guard against unauthorized access to ePHI that is being transmitted over an electronic communications network.",
+      "domain": "data_protection",
+      "severity": "critical",
+      "guidance": "Encrypt all ePHI in transit using TLS 1.2+. Prohibit transmission over unencrypted channels.",
+      "policy_threshold": 95,
+      "tags": ["technical-safeguards", "transmission-security", "encryption", "required"],
+      "external_ref": "https://www.hhs.gov/hipaa/for-professionals/security/guidance/index.html"
+    }
+  ]
+}
