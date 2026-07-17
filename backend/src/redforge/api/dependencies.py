@@ -14,6 +14,9 @@ from fastapi import Request  # noqa: TC002
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 if TYPE_CHECKING:
+    from redforge.application.compliance.assessment_service import (
+        OrganizationAssessmentService,
+    )
     from redforge.application.compliance.catalog_service import CatalogPublishingService
     from redforge.application.compliance.mapping_service import (
         CatalogQueryService,
@@ -1033,6 +1036,19 @@ def _mapping_service() -> MappingService:
 
 def get_mapping_service() -> MappingService:
     return _mapping_service()
+
+
+@lru_cache
+def _organization_assessment_service() -> OrganizationAssessmentService:
+    from redforge.application.compliance.assessment_service import (
+        OrganizationAssessmentService,
+    )
+
+    return OrganizationAssessmentService(_session_factory())
+
+
+def get_organization_assessment_service() -> OrganizationAssessmentService:
+    return _organization_assessment_service()
 
 
 def clear_cached_dependencies() -> None:

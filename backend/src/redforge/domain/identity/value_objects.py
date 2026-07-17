@@ -124,6 +124,14 @@ class Permission(StrEnum):
     INVESTIGATIONS_READ = "investigations:read"
     INVESTIGATIONS_MANAGE = "investigations:manage"
 
+    # Enterprise Compliance Assessment (M24 Phase 2).
+    # READ — profiles, periods, control assessments.
+    # MANAGE — create/activate profiles, open/close periods, confirm
+    #   evidence links, advance ControlStatus. Never implies Findings or
+    #   Threat Intelligence ownership.
+    COMPLIANCE_READ = "compliance:read"
+    COMPLIANCE_MANAGE = "compliance:manage"
+
 
 @unique
 class MembershipRole(StrEnum):
@@ -210,6 +218,8 @@ ROLE_PERMISSIONS: dict[MembershipRole, frozenset[Permission]] = {
         Permission.BEHAVIOR_MANAGE,
         Permission.INVESTIGATIONS_READ,
         Permission.INVESTIGATIONS_MANAGE,
+        Permission.COMPLIANCE_READ,
+        Permission.COMPLIANCE_MANAGE,
     }),
     MembershipRole.SECURITY_MANAGER: frozenset({
         Permission.ORG_READ,
@@ -236,6 +246,8 @@ ROLE_PERMISSIONS: dict[MembershipRole, frozenset[Permission]] = {
         Permission.BEHAVIOR_MANAGE,
         Permission.INVESTIGATIONS_READ,
         Permission.INVESTIGATIONS_MANAGE,
+        Permission.COMPLIANCE_READ,
+        Permission.COMPLIANCE_MANAGE,
     }),
     MembershipRole.ANALYST: frozenset({
         Permission.ORG_READ,
@@ -253,6 +265,8 @@ ROLE_PERMISSIONS: dict[MembershipRole, frozenset[Permission]] = {
         Permission.DDOS_READ,
         Permission.BEHAVIOR_READ,
         Permission.INVESTIGATIONS_READ,
+        Permission.COMPLIANCE_READ,
+        Permission.COMPLIANCE_MANAGE,
     }),
     MembershipRole.MEMBER: frozenset({
         Permission.ORG_READ,
@@ -271,6 +285,7 @@ ROLE_PERMISSIONS: dict[MembershipRole, frozenset[Permission]] = {
         Permission.DDOS_READ,
         Permission.BEHAVIOR_READ,
         Permission.INVESTIGATIONS_READ,
+        Permission.COMPLIANCE_READ,
     }),
     MembershipRole.VIEWER: frozenset({
         Permission.ORG_READ,
@@ -285,6 +300,7 @@ ROLE_PERMISSIONS: dict[MembershipRole, frozenset[Permission]] = {
         Permission.DDOS_READ,
         Permission.BEHAVIOR_READ,
         Permission.INVESTIGATIONS_READ,
+        Permission.COMPLIANCE_READ,
     }),
 }
 

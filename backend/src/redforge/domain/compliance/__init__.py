@@ -1,8 +1,9 @@
-"""Compliance bounded context — platform-owned Control Catalog.
+"""Compliance bounded context — platform catalog + organization assessment.
 
-Phase 1 delivers: FrameworkDefinition, ControlRequirement, ControlMapping,
-ControlCatalog aggregate, domain events, and the repository protocol.
+Phase 1: FrameworkDefinition, ControlRequirement, ControlMapping, ControlCatalog.
+Phase 2: ComplianceProfile, AssessmentPeriod, ControlAssessment,
+         ConfirmedEvidenceLink, ControlStatusEvaluator.
 
-Phase 2 will add: ComplianceProfile, AssessmentPeriod, ControlAssessment,
-evidence linking, and background workers.
+Phase 3+ (not implemented here): AutoLinkingEngine, workers, review queue,
+recommendation engine, dashboards.
 """

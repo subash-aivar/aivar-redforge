@@ -57,3 +57,73 @@ class ControlMappingRevoked:
     reason: str
     revoked_by: str  # platform user_id
     occurred_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+
+
+# ─── M24 Phase 2 — Organization Assessment events ─────────────────────────────
+
+
+@dataclass(frozen=True, slots=True)
+class ComplianceProfileCreated:
+    profile_id: str
+    organization_id: str
+    name: str
+    framework_keys: tuple[str, ...]
+    created_by: str
+    occurred_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+
+
+@dataclass(frozen=True, slots=True)
+class ComplianceProfileActivated:
+    profile_id: str
+    organization_id: str
+    activated_by: str
+    occurred_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+
+
+@dataclass(frozen=True, slots=True)
+class AssessmentPeriodOpened:
+    period_id: str
+    organization_id: str
+    profile_id: str
+    framework_key: FrameworkKey
+    opened_by: str
+    occurred_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+
+
+@dataclass(frozen=True, slots=True)
+class AssessmentPeriodClosed:
+    period_id: str
+    organization_id: str
+    profile_id: str
+    closed_by: str
+    occurred_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+
+
+@dataclass(frozen=True, slots=True)
+class ControlAssessmentCreated:
+    assessment_id: str
+    organization_id: str
+    period_id: str
+    requirement_id: str
+    framework_key: FrameworkKey
+    created_by: str
+    occurred_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+
+
+@dataclass(frozen=True, slots=True)
+class ControlEvidenceLinkConfirmed:
+    assessment_id: str
+    organization_id: str
+    evidence_id: str
+    confirmed_by: str
+    occurred_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+
+
+@dataclass(frozen=True, slots=True)
+class ControlStatusChanged:
+    assessment_id: str
+    organization_id: str
+    previous_status: str
+    new_status: str
+    changed_by: str
+    occurred_at: datetime = field(default_factory=lambda: datetime.now(UTC))

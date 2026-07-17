@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime  # noqa: TC003
 from enum import StrEnum, unique
 from typing import Any
 
@@ -137,6 +138,133 @@ class ControlMappingVersion:
 
     def bump_minor(self) -> ControlMappingVersion:
         return ControlMappingVersion(major=self.major, minor=self.minor + 1)
+
+
+# ─── M24 Phase 2 — Organization Assessment ───────────────────────────────────
+
+
+class ControlStatusCode:
+    """Known ControlStatus values for the approved Phase 2 lifecycle.
+
+    Stored as plain strings in persistence (never a DB enum) so future
+    states remain forward-compatible.  Unknown values must be preserved
+    verbatim on reconstitute — never rewritten to a known default.
+    """
+
+    NOT_ASSESSED = "not_assessed"
+    COLLECTING_EVIDENCE = "collecting_evidence"
+    PENDING_CONFIRMATION = "pending_confirmation"
+    TECHNICALLY_VALIDATED = "technically_validated"
+
+    KNOWN: frozenset[str] = frozenset(
+        {
+            NOT_ASSESSED,
+            COLLECTING_EVIDENCE,
+            PENDING_CONFIRMATION,
+            TECHNICALLY_VALIDATED,
+        }
+    )
+
+
+@dataclass(frozen=True, slots=True)
+class ControlStatus:
+    """Extensible control-assessment lifecycle status.
+
+    ``value`` is the durable string.  Known Phase 2 states are exposed as
+    constructors; any other non-empty string is accepted and preserved so
+    future schema additions never force a rewrite of historical rows.
+    """
+
+    value: str
+
+    def __post_init__(self) -> None:
+        cleaned = self.value.strip()
+        if not cleaned:
+            raise ValueError("ControlStatus value must be non-empty")
+        if len(cleaned) > 64:
+            raise ValueError(
+                f"ControlStatus value exceeds 64 characters: {len(cleaned)}"
+            )
+        if cleaned != self.value:
+            object.__setattr__(self, "value", cleaned)
+
+    @classmethod
+    def parse(cls, raw: str) -> ControlStatus:
+        """Reconstitute from persistence — never remaps unknown values."""
+        return cls(value=raw)
+
+    @classmethod
+    def not_assessed(cls) -> ControlStatus:
+        return cls(value=ControlStatusCode.NOT_ASSESSED)
+
+    @classmethod
+    def collecting_evidence(cls) -> ControlStatus:
+        return cls(value=ControlStatusCode.COLLECTING_EVIDENCE)
+
+    @classmethod
+    def pending_confirmation(cls) -> ControlStatus:
+        return cls(value=ControlStatusCode.PENDING_CONFIRMATION)
+
+    @classmethod
+    def technically_validated(cls) -> ControlStatus:
+        return cls(value=ControlStatusCode.TECHNICALLY_VALIDATED)
+
+    @property
+    def is_known(self) -> bool:
+        return self.value in ControlStatusCode.KNOWN
+
+    def __str__(self) -> str:
+        return self.value
+
+
+@unique
+class ProfileStatus(StrEnum):
+    """Lifecycle for an organization ComplianceProfile."""
+
+    DRAFT = "draft"
+    ACTIVE = "active"
+    ARCHIVED = "archived"
+
+
+@unique
+class AssessmentPeriodStatus(StrEnum):
+    """Lifecycle for an AssessmentPeriod."""
+
+    PLANNED = "planned"
+    OPEN = "open"
+    CLOSED = "closed"
+
+
+@dataclass(frozen=True, slots=True)
+class ConfirmedEvidenceLink:
+    """Reference-only link from a ControlAssessment to Evidence.
+
+    Compliance consumes evidence by ID — it never owns Evidence or Finding
+    aggregates and never embeds threat-intelligence payloads.
+    """
+
+    evidence_id: str
+    confirmed_by: str
+    confirmed_at: datetime
+    rationale: str = ""
+
+    def __post_init__(self) -> None:
+        eid = self.evidence_id.strip()
+        if not eid:
+            raise ValueError("ConfirmedEvidenceLink.evidence_id must be non-empty")
+        if len(eid) > 26:
+            raise ValueError(
+                f"ConfirmedEvidenceLink.evidence_id must be ≤26 chars, got {len(eid)}"
+            )
+        actor = self.confirmed_by.strip()
+        if not actor:
+            raise ValueError("ConfirmedEvidenceLink.confirmed_by must be non-empty")
+        if len(self.rationale) > 2000:
+            raise ValueError("ConfirmedEvidenceLink.rationale exceeds 2000 characters")
+        if eid != self.evidence_id:
+            object.__setattr__(self, "evidence_id", eid)
+        if actor != self.confirmed_by:
+            object.__setattr__(self, "confirmed_by", actor)
 
 
 @dataclass(frozen=True, slots=True)

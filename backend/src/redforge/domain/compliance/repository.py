@@ -4,6 +4,11 @@ from __future__ import annotations
 
 from typing import Protocol, runtime_checkable
 
+from redforge.domain.compliance.assessment import (  # noqa: TC001
+    AssessmentPeriod,
+    ComplianceProfile,
+    ControlAssessment,
+)
 from redforge.domain.compliance.entity import (  # noqa: TC001
     ControlCatalog,
     ControlMapping,
@@ -88,3 +93,61 @@ class ControlCatalogRepository(Protocol):
         Returns (items, total_count).
         """
         ...
+
+
+@runtime_checkable
+class OrganizationAssessmentRepository(Protocol):
+    """Persistence for org-scoped assessment aggregates (M24 Phase 2)."""
+
+    async def save_profile(self, profile: ComplianceProfile) -> None: ...
+
+    async def get_profile(
+        self, organization_id: str, profile_id: EntityId
+    ) -> ComplianceProfile | None: ...
+
+    async def list_profiles(
+        self, organization_id: str
+    ) -> list[ComplianceProfile]: ...
+
+    async def save_period(self, period: AssessmentPeriod) -> None: ...
+
+    async def get_period(
+        self, organization_id: str, period_id: EntityId
+    ) -> AssessmentPeriod | None: ...
+
+    async def list_periods(
+        self, organization_id: str, *, profile_id: EntityId | None = None
+    ) -> list[AssessmentPeriod]: ...
+
+    async def save_assessment(self, assessment: ControlAssessment) -> None: ...
+
+    async def get_assessment(
+        self, organization_id: str, assessment_id: EntityId
+    ) -> ControlAssessment | None: ...
+
+    async def get_assessment_for_requirement(
+        self,
+        organization_id: str,
+        period_id: EntityId,
+        requirement_id: EntityId,
+    ) -> ControlAssessment | None: ...
+
+    async def list_assessments(
+        self, organization_id: str, *, period_id: EntityId
+    ) -> list[ControlAssessment]: ...
+
+    async def list_active_profiles(
+        self, organization_id: str, *, exclude_profile_id: EntityId | None = None
+    ) -> list[ComplianceProfile]: ...
+
+    async def replace_active_framework_claims(
+        self,
+        *,
+        organization_id: str,
+        profile_id: EntityId,
+        framework_keys: tuple[FrameworkKey, ...],
+    ) -> None: ...
+
+    async def release_active_framework_claims(
+        self, *, organization_id: str, profile_id: EntityId
+    ) -> None: ...

@@ -1,4 +1,4 @@
-"""SQLAlchemy ORM models for the Compliance bounded context (Phase 1 — catalog only)."""
+"""SQLAlchemy ORM models for the Compliance bounded context."""
 
 from __future__ import annotations
 
@@ -24,7 +24,6 @@ class ComplianceFrameworkModel(Base):
     id: Mapped[str] = mapped_column(String(26), primary_key=True)
     key: Mapped[str] = mapped_column(String(80), nullable=False)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="draft")
-    # FrameworkMetadata serialised as JSONB
     metadata_: Mapped[dict[str, Any]] = mapped_column("metadata", JSONB, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -83,3 +82,92 @@ class ComplianceMappingModel(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ComplianceProfileModel(Base):
+    __tablename__ = "compliance_profiles"
+    __table_args__ = (
+        UniqueConstraint("organization_id", "name", name="uq_compliance_profiles_org_name"),
+        Index("ix_compliance_profiles_org_status", "organization_id", "status"),
+    )
+
+    id: Mapped[str] = mapped_column(String(26), primary_key=True)
+    organization_id: Mapped[str] = mapped_column(String(26), nullable=False)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    framework_keys: Mapped[list[str]] = mapped_column(
+        ARRAY(String), nullable=False, default=list
+    )
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="draft")
+    created_by: Mapped[str] = mapped_column(String(26), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class AssessmentPeriodModel(Base):
+    __tablename__ = "assessment_periods"
+    __table_args__ = (
+        UniqueConstraint(
+            "organization_id",
+            "profile_id",
+            "name",
+            name="uq_assessment_periods_org_profile_name",
+        ),
+        Index("ix_assessment_periods_org_profile", "organization_id", "profile_id"),
+        Index("ix_assessment_periods_org_status", "organization_id", "status"),
+    )
+
+    id: Mapped[str] = mapped_column(String(26), primary_key=True)
+    organization_id: Mapped[str] = mapped_column(String(26), nullable=False)
+    profile_id: Mapped[str] = mapped_column(String(26), nullable=False)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    framework_key: Mapped[str] = mapped_column(String(80), nullable=False)
+    period_start: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    period_end: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="planned")
+    created_by: Mapped[str] = mapped_column(String(26), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ControlAssessmentModel(Base):
+    __tablename__ = "control_assessments"
+    __table_args__ = (
+        UniqueConstraint(
+            "organization_id",
+            "period_id",
+            "requirement_id",
+            name="uq_control_assessments_org_period_req",
+        ),
+        Index("ix_control_assessments_org_period", "organization_id", "period_id"),
+        Index("ix_control_assessments_org_status", "organization_id", "status"),
+    )
+
+    id: Mapped[str] = mapped_column(String(26), primary_key=True)
+    organization_id: Mapped[str] = mapped_column(String(26), nullable=False)
+    profile_id: Mapped[str] = mapped_column(String(26), nullable=False)
+    period_id: Mapped[str] = mapped_column(String(26), nullable=False)
+    requirement_id: Mapped[str] = mapped_column(String(26), nullable=False)
+    framework_key: Mapped[str] = mapped_column(String(80), nullable=False)
+    status: Mapped[str] = mapped_column(String(64), nullable=False, default="not_assessed")
+    evidence_links: Mapped[list[dict[str, Any]]] = mapped_column(
+        JSONB, nullable=False, default=list
+    )
+    notes: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    created_by: Mapped[str] = mapped_column(String(26), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ComplianceActiveFrameworkClaimModel(Base):
+    """Concurrency-safe claim: one active profile per (org, framework_key)."""
+
+    __tablename__ = "compliance_active_framework_claims"
+    __table_args__ = (
+        Index("ix_cafc_profile", "organization_id", "profile_id"),
+    )
+
+    organization_id: Mapped[str] = mapped_column(String(26), primary_key=True)
+    framework_key: Mapped[str] = mapped_column(String(80), primary_key=True)
+    profile_id: Mapped[str] = mapped_column(String(26), nullable=False)
+    claimed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

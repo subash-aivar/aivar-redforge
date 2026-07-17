@@ -117,9 +117,13 @@ from redforge.infrastructure.database.models.threat_intel_reference_data import 
     VulnerabilityModel,
 )
 from redforge.infrastructure.database.models.compliance import (
+    AssessmentPeriodModel,
+    ComplianceActiveFrameworkClaimModel,
     ComplianceFrameworkModel,
     ComplianceMappingModel,
+    ComplianceProfileModel,
     ComplianceRequirementModel,
+    ControlAssessmentModel,
 )
 from redforge.infrastructure.database.models.user import UserModel
 from redforge.infrastructure.database.models.validation_execution import (
@@ -130,9 +134,13 @@ from redforge.infrastructure.database.models.validation_execution import (
 
 __all__ = [
     "AIAssetModel",
+    "AssessmentPeriodModel",
+    "ComplianceActiveFrameworkClaimModel",
     "ComplianceFrameworkModel",
     "ComplianceMappingModel",
+    "ComplianceProfileModel",
     "ComplianceRequirementModel",
+    "ControlAssessmentModel",
     "AITargetModel",
     "AttackPathModel",
     "AttackPathStepEvidenceModel",
