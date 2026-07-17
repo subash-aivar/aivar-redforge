@@ -46,6 +46,11 @@ class ReferenceDataSource(StrEnum):
     CISA_KEV = "cisa_kev"
     NVD_CVE = "nvd_cve"
     EPSS_FIRST = "epss_first"
+    #: M22 Phase 3 — vulnerability records ingested from a generic STIX
+    #: 2.1 TAXII collection (not necessarily MITRE-operated), via
+    #: `StixTaxiiFeedConnector`. Distinct from `NVD_CVE` so provenance
+    #: is never misattributed to a feed that was not actually queried.
+    STIX_TAXII_FEED = "stix_taxii_feed"
 
 
 @unique

@@ -426,6 +426,18 @@ class SqlAlchemyAttackTechniqueRepository:
         result = await self._session.execute(select(AttackTechniqueModel.technique_id))
         return set(result.scalars().all())
 
+    async def list_all(
+        self, *, limit: int = 2000, offset: int = 0
+    ) -> list[AttackTechnique]:
+        stmt = (
+            select(AttackTechniqueModel)
+            .order_by(AttackTechniqueModel.technique_id)
+            .limit(limit)
+            .offset(offset)
+        )
+        result = await self._session.execute(stmt)
+        return [_technique_to_domain(m) for m in result.scalars().all()]
+
     async def upsert_relationship(
         self, relationship: AttackTechniqueRelationship
     ) -> AttackTechniqueRelationship:
@@ -474,6 +486,18 @@ class SqlAlchemyAttackTechniqueRepository:
             stmt = stmt.where(
                 AttackTechniqueRelationshipModel.relationship_type == relationship_type.value
             )
+        result = await self._session.execute(stmt)
+        return [_relationship_to_domain(m) for m in result.scalars().all()]
+
+    async def list_all_relationships(
+        self, *, limit: int = 5000, offset: int = 0
+    ) -> list[AttackTechniqueRelationship]:
+        stmt = (
+            select(AttackTechniqueRelationshipModel)
+            .order_by(AttackTechniqueRelationshipModel.stix_id)
+            .limit(limit)
+            .offset(offset)
+        )
         result = await self._session.execute(stmt)
         return [_relationship_to_domain(m) for m in result.scalars().all()]
 
@@ -561,6 +585,18 @@ class SqlAlchemyVulnerabilityRepository:
             select(func.count()).select_from(VulnerabilityModel)
         )
         return int(result.scalar_one())
+
+    async def list_all(
+        self, *, limit: int = 2000, offset: int = 0
+    ) -> list[Vulnerability]:
+        stmt = (
+            select(VulnerabilityModel)
+            .order_by(VulnerabilityModel.cve_id)
+            .limit(limit)
+            .offset(offset)
+        )
+        result = await self._session.execute(stmt)
+        return [_vulnerability_to_domain(m) for m in result.scalars().all()]
 
 
 class SqlAlchemyReferenceDataIngestionRepository:

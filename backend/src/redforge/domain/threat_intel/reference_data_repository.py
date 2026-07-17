@@ -96,6 +96,12 @@ class AttackTechniqueRepository(Protocol):
         validation by callers — not a paginated read model."""
         ...
 
+    async def list_all(
+        self, *, limit: int = 2000, offset: int = 0
+    ) -> list[AttackTechnique]:
+        """Paginated full-catalog read for Threat Fusion (M22 Phase 4)."""
+        ...
+
     async def upsert_relationship(
         self, relationship: AttackTechniqueRelationship
     ) -> AttackTechniqueRelationship:
@@ -110,6 +116,12 @@ class AttackTechniqueRepository(Protocol):
     ) -> list[AttackTechniqueRelationship]:
         """Relationships where `technique_id` is on either the source or
         target side."""
+        ...
+
+    async def list_all_relationships(
+        self, *, limit: int = 5000, offset: int = 0
+    ) -> list[AttackTechniqueRelationship]:
+        """Paginated full relationship-catalog read for Threat Fusion."""
         ...
 
 
@@ -136,6 +148,12 @@ class VulnerabilityRepository(Protocol):
         ...
 
     async def count(self) -> int:
+        ...
+
+    async def list_all(
+        self, *, limit: int = 2000, offset: int = 0
+    ) -> list[Vulnerability]:
+        """Paginated full-catalog read for Threat Fusion (M22 Phase 4)."""
         ...
 
 

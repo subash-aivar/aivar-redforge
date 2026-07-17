@@ -13,7 +13,7 @@ old projection state from new.
 
 from enum import StrEnum, unique
 
-ONTOLOGY_VERSION = 6
+ONTOLOGY_VERSION = 7
 # v2 (M5): added IDENTITY/SERVICE_IDENTITY/GROUP node kinds and the
 # MEMBER_OF edge kind, backed by the new Directory Security bounded
 # context's real LDAP-derived identities/groups/direct memberships —
@@ -70,6 +70,11 @@ class NodeKind(StrEnum):
     CLOUD_ACCOUNT = "cloud_account"
     SECURITY_CONDITION = "security_condition"
     INVESTIGATION = "investigation"
+    # M22 Phase 5 — Threat Intelligence projection targets (Hardening:
+    # PostgreSQL security_graph ontology v7, not the in-memory KnowledgeGraph).
+    ATTACK_TECHNIQUE = "attack_technique"
+    THREAT_ACTOR = "threat_actor"
+    VULNERABILITY = "vulnerability"
 
 
 @unique
@@ -89,6 +94,11 @@ class EdgeKind(StrEnum):
     HAS_SECURITY_CONDITION = "has_security_condition"
     CORRELATED_WITH = "correlated_with"
     CUSTOM = "custom"
+    # M22 Phase 5 threat-intel edges
+    USES_TECHNIQUE = "uses_technique"
+    EXPLOITS_VULNERABILITY = "exploits_vulnerability"
+    ATTRIBUTED_TO = "attributed_to"
+    PRECEDES = "precedes"
 
 
 class InvalidRelationshipError(ValueError):
@@ -164,6 +174,14 @@ _CORRELATED_WITH_SOURCE = (
     | frozenset({NodeKind.SECURITY_CONDITION})
 )
 
+# M22 Phase 5 threat-intel kinds.
+_ATTACK_TECHNIQUE = frozenset({NodeKind.ATTACK_TECHNIQUE})
+_THREAT_ACTOR = frozenset({NodeKind.THREAT_ACTOR})
+_VULNERABILITY = frozenset({NodeKind.VULNERABILITY})
+_TI_ATTRIBUTE_SOURCE = _ASSET_KINDS | frozenset(
+    {NodeKind.IP_ADDRESS, NodeKind.FINDING, NodeKind.SECURITY_CONDITION}
+)
+
 EDGE_ONTOLOGY: dict[EdgeKind, tuple[frozenset[NodeKind], frozenset[NodeKind]]] = {
     EdgeKind.RUNS_ON: (_APP_AGENT, _HOST),
     EdgeKind.USES_MODEL: (_AGENT_SYSTEM, _MODEL),
@@ -182,6 +200,10 @@ EDGE_ONTOLOGY: dict[EdgeKind, tuple[frozenset[NodeKind], frozenset[NodeKind]]] =
     EdgeKind.HAS_SECURITY_CONDITION: (_CONDITION_SOURCE_KINDS, _SECURITY_CONDITION),
     EdgeKind.CORRELATED_WITH: (_CORRELATED_WITH_SOURCE, _INVESTIGATION),
     EdgeKind.CUSTOM: (_ASSET_KINDS, _ASSET_KINDS),
+    EdgeKind.USES_TECHNIQUE: (_THREAT_ACTOR, _ATTACK_TECHNIQUE),
+    EdgeKind.EXPLOITS_VULNERABILITY: (_ATTACK_TECHNIQUE, _VULNERABILITY),
+    EdgeKind.ATTRIBUTED_TO: (_TI_ATTRIBUTE_SOURCE, _THREAT_ACTOR),
+    EdgeKind.PRECEDES: (_ATTACK_TECHNIQUE, _ATTACK_TECHNIQUE),
 }
 
 

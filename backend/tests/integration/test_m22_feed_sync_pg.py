@@ -242,7 +242,7 @@ class TestMigrationSchema:
     async def test_migration_head_is_0036(self, session_factory) -> None:
         async with session_factory() as session:
             result = await session.execute(text("SELECT version_num FROM alembic_version"))
-            assert result.scalar_one() == "0036"
+            assert result.scalar_one() == "0038"
 
     async def test_feeds_scope_org_pairing_check_constraint_exists(self, session_factory) -> None:
         async with session_factory() as session:

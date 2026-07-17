@@ -144,6 +144,14 @@ class AuditAction(StrEnum):
     FEED_DISABLED = "feed.disabled"
     FEED_SYNC_TRIGGERED = "feed.sync_triggered"
 
+    # Threat Fusion — M22 Phase 4
+    INDICATOR_FUSED = "threat_fusion.indicator_fused"
+    FUSION_WEIGHT_UPDATED = "threat_fusion.weight_updated"
+
+    # Attack Path Engine — M22 Phase 5
+    ATTACK_PATH_COMPUTED = "attack_path.computed"
+    ATTACK_PATH_UPDATED = "attack_path.updated"
+
 
 @dataclass(frozen=True, slots=True)
 class AuditEntry:

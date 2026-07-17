@@ -75,6 +75,14 @@ class PlatformPermission(StrEnum):
     PLATFORM_FEED_SYNC_READ = "platform:feed_sync:read"
     PLATFORM_FEED_SYNC_MANAGE = "platform:feed_sync:manage"
 
+    # Threat Fusion (M22 Phase 4) — fused indicator catalog + source weights.
+    PLATFORM_THREAT_FUSION_READ = "platform:threat_fusion:read"
+    PLATFORM_THREAT_FUSION_MANAGE = "platform:threat_fusion:manage"
+
+    # Attack Path Engine (M22 Phase 5) — path compute + query.
+    PLATFORM_ATTACK_PATH_READ = "platform:attack_path:read"
+    PLATFORM_ATTACK_PATH_MANAGE = "platform:attack_path:manage"
+
 
 # Role -> Permission mapping for the platform control plane.
 #
@@ -120,6 +128,10 @@ PLATFORM_ROLE_PERMISSIONS: dict[PlatformRole, frozenset[PlatformPermission]] = {
         PlatformPermission.PLATFORM_THREAT_INTEL_MANAGE,
         PlatformPermission.PLATFORM_FEED_SYNC_READ,
         PlatformPermission.PLATFORM_FEED_SYNC_MANAGE,
+        PlatformPermission.PLATFORM_THREAT_FUSION_READ,
+        PlatformPermission.PLATFORM_THREAT_FUSION_MANAGE,
+        PlatformPermission.PLATFORM_ATTACK_PATH_READ,
+        PlatformPermission.PLATFORM_ATTACK_PATH_MANAGE,
     }),
     PlatformRole.SUPPORT: frozenset({
         PlatformPermission.PLATFORM_USERS_READ,
@@ -134,6 +146,8 @@ PLATFORM_ROLE_PERMISSIONS: dict[PlatformRole, frozenset[PlatformPermission]] = {
         PlatformPermission.PLATFORM_SECURITY_READ,
         PlatformPermission.PLATFORM_THREAT_INTEL_READ,
         PlatformPermission.PLATFORM_FEED_SYNC_READ,
+        PlatformPermission.PLATFORM_THREAT_FUSION_READ,
+        PlatformPermission.PLATFORM_ATTACK_PATH_READ,
     }),
 }
 

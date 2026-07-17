@@ -6,6 +6,7 @@ from redforge.api.v1.admin_rbac import router as admin_rbac_router
 from redforge.api.v1.ai_targets import router as ai_targets_router
 from redforge.api.v1.assets import router as assets_router
 from redforge.api.v1.attack_library import router as attack_library_router
+from redforge.api.v1.attack_paths import router as attack_paths_router
 from redforge.api.v1.attack_surface import router as attack_surface_router
 from redforge.api.v1.auth import router as auth_router
 from redforge.api.v1.authorizations import router as authorizations_router
@@ -42,6 +43,7 @@ from redforge.api.v1.security_correlations import router as security_correlation
 from redforge.api.v1.security_graph import router as security_graph_router
 from redforge.api.v1.security_operations import router as security_operations_router
 from redforge.api.v1.telemetry import router as telemetry_router
+from redforge.api.v1.threat_fusion import router as threat_fusion_router
 from redforge.api.v1.threat_intel import router as threat_intel_router
 from redforge.api.v1.threat_intel_reference_data import (
     router as threat_intel_reference_data_router,
@@ -92,6 +94,8 @@ router.include_router(
     threat_intel_reference_data_router, tags=["threat-intel-reference-data"]
 )
 router.include_router(feed_sync_router, tags=["threat-intel-feed-sync"])
+router.include_router(threat_fusion_router, tags=["threat-fusion"])
+router.include_router(attack_paths_router, tags=["attack-paths"])
 router.include_router(telemetry_router, tags=["telemetry"])
 router.include_router(ddos_router, tags=["ddos"])
 router.include_router(behavior_router, tags=["behavior"])

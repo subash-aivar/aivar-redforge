@@ -5,6 +5,11 @@ from redforge.infrastructure.database.models.asset_connector import (
     AIAssetModel,
     ConnectorModel,
 )
+from redforge.infrastructure.database.models.attack_path import (
+    AttackPathModel,
+    AttackPathStepEvidenceModel,
+    AttackPathStepModel,
+)
 from redforge.infrastructure.database.models.authorization import (
     SecurityAuthorizationApprovalModel,
     SecurityAuthorizationDecisionModel,
@@ -90,6 +95,12 @@ from redforge.infrastructure.database.models.telemetry import (
     TelemetryEventModel,
     TelemetrySensorModel,
 )
+from redforge.infrastructure.database.models.threat_fusion import (
+    FusedIndicatorModel,
+    FusedIndicatorSourceModel,
+    FusedRelationshipModel,
+    ThreatIntelFusionConfigModel,
+)
 from redforge.infrastructure.database.models.threat_intel import (
     ThreatIntelEnrichmentModel,
     ThreatIntelIndicatorModel,
@@ -111,6 +122,9 @@ from redforge.infrastructure.database.models.validation_execution import (
 __all__ = [
     "AIAssetModel",
     "AITargetModel",
+    "AttackPathModel",
+    "AttackPathStepEvidenceModel",
+    "AttackPathStepModel",
     "AttackTacticModel",
     "AttackTechniqueModel",
     "AttackTechniqueRelationshipModel",
@@ -134,6 +148,9 @@ __all__ = [
     "DirectoryMembershipModel",
     "FeedModel",
     "FeedSyncRunModel",
+    "FusedIndicatorModel",
+    "FusedIndicatorSourceModel",
+    "FusedRelationshipModel",
     "IntegrationProviderModel",
     "InvestigationEventModel",
     "InvestigationEvidenceLinkModel",
@@ -171,6 +188,7 @@ __all__ = [
     "TelemetryEventModel",
     "TelemetrySensorModel",
     "ThreatIntelEnrichmentModel",
+    "ThreatIntelFusionConfigModel",
     "ThreatIntelIndicatorModel",
     "UserModel",
     "ValidationExecutionEventModel",
