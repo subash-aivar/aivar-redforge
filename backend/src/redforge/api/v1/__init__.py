@@ -5,6 +5,7 @@ from fastapi import APIRouter
 from redforge.api.v1.admin_rbac import router as admin_rbac_router
 from redforge.api.v1.compliance import router as compliance_router
 from redforge.api.v1.compliance_assessment import router as compliance_assessment_router
+from redforge.api.v1.compliance_console import router as compliance_console_router
 from redforge.api.v1.compliance_recommendations import (
     router as compliance_recommendations_router,
 )
@@ -110,3 +111,4 @@ router.include_router(compliance_assessment_router, tags=["compliance-assessment
 router.include_router(
     compliance_recommendations_router, tags=["compliance-recommendations"]
 )
+router.include_router(compliance_console_router, tags=["compliance-console"])

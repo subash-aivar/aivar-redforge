@@ -105,7 +105,7 @@ def _batch_from_row(row: RecommendationBatchModel) -> RecommendationBatch:
     )
 
 
-def _recommendation_from_row(row: EvidenceRecommendationModel) -> EvidenceRecommendation:
+def recommendation_from_row(row: EvidenceRecommendationModel) -> EvidenceRecommendation:
     return EvidenceRecommendation(
         id=EntityId.from_string(row.id),
         organization_id=row.organization_id,
@@ -130,6 +130,10 @@ def _recommendation_from_row(row: EvidenceRecommendationModel) -> EvidenceRecomm
         created_at=row.created_at,
         updated_at=row.updated_at,
     )
+
+
+# Backwards-compatible alias used by existing repository methods.
+_recommendation_from_row = recommendation_from_row
 
 
 class SqlAlchemyEvidenceRecommendationRepository:

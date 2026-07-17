@@ -1067,6 +1067,19 @@ def get_evidence_recommendation_service() -> object:
     return _evidence_recommendation_service()
 
 
+@lru_cache
+def _compliance_console_query_service() -> object:
+    from redforge.application.compliance.console_query_service import (
+        ComplianceConsoleQueryService,
+    )
+
+    return ComplianceConsoleQueryService(_session_factory())
+
+
+def get_compliance_console_query_service() -> object:
+    return _compliance_console_query_service()
+
+
 def clear_cached_dependencies() -> None:
     """Clear every `@lru_cache`-memoized provider in this module.
 
