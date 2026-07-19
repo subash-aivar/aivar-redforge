@@ -105,14 +105,6 @@ class CredentialExpired(BaseDomainEvent):
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class CredentialExpirationWarning(BaseDomainEvent):
-    credential_id: CredentialId
-    active_version_id: VersionId | None
-    expires_at: datetime
-    days_remaining: int
-
-
-@dataclass(frozen=True, slots=True, kw_only=True)
 class CredentialAccessed(BaseDomainEvent):
     credential_id: CredentialId
     version_id: VersionId
@@ -209,3 +201,41 @@ class BulkRevocationInitiated(BaseDomainEvent):
     initiating_principal: PrincipalId
     credential_ids: list[CredentialId]
     reason: str
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class CredentialRotationScheduled(BaseDomainEvent):
+    """Emitted by RotationSchedulerWorker before triggering rotate_credential."""
+
+    credential_id: CredentialId
+    policy_id: RotationPolicyId
+    scheduled_at: datetime
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class CredentialExpirationWarning(BaseDomainEvent):
+    """Emitted by ExpirationScannerWorker when expiry is imminent."""
+
+    credential_id: CredentialId
+    version_id: VersionId
+    days_until_expiry: int
+    expiry_at: datetime
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class CredentialVersionsPruned(BaseDomainEvent):
+    """Emitted by VersionPrunerWorker after pruning."""
+
+    credential_id: CredentialId
+    pruned_count: int
+    remaining_superseded: int
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class DekRewrapCompleted(BaseDomainEvent):
+    """Emitted by DekRewrapWorker after a version's DEK is rewrapped."""
+
+    version_id: VersionId
+    old_master_key_id: str
+    new_master_key_id: str
+    rewrapped_at: datetime

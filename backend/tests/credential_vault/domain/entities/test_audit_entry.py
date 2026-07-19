@@ -13,9 +13,7 @@ from credential_vault.domain.value_objects.identifiers import AuditEntryId, Audi
 
 
 class TestAuditEntry:
-    def test_valid_entry(
-        self, credential_id, tenant_id, principal_id, version_id, now
-    ) -> None:
+    def test_valid_entry(self, credential_id, tenant_id, principal_id, version_id, now) -> None:
         entry = AuditEntry(
             entry_id=AuditEntryId(uuid4()),
             audit_log_id=AuditLogId(uuid4()),
@@ -34,9 +32,7 @@ class TestAuditEntry:
         )
         assert entry.operation == AuditOperation.ACCESSED
 
-    def test_detail_too_long(
-        self, credential_id, tenant_id, principal_id, now
-    ) -> None:
+    def test_detail_too_long(self, credential_id, tenant_id, principal_id, now) -> None:
         with pytest.raises(InvalidArgument, match="detail"):
             AuditEntry(
                 entry_id=AuditEntryId(uuid4()),

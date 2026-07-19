@@ -27,6 +27,8 @@ class TestRotationPolicy:
         )
         assert policy.name == "monthly"
         assert policy.version == 0
+        assert policy.auto_commit is True
+        assert policy.commit_window_hours == 24
         events = policy.pop_events()
         assert isinstance(events[0], RotationPolicyCreated)
 
@@ -77,7 +79,9 @@ class TestRotationPolicy:
                 now=now,
             )
 
-    def test_tenant_mismatch(self, rotation_policy_id, tenant_id, other_tenant_id, now, principal_id) -> None:
+    def test_tenant_mismatch(
+        self, rotation_policy_id, tenant_id, other_tenant_id, now, principal_id
+    ) -> None:
         policy = RotationPolicy.create(
             policy_id=rotation_policy_id,
             tenant_id=tenant_id,

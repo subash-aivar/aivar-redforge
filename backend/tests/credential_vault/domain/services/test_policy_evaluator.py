@@ -98,9 +98,7 @@ class TestPolicyEvaluatorService:
         evaluator = PolicyEvaluatorService()
         assert evaluator.should_warn_expiration(version, policy, now) is True
 
-    def test_compute_version_expiry(
-        self, expiration_policy_id, tenant_id, now
-    ) -> None:
+    def test_compute_version_expiry(self, expiration_policy_id, tenant_id, now) -> None:
         policy = ExpirationPolicy.create(
             policy_id=expiration_policy_id,
             tenant_id=tenant_id,

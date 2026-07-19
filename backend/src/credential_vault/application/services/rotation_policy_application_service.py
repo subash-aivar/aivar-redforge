@@ -119,6 +119,8 @@ class RotationPolicyApplicationService:
                 cmd.notify_days_before,
                 cmd.auto_rotate,
                 now,
+                auto_commit=cmd.auto_commit,
+                commit_window_hours=cmd.commit_window_hours,
             )
             await uow.rotation_policies.save(policy)
             await uow.commit()
@@ -152,6 +154,8 @@ class RotationPolicyApplicationService:
                 cmd.auto_rotate,
                 principal,
                 now,
+                auto_commit=cmd.auto_commit,
+                commit_window_hours=cmd.commit_window_hours,
             )
             await uow.rotation_policies.save(policy)
             await uow.commit()

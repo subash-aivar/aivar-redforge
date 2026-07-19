@@ -56,6 +56,7 @@ from redforge.api.v1.threat_intel_reference_data import (
 )
 from redforge.api.v1.validation_executions import router as validation_executions_router
 from redforge.api.v1.validations import router as validations_router
+from credential_vault.api.v1 import router as credential_vault_router
 
 router = APIRouter()
 router.include_router(health_router, tags=["health"])
@@ -112,3 +113,4 @@ router.include_router(
     compliance_recommendations_router, tags=["compliance-recommendations"]
 )
 router.include_router(compliance_console_router, tags=["compliance-console"])
+router.include_router(credential_vault_router, tags=["credential-vault"])

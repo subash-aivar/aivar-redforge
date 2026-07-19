@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
@@ -24,6 +25,26 @@ from credential_vault.domain.value_objects.identifiers import (
 from credential_vault.domain.value_objects.payloads import EncryptedPayload, KeyEnvelope
 from credential_vault.domain.value_objects.rotation_context import RotationContext
 from credential_vault.domain.value_objects.states import VersionState
+
+pytest_plugins = ["tests.credential_vault.infrastructure.conftest"]
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    config.addinivalue_line(
+        "markers",
+        "integration: marks tests requiring PostgreSQL",
+    )
+
+
+def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
+    if os.environ.get("TEST_DATABASE_URL"):
+        return
+    skip_integration = pytest.mark.skip(
+        reason="TEST_DATABASE_URL not set — skipping integration tests"
+    )
+    for item in items:
+        if "integration" in item.keywords:
+            item.add_marker(skip_integration)
 
 
 @pytest.fixture

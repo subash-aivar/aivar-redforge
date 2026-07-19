@@ -297,8 +297,8 @@ class CredentialApplicationService:
             version.promote()
             audit_log = AuditLog.create(audit_log_id, credential_id, tenant_id, now)
 
-            await uow.versions.save(version)
             await uow.credentials.save(credential)
+            await uow.versions.save(version)
             await uow.audit_logs.save(audit_log)
 
             entry = self._make_audit_entry(
@@ -566,6 +566,7 @@ class CredentialApplicationService:
                 )
             aborted_version = pending[0]
             aborted_version.revoke()
+            credential._pending_new_version_id = aborted_version.version_id
             credential.abort_rotation(tenant_id, cmd.reason, principal, now)
 
             await uow.versions.update(aborted_version)

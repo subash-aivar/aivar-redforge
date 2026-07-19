@@ -30,7 +30,9 @@ class RotationPolicy:
     __slots__ = (
         "_pending_events",
         "_version",
+        "auto_commit",
         "auto_rotate",
+        "commit_window_hours",
         "created_at",
         "interval_days",
         "max_versions_kept",
@@ -53,6 +55,8 @@ class RotationPolicy:
         created_at: datetime,
         updated_at: datetime,
         version: int,
+        auto_commit: bool = True,
+        commit_window_hours: int = 24,
     ) -> None:
         self.policy_id = policy_id
         self.tenant_id = tenant_id
@@ -61,6 +65,8 @@ class RotationPolicy:
         self.max_versions_kept = max_versions_kept
         self.notify_days_before = notify_days_before
         self.auto_rotate = auto_rotate
+        self.auto_commit = auto_commit
+        self.commit_window_hours = commit_window_hours
         self.created_at = created_at
         self.updated_at = updated_at
         self._version = version
@@ -77,8 +83,16 @@ class RotationPolicy:
         notify_days_before: int,
         auto_rotate: bool,
         now: datetime,
+        auto_commit: bool = True,
+        commit_window_hours: int = 24,
     ) -> RotationPolicy:
-        cls._validate(name, interval_days, max_versions_kept, notify_days_before)
+        cls._validate(
+            name,
+            interval_days,
+            max_versions_kept,
+            notify_days_before,
+            commit_window_hours,
+        )
         policy = cls(
             policy_id=policy_id,
             tenant_id=tenant_id,
@@ -87,6 +101,8 @@ class RotationPolicy:
             max_versions_kept=max_versions_kept,
             notify_days_before=notify_days_before,
             auto_rotate=auto_rotate,
+            auto_commit=auto_commit,
+            commit_window_hours=commit_window_hours,
             created_at=now,
             updated_at=now,
             version=0,
@@ -113,6 +129,7 @@ class RotationPolicy:
         interval_days: int | None,
         max_versions_kept: int,
         notify_days_before: int,
+        commit_window_hours: int = 24,
     ) -> None:
         if not name or not name.strip():
             raise InvalidArgument("name", "name required")
@@ -124,6 +141,8 @@ class RotationPolicy:
             raise InvalidArgument("max_versions_kept", "must be 1-100")
         if not (0 <= notify_days_before <= 90):
             raise InvalidArgument("notify_days_before", "must be 0-90")
+        if not (1 <= commit_window_hours <= 168):
+            raise InvalidArgument("commit_window_hours", "must be 1-168")
 
     def _assert_tenant(self, tenant_id: TenantId) -> None:
         if self.tenant_id != tenant_id:
@@ -138,9 +157,21 @@ class RotationPolicy:
         auto_rotate: bool,
         principal: PrincipalId,
         now: datetime,
+        auto_commit: bool | None = None,
+        commit_window_hours: int | None = None,
     ) -> None:
         self._assert_tenant(tenant_id)
-        self._validate(self.name, interval_days, max_versions_kept, notify_days_before)
+        next_auto_commit = self.auto_commit if auto_commit is None else auto_commit
+        next_commit_window = (
+            self.commit_window_hours if commit_window_hours is None else commit_window_hours
+        )
+        self._validate(
+            self.name,
+            interval_days,
+            max_versions_kept,
+            notify_days_before,
+            next_commit_window,
+        )
         changed: list[str] = []
         if interval_days != self.interval_days:
             changed.append("interval_days")
@@ -154,6 +185,12 @@ class RotationPolicy:
         if auto_rotate != self.auto_rotate:
             changed.append("auto_rotate")
             self.auto_rotate = auto_rotate
+        if next_auto_commit != self.auto_commit:
+            changed.append("auto_commit")
+            self.auto_commit = next_auto_commit
+        if next_commit_window != self.commit_window_hours:
+            changed.append("commit_window_hours")
+            self.commit_window_hours = next_commit_window
         _ = principal
         self._version += 1
         self.updated_at = now
@@ -169,9 +206,7 @@ class RotationPolicy:
             )
         )
 
-    def delete(
-        self, tenant_id: TenantId, principal: PrincipalId, now: datetime
-    ) -> None:
+    def delete(self, tenant_id: TenantId, principal: PrincipalId, now: datetime) -> None:
         self._assert_tenant(tenant_id)
         self._version += 1
         self.updated_at = now

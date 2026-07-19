@@ -115,4 +115,4 @@ class TestDomainExceptions:
             and isinstance(getattr(exc, n), type)
             and issubclass(getattr(exc, n), exc.DomainException)
         ]
-        assert len(public_names) == 24
+        assert len(public_names) == 26

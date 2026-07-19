@@ -77,9 +77,7 @@ class TestRotationPlannerService:
         planner = RotationPlannerService()
         assert planner.is_rotation_due(credential, policy, now, now) is False
 
-    def test_next_rotation_at(
-        self, rotation_policy_id, tenant_id, now
-    ) -> None:
+    def test_next_rotation_at(self, rotation_policy_id, tenant_id, now) -> None:
         policy = RotationPolicy.create(
             policy_id=rotation_policy_id,
             tenant_id=tenant_id,

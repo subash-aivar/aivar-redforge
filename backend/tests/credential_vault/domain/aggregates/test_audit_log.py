@@ -24,9 +24,7 @@ class TestAuditLog:
         assert log.entries == []
         assert log.version == 0
 
-    def test_append_entry(
-        self, credential_id, tenant_id, principal_id, version_id, now
-    ) -> None:
+    def test_append_entry(self, credential_id, tenant_id, principal_id, version_id, now) -> None:
         log_id = AuditLogId(uuid4())
         log = AuditLog.create(
             audit_log_id=log_id,

@@ -15,6 +15,8 @@ class CreateRotationPolicyCommand:
     max_versions_kept: int
     notify_days_before: int
     auto_rotate: bool
+    auto_commit: bool = True
+    commit_window_hours: int = 24
 
 
 @dataclass(frozen=True, slots=True)
@@ -26,6 +28,8 @@ class UpdateRotationPolicyCommand:
     max_versions_kept: int
     notify_days_before: int
     auto_rotate: bool
+    auto_commit: bool = True
+    commit_window_hours: int = 24
 
 
 @dataclass(frozen=True, slots=True)

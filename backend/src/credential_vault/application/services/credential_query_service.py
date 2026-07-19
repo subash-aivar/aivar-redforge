@@ -11,7 +11,7 @@ from credential_vault.application._validation import (
 )
 from credential_vault.application.dtos.credential_dtos import CredentialDTO, VersionDTO
 from credential_vault.application.exceptions import ApplicationValidationError
-from credential_vault.domain.exceptions.domain_exceptions import AccessDenied
+from credential_vault.domain.exceptions.domain_exceptions import AccessDenied, CredentialIsDeleted
 from credential_vault.domain.ports.i_permission_port import IPermissionPort
 from credential_vault.domain.value_objects.identifiers import (
     CredentialId,
@@ -105,6 +105,8 @@ class CredentialQueryService:
 
         await self._require_read(principal, credential_id, tenant_id)
         credential = await self._credential_repo.get_by_id(credential_id, tenant_id)
+        if credential.state == CredentialState.DELETED:
+            raise CredentialIsDeleted(credential_id)
         return CredentialDTO.from_aggregate(credential)
 
     async def list_credentials(self, qry: ListCredentialsQuery) -> list[CredentialDTO]:

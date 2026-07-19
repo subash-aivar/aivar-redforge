@@ -43,27 +43,21 @@ class CredentialNotFound(DomainException):
     def __init__(self, credential_id: CredentialId, tenant_id: TenantId) -> None:
         self.credential_id = credential_id
         self.tenant_id = tenant_id
-        super().__init__(
-            f"Credential not found: {credential_id} for tenant {tenant_id}"
-        )
+        super().__init__(f"Credential not found: {credential_id} for tenant {tenant_id}")
 
 
 class CredentialAlreadyExists(DomainException):
     def __init__(self, name: CredentialName, tenant_id: TenantId) -> None:
         self.name = name
         self.tenant_id = tenant_id
-        super().__init__(
-            f"Credential already exists: {name.value} for tenant {tenant_id}"
-        )
+        super().__init__(f"Credential already exists: {name.value} for tenant {tenant_id}")
 
 
 class VersionNotFound(DomainException):
     def __init__(self, version_id: VersionId, credential_id: CredentialId) -> None:
         self.version_id = version_id
         self.credential_id = credential_id
-        super().__init__(
-            f"Version not found: {version_id} for credential {credential_id}"
-        )
+        super().__init__(f"Version not found: {version_id} for credential {credential_id}")
 
 
 class ActiveVersionNotFound(DomainException):
@@ -94,9 +88,7 @@ class PolicyInUse(DomainException):
     def __init__(self, policy_id: object, referencing_credential_count: int) -> None:
         self.policy_id = policy_id
         self.referencing_credential_count = referencing_credential_count
-        super().__init__(
-            f"Policy {policy_id} in use by {referencing_credential_count} credentials"
-        )
+        super().__init__(f"Policy {policy_id} in use by {referencing_credential_count} credentials")
 
 
 class VaultBackendNotFound(DomainException):
@@ -109,9 +101,7 @@ class VaultBackendInUse(DomainException):
     def __init__(self, backend_id: VaultBackendId, credential_count: int) -> None:
         self.backend_id = backend_id
         self.credential_count = credential_count
-        super().__init__(
-            f"Vault backend {backend_id} in use by {credential_count} credentials"
-        )
+        super().__init__(f"Vault backend {backend_id} in use by {credential_count} credentials")
 
 
 class AccessDenied(DomainException):
@@ -163,21 +153,16 @@ class CredentialIsDeleted(DomainException):
 class BreakGlassJustificationRequired(DomainException):
     def __init__(self, credential_id: CredentialId) -> None:
         self.credential_id = credential_id
-        super().__init__(
-            f"Break-glass justification required for credential {credential_id}"
-        )
+        super().__init__(f"Break-glass justification required for credential {credential_id}")
 
 
 class InsufficientApprovers(DomainException):
-    def __init__(
-        self, required: int, actual: int, credential_id: CredentialId
-    ) -> None:
+    def __init__(self, required: int, actual: int, credential_id: CredentialId) -> None:
         self.required = required
         self.actual = actual
         self.credential_id = credential_id
         super().__init__(
-            f"Insufficient approvers for {credential_id}: "
-            f"required {required}, actual {actual}"
+            f"Insufficient approvers for {credential_id}: required {required}, actual {actual}"
         )
 
 
@@ -193,9 +178,7 @@ class RecoveryVersionInvalid(DomainException):
 class OptimisticLockConflict(DomainException):
     """Raised by repositories (not aggregates) on version mismatch."""
 
-    def __init__(
-        self, aggregate_id: str, expected_version: int, actual_version: int
-    ) -> None:
+    def __init__(self, aggregate_id: str, expected_version: int, actual_version: int) -> None:
         self.aggregate_id = aggregate_id
         self.expected_version = expected_version
         self.actual_version = actual_version
@@ -220,9 +203,7 @@ class NoPolicyAttached(DomainException):
     def __init__(self, credential_id: object, policy_type: str) -> None:
         self.credential_id = credential_id
         self.policy_type = policy_type
-        super().__init__(
-            f"No {policy_type} policy attached for {credential_id}"
-        )
+        super().__init__(f"No {policy_type} policy attached for {credential_id}")
 
 
 class DuplicatePolicyName(DomainException):
@@ -230,9 +211,7 @@ class DuplicatePolicyName(DomainException):
         self.name = name
         self.tenant_id = tenant_id
         self.policy_type = policy_type
-        super().__init__(
-            f"Duplicate {policy_type} policy name '{name}' for tenant {tenant_id}"
-        )
+        super().__init__(f"Duplicate {policy_type} policy name '{name}' for tenant {tenant_id}")
 
 
 class ResolvedSecretZeroized(DomainException):
@@ -240,3 +219,18 @@ class ResolvedSecretZeroized(DomainException):
 
     def __init__(self) -> None:
         super().__init__("ResolvedSecret has been zeroized")
+
+
+class EncryptionAuthTagFailure(DomainException):
+    """AES-GCM authentication tag verification failed. Ciphertext is corrupted or tampered."""
+
+    def __init__(self) -> None:
+        super().__init__("Encryption authentication tag verification failed")
+
+
+class KmsKeyNotFound(DomainException):
+    """KMS master key ID not found or inaccessible."""
+
+    def __init__(self, master_key_id: str) -> None:
+        self.master_key_id = master_key_id
+        super().__init__(f"KMS master key not found: {master_key_id}")

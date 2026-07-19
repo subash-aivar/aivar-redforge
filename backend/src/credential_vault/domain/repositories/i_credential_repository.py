@@ -13,6 +13,7 @@ if TYPE_CHECKING:
         ExpirationPolicyId,
         RotationPolicyId,
         TenantId,
+        VaultBackendId,
     )
     from credential_vault.domain.value_objects.states import CredentialState
 
@@ -23,21 +24,15 @@ class ICredentialRepository(ABC):
         """Persist or update a Credential aggregate."""
 
     @abstractmethod
-    async def get_by_id(
-        self, credential_id: CredentialId, tenant_id: TenantId
-    ) -> Credential:
+    async def get_by_id(self, credential_id: CredentialId, tenant_id: TenantId) -> Credential:
         """Raises CredentialNotFound if not found or tenant_id mismatch."""
 
     @abstractmethod
-    async def get_by_name(
-        self, name: CredentialName, tenant_id: TenantId
-    ) -> Credential:
+    async def get_by_name(self, name: CredentialName, tenant_id: TenantId) -> Credential:
         """Raises CredentialNotFound if not found."""
 
     @abstractmethod
-    async def exists_by_name(
-        self, name: CredentialName, tenant_id: TenantId
-    ) -> bool:
+    async def exists_by_name(self, name: CredentialName, tenant_id: TenantId) -> bool:
         """Used for uniqueness check before create."""
 
     @abstractmethod
@@ -65,3 +60,20 @@ class ICredentialRepository(ABC):
         tenant_id: TenantId,
     ) -> list[CredentialId]:
         """Used to enforce PolicyInUse on policy delete."""
+
+    @abstractmethod
+    async def list_with_vault_backend(
+        self,
+        backend_id: VaultBackendId,
+        tenant_id: TenantId,
+    ) -> list[CredentialId]:
+        """Used to enforce VaultBackendInUse on backend delete."""
+
+    @abstractmethod
+    async def list_with_active_rotation_policy(
+        self,
+        tenant_id: TenantId,
+        limit: int = 1000,
+        offset: int = 0,
+    ) -> list[Credential]:
+        """Returns ACTIVE credentials with a rotation_policy_id set."""

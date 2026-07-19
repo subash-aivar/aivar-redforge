@@ -133,6 +133,109 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             )
             logger.info("database_engine_started", dlq="postgresql")
 
+        async def _start_credential_vault() -> None:
+            sf = _session_factory
+            if sf is None:
+                logger.warning("credential_vault_no_session_factory")
+                return
+            from redforge.api.dependencies import get_effective_access_service
+
+            from credential_vault.infrastructure.container import CredentialVaultContainer
+            from credential_vault.infrastructure.startup_validator import (
+                validate_credential_vault,
+            )
+
+            cv_container = CredentialVaultContainer(
+                session_factory=sf,
+                effective_access_svc=get_effective_access_service(),
+            )
+            app.state.cv_container = cv_container
+            if settings.environment != "test":
+                try:
+                    await validate_credential_vault(cv_container)
+                except Exception as exc:
+                    if settings.environment == "production":
+                        raise
+                    logger.warning("credential_vault_startup_validation_failed", error=str(exc))
+            logger.info("credential_vault_container_started")
+
+        async def _start_credential_vault_workers() -> None:
+            if settings.environment == "test":
+                return
+            sf = _session_factory
+            cv_container = getattr(app.state, "cv_container", None)
+            if sf is None or cv_container is None:
+                logger.warning("credential_vault_workers_skipped")
+                return
+
+            import os
+            import uuid
+
+            from credential_vault.domain.services.policy_evaluator import PolicyEvaluatorService
+            from credential_vault.domain.services.rotation_planner import RotationPlannerService
+            from credential_vault.workers.dek_rewrap.dek_rewrap_progress_repository import (
+                DekRewrapProgressRepository,
+            )
+            from credential_vault.workers.dek_rewrap.dek_rewrap_worker import DekRewrapWorker
+            from credential_vault.workers.expiration_scanner.expiration_schedule_repository import (
+                ExpirationScheduleRepository,
+            )
+            from credential_vault.workers.expiration_scanner.expiration_scanner_worker import (
+                ExpirationScannerWorker,
+            )
+            from credential_vault.workers.rotation_scheduler.rotation_schedule_repository import (
+                RotationScheduleRepository,
+            )
+            from credential_vault.workers.rotation_scheduler.rotation_scheduler_worker import (
+                RotationSchedulerWorker,
+            )
+            from credential_vault.workers.version_pruner.version_pruner_worker import (
+                VersionPrunerWorker,
+            )
+            from credential_vault.workers.worker_host import CredentialVaultWorkerHost
+
+            rotation_repo = RotationScheduleRepository(sf)
+            expiration_repo = ExpirationScheduleRepository(sf)
+            rewrap_target = os.environ.get("CREDENTIAL_VAULT_REWRAP_MASTER_KEY_ID")
+            rewrap_worker = None
+            if rewrap_target:
+                rewrap_worker = DekRewrapWorker(
+                    kms_adapter=cv_container.kms_adapter,
+                    rewrap_repo=DekRewrapProgressRepository(sf),
+                    session_factory=sf,
+                    target_master_key_id=rewrap_target,
+                )
+
+            worker_host = CredentialVaultWorkerHost(
+                rotation_worker=RotationSchedulerWorker(
+                    credential_service=cv_container._inner_credential_service,
+                    schedule_repo=rotation_repo,
+                    rotation_planner=RotationPlannerService(),
+                    credential_repo_factory=sf,
+                    worker_id=f"rotation-scheduler-{uuid.uuid4().hex[:8]}",
+                ),
+                expiration_worker=ExpirationScannerWorker(
+                    credential_service=cv_container._inner_credential_service,
+                    schedule_repo=expiration_repo,
+                    policy_evaluator=PolicyEvaluatorService(),
+                    session_factory=sf,
+                    event_publisher=cv_container.event_publisher,
+                    worker_id=f"expiration-scanner-{uuid.uuid4().hex[:8]}",
+                ),
+                pruner_worker=VersionPrunerWorker(session_factory=sf),
+                rewrap_worker=rewrap_worker,
+            )
+            await worker_host.start()
+            runtime.credential_vault_worker_host = worker_host  # type: ignore[attr-defined]
+            app.state.credential_vault_worker_host = worker_host
+            logger.info("credential_vault_workers_started")
+
+        async def _shutdown_credential_vault_workers() -> None:
+            worker_host = getattr(app.state, "credential_vault_worker_host", None)
+            if worker_host is not None:
+                await worker_host.stop()
+                logger.info("credential_vault_workers_stopped")
+
         async def _start_replay_worker() -> None:
             # Fail fast if no projections are registered — replay would be a no-op.
             runtime.projection_registry.validate()
@@ -464,9 +567,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             logger.info("network_monitoring_scheduler_started")
 
         coordinator.register_startup("database", _start_database)
+        coordinator.register_startup("credential_vault", _start_credential_vault)
         coordinator.register_startup("replay_worker", _start_replay_worker)
         coordinator.register_startup(
             "continuous_validation_scheduler", _start_continuous_validation_scheduler,
+        )
+        coordinator.register_startup(
+            "credential_vault_workers", _start_credential_vault_workers,
         )
         coordinator.register_startup(
             "runtime_health_transition_worker", _start_runtime_health_transition_worker,
@@ -677,6 +784,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 logger.info("feed_sync_scheduler_stopped")
 
         coordinator.register_shutdown(
+            "credential_vault_workers",
+            _shutdown_credential_vault_workers,
+            timeout_s=settings.runtime_shutdown_timeout_s,
+        )
+        coordinator.register_shutdown(
             "feed_sync_scheduler",
             _shutdown_feed_sync_scheduler,
             timeout_s=settings.runtime_shutdown_timeout_s,
@@ -751,6 +863,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     _register_middleware(app)
     _register_routers(app)
+
+    from credential_vault.api.exception_handlers import register_credential_vault_exception_handlers
+
+    register_credential_vault_exception_handlers(app)
 
     # Configure OpenTelemetry (after app creation so auto-instrumentation works)
     from redforge.infrastructure.telemetry import configure_telemetry

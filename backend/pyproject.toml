@@ -54,6 +54,9 @@ where = ["src"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+markers = [
+    "integration: marks tests requiring PostgreSQL",
+]
 filterwarnings = [
     "error",
     "ignore::starlette.exceptions.StarletteDeprecationWarning",
@@ -85,6 +88,8 @@ known-first-party = ["redforge", "credential_vault"]
 
 [tool.ruff.lint.per-file-ignores]
 "src/redforge/api/**" = ["B008"]  # FastAPI Depends() in defaults is intentional
+"src/credential_vault/api/**" = ["B008", "TC001", "TC003"]  # FastAPI Depends()/Annotated deps and path params need runtime types
+"src/credential_vault/infrastructure/persistence/models/**" = ["N811", "TC001", "TC003"]  # PgUUID; Mapped[] needs runtime types
 "src/redforge/application/**" = ["TCH001", "TCH004"]  # Application services use domain types at runtime
 "src/redforge/infrastructure/**" = ["TCH001", "TCH003"]  # Infrastructure uses types at runtime
 "src/credential_vault/domain/exceptions/**" = ["N818"]  # Spec freezes DomainException naming (not *Error)

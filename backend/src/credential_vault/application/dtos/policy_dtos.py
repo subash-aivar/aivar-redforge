@@ -19,6 +19,8 @@ class RotationPolicyDTO:
     max_versions_kept: int
     notify_days_before: int
     auto_rotate: bool
+    auto_commit: bool
+    commit_window_hours: int
     created_at: str
     updated_at: str
     version: int
@@ -33,6 +35,8 @@ class RotationPolicyDTO:
             max_versions_kept=policy.max_versions_kept,
             notify_days_before=policy.notify_days_before,
             auto_rotate=policy.auto_rotate,
+            auto_commit=policy.auto_commit,
+            commit_window_hours=policy.commit_window_hours,
             created_at=policy.created_at.isoformat(),
             updated_at=policy.updated_at.isoformat(),
             version=policy.version,
@@ -47,6 +51,8 @@ class RotationPolicyDTO:
             "max_versions_kept": self.max_versions_kept,
             "notify_days_before": self.notify_days_before,
             "auto_rotate": self.auto_rotate,
+            "auto_commit": self.auto_commit,
+            "commit_window_hours": self.commit_window_hours,
             "created_at": self.created_at,
             "updated_at": self.updated_at,
             "version": self.version,

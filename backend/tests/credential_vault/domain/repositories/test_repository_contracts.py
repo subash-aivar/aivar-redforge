@@ -33,6 +33,8 @@ REPOSITORY_CONTRACTS: list[tuple[type, list[str]]] = [
             "list_by_tenant",
             "list_with_rotation_policy",
             "list_with_expiration_policy",
+            "list_with_vault_backend",
+            "list_with_active_rotation_policy",
         ],
     ),
     (
