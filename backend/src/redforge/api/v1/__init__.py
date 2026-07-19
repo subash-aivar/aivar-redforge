@@ -17,6 +17,7 @@ from redforge.api.v1.attack_surface import router as attack_surface_router
 from redforge.api.v1.auth import router as auth_router
 from redforge.api.v1.authorizations import router as authorizations_router
 from redforge.api.v1.behavior import router as behavior_router
+from redforge.api.v1.cloud_foundation import router as cloud_foundation_router
 from redforge.api.v1.cloud_security import router as cloud_security_router
 from redforge.api.v1.command_center import router as command_center_router
 from redforge.api.v1.connectors import router as connectors_router
@@ -86,6 +87,7 @@ router.include_router(continuous_validation_router, tags=["continuous-validation
 router.include_router(security_graph_router, tags=["security-graph"])
 router.include_router(directory_security_router, tags=["directory-security"])
 router.include_router(network_exposure_router, tags=["network-exposure"])
+router.include_router(cloud_foundation_router, tags=["cloud-foundation"])
 router.include_router(cloud_security_router, tags=["cloud-security"])
 router.include_router(security_conditions_router, tags=["security-conditions"])
 router.include_router(security_correlations_router, tags=["security-correlations"])

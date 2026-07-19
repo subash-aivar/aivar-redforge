@@ -87,13 +87,17 @@ select = [
 known-first-party = ["redforge", "credential_vault"]
 
 [tool.ruff.lint.per-file-ignores]
-"src/redforge/api/**" = ["B008"]  # FastAPI Depends() in defaults is intentional
+"src/redforge/api/**" = ["B008", "TC001", "TC003"]  # FastAPI Depends()/Annotated deps need runtime types
+"src/redforge/domain/cloud_security/**" = ["TC001", "TC003"]  # Domain aggregates/ports use referenced types at runtime
+"src/redforge/application/cloud_security/**" = ["TC001", "TC003"]
+"src/redforge/infrastructure/database/models/cloud_security.py" = ["N811", "TC001", "TC003"]
+"src/redforge/infrastructure/cloud_security/**" = ["TC001", "TC003"]
 "src/credential_vault/api/**" = ["B008", "TC001", "TC003"]  # FastAPI Depends()/Annotated deps and path params need runtime types
 "src/credential_vault/infrastructure/persistence/models/**" = ["N811", "TC001", "TC003"]  # PgUUID; Mapped[] needs runtime types
-"src/redforge/application/**" = ["TCH001", "TCH004"]  # Application services use domain types at runtime
-"src/redforge/infrastructure/**" = ["TCH001", "TCH003"]  # Infrastructure uses types at runtime
+"src/redforge/application/**" = ["TCH001", "TCH004", "TC001", "TC003"]  # Application services use domain types at runtime
+"src/redforge/infrastructure/**" = ["TCH001", "TCH003", "TC001", "TC003"]  # Infrastructure uses types at runtime
 "src/credential_vault/domain/exceptions/**" = ["N818"]  # Spec freezes DomainException naming (not *Error)
-"tests/**" = ["TCH001", "TCH002", "TCH003", "E501", "N806", "E711"]  # Test doubles use domain types at runtime; line length and naming relaxed in tests
+"tests/**" = ["TCH001", "TCH002", "TCH003", "TC001", "TC002", "TC003", "E501", "N806", "E711"]  # Test doubles use domain types at runtime; line length and naming relaxed in tests
 
 [tool.mypy]
 python_version = "3.14"

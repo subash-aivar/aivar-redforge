@@ -311,6 +311,25 @@ def get_tenant_cloud_security_service() -> object:
 
 
 @lru_cache
+def _cloud_foundation_service() -> object:
+    from redforge.application.cloud_security.foundation_service import CloudFoundationService
+    from redforge.infrastructure.cloud_security.persistence.repositories import (
+        PgCloudAccountRepository,
+        PgCloudProviderRepository,
+    )
+
+    return CloudFoundationService(
+        session_factory=_session_factory(),
+        provider_repo_factory=PgCloudProviderRepository,
+        account_repo_factory=PgCloudAccountRepository,
+    )
+
+
+def get_cloud_foundation_service() -> object:
+    return _cloud_foundation_service()
+
+
+@lru_cache
 def _correlation_rule_registry() -> object:
     from typing import Any, cast
 

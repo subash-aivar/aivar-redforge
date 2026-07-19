@@ -127,6 +127,10 @@ from redforge.infrastructure.database.models.compliance import (
     EvidenceRecommendationModel,
     RecommendationBatchModel,
 )
+from redforge.infrastructure.database.models.cloud_security import (
+    CloudAccountModel,
+    CloudProviderModel,
+)
 from redforge.infrastructure.database.models.user import UserModel
 from redforge.infrastructure.database.models.validation_execution import (
     ValidationExecutionEventModel,
@@ -137,6 +141,8 @@ from redforge.infrastructure.database.models.validation_execution import (
 __all__ = [
     "AIAssetModel",
     "AssessmentPeriodModel",
+    "CloudAccountModel",
+    "CloudProviderModel",
     "ComplianceActiveFrameworkClaimModel",
     "ComplianceFrameworkModel",
     "ComplianceMappingModel",
