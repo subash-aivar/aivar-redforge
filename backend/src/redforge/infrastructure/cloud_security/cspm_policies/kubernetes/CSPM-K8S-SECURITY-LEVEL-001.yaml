@@ -1,0 +1,22 @@
+version: 1.0.0
+enabled: true
+evaluation_strategy: boolean
+metadata:
+  category: kubernetes
+  tags: [pss, privileged]
+compliance_mapping:
+- framework_key: nist_csf_2_0
+  requirement_ref: PR.PS-01
+remediation:
+  description: Align workload with Pod Security Standards restricted profile.
+id: CSPM-K8S-SECURITY-LEVEL-001
+rule_id: K8S_PRIVILEGED_SECURITY_LEVEL
+title: Privileged pod security level
+description: Workload security level is PRIVILEGED.
+severity: CRITICAL
+provider_types: [AWS, AZURE, GCP, "*"]
+asset_types: [K8S_WORKLOAD]
+rule:
+  op: eq
+  path: normalized_config.security_level
+  value: PRIVILEGED

@@ -1,0 +1,22 @@
+version: 1.0.0
+enabled: true
+evaluation_strategy: boolean
+metadata:
+  category: kubernetes
+  tags: [host_network, pss]
+compliance_mapping:
+- framework_key: cis_benchmarks_v8
+  requirement_ref: '5.2.4'
+remediation:
+  description: Disable hostNetwork on the pod spec.
+id: CSPM-K8S-HOST-NETWORK-001
+rule_id: K8S_HOST_NETWORK
+title: Host network enabled
+description: Workload uses hostNetwork.
+severity: HIGH
+provider_types: ["*"]
+asset_types: [K8S_WORKLOAD]
+rule:
+  op: eq
+  path: normalized_config.host_network
+  value: true

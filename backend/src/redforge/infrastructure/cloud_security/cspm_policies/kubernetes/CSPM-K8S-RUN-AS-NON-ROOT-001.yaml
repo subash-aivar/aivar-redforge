@@ -1,0 +1,22 @@
+version: 1.0.0
+enabled: true
+evaluation_strategy: boolean
+metadata:
+  category: kubernetes
+  tags: [run_as_non_root, pss]
+compliance_mapping:
+- framework_key: cis_benchmarks_v8
+  requirement_ref: '5.2.6'
+remediation:
+  description: Set runAsNonRoot to true.
+id: CSPM-K8S-RUN-AS-NON-ROOT-001
+rule_id: K8S_RUN_AS_NON_ROOT
+title: Container may run as root
+description: Containers are not required to run as non-root.
+severity: MEDIUM
+provider_types: ["*"]
+asset_types: [K8S_WORKLOAD]
+rule:
+  op: eq
+  path: normalized_config.run_as_non_root
+  value: false

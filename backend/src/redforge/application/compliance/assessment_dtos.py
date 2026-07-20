@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime  # noqa: TC003
+from datetime import datetime
 
 from redforge.domain.compliance.value_objects import FrameworkKey
 from redforge.shared.identifiers import EntityId

@@ -7,7 +7,7 @@ skipped unless they have been retired.
 
 from __future__ import annotations
 
-from collections.abc import Sequence  # noqa: TC003
+from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 from redforge.domain.compliance.entity import ControlRequirement

@@ -1,0 +1,22 @@
+version: 1.0.0
+enabled: true
+evaluation_strategy: boolean
+metadata:
+  category: kubernetes
+  tags: [latest_tag, supply_chain]
+compliance_mapping:
+- framework_key: cis_benchmarks_v8
+  requirement_ref: '5.1.1'
+remediation:
+  description: Pin images to immutable digests or explicit version tags.
+id: CSPM-K8S-LATEST-TAG-001
+rule_id: K8S_LATEST_TAG
+title: Container image uses latest tag
+description: Workload uses :latest or untagged images.
+severity: MEDIUM
+provider_types: ["*"]
+asset_types: [K8S_WORKLOAD]
+rule:
+  op: eq
+  path: normalized_config.uses_latest_tag
+  value: true

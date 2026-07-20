@@ -6,7 +6,7 @@ Existing Phase 1-3 APIs are unchanged. Permission: COMPLIANCE_READ.
 
 from __future__ import annotations
 
-from datetime import datetime  # noqa: TC003
+from datetime import datetime
 from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, Query

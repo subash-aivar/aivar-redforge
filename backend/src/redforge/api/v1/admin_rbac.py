@@ -28,12 +28,12 @@ from redforge.api.dependencies import (
 )
 from redforge.api.security import TenantContext, require_permission
 from redforge.application.rbac import (
-    EffectiveAccessDTO,  # noqa: TC001
-    EffectiveAccessService,  # noqa: TC001
-    GroupDTO,  # noqa: TC001
-    GroupService,  # noqa: TC001
-    RoleDTO,  # noqa: TC001
-    RoleService,  # noqa: TC001
+    EffectiveAccessDTO,
+    EffectiveAccessService,
+    GroupDTO,
+    GroupService,
+    RoleDTO,
+    RoleService,
 )
 from redforge.domain.identity.value_objects import Permission
 

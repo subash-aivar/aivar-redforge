@@ -15,7 +15,6 @@ from datetime import UTC, datetime
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
-import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
@@ -27,7 +26,6 @@ from redforge.api.dependencies import (
 from redforge.api.security import PlatformContext, TenantContext
 from redforge.api.v1.compliance import router as compliance_router
 from redforge.domain.compliance.entity import (
-    ControlCatalog,
     ControlMapping,
     ControlRequirement,
     FrameworkDefinition,
@@ -35,7 +33,6 @@ from redforge.domain.compliance.entity import (
 from redforge.domain.compliance.exceptions import (
     DuplicateControlMappingError,
     FrameworkAlreadyPublishedError,
-    FrameworkNotFoundError,
 )
 from redforge.domain.compliance.value_objects import (
     ControlDomain,
@@ -47,15 +44,14 @@ from redforge.domain.compliance.value_objects import (
     MappingConfidenceHint,
     PolicyThreshold,
 )
-from redforge.domain.identity.value_objects import MembershipRole, ROLE_PERMISSIONS
+from redforge.domain.identity.value_objects import ROLE_PERMISSIONS, MembershipRole
 from redforge.domain.platform_identity.value_objects import (
+    PLATFORM_ROLE_PERMISSIONS,
     PlatformPermission,
     PlatformRole,
-    PLATFORM_ROLE_PERMISSIONS,
 )
 from redforge.infrastructure.middleware.error_handler import ErrorHandlerMiddleware
 from redforge.shared.identifiers import EntityId
-
 
 # ─── Test data builders ───────────────────────────────────────────────────────
 

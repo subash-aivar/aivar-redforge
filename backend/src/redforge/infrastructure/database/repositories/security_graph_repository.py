@@ -14,7 +14,7 @@ instead of raising.
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -40,7 +40,7 @@ class SecurityGraphRepository:
         source_domain: str,
         source_entity_id: str,
         label: str,
-        attributes: dict[str, str],
+        attributes: dict[str, Any],
         ontology_version: int,
     ) -> SecurityGraphNodeModel:
         existing = await self._get_node_by_source(organization_id, source_domain, source_entity_id)

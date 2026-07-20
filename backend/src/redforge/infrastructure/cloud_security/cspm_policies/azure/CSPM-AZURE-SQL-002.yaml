@@ -1,0 +1,38 @@
+version: 1.0.0
+enabled: true
+evaluation_strategy: boolean
+metadata:
+  category: database
+  tags:
+  - encryption
+  mitre_techniques:
+  - T1530
+  cwe_ids:
+  - CWE-311
+compliance_mapping:
+- framework_key: cis_benchmarks_v8
+  requirement_ref: '3.3'
+- framework_key: soc2_type2
+  requirement_ref: CC6.1
+remediation:
+  description: Remediate the misconfiguration.
+  manual_steps:
+  - Review resource configuration
+  - Apply least privilege
+  terraform_guidance: Update resource to enforce secure defaults.
+id: CSPM-AZURE-SQL-002
+rule_id: AZURE_SQL_MISSING_KMS
+title: Azure SQL missing customer-managed key
+description: Encryption enabled but kms_key_id missing.
+severity: MEDIUM
+provider_types:
+- AZURE
+asset_types:
+- AZURE_SQL_DATABASE
+rule:
+  all:
+  - op: eq
+    path: normalized_config.encryption_at_rest
+    value: true
+  - op: not_exists
+    path: normalized_config.kms_key_id

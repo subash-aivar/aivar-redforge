@@ -1,0 +1,22 @@
+version: 1.0.0
+enabled: true
+evaluation_strategy: boolean
+metadata:
+  category: kubernetes
+  tags: [image_pull_policy]
+compliance_mapping:
+- framework_key: cis_benchmarks_v8
+  requirement_ref: '5.1.1'
+remediation:
+  description: Set imagePullPolicy to Always for mutable tags.
+id: CSPM-K8S-IMAGE-PULL-POLICY-001
+rule_id: K8S_IMAGE_PULL_POLICY
+title: Image pull policy not Always
+description: Containers do not all use imagePullPolicy Always.
+severity: LOW
+provider_types: ["*"]
+asset_types: [K8S_WORKLOAD]
+rule:
+  op: eq
+  path: normalized_config.image_pull_policy_always
+  value: false

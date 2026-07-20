@@ -1,0 +1,22 @@
+version: 1.0.0
+enabled: true
+evaluation_strategy: boolean
+metadata:
+  category: kubernetes
+  tags: [readonly_rootfs, pss]
+compliance_mapping:
+- framework_key: cis_benchmarks_v8
+  requirement_ref: '5.2.6'
+remediation:
+  description: Set readOnlyRootFilesystem to true.
+id: CSPM-K8S-READONLY-ROOT-001
+rule_id: K8S_READ_ONLY_ROOT_FS
+title: Writable root filesystem
+description: Containers do not use a read-only root filesystem.
+severity: MEDIUM
+provider_types: ["*"]
+asset_types: [K8S_WORKLOAD]
+rule:
+  op: eq
+  path: normalized_config.read_only_root_filesystem
+  value: false

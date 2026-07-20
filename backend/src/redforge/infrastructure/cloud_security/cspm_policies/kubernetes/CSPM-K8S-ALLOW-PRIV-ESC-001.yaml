@@ -1,0 +1,22 @@
+version: 1.0.0
+enabled: true
+evaluation_strategy: boolean
+metadata:
+  category: kubernetes
+  tags: [privilege_escalation, pss]
+compliance_mapping:
+- framework_key: cis_benchmarks_v8
+  requirement_ref: '5.2.5'
+remediation:
+  description: Set allowPrivilegeEscalation to false.
+id: CSPM-K8S-ALLOW-PRIV-ESC-001
+rule_id: K8S_ALLOW_PRIVILEGE_ESCALATION
+title: Privilege escalation allowed
+description: Container allows privilege escalation.
+severity: HIGH
+provider_types: ["*"]
+asset_types: [K8S_WORKLOAD]
+rule:
+  op: eq
+  path: normalized_config.allow_privilege_escalation
+  value: true

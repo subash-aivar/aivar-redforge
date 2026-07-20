@@ -67,7 +67,7 @@ def upgrade() -> None:
         sa.Column("window_seconds", sa.Integer(), nullable=False, server_default="60"),
         sa.Column("min_breach_windows", sa.Integer(), nullable=False, server_default="1"),
         sa.Column("quiet_period_windows", sa.Integer(), nullable=False, server_default="3"),
-        sa.Column("mitigation_mode", sa.String(20), nullable=False, server_default="RECOMMEND_ONLY"),  # noqa: E501
+        sa.Column("mitigation_mode", sa.String(20), nullable=False, server_default="RECOMMEND_ONLY"),
         sa.Column("suppression_windows", sa.JSON(), nullable=True),
         sa.Column("created_by", sa.String(26), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),

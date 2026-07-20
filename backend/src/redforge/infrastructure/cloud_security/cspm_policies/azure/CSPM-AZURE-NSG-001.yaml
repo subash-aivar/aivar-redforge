@@ -1,0 +1,35 @@
+version: 1.0.0
+enabled: true
+evaluation_strategy: boolean
+metadata:
+  category: network
+  tags:
+  - firewall
+  mitre_techniques:
+  - T1190
+  cwe_ids:
+  - CWE-284
+compliance_mapping:
+- framework_key: cis_benchmarks_v8
+  requirement_ref: '3.3'
+- framework_key: soc2_type2
+  requirement_ref: CC6.1
+remediation:
+  description: Remediate the misconfiguration.
+  manual_steps:
+  - Review resource configuration
+  - Apply least privilege
+  terraform_guidance: Update resource to enforce secure defaults.
+id: CSPM-AZURE-NSG-001
+rule_id: AZURE_NSG_OPEN
+title: NSG allows internet ingress
+description: NSG attributes indicate open CIDR.
+severity: HIGH
+provider_types:
+- AZURE
+asset_types:
+- AZURE_NSG
+rule:
+  op: contains
+  path: normalized_config.attributes.open_cidr
+  value: 0.0.0.0/0

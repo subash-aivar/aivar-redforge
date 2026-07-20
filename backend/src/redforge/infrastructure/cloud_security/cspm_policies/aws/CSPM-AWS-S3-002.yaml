@@ -1,0 +1,36 @@
+version: 1.0.0
+enabled: true
+evaluation_strategy: boolean
+metadata:
+  category: storage
+  tags:
+  - encryption
+  - cis
+  mitre_techniques:
+  - T1530
+  cwe_ids:
+  - CWE-311
+compliance_mapping:
+- framework_key: cis_benchmarks_v8
+  requirement_ref: '3.3'
+- framework_key: soc2_type2
+  requirement_ref: CC6.1
+remediation:
+  description: Enable default encryption on the S3 bucket.
+  manual_steps:
+  - Review resource configuration
+  - Apply least privilege
+  terraform_guidance: Update resource to enforce secure defaults.
+id: CSPM-AWS-S3-002
+rule_id: S3_UNENCRYPTED
+title: S3 bucket encryption at rest disabled
+description: S3 bucket does not have encryption at rest enabled.
+severity: HIGH
+provider_types:
+- AWS
+asset_types:
+- S3_BUCKET
+rule:
+  op: eq
+  path: normalized_config.encryption_at_rest
+  value: false

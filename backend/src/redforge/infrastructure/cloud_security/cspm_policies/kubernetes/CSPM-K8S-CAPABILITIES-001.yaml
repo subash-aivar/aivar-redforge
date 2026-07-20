@@ -1,0 +1,21 @@
+version: 1.0.0
+enabled: true
+evaluation_strategy: boolean
+metadata:
+  category: kubernetes
+  tags: [capabilities, pss]
+compliance_mapping:
+- framework_key: cis_benchmarks_v8
+  requirement_ref: '5.2.7'
+remediation:
+  description: Drop ALL capabilities and add only required ones.
+id: CSPM-K8S-CAPABILITIES-001
+rule_id: K8S_ADDED_CAPABILITIES
+title: Added Linux capabilities
+description: Workload adds Linux capabilities.
+severity: MEDIUM
+provider_types: ["*"]
+asset_types: [K8S_WORKLOAD]
+rule:
+  op: not_empty
+  path: normalized_config.capabilities_add

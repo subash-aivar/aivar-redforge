@@ -238,6 +238,20 @@ def _build_projection_registry(
         from redforge.application.platform.projections.kg_projection import KGProjection
         registry.register(KGProjection(knowledge_graph, repo))
 
+    # M27 Phase 5 — Vulnerability KG projection (ProjectionBase-compatible).
+    from vulnerability.application.projections.vulnerability_kg_projection import (
+        VulnerabilityKGProjection,
+    )
+
+    registry.register(VulnerabilityKGProjection(repo))
+
+    # M29 Phase 6 — Red Team graph projection (ProjectionBase-compatible).
+    from execution.application.projections.red_team_graph_projection import (
+        RedTeamGraphProjection,
+    )
+
+    registry.register(RedTeamGraphProjection(repo))
+
     return registry
 
 

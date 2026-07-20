@@ -31,6 +31,8 @@ dependencies = [
     "pyasn1>=0.4,<0.5",  # ldap3 2.9's asn1 encoder uses pyasn1's pre-0.5 tagMap/typeMap API
     "boto3>=1.34,<2.0",
     "maxminddb>=2.6,<4.0",  # reads an operator-supplied local GeoLite2 .mmdb file; we never bundle or auto-download the database itself (MaxMind EULA)
+    "PyYAML>=6.0,<7.0",  # M26 CSPM policy library (YAML definitions)
+    "redis>=5.0,<6.0",  # M29 execution kill switch / rate limit (redis.asyncio)
 ]
 
 [project.optional-dependencies]
@@ -42,6 +44,7 @@ dev = [
     "aiosqlite>=0.20,<1.0",
     "ruff>=0.8,<1.0",
     "mypy>=1.14,<2.0",
+    "types-PyYAML>=6.0",
 ]
 
 [build-system]
@@ -50,6 +53,17 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+"redforge.infrastructure.cloud_security" = ["cspm_policies/**/*.yaml", "cspm_policies/**/*.yml", "cspm_policies/**/*.json"]
+"vulnerability" = ["py.typed"]
+"detection" = ["py.typed"]
+"engagement" = ["py.typed"]
+"operation" = ["py.typed"]
+"execution" = ["py.typed"]
+"red_team_operator" = ["py.typed"]
+"evidence" = ["py.typed"]
+"payload" = ["py.typed"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -84,7 +98,7 @@ select = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["redforge", "credential_vault"]
+known-first-party = ["redforge", "credential_vault", "vulnerability", "detection", "engagement", "operation", "execution", "red_team_operator", "evidence", "payload"]
 
 [tool.ruff.lint.per-file-ignores]
 "src/redforge/api/**" = ["B008", "TC001", "TC003"]  # FastAPI Depends()/Annotated deps need runtime types
@@ -94,10 +108,88 @@ known-first-party = ["redforge", "credential_vault"]
 "src/redforge/infrastructure/cloud_security/**" = ["TC001", "TC003"]
 "src/credential_vault/api/**" = ["B008", "TC001", "TC003"]  # FastAPI Depends()/Annotated deps and path params need runtime types
 "src/credential_vault/infrastructure/persistence/models/**" = ["N811", "TC001", "TC003"]  # PgUUID; Mapped[] needs runtime types
+"src/vulnerability/api/**" = ["B008", "TC001", "TC003"]  # FastAPI Depends()/Annotated deps and path params need runtime types
+"src/vulnerability/application/**" = ["TC001", "TC003"]  # Application DTOs/commands use referenced types at runtime
+"src/vulnerability/infrastructure/persistence/models/**" = ["N811", "TC001", "TC003"]  # PgUUID; Mapped[] needs runtime types
+"src/vulnerability/infrastructure/persistence/repositories/**" = ["TC001", "TC003"]  # Repo signatures use UUID/domain types
+"src/vulnerability/domain/exceptions/**" = ["N818"]  # Spec freezes DomainException naming (not *Error)
+"src/vulnerability/domain/value_objects/**" = ["TC001", "TC003"]  # VO fields referenced at runtime
+"src/vulnerability/domain/prioritization/**" = ["TC001", "TC003"]  # Signal models use enum types at runtime
+"src/vulnerability/domain/aggregates/**" = ["TC001", "TC003"]  # Aggregate methods use datetime/UUID at runtime
+"src/vulnerability/domain/entities/**" = ["TC001", "TC003"]  # Entity fields use datetime/UUID at runtime
+"src/vulnerability/infrastructure/acl/**" = ["TC001", "TC003"]  # ACL adapters need runtime UUID/port types
+"src/vulnerability/infrastructure/blob/**" = ["TC001", "TC003"]  # Blob store uses EvidenceStorageRef at runtime
+"src/detection/api/**" = ["B008", "TC001", "TC003"]
+"src/detection/application/**" = ["TC001", "TC003"]
+"src/detection/infrastructure/persistence/models/**" = ["N811", "TC001", "TC003"]
+"src/detection/infrastructure/persistence/repositories/**" = ["TC001", "TC003"]
+"src/detection/domain/exceptions/**" = ["N818"]
+"src/detection/domain/value_objects/**" = ["TC001", "TC003"]
+"src/detection/domain/aggregates/**" = ["TC001", "TC003"]
+"src/detection/domain/entities/**" = ["TC001", "TC003"]
+"src/engagement/api/**" = ["B008", "TC001", "TC003"]
+"src/engagement/application/**" = ["TC001", "TC003"]
+"src/engagement/infrastructure/persistence/models/**" = ["N811", "TC001", "TC003"]
+"src/engagement/infrastructure/persistence/repositories/**" = ["TC001", "TC003"]
+"src/engagement/domain/exceptions/**" = ["N818"]
+"src/engagement/domain/value_objects/**" = ["TC001", "TC003"]
+"src/engagement/domain/aggregates/**" = ["TC001", "TC003"]
+"src/engagement/domain/entities/**" = ["TC001", "TC003"]
+"src/engagement/infrastructure/acl/**" = ["TC001", "TC003"]
+"src/red_team_operator/api/**" = ["B008", "TC001", "TC003"]
+"src/red_team_operator/application/**" = ["TC001", "TC003"]
+"src/red_team_operator/infrastructure/persistence/models/**" = ["N811", "TC001", "TC003"]
+"src/red_team_operator/infrastructure/persistence/repositories/**" = ["TC001", "TC003"]
+"src/red_team_operator/domain/exceptions/**" = ["N818"]
+"src/red_team_operator/domain/value_objects/**" = ["TC001", "TC003"]
+"src/red_team_operator/domain/aggregates/**" = ["TC001", "TC003"]
+"src/operation/api/**" = ["B008", "TC001", "TC003"]
+"src/operation/application/**" = ["TC001", "TC003"]
+"src/operation/infrastructure/persistence/models/**" = ["N811", "TC001", "TC003"]
+"src/operation/infrastructure/persistence/repositories/**" = ["TC001", "TC003"]
+"src/operation/domain/exceptions/**" = ["N818"]
+"src/operation/domain/value_objects/**" = ["TC001", "TC003"]
+"src/operation/domain/aggregates/**" = ["TC001", "TC003"]
+"src/operation/domain/entities/**" = ["TC001", "TC003"]
+"src/operation/infrastructure/acl/**" = ["TC001", "TC003"]
+"src/execution/api/**" = ["B008", "TC001", "TC003"]
+"src/execution/application/**" = ["TC001", "TC003"]
+"src/execution/infrastructure/persistence/models/**" = ["N811", "TC001", "TC003"]
+"src/execution/infrastructure/persistence/repositories/**" = ["TC001", "TC003"]
+"src/execution/domain/exceptions/**" = ["N818"]
+"src/execution/domain/value_objects/**" = ["TC001", "TC003"]
+"src/execution/domain/aggregates/**" = ["TC001", "TC003"]
+"src/execution/domain/entities/**" = ["TC001", "TC003"]
+"src/execution/infrastructure/acl/**" = ["TC001", "TC003"]
+"src/execution/infrastructure/redis/**" = ["TC001", "TC003"]
+"src/execution/domain/ports/**" = ["N818", "TC001", "TC003"]
+"src/execution/domain/services/**" = ["TC001", "TC003"]
+"src/execution/infrastructure/container.py" = ["TC001", "TC003"]
+"src/evidence/api/**" = ["B008", "TC001", "TC003"]
+"src/evidence/application/**" = ["TC001", "TC003"]
+"src/evidence/infrastructure/persistence/models/**" = ["N811", "TC001", "TC003"]
+"src/evidence/infrastructure/persistence/repositories/**" = ["TC001", "TC003"]
+"src/evidence/domain/exceptions/**" = ["N818"]
+"src/evidence/domain/value_objects/**" = ["TC001", "TC003"]
+"src/evidence/domain/aggregates/**" = ["TC001", "TC003"]
+"src/evidence/infrastructure/acl/**" = ["TC001", "TC003"]
+"src/evidence/infrastructure/blob/**" = ["TC001", "TC003"]
+"src/evidence/infrastructure/kms/**" = ["TC001", "TC003"]
+"src/evidence/infrastructure/container.py" = ["TC001", "TC003"]
+"src/payload/api/**" = ["B008", "TC001", "TC003"]
+"src/payload/application/**" = ["TC001", "TC003"]
+"src/payload/infrastructure/persistence/models/**" = ["N811", "TC001", "TC003"]
+"src/payload/infrastructure/persistence/repositories/**" = ["TC001", "TC003"]
+"src/payload/domain/exceptions/**" = ["N818"]
+"src/payload/domain/value_objects/**" = ["TC001", "TC003"]
+"src/payload/domain/aggregates/**" = ["TC001", "TC003"]
+"src/payload/infrastructure/acl/**" = ["TC001", "TC003"]
+"src/payload/infrastructure/container.py" = ["TC001", "TC003"]
 "src/redforge/application/**" = ["TCH001", "TCH004", "TC001", "TC003"]  # Application services use domain types at runtime
 "src/redforge/infrastructure/**" = ["TCH001", "TCH003", "TC001", "TC003"]  # Infrastructure uses types at runtime
 "src/credential_vault/domain/exceptions/**" = ["N818"]  # Spec freezes DomainException naming (not *Error)
-"tests/**" = ["TCH001", "TCH002", "TCH003", "TC001", "TC002", "TC003", "E501", "N806", "E711"]  # Test doubles use domain types at runtime; line length and naming relaxed in tests
+"tests/**" = ["TCH001", "TCH002", "TCH003", "TC001", "TC002", "TC003", "E501", "N806", "N801", "E711", "F841", "RUF002"]  # Test doubles use domain types at runtime; line length, naming, and unused-var relaxed in tests
+"src/redforge/infrastructure/database/migrations/**" = ["E501"]  # Alembic SQL column definitions exceed line length; reformatting would corrupt migration history
 
 [tool.mypy]
 python_version = "3.14"
@@ -120,9 +212,33 @@ disallow_untyped_defs = false
 ignore_errors = true
 
 [[tool.mypy.overrides]]
+module = ["redis", "redis.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["yaml", "yaml.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["maxminddb", "maxminddb.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
 module = "ldap3.*"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = ["boto3.*", "botocore.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = [
+    "azure.*",
+    "azure.identity.*",
+    "azure.mgmt.*",
+    "google.*",
+    "google.cloud.*",
+    "google.oauth2.*",
+    "googleapiclient.*",
+]
 ignore_missing_imports = true

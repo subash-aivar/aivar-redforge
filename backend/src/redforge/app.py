@@ -138,12 +138,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             if sf is None:
                 logger.warning("credential_vault_no_session_factory")
                 return
-            from redforge.api.dependencies import get_effective_access_service
-
             from credential_vault.infrastructure.container import CredentialVaultContainer
             from credential_vault.infrastructure.startup_validator import (
                 validate_credential_vault,
             )
+            from redforge.api.dependencies import get_effective_access_service
 
             cv_container = CredentialVaultContainer(
                 session_factory=sf,
@@ -158,6 +157,94 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                         raise
                     logger.warning("credential_vault_startup_validation_failed", error=str(exc))
             logger.info("credential_vault_container_started")
+
+        async def _start_vulnerability() -> None:
+            sf = _session_factory
+            if sf is None:
+                logger.warning("vulnerability_no_session_factory")
+                return
+            from vulnerability.infrastructure.container import VulnerabilityContainer
+
+            vuln_container = VulnerabilityContainer(session_factory=sf)
+            app.state.vuln_container = vuln_container
+            logger.info("vulnerability_container_started")
+
+        async def _start_detection() -> None:
+            sf = _session_factory
+            if sf is None:
+                logger.warning("detection_no_session_factory")
+                return
+            from detection.infrastructure.container import DetectionContainer
+
+            detection_container = DetectionContainer(session_factory=sf)
+            app.state.detection_container = detection_container
+            logger.info("detection_container_started")
+
+        async def _start_engagement() -> None:
+            sf = _session_factory
+            if sf is None:
+                logger.warning("engagement_no_session_factory")
+                return
+            from engagement.infrastructure.container import EngagementContainer
+
+            engagement_container = EngagementContainer(session_factory=sf)
+            app.state.engagement_container = engagement_container
+            logger.info("engagement_container_started")
+
+        async def _start_operation() -> None:
+            sf = _session_factory
+            if sf is None:
+                logger.warning("operation_no_session_factory")
+                return
+            from operation.infrastructure.container import OperationContainer
+
+            operation_container = OperationContainer(session_factory=sf)
+            app.state.operation_container = operation_container
+            logger.info("operation_container_started")
+
+        async def _start_execution() -> None:
+            sf = _session_factory
+            if sf is None:
+                logger.warning("execution_no_session_factory")
+                return
+            from execution.infrastructure.container import ExecutionContainer
+
+            execution_container = ExecutionContainer(session_factory=sf)
+            app.state.execution_container = execution_container
+            logger.info("execution_container_started")
+
+        async def _start_operator() -> None:
+            sf = _session_factory
+            if sf is None:
+                logger.warning("operator_no_session_factory")
+                return
+            from red_team_operator.infrastructure.container import OperatorContainer
+
+            operator_container = OperatorContainer(session_factory=sf)
+            app.state.operator_container = operator_container
+            logger.info("operator_container_started")
+
+        async def _start_evidence() -> None:
+            sf = _session_factory
+            if sf is None:
+                logger.warning("evidence_no_session_factory")
+                return
+            from evidence.infrastructure.container import EvidenceContainer
+
+            evidence_container = EvidenceContainer(session_factory=sf)
+            app.state.evidence_container = evidence_container
+            logger.info("evidence_container_started")
+
+        async def _start_payload() -> None:
+            sf = _session_factory
+            if sf is None:
+                logger.warning("payload_no_session_factory")
+                return
+            from payload.infrastructure.container import PayloadContainer
+
+            payload_container = PayloadContainer(session_factory=sf)
+            app.state.payload_container = payload_container
+            logger.info("payload_container_started")
 
         async def _start_credential_vault_workers() -> None:
             if settings.environment == "test":
@@ -177,11 +264,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 DekRewrapProgressRepository,
             )
             from credential_vault.workers.dek_rewrap.dek_rewrap_worker import DekRewrapWorker
-            from credential_vault.workers.expiration_scanner.expiration_schedule_repository import (
-                ExpirationScheduleRepository,
-            )
             from credential_vault.workers.expiration_scanner.expiration_scanner_worker import (
                 ExpirationScannerWorker,
+            )
+            from credential_vault.workers.expiration_scanner.expiration_schedule_repository import (
+                ExpirationScheduleRepository,
             )
             from credential_vault.workers.rotation_scheduler.rotation_schedule_repository import (
                 RotationScheduleRepository,
@@ -568,6 +655,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
         coordinator.register_startup("database", _start_database)
         coordinator.register_startup("credential_vault", _start_credential_vault)
+        coordinator.register_startup("vulnerability", _start_vulnerability)
+        coordinator.register_startup("detection", _start_detection)
+        coordinator.register_startup("engagement", _start_engagement)
+        coordinator.register_startup("operation", _start_operation)
+        coordinator.register_startup("execution", _start_execution)
+        coordinator.register_startup("operator", _start_operator)
+        coordinator.register_startup("evidence", _start_evidence)
+        coordinator.register_startup("payload", _start_payload)
         coordinator.register_startup("replay_worker", _start_replay_worker)
         coordinator.register_startup(
             "continuous_validation_scheduler", _start_continuous_validation_scheduler,
@@ -865,8 +960,24 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     _register_routers(app)
 
     from credential_vault.api.exception_handlers import register_credential_vault_exception_handlers
+    from detection.api.exception_handlers import register_detection_exception_handlers
+    from engagement.api.exception_handlers import register_engagement_exception_handlers
+    from evidence.api.exception_handlers import register_evidence_exception_handlers
+    from execution.api.exception_handlers import register_execution_exception_handlers
+    from operation.api.exception_handlers import register_operation_exception_handlers
+    from payload.api.exception_handlers import register_payload_exception_handlers
+    from red_team_operator.api.exception_handlers import register_operator_exception_handlers
+    from vulnerability.api.exception_handlers import register_vulnerability_exception_handlers
 
     register_credential_vault_exception_handlers(app)
+    register_vulnerability_exception_handlers(app)
+    register_detection_exception_handlers(app)
+    register_engagement_exception_handlers(app)
+    register_operation_exception_handlers(app)
+    register_execution_exception_handlers(app)
+    register_operator_exception_handlers(app)
+    register_evidence_exception_handlers(app)
+    register_payload_exception_handlers(app)
 
     # Configure OpenTelemetry (after app creation so auto-instrumentation works)
     from redforge.infrastructure.telemetry import configure_telemetry

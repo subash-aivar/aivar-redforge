@@ -2,13 +2,15 @@
 
 from fastapi import APIRouter
 
+from credential_vault.api.v1 import router as credential_vault_router
+from detection.api.v1 import router as detection_router
+from engagement.api.v1 import router as engagement_router
+from evidence.api.v1 import router as evidence_bc_router
+from execution.api.v1 import router as execution_router
+from operation.api.v1 import router as operation_router
+from payload.api.v1 import router as payload_router
+from red_team_operator.api.v1 import router as operator_router
 from redforge.api.v1.admin_rbac import router as admin_rbac_router
-from redforge.api.v1.compliance import router as compliance_router
-from redforge.api.v1.compliance_assessment import router as compliance_assessment_router
-from redforge.api.v1.compliance_console import router as compliance_console_router
-from redforge.api.v1.compliance_recommendations import (
-    router as compliance_recommendations_router,
-)
 from redforge.api.v1.ai_targets import router as ai_targets_router
 from redforge.api.v1.assets import router as assets_router
 from redforge.api.v1.attack_library import router as attack_library_router
@@ -17,9 +19,22 @@ from redforge.api.v1.attack_surface import router as attack_surface_router
 from redforge.api.v1.auth import router as auth_router
 from redforge.api.v1.authorizations import router as authorizations_router
 from redforge.api.v1.behavior import router as behavior_router
+from redforge.api.v1.cloud_cspm import router as cloud_cspm_router
+from redforge.api.v1.cloud_discovery import router as cloud_discovery_router
 from redforge.api.v1.cloud_foundation import router as cloud_foundation_router
+from redforge.api.v1.cloud_identity import router as cloud_identity_router
+from redforge.api.v1.cloud_k8s import router as cloud_k8s_router
+from redforge.api.v1.cloud_platform import router as cloud_platform_router
+from redforge.api.v1.cloud_risk import router as cloud_risk_router
+from redforge.api.v1.cloud_runtime import router as cloud_runtime_router
 from redforge.api.v1.cloud_security import router as cloud_security_router
 from redforge.api.v1.command_center import router as command_center_router
+from redforge.api.v1.compliance import router as compliance_router
+from redforge.api.v1.compliance_assessment import router as compliance_assessment_router
+from redforge.api.v1.compliance_console import router as compliance_console_router
+from redforge.api.v1.compliance_recommendations import (
+    router as compliance_recommendations_router,
+)
 from redforge.api.v1.connectors import router as connectors_router
 from redforge.api.v1.continuous_validation import router as continuous_validation_router
 from redforge.api.v1.ddos import router as ddos_router
@@ -57,7 +72,7 @@ from redforge.api.v1.threat_intel_reference_data import (
 )
 from redforge.api.v1.validation_executions import router as validation_executions_router
 from redforge.api.v1.validations import router as validations_router
-from credential_vault.api.v1 import router as credential_vault_router
+from vulnerability.api.v1 import router as vulnerability_router
 
 router = APIRouter()
 router.include_router(health_router, tags=["health"])
@@ -88,6 +103,13 @@ router.include_router(security_graph_router, tags=["security-graph"])
 router.include_router(directory_security_router, tags=["directory-security"])
 router.include_router(network_exposure_router, tags=["network-exposure"])
 router.include_router(cloud_foundation_router, tags=["cloud-foundation"])
+router.include_router(cloud_discovery_router, tags=["cloud-foundation"])
+router.include_router(cloud_identity_router, tags=["cloud-foundation"])
+router.include_router(cloud_cspm_router, tags=["cloud-foundation"])
+router.include_router(cloud_k8s_router, tags=["cloud-foundation"])
+router.include_router(cloud_runtime_router, tags=["cloud-foundation"])
+router.include_router(cloud_risk_router, tags=["cloud-foundation"])
+router.include_router(cloud_platform_router, tags=["cloud-foundation"])
 router.include_router(cloud_security_router, tags=["cloud-security"])
 router.include_router(security_conditions_router, tags=["security-conditions"])
 router.include_router(security_correlations_router, tags=["security-correlations"])
@@ -116,3 +138,19 @@ router.include_router(
 )
 router.include_router(compliance_console_router, tags=["compliance-console"])
 router.include_router(credential_vault_router, tags=["credential-vault"])
+router.include_router(vulnerability_router, tags=["vulnerabilities"])
+router.include_router(detection_router, tags=["detection-rules"])
+router.include_router(engagement_router, tags=["engagements"])
+router.include_router(operation_router, tags=["operations"])
+router.include_router(execution_router, tags=["execution"])
+router.include_router(operator_router, tags=["red-team-operators"])
+router.include_router(
+    evidence_bc_router,
+    prefix="/red-team-evidence",
+    tags=["red-team-evidence"],
+)
+router.include_router(
+    payload_router,
+    prefix="/red-team-payloads",
+    tags=["red-team-payloads"],
+)

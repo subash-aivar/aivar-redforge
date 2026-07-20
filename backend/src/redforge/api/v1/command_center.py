@@ -31,18 +31,18 @@ from redforge.api.dependencies import (
 )
 from redforge.api.security import TenantContext, require_permission
 from redforge.application.command_center.behavior_service import (
-    BehaviorAnalyticsService,  # noqa: TC001
+    BehaviorAnalyticsService,
 )
 from redforge.application.command_center.integration_service import (
-    IntegrationStatusService,  # noqa: TC001
+    IntegrationStatusService,
 )
 from redforge.application.command_center.overview_service import (
-    CommandOverviewService,  # noqa: TC001
+    CommandOverviewService,
 )
 from redforge.application.command_center.zone_service import (
-    NetworkZoneService,  # noqa: TC001
+    NetworkZoneService,
 )
-from redforge.domain.command_center.value_objects import BehaviorDomain  # noqa: TC001
+from redforge.domain.command_center.value_objects import BehaviorDomain
 from redforge.domain.identity.value_objects import Permission
 from redforge.domain.security_operations.value_objects import BoundedPeriod
 

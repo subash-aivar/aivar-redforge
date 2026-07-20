@@ -132,6 +132,21 @@ class Permission(StrEnum):
     COMPLIANCE_READ = "compliance:read"
     COMPLIANCE_MANAGE = "compliance:manage"
 
+    # Enterprise Red Team Platform (M29).
+    # Hierarchy (each tier includes lower tiers at the API layer via
+    # role mapping; individual endpoints still require the minimum
+    # Permission for the action):
+    #   reader < analyst < operator < planner < approver < admin < ciso
+    # auditor is a parallel read-only path for journal/evidence integrity.
+    REDTEAM_READER = "redteam:reader"
+    REDTEAM_ANALYST = "redteam:analyst"
+    REDTEAM_OPERATOR = "redteam:operator"
+    REDTEAM_PLANNER = "redteam:planner"
+    REDTEAM_APPROVER = "redteam:approver"
+    REDTEAM_ADMIN = "redteam:admin"
+    REDTEAM_CISO = "redteam:ciso"
+    REDTEAM_AUDITOR = "redteam:auditor"
+
 
 @unique
 class MembershipRole(StrEnum):
@@ -220,6 +235,14 @@ ROLE_PERMISSIONS: dict[MembershipRole, frozenset[Permission]] = {
         Permission.INVESTIGATIONS_MANAGE,
         Permission.COMPLIANCE_READ,
         Permission.COMPLIANCE_MANAGE,
+        Permission.REDTEAM_READER,
+        Permission.REDTEAM_ANALYST,
+        Permission.REDTEAM_OPERATOR,
+        Permission.REDTEAM_PLANNER,
+        Permission.REDTEAM_APPROVER,
+        Permission.REDTEAM_ADMIN,
+        Permission.REDTEAM_CISO,
+        Permission.REDTEAM_AUDITOR,
     }),
     MembershipRole.SECURITY_MANAGER: frozenset({
         Permission.ORG_READ,
@@ -248,6 +271,13 @@ ROLE_PERMISSIONS: dict[MembershipRole, frozenset[Permission]] = {
         Permission.INVESTIGATIONS_MANAGE,
         Permission.COMPLIANCE_READ,
         Permission.COMPLIANCE_MANAGE,
+        Permission.REDTEAM_READER,
+        Permission.REDTEAM_ANALYST,
+        Permission.REDTEAM_OPERATOR,
+        Permission.REDTEAM_PLANNER,
+        Permission.REDTEAM_APPROVER,
+        Permission.REDTEAM_ADMIN,
+        Permission.REDTEAM_AUDITOR,
     }),
     MembershipRole.ANALYST: frozenset({
         Permission.ORG_READ,
@@ -267,6 +297,11 @@ ROLE_PERMISSIONS: dict[MembershipRole, frozenset[Permission]] = {
         Permission.INVESTIGATIONS_READ,
         Permission.COMPLIANCE_READ,
         Permission.COMPLIANCE_MANAGE,
+        Permission.REDTEAM_READER,
+        Permission.REDTEAM_ANALYST,
+        Permission.REDTEAM_OPERATOR,
+        Permission.REDTEAM_PLANNER,
+        Permission.REDTEAM_AUDITOR,
     }),
     MembershipRole.MEMBER: frozenset({
         Permission.ORG_READ,
@@ -286,6 +321,10 @@ ROLE_PERMISSIONS: dict[MembershipRole, frozenset[Permission]] = {
         Permission.BEHAVIOR_READ,
         Permission.INVESTIGATIONS_READ,
         Permission.COMPLIANCE_READ,
+        Permission.REDTEAM_READER,
+        Permission.REDTEAM_ANALYST,
+        Permission.REDTEAM_OPERATOR,
+        Permission.REDTEAM_AUDITOR,
     }),
     MembershipRole.VIEWER: frozenset({
         Permission.ORG_READ,
@@ -301,6 +340,8 @@ ROLE_PERMISSIONS: dict[MembershipRole, frozenset[Permission]] = {
         Permission.BEHAVIOR_READ,
         Permission.INVESTIGATIONS_READ,
         Permission.COMPLIANCE_READ,
+        Permission.REDTEAM_READER,
+        Permission.REDTEAM_AUDITOR,
     }),
 }
 

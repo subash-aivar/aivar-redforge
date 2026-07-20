@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 
 logger = structlog.get_logger(__name__)
 
-_EXPECTED_MIGRATION_HEAD = "0045"
+_EXPECTED_MIGRATION_HEAD = "0053"
 
 
 async def validate_credential_vault(container: CredentialVaultContainer) -> None:

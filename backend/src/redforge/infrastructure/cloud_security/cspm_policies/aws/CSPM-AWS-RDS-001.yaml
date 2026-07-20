@@ -1,0 +1,36 @@
+version: 1.0.0
+enabled: true
+evaluation_strategy: boolean
+metadata:
+  category: database
+  tags:
+  - public
+  - rds
+  mitre_techniques:
+  - T1190
+  cwe_ids:
+  - CWE-284
+compliance_mapping:
+- framework_key: cis_benchmarks_v8
+  requirement_ref: '3.3'
+- framework_key: soc2_type2
+  requirement_ref: CC6.1
+remediation:
+  description: Remediate the misconfiguration.
+  manual_steps:
+  - Review resource configuration
+  - Apply least privilege
+  terraform_guidance: Update resource to enforce secure defaults.
+id: CSPM-AWS-RDS-001
+rule_id: RDS_PUBLIC_EXPOSURE
+title: RDS instance publicly exposed
+description: RDS instance has PUBLIC network exposure.
+severity: CRITICAL
+provider_types:
+- AWS
+asset_types:
+- RDS_INSTANCE
+rule:
+  op: eq
+  path: normalized_config.network_exposure
+  value: PUBLIC

@@ -1,0 +1,34 @@
+version: 1.0.0
+enabled: true
+evaluation_strategy: boolean
+metadata:
+  category: compute
+  tags:
+  - public
+  mitre_techniques:
+  - T1190
+  cwe_ids:
+  - CWE-284
+compliance_mapping:
+- framework_key: cis_benchmarks_v8
+  requirement_ref: '3.3'
+- framework_key: soc2_type2
+  requirement_ref: CC6.1
+remediation:
+  description: Remediate the misconfiguration.
+  manual_steps:
+  - Review resource configuration
+  - Apply least privilege
+  terraform_guidance: Update resource to enforce secure defaults.
+id: CSPM-AWS-LAMBDA-001
+rule_id: LAMBDA_PUBLIC_ENDPOINTS
+title: Lambda has public endpoints
+description: Lambda function exposes public endpoints.
+severity: HIGH
+provider_types:
+- AWS
+asset_types:
+- LAMBDA_FUNCTION
+rule:
+  op: not_empty
+  path: normalized_config.public_endpoints

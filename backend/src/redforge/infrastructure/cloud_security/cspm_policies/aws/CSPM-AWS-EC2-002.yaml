@@ -1,0 +1,34 @@
+version: 1.0.0
+enabled: true
+evaluation_strategy: boolean
+metadata:
+  category: compute
+  tags:
+  - iam
+  mitre_techniques:
+  - T1078
+  cwe_ids:
+  - CWE-284
+compliance_mapping:
+- framework_key: cis_benchmarks_v8
+  requirement_ref: '3.3'
+- framework_key: soc2_type2
+  requirement_ref: CC6.1
+remediation:
+  description: Remediate the misconfiguration.
+  manual_steps:
+  - Review resource configuration
+  - Apply least privilege
+  terraform_guidance: Update resource to enforce secure defaults.
+id: CSPM-AWS-EC2-002
+rule_id: EC2_MISSING_IAM_ROLE
+title: EC2 instance missing IAM role
+description: EC2 instance has no attached IAM role ARN.
+severity: MEDIUM
+provider_types:
+- AWS
+asset_types:
+- EC2_INSTANCE
+rule:
+  op: not_exists
+  path: normalized_config.iam_role_arn

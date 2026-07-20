@@ -18,8 +18,6 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-import pytest
-
 from redforge.application.investigations.correlation_engine import (
     RULE_VERSIONS,
     compute_case_confidence,

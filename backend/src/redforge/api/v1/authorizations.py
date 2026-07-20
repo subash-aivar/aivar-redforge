@@ -14,7 +14,7 @@ they are not swallowed by the path parameter.
 
 from __future__ import annotations
 
-from datetime import datetime  # noqa: TC003 — Pydantic resolves this at runtime
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
@@ -36,7 +36,7 @@ from redforge.application.authorization import (
 # import annotations` — these two imports must stay real imports, not
 # TYPE_CHECKING-only (ruff's TC001/TC003 heuristics don't know that).
 from redforge.application.authorization.execution_policy_service import (
-    ExecutionPolicyService,  # noqa: TC001
+    ExecutionPolicyService,
 )
 from redforge.domain.identity.value_objects import Permission
 

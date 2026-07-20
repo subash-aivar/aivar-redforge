@@ -1,0 +1,35 @@
+version: 1.0.0
+enabled: true
+evaluation_strategy: boolean
+metadata:
+  category: crypto
+  tags:
+  - kms
+  mitre_techniques:
+  - T1485
+  cwe_ids:
+  - CWE-326
+compliance_mapping:
+- framework_key: cis_benchmarks_v8
+  requirement_ref: '3.3'
+- framework_key: soc2_type2
+  requirement_ref: CC6.1
+remediation:
+  description: Remediate the misconfiguration.
+  manual_steps:
+  - Review resource configuration
+  - Apply least privilege
+  terraform_guidance: Update resource to enforce secure defaults.
+id: CSPM-AWS-KMS-001
+rule_id: KMS_KEY_DISABLED_STATE
+title: KMS key in disabled state
+description: KMS key state indicates disabled.
+severity: MEDIUM
+provider_types:
+- AWS
+asset_types:
+- KMS_KEY
+rule:
+  op: eq
+  path: normalized_config.state
+  value: DISABLED

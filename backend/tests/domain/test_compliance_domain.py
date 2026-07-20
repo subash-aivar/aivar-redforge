@@ -15,7 +15,6 @@ import pytest
 
 from redforge.domain.compliance.entity import (
     ControlCatalog,
-    ControlMapping,
     ControlRequirement,
     FrameworkDefinition,
 )
@@ -45,7 +44,6 @@ from redforge.domain.compliance.value_objects import (
     PolicyThreshold,
 )
 from redforge.shared.identifiers import EntityId
-
 
 # ─── Fixtures ─────────────────────────────────────────────────────────────────
 

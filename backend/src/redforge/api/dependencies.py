@@ -330,6 +330,503 @@ def get_cloud_foundation_service() -> object:
 
 
 @lru_cache
+def _asset_discovery_service() -> object:
+    from typing import Any, cast
+
+    from redforge.application.cloud_security.asset_discovery_service import AssetDiscoveryService
+    from redforge.application.cloud_security.discovery_client_factory import (
+        Boto3DiscoveryClientFactory,
+    )
+    from redforge.application.cloud_security.inventory_projection_service import (
+        InventoryProjectionService,
+    )
+    from redforge.infrastructure.cloud_security.acl.inventory_acl import CloudAssetToInventoryACL
+    from redforge.infrastructure.cloud_security.persistence.repositories import (
+        PgCloudAccountRepository,
+        PgCloudAssetRepository,
+        PgCloudProviderRepository,
+    )
+
+    return AssetDiscoveryService(
+        session_factory=_session_factory(),
+        provider_repo_factory=PgCloudProviderRepository,
+        account_repo_factory=PgCloudAccountRepository,
+        asset_repo_factory=PgCloudAssetRepository,
+        client_factory=Boto3DiscoveryClientFactory(),
+        inventory_projection=InventoryProjectionService(
+            CloudAssetToInventoryACL(cast("Any", _tenant_asset_service()))
+        ),
+    )
+
+
+def get_asset_discovery_service() -> object:
+    return _asset_discovery_service()
+
+
+@lru_cache
+def _identity_discovery_service() -> object:
+    from redforge.application.cloud_security.discovery_client_factory import (
+        Boto3DiscoveryClientFactory,
+    )
+    from redforge.application.cloud_security.identity_discovery_service import (
+        IdentityDiscoveryService,
+    )
+    from redforge.application.cloud_security.identity_projection_service import (
+        IdentityProjectionService,
+    )
+    from redforge.infrastructure.cloud_security.acl.iam_graph_acl import CloudIAMToGraphACL
+    from redforge.infrastructure.cloud_security.persistence.repositories import (
+        PgCloudAccountRepository,
+        PgCloudIAMPrincipalRepository,
+        PgCloudProviderRepository,
+    )
+
+    return IdentityDiscoveryService(
+        session_factory=_session_factory(),
+        provider_repo_factory=PgCloudProviderRepository,
+        account_repo_factory=PgCloudAccountRepository,
+        principal_repo_factory=PgCloudIAMPrincipalRepository,
+        client_factory=Boto3DiscoveryClientFactory(),
+        identity_projection=IdentityProjectionService(
+            CloudIAMToGraphACL(_session_factory())
+        ),
+    )
+
+
+def get_identity_discovery_service() -> object:
+    return _identity_discovery_service()
+
+
+@lru_cache
+def _cspm_assessment_service() -> object:
+    from redforge.application.cloud_security.cspm.assessment_service import (
+        CSPMAssessmentService,
+    )
+    from redforge.application.compliance.mapping_service import CatalogQueryService
+    from redforge.infrastructure.cloud_security.acl.cspm_compliance_acl import (
+        CSPMComplianceACL,
+    )
+    from redforge.infrastructure.cloud_security.acl.cspm_graph_acl import (
+        CSPMFindingToGraphACL,
+    )
+    from redforge.infrastructure.cloud_security.cspm.repositories import (
+        PgCSPMDriftBaselineRepository,
+        PgCSPMEvaluationRepository,
+        PgCSPMFindingRepository,
+        PgCSPMPolicyRepository,
+    )
+    from redforge.infrastructure.cloud_security.persistence.repositories import (
+        PgCloudAccountRepository,
+        PgCloudAssetRepository,
+        PgCloudProviderRepository,
+    )
+
+    return CSPMAssessmentService(
+        session_factory=_session_factory(),
+        policy_repo_factory=PgCSPMPolicyRepository,
+        finding_repo_factory=PgCSPMFindingRepository,
+        evaluation_repo_factory=PgCSPMEvaluationRepository,
+        drift_repo_factory=PgCSPMDriftBaselineRepository,
+        asset_repo_factory=PgCloudAssetRepository,
+        account_repo_factory=PgCloudAccountRepository,
+        provider_repo_factory=PgCloudProviderRepository,
+        compliance_acl=CSPMComplianceACL(CatalogQueryService(_session_factory())),
+        graph_acl=CSPMFindingToGraphACL(_session_factory()),
+    )
+
+
+def get_cspm_assessment_service() -> object:
+    return _cspm_assessment_service()
+
+
+@lru_cache
+def _kubernetes_security_service() -> object:
+    from redforge.application.cloud_security.kubernetes.admission_policy_evaluation_service import (
+        AdmissionPolicyEvaluationService,
+    )
+    from redforge.application.cloud_security.kubernetes.cluster_discovery_service import (
+        ClusterDiscoveryService,
+    )
+    from redforge.application.cloud_security.kubernetes.inventory_projection_service import (
+        InventoryProjectionService,
+    )
+    from redforge.application.cloud_security.kubernetes.network_policy_discovery_service import (
+        NetworkPolicyDiscoveryService,
+    )
+    from redforge.application.cloud_security.kubernetes.posture_evaluation_service import (
+        PostureEvaluationService,
+    )
+    from redforge.application.cloud_security.kubernetes.rbac_discovery_service import (
+        RBACDiscoveryService,
+    )
+    from redforge.application.cloud_security.kubernetes.security_service import (
+        KubernetesSecurityService,
+    )
+    from redforge.application.cloud_security.kubernetes.workload_discovery_service import (
+        WorkloadDiscoveryService,
+    )
+    from redforge.infrastructure.cloud_security.acl.k8s_graph_acl import KubernetesGraphACL
+    from redforge.infrastructure.cloud_security.kubernetes.fake_inventory import (
+        FakeKubernetesInventory,
+    )
+    from redforge.infrastructure.cloud_security.kubernetes.repositories import (
+        PgKubernetesAdmissionPolicyRepository,
+        PgKubernetesClusterRepository,
+        PgKubernetesNamespaceRepository,
+        PgKubernetesNetworkPolicyRepository,
+        PgKubernetesNodeRepository,
+        PgKubernetesRBACRepository,
+        PgKubernetesServiceRepository,
+        PgKubernetesWorkloadRepository,
+    )
+
+    session_factory = _session_factory()
+    inventory = FakeKubernetesInventory()
+    graph_acl = KubernetesGraphACL(session_factory)
+
+    cluster_discovery = ClusterDiscoveryService(
+        session_factory,
+        cluster_repo_factory=PgKubernetesClusterRepository,
+        inventory=inventory,
+        graph_acl=graph_acl,
+    )
+    workload_discovery = WorkloadDiscoveryService(
+        session_factory,
+        cluster_repo_factory=PgKubernetesClusterRepository,
+        workload_repo_factory=PgKubernetesWorkloadRepository,
+        inventory=inventory,
+        graph_acl=graph_acl,
+    )
+    rbac_discovery = RBACDiscoveryService(
+        session_factory,
+        cluster_repo_factory=PgKubernetesClusterRepository,
+        rbac_repo_factory=PgKubernetesRBACRepository,
+        inventory=inventory,
+        graph_acl=graph_acl,
+    )
+    network_discovery = NetworkPolicyDiscoveryService(
+        session_factory,
+        cluster_repo_factory=PgKubernetesClusterRepository,
+        network_policy_repo_factory=PgKubernetesNetworkPolicyRepository,
+        inventory=inventory,
+        graph_acl=graph_acl,
+    )
+    inventory_projection = InventoryProjectionService(
+        session_factory,
+        cluster_repo_factory=PgKubernetesClusterRepository,
+        namespace_repo_factory=PgKubernetesNamespaceRepository,
+        workload_repo_factory=PgKubernetesWorkloadRepository,
+        node_repo_factory=PgKubernetesNodeRepository,
+        service_repo_factory=PgKubernetesServiceRepository,
+        rbac_repo_factory=PgKubernetesRBACRepository,
+        network_policy_repo_factory=PgKubernetesNetworkPolicyRepository,
+        admission_repo_factory=PgKubernetesAdmissionPolicyRepository,
+        inventory=inventory,
+        graph_acl=graph_acl,
+    )
+    posture = PostureEvaluationService(
+        session_factory,
+        cluster_repo_factory=PgKubernetesClusterRepository,
+        workload_repo_factory=PgKubernetesWorkloadRepository,
+        namespace_repo_factory=PgKubernetesNamespaceRepository,
+        rbac_repo_factory=PgKubernetesRBACRepository,
+        service_repo_factory=PgKubernetesServiceRepository,
+        graph_acl=graph_acl,
+    )
+    admission = AdmissionPolicyEvaluationService(
+        session_factory,
+        cluster_repo_factory=PgKubernetesClusterRepository,
+        admission_repo_factory=PgKubernetesAdmissionPolicyRepository,
+        workload_repo_factory=PgKubernetesWorkloadRepository,
+    )
+    return KubernetesSecurityService(
+        cluster_discovery=cluster_discovery,
+        workload_discovery=workload_discovery,
+        rbac_discovery=rbac_discovery,
+        network_policy_discovery=network_discovery,
+        inventory_projection=inventory_projection,
+        posture_evaluation=posture,
+        admission_evaluation=admission,
+        session_factory=session_factory,
+        namespace_repo_factory=PgKubernetesNamespaceRepository,
+    )
+
+
+def get_kubernetes_security_service() -> object:
+    return _kubernetes_security_service()
+
+
+@lru_cache
+def _runtime_ingestion_service() -> object:
+    from redforge.application.cloud_security.runtime.correlation_service import (
+        RuntimeCorrelationService,
+    )
+    from redforge.application.cloud_security.runtime.ingestion_service import (
+        RuntimeIngestionService,
+    )
+    from redforge.application.cloud_security.runtime.normalization_service import (
+        RuntimeNormalizationService,
+    )
+    from redforge.infrastructure.cloud_security.acl.runtime_graph_acl import RuntimeGraphACL
+
+    session_factory = _session_factory()
+    return RuntimeIngestionService(
+        session_factory,
+        normalization=RuntimeNormalizationService(),
+        correlation=RuntimeCorrelationService(),
+        graph_acl=RuntimeGraphACL(session_factory),
+    )
+
+
+@lru_cache
+def _runtime_query_service() -> object:
+    from redforge.application.cloud_security.runtime.query_service import RuntimeQueryService
+
+    return RuntimeQueryService(_session_factory())
+
+
+def get_runtime_ingestion_service() -> object:
+    return _runtime_ingestion_service()
+
+
+def get_runtime_query_service() -> object:
+    return _runtime_query_service()
+
+
+@lru_cache
+def _risk_calculation_service() -> object:
+    from redforge.application.cloud_security.risk.aggregation_service import (
+        RiskAggregationService,
+    )
+    from redforge.application.cloud_security.risk.calculation_pipeline import (
+        RiskCalculationPipeline,
+    )
+    from redforge.application.cloud_security.risk.calculation_service import (
+        RiskCalculationService,
+    )
+    from redforge.application.cloud_security.risk.correlation_service import (
+        RiskCorrelationService,
+    )
+    from redforge.application.cloud_security.risk.projection_service import (
+        RiskProjectionService,
+    )
+    from redforge.application.cloud_security.risk.snapshot_builder import (
+        RiskEvidenceCollector,
+        RiskSnapshotBuilder,
+    )
+    from redforge.domain.cloud_security.value_objects import CloudAssetId, OrganizationId
+    from redforge.infrastructure.cloud_security.acl.risk_graph_acl import RiskGraphACL
+    from redforge.infrastructure.cloud_security.cspm.repositories import (
+        PgCSPMFindingRepository,
+    )
+    from redforge.infrastructure.cloud_security.kubernetes.repositories import (
+        PgKubernetesClusterRepository,
+    )
+    from redforge.infrastructure.cloud_security.persistence.repositories import (
+        PgCloudAssetRepository,
+        PgCloudIAMPrincipalRepository,
+    )
+    from redforge.infrastructure.cloud_security.risk.repositories import (
+        PgCloudRiskAssessmentRepository,
+        PgCloudRiskExposureRepository,
+        PgCloudRiskFactorRepository,
+        PgCloudRiskHistoryRepository,
+        PgCloudRiskRepository,
+    )
+    from redforge.infrastructure.cloud_security.runtime.repositories import (
+        PgRuntimeEventRepository,
+    )
+
+    session_factory = _session_factory()
+
+    async def _finding_severities(
+        asset: object, organization_id: OrganizationId
+    ) -> tuple[str, ...]:
+        async with session_factory() as session:
+            repo = PgCSPMFindingRepository(session)
+            findings = await repo.list_open_by_asset(
+                CloudAssetId(asset.id.value),  # type: ignore[attr-defined]
+                organization_id,
+            )
+            return tuple(f.severity.value for f in findings)
+
+    async def _privilege(asset: object, organization_id: OrganizationId) -> str:
+        async with session_factory() as session:
+            repo = PgCloudIAMPrincipalRepository(session)
+            page = await repo.list_by_account(
+                asset.cloud_account_id,  # type: ignore[attr-defined]
+                organization_id,
+                None,
+                page=1,
+                size=50,
+            )
+            if not page.items:
+                return "NONE"
+            order = {"NONE": 0, "LOW": 1, "MEDIUM": 2, "HIGH": 3, "ADMIN": 4}
+            best = "NONE"
+            for principal in page.items:
+                level = (
+                    principal.privilege_level.value
+                    if hasattr(principal.privilege_level, "value")
+                    else str(principal.privilege_level)
+                )
+                if order.get(level.upper(), 0) > order.get(best, 0):
+                    best = level.upper()
+            return best
+
+    async def _k8s_score(asset: object, organization_id: OrganizationId) -> float | None:
+        asset_type = str(
+            asset.asset_type.value if hasattr(asset.asset_type, "value") else asset.asset_type  # type: ignore[attr-defined]
+        )
+        if "K8S" not in asset_type.upper() and "KUBERNETES" not in asset_type.upper():
+            tags = asset.tags or {}  # type: ignore[attr-defined]
+            if "cluster_id" not in tags and "k8s_cluster" not in tags:
+                return None
+        async with session_factory() as session:
+            repo = PgKubernetesClusterRepository(session)
+            tags = asset.tags or {}  # type: ignore[attr-defined]
+            cluster_id = tags.get("cluster_id") or tags.get("k8s_cluster")
+            if cluster_id:
+                from uuid import UUID
+
+                try:
+                    cluster = await repo.get_by_id(
+                        UUID(str(cluster_id)), organization_id=organization_id
+                    )
+                except ValueError:
+                    cluster = await repo.get_by_name(
+                        organization_id=organization_id, name=str(cluster_id)
+                    )
+            else:
+                cluster = await repo.get_by_name(
+                    organization_id=organization_id,
+                    name=str(asset.display_name),  # type: ignore[attr-defined]
+                )
+            if cluster is None:
+                return None
+            return float(cluster.security_score.value)
+
+    async def _runtime_severities(
+        asset: object, organization_id: OrganizationId
+    ) -> tuple[str, ...]:
+        async with session_factory() as session:
+            repo = PgRuntimeEventRepository(session)
+            account_id = asset.cloud_account_id  # type: ignore[attr-defined]
+            account_uuid = account_id.value if hasattr(account_id, "value") else account_id
+            events = await repo.list_by_account(
+                account_uuid,
+                organization_id=organization_id,
+                limit=100,
+            )
+            asset_id = str(asset.id.value)  # type: ignore[attr-defined]
+            severities: list[str] = []
+            for event in events:
+                refs = event.correlation_refs
+                ref_asset = getattr(refs, "cloud_asset_id", None)
+                if ref_asset is not None and str(ref_asset) == asset_id:
+                    sev = (
+                        event.severity.value
+                        if hasattr(event.severity, "value")
+                        else str(event.severity)
+                    )
+                    severities.append(sev)
+            return tuple(severities)
+
+    collector = RiskEvidenceCollector(
+        finding_severities=_finding_severities,
+        privilege_level=_privilege,
+        k8s_score=_k8s_score,
+        runtime_severities=_runtime_severities,
+    )
+    graph_acl = RiskGraphACL(session_factory)
+    pipeline = RiskCalculationPipeline(
+        session_factory,
+        asset_repo_factory=PgCloudAssetRepository,
+        risk_repo_factory=PgCloudRiskRepository,
+        history_repo_factory=PgCloudRiskHistoryRepository,
+        factor_repo_factory=PgCloudRiskFactorRepository,
+        exposure_repo_factory=PgCloudRiskExposureRepository,
+        assessment_repo_factory=PgCloudRiskAssessmentRepository,
+        snapshot_builder=RiskSnapshotBuilder(collector),
+        correlation=RiskCorrelationService(),
+        projection=RiskProjectionService(graph_acl),
+    )
+    return RiskCalculationService(
+        session_factory,
+        pipeline=pipeline,
+        risk_repo_factory=PgCloudRiskRepository,
+        factor_repo_factory=PgCloudRiskFactorRepository,
+        history_repo_factory=PgCloudRiskHistoryRepository,
+        aggregation=RiskAggregationService(),
+    )
+
+
+def get_risk_calculation_service() -> object:
+    return _risk_calculation_service()
+
+
+@lru_cache
+def _cloud_platform_service() -> object:
+    from typing import Any, cast
+
+    from redforge.application.cloud_security.platform.health_service import (
+        CloudPlatformHealthService,
+    )
+    from redforge.application.cloud_security.platform.lifecycle_service import (
+        CloudPlatformLifecycleService,
+    )
+    from redforge.application.cloud_security.platform.orchestrator import (
+        CloudPlatformOrchestrator,
+    )
+    from redforge.application.cloud_security.platform.service import CloudPlatformService
+    from redforge.application.cloud_security.platform.synchronization_service import (
+        CloudPlatformSynchronizationService,
+    )
+    from redforge.application.cloud_security.platform.validation_service import (
+        CloudPlatformValidationService,
+    )
+    from redforge.infrastructure.cloud_security.platform.repositories import (
+        PgOrchestrationRunRepository,
+        PgPlatformValidationReportRepository,
+    )
+
+    session_factory = _session_factory()
+    foundation = cast("Any", get_cloud_foundation_service())
+    orchestrator = CloudPlatformOrchestrator(
+        foundation=foundation,
+        asset_discovery=cast("Any", get_asset_discovery_service()),
+        identity_discovery=cast("Any", get_identity_discovery_service()),
+        cspm=cast("Any", get_cspm_assessment_service()),
+        kubernetes=cast("Any", get_kubernetes_security_service()),
+        runtime_ingestion=cast("Any", get_runtime_ingestion_service()),
+        risk=cast("Any", get_risk_calculation_service()),
+        session_factory=session_factory,
+        run_repo_factory=PgOrchestrationRunRepository,
+    )
+    return CloudPlatformService(
+        orchestrator=orchestrator,
+        lifecycle=CloudPlatformLifecycleService(foundation),
+        sync=CloudPlatformSynchronizationService(
+            foundation,
+            run_repo_factory=PgOrchestrationRunRepository,
+            session_factory=session_factory,
+        ),
+        validation=CloudPlatformValidationService(
+            session_factory=session_factory,
+            validation_repo_factory=PgPlatformValidationReportRepository,
+        ),
+        health=CloudPlatformHealthService(session_factory=session_factory),
+        session_factory=session_factory,
+        run_repo_factory=PgOrchestrationRunRepository,
+        foundation=foundation,
+    )
+
+
+def get_cloud_platform_service() -> object:
+    return _cloud_platform_service()
+
+
+@lru_cache
 def _correlation_rule_registry() -> object:
     from typing import Any, cast
 

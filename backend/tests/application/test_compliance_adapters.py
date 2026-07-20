@@ -23,7 +23,6 @@ from redforge.infrastructure.compliance.adapters.iso27001 import ISO27001Framewo
 from redforge.infrastructure.compliance.adapters.nist_csf import NistCsfFrameworkAdapter
 from redforge.infrastructure.compliance.adapters.soc2 import SOC2FrameworkAdapter
 
-
 ALL_ADAPTERS = [
     SOC2FrameworkAdapter(),
     ISO27001FrameworkAdapter(),

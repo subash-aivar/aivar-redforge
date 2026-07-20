@@ -9,7 +9,7 @@ and NEVER create evidence links without explicit accept → link.
 
 from __future__ import annotations
 
-from datetime import datetime  # noqa: TC003
+from datetime import datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query

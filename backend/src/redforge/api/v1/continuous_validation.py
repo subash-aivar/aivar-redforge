@@ -28,10 +28,10 @@ from redforge.api.dependencies import (
 )
 from redforge.api.security import TenantContext, require_permission
 from redforge.application.continuous_validation.policy_service import (
-    ContinuousValidationPolicyService,  # noqa: TC001
+    ContinuousValidationPolicyService,
 )
 from redforge.application.continuous_validation.processor import (
-    ContinuousValidationProcessor,  # noqa: TC001
+    ContinuousValidationProcessor,
 )
 from redforge.domain.identity.value_objects import Permission
 

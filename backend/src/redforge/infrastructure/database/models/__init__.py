@@ -23,9 +23,30 @@ from redforge.infrastructure.database.models.behavior import (
     BehaviorObservationModel,
 )
 from redforge.infrastructure.database.models.campaign_result import CampaignResultModel
+from redforge.infrastructure.database.models.cloud_security import (
+    CloudAccountModel,
+    CloudAssetModel,
+    CloudIAMPrincipalModel,
+    CloudProviderModel,
+    CSPMDriftBaselineModel,
+    CSPMEvaluationModel,
+    CSPMFindingModel,
+    CSPMPolicyModel,
+)
 from redforge.infrastructure.database.models.command_center import (
     IntegrationProviderModel,
     NetworkZoneAssignmentModel,
+)
+from redforge.infrastructure.database.models.compliance import (
+    AssessmentPeriodModel,
+    ComplianceActiveFrameworkClaimModel,
+    ComplianceFrameworkModel,
+    ComplianceMappingModel,
+    ComplianceProfileModel,
+    ComplianceRequirementModel,
+    ControlAssessmentModel,
+    EvidenceRecommendationModel,
+    RecommendationBatchModel,
 )
 from redforge.infrastructure.database.models.continuous_validation import (
     ContinuousValidationPolicyModel,
@@ -101,10 +122,6 @@ from redforge.infrastructure.database.models.threat_fusion import (
     FusedRelationshipModel,
     ThreatIntelFusionConfigModel,
 )
-from redforge.infrastructure.database.models.threat_intel_sync import (
-    InvestigationPathComputeStateModel,
-    ThreatIntelSyncStateModel,
-)
 from redforge.infrastructure.database.models.threat_intel import (
     ThreatIntelEnrichmentModel,
     ThreatIntelIndicatorModel,
@@ -116,20 +133,9 @@ from redforge.infrastructure.database.models.threat_intel_reference_data import 
     StixIngestionLogModel,
     VulnerabilityModel,
 )
-from redforge.infrastructure.database.models.compliance import (
-    AssessmentPeriodModel,
-    ComplianceActiveFrameworkClaimModel,
-    ComplianceFrameworkModel,
-    ComplianceMappingModel,
-    ComplianceProfileModel,
-    ComplianceRequirementModel,
-    ControlAssessmentModel,
-    EvidenceRecommendationModel,
-    RecommendationBatchModel,
-)
-from redforge.infrastructure.database.models.cloud_security import (
-    CloudAccountModel,
-    CloudProviderModel,
+from redforge.infrastructure.database.models.threat_intel_sync import (
+    InvestigationPathComputeStateModel,
+    ThreatIntelSyncStateModel,
 )
 from redforge.infrastructure.database.models.user import UserModel
 from redforge.infrastructure.database.models.validation_execution import (
@@ -140,18 +146,8 @@ from redforge.infrastructure.database.models.validation_execution import (
 
 __all__ = [
     "AIAssetModel",
-    "AssessmentPeriodModel",
-    "CloudAccountModel",
-    "CloudProviderModel",
-    "ComplianceActiveFrameworkClaimModel",
-    "ComplianceFrameworkModel",
-    "ComplianceMappingModel",
-    "ComplianceProfileModel",
-    "ComplianceRequirementModel",
-    "ControlAssessmentModel",
-    "EvidenceRecommendationModel",
-    "RecommendationBatchModel",
     "AITargetModel",
+    "AssessmentPeriodModel",
     "AttackPathModel",
     "AttackPathStepEvidenceModel",
     "AttackPathStepModel",
@@ -162,10 +158,24 @@ __all__ = [
     "BehaviorDetectionModel",
     "BehaviorEntityBaselineModel",
     "BehaviorObservationModel",
+    "CSPMDriftBaselineModel",
+    "CSPMEvaluationModel",
+    "CSPMFindingModel",
+    "CSPMPolicyModel",
     "CampaignResultModel",
+    "CloudAccountModel",
+    "CloudAssetModel",
+    "CloudIAMPrincipalModel",
+    "CloudProviderModel",
+    "ComplianceActiveFrameworkClaimModel",
+    "ComplianceFrameworkModel",
+    "ComplianceMappingModel",
+    "ComplianceProfileModel",
+    "ComplianceRequirementModel",
     "ConnectorModel",
     "ContinuousValidationPolicyLifecycleEventModel",
     "ContinuousValidationPolicyModel",
+    "ControlAssessmentModel",
     "CorrelationCursorModel",
     "DDoSDetectionPolicyModel",
     "DDoSIncidentEventModel",
@@ -176,6 +186,7 @@ __all__ = [
     "DirectoryGroupModel",
     "DirectoryIdentityModel",
     "DirectoryMembershipModel",
+    "EvidenceRecommendationModel",
     "FeedModel",
     "FeedSyncRunModel",
     "FusedIndicatorModel",
@@ -202,6 +213,7 @@ __all__ = [
     "PlatformAuditLogModel",
     "PlatformBootstrapStateModel",
     "PlatformPrivilegedAssuranceModel",
+    "RecommendationBatchModel",
     "RuntimeComponentHealthStateModel",
     "RuntimeComponentHealthTransitionModel",
     "SecurityAuthorizationApprovalModel",
@@ -220,8 +232,8 @@ __all__ = [
     "TelemetrySensorModel",
     "ThreatIntelEnrichmentModel",
     "ThreatIntelFusionConfigModel",
-    "ThreatIntelSyncStateModel",
     "ThreatIntelIndicatorModel",
+    "ThreatIntelSyncStateModel",
     "UserModel",
     "ValidationExecutionEventModel",
     "ValidationExecutionModel",

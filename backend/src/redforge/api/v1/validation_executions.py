@@ -26,7 +26,7 @@ from redforge.application.validation_execution.discovery_port_policy import is_s
 # import annotations` — this import must stay a real import, not
 # TYPE_CHECKING-only (matches api/v1/authorizations.py's precedent).
 from redforge.application.validation_execution.execution_service import (
-    ValidationExecutionService,  # noqa: TC001
+    ValidationExecutionService,
 )
 from redforge.domain.identity.value_objects import Permission
 

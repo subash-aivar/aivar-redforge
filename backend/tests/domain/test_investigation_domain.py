@@ -23,8 +23,8 @@ from datetime import UTC, datetime
 import pytest
 
 from redforge.domain.investigations.value_objects import (
-    ACTIVE_STATUSES,
     ACTIVE_STATUS_STRINGS,
+    ACTIVE_STATUSES,
     DEFAULT_CORRELATION_WINDOW_SECONDS,
     REOPEN_WINDOW_SECONDS,
     TERMINAL_STATUSES,
@@ -45,7 +45,6 @@ from redforge.domain.investigations.value_objects import (
     normalize_ip,
     normalize_resource_id,
 )
-
 
 # ── InvestigationStatus ────────────────────────────────────────────────────────
 

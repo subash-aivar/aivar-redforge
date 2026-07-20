@@ -1,0 +1,27 @@
+version: 1.0.0
+enabled: false
+evaluation_strategy: boolean
+metadata:
+  category: storage
+  tags:
+  - base
+  mitre_techniques: []
+  cwe_ids: []
+compliance_mapping: []
+remediation:
+  description: Remediate the misconfiguration.
+  manual_steps:
+  - Review resource configuration
+  - Apply least privilege
+  terraform_guidance: Update resource to enforce secure defaults.
+id: CSPM-AWS-S3-BASE
+rule_id: S3_BASE_STORAGE
+title: S3 base storage policy
+description: Base policy inherited by S3 child policies.
+severity: INFO
+provider_types:
+- AWS
+asset_types:
+- S3_BUCKET
+rule:
+  op: always_true

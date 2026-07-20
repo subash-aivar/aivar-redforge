@@ -1,0 +1,35 @@
+version: 1.0.0
+enabled: true
+evaluation_strategy: boolean
+metadata:
+  category: compute
+  tags:
+  - public
+  mitre_techniques:
+  - T1190
+  cwe_ids:
+  - CWE-284
+compliance_mapping:
+- framework_key: cis_benchmarks_v8
+  requirement_ref: '3.3'
+- framework_key: soc2_type2
+  requirement_ref: CC6.1
+remediation:
+  description: Remediate the misconfiguration.
+  manual_steps:
+  - Review resource configuration
+  - Apply least privilege
+  terraform_guidance: Update resource to enforce secure defaults.
+id: CSPM-AWS-EC2-001
+rule_id: EC2_PUBLIC_EXPOSURE
+title: EC2 instance publicly exposed
+description: EC2 instance has PUBLIC network exposure.
+severity: HIGH
+provider_types:
+- AWS
+asset_types:
+- EC2_INSTANCE
+rule:
+  op: eq
+  path: normalized_config.network_exposure
+  value: PUBLIC

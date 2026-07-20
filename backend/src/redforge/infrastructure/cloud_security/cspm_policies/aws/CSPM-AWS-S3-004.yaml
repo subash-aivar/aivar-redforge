@@ -1,0 +1,40 @@
+version: 1.0.0
+enabled: true
+evaluation_strategy: boolean
+metadata:
+  category: storage
+  tags:
+  - composite
+  mitre_techniques:
+  - T1530
+  cwe_ids:
+  - CWE-284
+compliance_mapping:
+- framework_key: cis_benchmarks_v8
+  requirement_ref: '3.3'
+- framework_key: soc2_type2
+  requirement_ref: CC6.1
+remediation:
+  description: Remediate the misconfiguration.
+  manual_steps:
+  - Review resource configuration
+  - Apply least privilege
+  terraform_guidance: Update resource to enforce secure defaults.
+id: CSPM-AWS-S3-004
+rule_id: S3_PUBLIC_OR_UNENCRYPTED
+title: S3 public or unencrypted (composite)
+description: S3 bucket is public or lacks encryption.
+severity: HIGH
+provider_types:
+- AWS
+asset_types:
+- S3_BUCKET
+inherits_from: CSPM-AWS-S3-BASE
+rule:
+  any:
+  - op: eq
+    path: normalized_config.network_exposure
+    value: PUBLIC
+  - op: eq
+    path: normalized_config.encryption_at_rest
+    value: false

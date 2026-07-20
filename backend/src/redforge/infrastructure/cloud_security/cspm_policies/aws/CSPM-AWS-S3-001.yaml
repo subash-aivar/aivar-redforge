@@ -1,0 +1,36 @@
+version: 1.0.0
+enabled: true
+evaluation_strategy: boolean
+metadata:
+  category: storage
+  tags:
+  - public
+  - cis
+  mitre_techniques:
+  - T1530
+  cwe_ids:
+  - CWE-284
+compliance_mapping:
+- framework_key: cis_benchmarks_v8
+  requirement_ref: '3.3'
+- framework_key: soc2_type2
+  requirement_ref: CC6.1
+remediation:
+  description: Block public access on the S3 bucket.
+  manual_steps:
+  - Enable S3 Block Public Access
+  - Review bucket policy
+  terraform_guidance: aws_s3_bucket_public_access_block.block_public
+id: CSPM-AWS-S3-001
+rule_id: S3_PUBLIC_EXPOSURE
+title: S3 bucket publicly exposed
+description: S3 bucket has PUBLIC network exposure.
+severity: CRITICAL
+provider_types:
+- AWS
+asset_types:
+- S3_BUCKET
+rule:
+  op: eq
+  path: normalized_config.network_exposure
+  value: PUBLIC

@@ -75,7 +75,9 @@ class RawAIService:
 class CloudProviderAdapter(Protocol):
     """Implemented once per cloud provider. Never called outside infrastructure.
 
-    Phase 1 ships the protocol only — no AWS/Azure/GCP SDK adapters.
+    Phase 2 adapters live under ``infrastructure/cloud_security/adapters/``
+    (AWSCloudProviderAdapter, AzureCloudProviderAdapter, GCPCloudProviderAdapter)
+    and are driven by injectable discovery clients (Static*/Boto3*/DictBased*).
     """
 
     async def discover_accounts(self, credential: CloudCredential) -> list[DiscoveredAccount]: ...

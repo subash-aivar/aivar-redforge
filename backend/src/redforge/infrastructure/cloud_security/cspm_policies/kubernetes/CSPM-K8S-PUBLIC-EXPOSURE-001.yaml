@@ -1,0 +1,24 @@
+version: 1.0.0
+enabled: true
+evaluation_strategy: boolean
+metadata:
+  category: kubernetes
+  tags: [exposure, public]
+compliance_mapping:
+- framework_key: cis_benchmarks_v8
+  requirement_ref: '5.4.1'
+- framework_key: soc2_type2
+  requirement_ref: CC6.1
+remediation:
+  description: Prefer ClusterIP services; restrict LoadBalancer/NodePort exposure.
+id: CSPM-K8S-PUBLIC-EXPOSURE-001
+rule_id: K8S_PUBLIC_SERVICE_EXPOSURE
+title: Workload publicly exposed
+description: Workload is exposed via public Service or Ingress.
+severity: HIGH
+provider_types: ["*"]
+asset_types: [K8S_WORKLOAD]
+rule:
+  op: eq
+  path: normalized_config.network_exposure
+  value: PUBLIC

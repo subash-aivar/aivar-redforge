@@ -1,0 +1,27 @@
+version: 1.0.0
+enabled: true
+evaluation_strategy: boolean
+metadata:
+  category: kubernetes
+  tags: [privileged, pss]
+  mitre_techniques: [T1611]
+  cwe_ids: [CWE-250]
+compliance_mapping:
+- framework_key: cis_benchmarks_v8
+  requirement_ref: '5.2.1'
+remediation:
+  description: Remove privileged:true from container securityContext.
+  manual_steps:
+  - Set securityContext.privileged to false
+  terraform_guidance: kubernetes_pod_security_policy
+id: CSPM-K8S-PRIVILEGED-001
+rule_id: K8S_PRIVILEGED_CONTAINER
+title: Privileged container detected
+description: Workload runs with privileged containers.
+severity: CRITICAL
+provider_types: ["*"]
+asset_types: [K8S_WORKLOAD]
+rule:
+  op: eq
+  path: normalized_config.privileged
+  value: true
