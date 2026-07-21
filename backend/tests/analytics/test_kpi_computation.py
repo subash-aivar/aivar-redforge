@@ -7,11 +7,47 @@ from analytics.domain.services.kpi_computation_service import KPIComputationServ
 from analytics.domain.value_objects.enums import KPIStatus, KPIType
 
 
-def test_mttr_stub_requires_m34() -> None:
+def test_mttr_requires_m34_when_no_incident_events() -> None:
     svc = KPIComputationService()
     result = svc.compute(KPIType.MTTR, tenant_id=uuid4(), events={})
     assert result.status == KPIStatus.REQUIRES_M34_DATA
     assert result.value is None
+
+
+def test_mttr_active_with_qualified_incidents() -> None:
+    svc = KPIComputationService()
+    now = datetime.now(UTC)
+    rows: list[dict[str, object]] = []
+    for i in range(3):
+        incident_id = str(uuid4())
+        classified_at = now - timedelta(hours=20 + i)
+        closed_at = now - timedelta(hours=i)
+        rows.append(
+            {
+                "event_type": "incident_classified",
+                "incident_id": incident_id,
+                "classified_at": classified_at,
+                "event_ts": classified_at,
+            }
+        )
+        rows.append(
+            {
+                "event_type": "incident_closed",
+                "incident_id": incident_id,
+                "closed_at": closed_at,
+                "resolution_type": "threat_contained",
+                "event_ts": closed_at,
+            }
+        )
+    result = svc.compute(
+        KPIType.MTTR,
+        tenant_id=uuid4(),
+        events={"incident": rows},
+        period_end=now + timedelta(seconds=1),
+    )
+    assert result.status == KPIStatus.ACTIVE
+    assert result.value is not None
+    assert result.value > 0
 
 
 def test_mttd_insufficient_data() -> None:

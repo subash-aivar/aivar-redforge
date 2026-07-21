@@ -38,7 +38,7 @@ class KPIComputationService:
         del tenant_id
         end = period_end or datetime.now(UTC)
         if kpi_type == KPIType.MTTR:
-            return KPIComputationResult(KPIType.MTTR, None, "hours", KPIStatus.REQUIRES_M34_DATA)
+            return self._mttr(events.get("incident", []), end)
         if kpi_type == KPIType.MTTD:
             return self._mttd(events, end)
         if kpi_type == KPIType.COVERAGE_PCT:
@@ -50,6 +50,63 @@ class KPIComputationService:
         if kpi_type == KPIType.AI_RISK_TREND:
             return self._ai_risk_trend(events.get("ai_posture", []), end)
         return KPIComputationResult(kpi_type, None, "", KPIStatus.ERROR)
+
+    def _mttr(self, rows: list[dict[str, Any]], end: datetime) -> KPIComputationResult:
+        """MTTR from analytics.incident_events (M34 activation — C4)."""
+        if not rows:
+            return KPIComputationResult(KPIType.MTTR, None, "hours", KPIStatus.REQUIRES_M34_DATA)
+
+        classified: dict[str, datetime] = {}
+        closed: dict[str, tuple[datetime, str]] = {}
+        for row in rows:
+            event_type = str(row.get("event_type") or "")
+            incident_id = str(row.get("incident_id") or "")
+            if not incident_id:
+                continue
+            if event_type in {"incident_classified", "IncidentClassified"}:
+                ts = _as_dt(row.get("classified_at") or row.get("event_ts"))
+                if ts is not None:
+                    classified[incident_id] = ts
+            elif event_type in {"incident_closed", "IncidentClosed"}:
+                ts = _as_dt(row.get("closed_at") or row.get("event_ts"))
+                resolution = str(row.get("resolution_type") or "").lower()
+                if ts is not None:
+                    closed[incident_id] = (ts, resolution)
+
+        period_start = end - timedelta(days=90)
+        durations: list[float] = []
+        for incident_id, (closed_at, resolution) in closed.items():
+            if resolution in {"false_positive", "duplicate"}:
+                continue
+            classified_at = classified.get(incident_id)
+            if classified_at is None:
+                continue
+            if not (period_start <= closed_at < end):
+                continue
+            hours = (closed_at - classified_at).total_seconds() / 3600.0
+            if hours >= 0:
+                durations.append(hours)
+
+        if not classified and not closed:
+            return KPIComputationResult(KPIType.MTTR, None, "hours", KPIStatus.REQUIRES_M34_DATA)
+        if len(durations) < 3:
+            return KPIComputationResult(KPIType.MTTR, None, "hours", KPIStatus.INSUFFICIENT_DATA)
+
+        durations_sorted = sorted(durations)
+        avg = sum(durations_sorted) / len(durations_sorted)
+        p50 = durations_sorted[len(durations_sorted) // 2]
+        p95 = durations_sorted[max(0, int(len(durations_sorted) * 0.95) - 1)]
+        return KPIComputationResult(
+            KPIType.MTTR,
+            avg,
+            "hours",
+            KPIStatus.ACTIVE,
+            metadata={
+                "mttr_p50_hours": p50,
+                "mttr_p95_hours": p95,
+                "qualified_incident_count": len(durations_sorted),
+            },
+        )
 
     def _mttd(self, events: dict[str, list[dict[str, Any]]], end: datetime) -> KPIComputationResult:
         # Approximate: mean hours between vuln discover and first detection finding
