@@ -33,3 +33,10 @@ class ScenarioInstantiated(BaseDomainEvent):
     scenario_key: str
     version: str
     instantiated_by_tenant_id: str
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ScenarioSubscriptionChanged(BaseDomainEvent):
+    subscribed_tenant_id: str
+    action: str  # subscribed | unsubscribed
+    local_template_id: str | None = None

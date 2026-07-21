@@ -23,9 +23,7 @@ class ScenarioTemplateModel(ScenarioBase):
     __table_args__ = {"schema": "scenario"}  # noqa: RUF012
 
     id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), primary_key=True)
-    tenant_id: Mapped[UUID] = mapped_column(
-        PG_UUID(as_uuid=True), nullable=False, index=True
-    )
+    tenant_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False, index=True)
     scenario_key: Mapped[str] = mapped_column(String(256), nullable=False, index=True)
     name: Mapped[str] = mapped_column(String(256), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False, default="")
@@ -39,9 +37,7 @@ class ScenarioTemplateModel(ScenarioBase):
     parameters_json: Mapped[list[dict[str, Any]]] = mapped_column(
         JSONB, nullable=False, default=list
     )
-    phases_json: Mapped[list[dict[str, Any]]] = mapped_column(
-        JSONB, nullable=False, default=list
-    )
+    phases_json: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, nullable=False, default=list)
     objective_blueprints_json: Mapped[list[dict[str, Any]]] = mapped_column(
         JSONB, nullable=False, default=list
     )
@@ -51,10 +47,10 @@ class ScenarioTemplateModel(ScenarioBase):
     task_graph_blueprint_json: Mapped[dict[str, Any]] = mapped_column(
         JSONB, nullable=False, default=dict
     )
-    created_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
-    published_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
+    created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    subscription_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    source_template_id: Mapped[UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), nullable=True, index=True
     )
     row_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)

@@ -206,6 +206,7 @@ class TestAddObjective:
         await svc.add_objective(add_cmd)
         # verify via repository
         from campaign.domain.value_objects.identifiers import CampaignId
+
         campaigns = uow.campaigns
         campaign = await campaigns.find_by_id(CampaignId(dto.campaign_id), tenant_id)
         assert campaign is not None
@@ -274,9 +275,8 @@ class TestApprovalFlow:
 
         # Verify approved state
         from campaign.domain.value_objects.identifiers import CampaignId
-        campaign = await uow.campaigns.find_by_id(
-            CampaignId(campaign_id), tenant_id
-        )
+
+        campaign = await uow.campaigns.find_by_id(CampaignId(campaign_id), tenant_id)
         assert campaign is not None
         assert campaign.state == CampaignState.APPROVED
 
@@ -345,9 +345,7 @@ class TestStartCampaignInstance:
             )
         )
         await svc.submit_for_approval(
-            SubmitCampaignForApprovalCommand(
-                tenant_id=tenant_id.value, campaign_id=campaign_id
-            )
+            SubmitCampaignForApprovalCommand(tenant_id=tenant_id.value, campaign_id=campaign_id)
         )
         await svc.approve_campaign(
             ApproveCampaignCommand(
@@ -371,9 +369,8 @@ class TestStartCampaignInstance:
     @pytest.mark.asyncio
     async def test_start_instance_suspended_engagement_raises(self, tenant_id, now) -> None:
         from campaign.application.exceptions import ApplicationConflictError
-        svc, _, _ = make_service(
-            tenant_id, engagement_state="Suspended", kill_switch="Triggered"
-        )
+
+        svc, _, _ = make_service(tenant_id, engagement_state="Suspended", kill_switch="Triggered")
         engagement_id = uuid4()
         dto = await svc.create_campaign(
             CreateCampaignCommand(
@@ -396,9 +393,7 @@ class TestStartCampaignInstance:
             )
         )
         await svc.submit_for_approval(
-            SubmitCampaignForApprovalCommand(
-                tenant_id=tenant_id.value, campaign_id=campaign_id
-            )
+            SubmitCampaignForApprovalCommand(tenant_id=tenant_id.value, campaign_id=campaign_id)
         )
         await svc.approve_campaign(
             ApproveCampaignCommand(

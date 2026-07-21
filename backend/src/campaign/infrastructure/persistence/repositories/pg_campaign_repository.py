@@ -60,9 +60,7 @@ def _safety_policy_from_json(data: dict[str, Any]) -> CampaignSafetyPolicyVO:
     return CampaignSafetyPolicyVO(
         max_concurrent_actions=int(data.get("max_concurrent_actions", 10)),
         auto_abort_on_detection=bool(data.get("auto_abort_on_detection", False)),
-        auto_abort_on_objective_failure=bool(
-            data.get("auto_abort_on_objective_failure", False)
-        ),
+        auto_abort_on_objective_failure=bool(data.get("auto_abort_on_objective_failure", False)),
         blast_radius_ceiling=str(data.get("blast_radius_ceiling", "Probe")),
     )
 
@@ -92,6 +90,7 @@ def _schedule_to_json(schedule: CampaignSchedule | None) -> dict[str, Any] | Non
         "max_consecutive_failures": schedule.max_consecutive_failures,
         "blackout_periods": list(schedule.blackout_periods),
         "consecutive_failure_count": schedule.consecutive_failure_count,
+        "scheduler_job_id": schedule.scheduler_job_id,
     }
 
 
@@ -104,14 +103,12 @@ def _schedule_from_json(data: dict[str, Any] | None) -> CampaignSchedule | None:
         max_consecutive_failures=int(data.get("max_consecutive_failures", 3)),
         blackout_periods=list(data.get("blackout_periods") or []),
         consecutive_failure_count=int(data.get("consecutive_failure_count", 0)),
+        scheduler_job_id=data.get("scheduler_job_id"),
     )
 
 
 def _rules_to_json(rules: list[TargetSelectionRule]) -> list[dict[str, Any]]:
-    return [
-        {"attribute": r.attribute, "operator": r.operator, "value": r.value}
-        for r in rules
-    ]
+    return [{"attribute": r.attribute, "operator": r.operator, "value": r.value} for r in rules]
 
 
 def _rules_from_json(data: list[Any]) -> list[TargetSelectionRule]:
@@ -155,12 +152,8 @@ def _to_domain(row: CampaignModel) -> Campaign:
             objective_type=ObjectiveType(o.objective_type),
             description=o.description,
             evaluation_criteria=ObjectiveEvaluationCriteria(
-                condition_type=str(
-                    o.evaluation_criteria_json.get("condition_type", "")
-                ),
-                parameters=dict(
-                    o.evaluation_criteria_json.get("parameters") or {}
-                ),
+                condition_type=str(o.evaluation_criteria_json.get("condition_type", "")),
+                parameters=dict(o.evaluation_criteria_json.get("parameters") or {}),
             ),
             state=ObjectiveState(o.state),
             sealed=o.sealed,
@@ -201,15 +194,9 @@ class PgCampaignRepository(ICampaignRepository):
         result = await self._session.execute(stmt)
         row = result.scalar_one_or_none()
 
-        engagement_id = (
-            campaign.engagement_ref.engagement_id
-            if campaign.engagement_ref
-            else None
-        )
+        engagement_id = campaign.engagement_ref.engagement_id if campaign.engagement_ref else None
         engagement_tenant_id = (
-            campaign.engagement_ref.tenant_id
-            if campaign.engagement_ref
-            else None
+            campaign.engagement_ref.tenant_id if campaign.engagement_ref else None
         )
 
         if row is None:
@@ -226,9 +213,7 @@ class PgCampaignRepository(ICampaignRepository):
                 safety_policy_json=_safety_policy_to_json(campaign.safety_policy),
                 approval_policy_json=_approval_policy_to_json(campaign.approval_policy),
                 schedule_json=_schedule_to_json(campaign.campaign_schedule),
-                target_selection_rules_json=_rules_to_json(
-                    campaign.target_selection_rules
-                ),
+                target_selection_rules_json=_rules_to_json(campaign.target_selection_rules),
                 created_at=campaign.created_at,
                 updated_at=campaign.updated_at,
                 row_version=campaign.version,
@@ -260,9 +245,7 @@ class PgCampaignRepository(ICampaignRepository):
                 safety_policy_json=_safety_policy_to_json(campaign.safety_policy),
                 approval_policy_json=_approval_policy_to_json(campaign.approval_policy),
                 schedule_json=_schedule_to_json(campaign.campaign_schedule),
-                target_selection_rules_json=_rules_to_json(
-                    campaign.target_selection_rules
-                ),
+                target_selection_rules_json=_rules_to_json(campaign.target_selection_rules),
                 updated_at=campaign.updated_at,
                 row_version=campaign.version,
             )
@@ -275,9 +258,7 @@ class PgCampaignRepository(ICampaignRepository):
                 CampaignModel.id == campaign.campaign_id.value,
                 CampaignModel.tenant_id == campaign.tenant_id.value,
             )
-            actual = (
-                await self._session.execute(actual_stmt)
-            ).scalar_one_or_none() or 0
+            actual = (await self._session.execute(actual_stmt)).scalar_one_or_none() or 0
             raise OptimisticLockConflict(
                 str(campaign.campaign_id),
                 expected,
@@ -287,9 +268,7 @@ class PgCampaignRepository(ICampaignRepository):
         await self._session.refresh(row)
         await self._sync_children(row, campaign)
 
-    async def _sync_children(
-        self, row: CampaignModel, campaign: Campaign
-    ) -> None:
+    async def _sync_children(self, row: CampaignModel, campaign: Campaign) -> None:
         row.approvals.clear()
         row.objectives.clear()
         await self._session.flush()
@@ -340,11 +319,10 @@ class PgCampaignRepository(ICampaignRepository):
 
     async def find_active_by_tenant(self, tenant_id: TenantId) -> list[Campaign]:
         from campaign.domain.value_objects.enums import CampaignState as _State
+
         stmt = select(CampaignModel).where(
             CampaignModel.tenant_id == tenant_id.value,
-            CampaignModel.state.in_(
-                [_State.RUNNING.value, _State.PAUSED.value]
-            ),
+            CampaignModel.state.in_([_State.RUNNING.value, _State.PAUSED.value]),
         )
         result = await self._session.execute(stmt)
         return [_to_domain(row) for row in result.scalars().all()]

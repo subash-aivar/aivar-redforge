@@ -60,18 +60,12 @@ class ScenarioInstantiationService:
             "name": self._substitute_string(template.name, resolved),
             "objectives": objectives,
             "safety_policy": {
-                "max_concurrent_actions": (
-                    template.default_safety_policy.max_concurrent_actions
-                ),
-                "auto_abort_on_detection": (
-                    template.default_safety_policy.auto_abort_on_detection
-                ),
+                "max_concurrent_actions": (template.default_safety_policy.max_concurrent_actions),
+                "auto_abort_on_detection": (template.default_safety_policy.auto_abort_on_detection),
                 "auto_abort_on_objective_failure": (
                     template.default_safety_policy.auto_abort_on_objective_failure
                 ),
-                "blast_radius_ceiling": (
-                    template.default_safety_policy.blast_radius_ceiling
-                ),
+                "blast_radius_ceiling": (template.default_safety_policy.blast_radius_ceiling),
             },
             "scenario_template_id": str(template.template_id),
             "suggested_approval_fast_path": template.suggested_approval_fast_path,
@@ -131,7 +125,4 @@ class ScenarioInstantiationService:
         data: dict[str, str],
         parameters: dict[str, str],
     ) -> dict[str, str]:
-        return {
-            key: self._substitute_string(str(value), parameters)
-            for key, value in data.items()
-        }
+        return {key: self._substitute_string(str(value), parameters) for key, value in data.items()}

@@ -58,6 +58,7 @@ def make_execution(
 
 # ── Initialization ─────────────────────────────────────────────────────────────
 
+
 def test_initialization_creates_pending_records(
     tenant_id: TenantId,
     task_ids: list[CampaignTaskId],
@@ -68,7 +69,13 @@ def test_initialization_creates_pending_records(
     now: object,
 ) -> None:
     execution = make_execution(
-        tenant_id, task_ids, campaign_instance_ref, graph_version_ref, engagement_ref, policy_snapshot, now
+        tenant_id,
+        task_ids,
+        campaign_instance_ref,
+        graph_version_ref,
+        engagement_ref,
+        policy_snapshot,
+        now,
     )
     assert len(execution.task_records) == 3
     for rec in execution.task_records:
@@ -87,7 +94,13 @@ def test_initialization_emits_initialized_event(
     from campaignexecution.domain.events.execution_events import TaskGraphExecutionInitialized
 
     execution = make_execution(
-        tenant_id, task_ids, campaign_instance_ref, graph_version_ref, engagement_ref, policy_snapshot, now
+        tenant_id,
+        task_ids,
+        campaign_instance_ref,
+        graph_version_ref,
+        engagement_ref,
+        policy_snapshot,
+        now,
     )
     events = execution.pop_events()
     assert any(isinstance(e, TaskGraphExecutionInitialized) for e in events)
@@ -103,15 +116,23 @@ def test_initialization_starts_in_initializing_state(
     now: object,
 ) -> None:
     execution = make_execution(
-        tenant_id, task_ids, campaign_instance_ref, graph_version_ref, engagement_ref, policy_snapshot, now
+        tenant_id,
+        task_ids,
+        campaign_instance_ref,
+        graph_version_ref,
+        engagement_ref,
+        policy_snapshot,
+        now,
     )
     # mark_running transitions to RUNNING
     from datetime import UTC, datetime
+
     execution.mark_running(datetime.now(UTC))
     assert execution.state == ExecutionState.RUNNING
 
 
 # ── Dispatch ───────────────────────────────────────────────────────────────────
+
 
 def test_dispatch_task_transitions_to_running(
     tenant_id: TenantId,
@@ -126,7 +147,13 @@ def test_dispatch_task_transitions_to_running(
     from uuid import uuid4
 
     execution = make_execution(
-        tenant_id, task_ids, campaign_instance_ref, graph_version_ref, engagement_ref, policy_snapshot, now
+        tenant_id,
+        task_ids,
+        campaign_instance_ref,
+        graph_version_ref,
+        engagement_ref,
+        policy_snapshot,
+        now,
     )
     execution.mark_running(datetime.now(UTC))
 
@@ -154,7 +181,13 @@ def test_dispatch_is_idempotent(
     from uuid import uuid4
 
     execution = make_execution(
-        tenant_id, task_ids, campaign_instance_ref, graph_version_ref, engagement_ref, policy_snapshot, now
+        tenant_id,
+        task_ids,
+        campaign_instance_ref,
+        graph_version_ref,
+        engagement_ref,
+        policy_snapshot,
+        now,
     )
     execution.mark_running(datetime.now(UTC))
 
@@ -172,6 +205,7 @@ def test_dispatch_is_idempotent(
 
 # ── Completion ─────────────────────────────────────────────────────────────────
 
+
 def test_task_completion_marks_state(
     tenant_id: TenantId,
     task_ids: list[CampaignTaskId],
@@ -185,7 +219,13 @@ def test_task_completion_marks_state(
     from uuid import uuid4
 
     execution = make_execution(
-        tenant_id, task_ids, campaign_instance_ref, graph_version_ref, engagement_ref, policy_snapshot, now
+        tenant_id,
+        task_ids,
+        campaign_instance_ref,
+        graph_version_ref,
+        engagement_ref,
+        policy_snapshot,
+        now,
     )
     execution.mark_running(datetime.now(UTC))
     task = task_ids[0]
@@ -212,7 +252,13 @@ def test_task_completion_is_idempotent(
     from uuid import uuid4
 
     execution = make_execution(
-        tenant_id, task_ids, campaign_instance_ref, graph_version_ref, engagement_ref, policy_snapshot, now
+        tenant_id,
+        task_ids,
+        campaign_instance_ref,
+        graph_version_ref,
+        engagement_ref,
+        policy_snapshot,
+        now,
     )
     execution.mark_running(datetime.now(UTC))
     task = task_ids[0]
@@ -230,6 +276,7 @@ def test_task_completion_is_idempotent(
 
 # ── Conditional branch ─────────────────────────────────────────────────────────
 
+
 def test_completion_with_successors_marks_ready_and_skipped(
     tenant_id: TenantId,
     task_ids: list[CampaignTaskId],
@@ -243,7 +290,13 @@ def test_completion_with_successors_marks_ready_and_skipped(
     from uuid import uuid4
 
     execution = make_execution(
-        tenant_id, task_ids, campaign_instance_ref, graph_version_ref, engagement_ref, policy_snapshot, now
+        tenant_id,
+        task_ids,
+        campaign_instance_ref,
+        graph_version_ref,
+        engagement_ref,
+        policy_snapshot,
+        now,
     )
     execution.mark_running(datetime.now(UTC))
 
@@ -252,7 +305,10 @@ def test_completion_with_successors_marks_ready_and_skipped(
     op_ref = OperationRef(operation_id=uuid4(), tenant_id=tenant_id.value)
     execution.record_task_dispatched(tenant_id, t0, op_ref, datetime.now(UTC))
     execution.record_task_completion(
-        tenant_id, t0, TaskOutcome.SUCCESS, datetime.now(UTC),
+        tenant_id,
+        t0,
+        TaskOutcome.SUCCESS,
+        datetime.now(UTC),
         ready_successor_ids=[t1],
         skipped_successor_ids=[t2],
     )
@@ -264,6 +320,7 @@ def test_completion_with_successors_marks_ready_and_skipped(
 
 
 # ── Barrier evaluation ─────────────────────────────────────────────────────────
+
 
 def test_barrier_passes_when_all_group_tasks_done(
     tenant_id: TenantId,
@@ -281,7 +338,13 @@ def test_barrier_passes_when_all_group_tasks_done(
     barrier = CampaignTaskId(uuid4())
 
     execution = make_execution(
-        tenant_id, [t1, t2, barrier], campaign_instance_ref, graph_version_ref, engagement_ref, policy_snapshot, now
+        tenant_id,
+        [t1, t2, barrier],
+        campaign_instance_ref,
+        graph_version_ref,
+        engagement_ref,
+        policy_snapshot,
+        now,
     )
     execution.mark_running(datetime.now(UTC))
 
@@ -314,7 +377,13 @@ def test_barrier_blocks_when_tasks_pending(
     barrier = CampaignTaskId(uuid4())
 
     execution = make_execution(
-        tenant_id, [t1, t2, barrier], campaign_instance_ref, graph_version_ref, engagement_ref, policy_snapshot, now
+        tenant_id,
+        [t1, t2, barrier],
+        campaign_instance_ref,
+        graph_version_ref,
+        engagement_ref,
+        policy_snapshot,
+        now,
     )
     execution.mark_running(datetime.now(UTC))
 
@@ -330,6 +399,7 @@ def test_barrier_blocks_when_tasks_pending(
 
 # ── Human approval gate ────────────────────────────────────────────────────────
 
+
 def test_approval_gate_transitions_to_waiting(
     tenant_id: TenantId,
     task_ids: list[CampaignTaskId],
@@ -342,7 +412,13 @@ def test_approval_gate_transitions_to_waiting(
     from datetime import UTC, datetime
 
     execution = make_execution(
-        tenant_id, task_ids, campaign_instance_ref, graph_version_ref, engagement_ref, policy_snapshot, now
+        tenant_id,
+        task_ids,
+        campaign_instance_ref,
+        graph_version_ref,
+        engagement_ref,
+        policy_snapshot,
+        now,
     )
     execution.mark_running(datetime.now(UTC))
 
@@ -371,7 +447,13 @@ def test_grant_approval_transitions_back_to_running(
     from uuid import uuid4
 
     execution = make_execution(
-        tenant_id, task_ids, campaign_instance_ref, graph_version_ref, engagement_ref, policy_snapshot, now
+        tenant_id,
+        task_ids,
+        campaign_instance_ref,
+        graph_version_ref,
+        engagement_ref,
+        policy_snapshot,
+        now,
     )
     execution.mark_running(datetime.now(UTC))
 
@@ -407,7 +489,13 @@ def test_deny_approval_transitions_to_paused(
     from uuid import uuid4
 
     execution = make_execution(
-        tenant_id, task_ids, campaign_instance_ref, graph_version_ref, engagement_ref, policy_snapshot, now
+        tenant_id,
+        task_ids,
+        campaign_instance_ref,
+        graph_version_ref,
+        engagement_ref,
+        policy_snapshot,
+        now,
     )
     execution.mark_running(datetime.now(UTC))
 
@@ -424,7 +512,9 @@ def test_deny_approval_transitions_to_paused(
         default_on_timeout="abort",
     )
     execution.reach_human_approval_gate(tenant_id, gate, datetime.now(UTC))
-    execution.deny_human_approval(tenant_id, "approver-001", "Not yet authorized", datetime.now(UTC))
+    execution.deny_human_approval(
+        tenant_id, "approver-001", "Not yet authorized", datetime.now(UTC)
+    )
     assert execution.state == ExecutionState.PAUSED
 
 
@@ -441,7 +531,13 @@ def test_approval_timeout_default_abort_pauses(
     from uuid import uuid4
 
     execution = make_execution(
-        tenant_id, task_ids, campaign_instance_ref, graph_version_ref, engagement_ref, policy_snapshot, now
+        tenant_id,
+        task_ids,
+        campaign_instance_ref,
+        graph_version_ref,
+        engagement_ref,
+        policy_snapshot,
+        now,
     )
     execution.mark_running(datetime.now(UTC))
 
@@ -476,7 +572,13 @@ def test_approval_timeout_default_proceed_continues(
     from uuid import uuid4
 
     execution = make_execution(
-        tenant_id, task_ids, campaign_instance_ref, graph_version_ref, engagement_ref, policy_snapshot, now
+        tenant_id,
+        task_ids,
+        campaign_instance_ref,
+        graph_version_ref,
+        engagement_ref,
+        policy_snapshot,
+        now,
     )
     execution.mark_running(datetime.now(UTC))
 
@@ -510,7 +612,13 @@ def test_no_approval_gate_raises(
     from datetime import UTC, datetime
 
     execution = make_execution(
-        tenant_id, task_ids, campaign_instance_ref, graph_version_ref, engagement_ref, policy_snapshot, now
+        tenant_id,
+        task_ids,
+        campaign_instance_ref,
+        graph_version_ref,
+        engagement_ref,
+        policy_snapshot,
+        now,
     )
     execution.mark_running(datetime.now(UTC))
     with pytest.raises(NoApprovalGatePending):
@@ -518,6 +626,7 @@ def test_no_approval_gate_raises(
 
 
 # ── Rollback ───────────────────────────────────────────────────────────────────
+
 
 def test_rollback_requires_paused_or_failed(
     tenant_id: TenantId,
@@ -531,7 +640,13 @@ def test_rollback_requires_paused_or_failed(
     from datetime import UTC, datetime
 
     execution = make_execution(
-        tenant_id, task_ids, campaign_instance_ref, graph_version_ref, engagement_ref, policy_snapshot, now
+        tenant_id,
+        task_ids,
+        campaign_instance_ref,
+        graph_version_ref,
+        engagement_ref,
+        policy_snapshot,
+        now,
     )
     execution.mark_running(datetime.now(UTC))
 
@@ -551,7 +666,13 @@ def test_rollback_proceeds_from_paused(
     from datetime import UTC, datetime
 
     execution = make_execution(
-        tenant_id, task_ids, campaign_instance_ref, graph_version_ref, engagement_ref, policy_snapshot, now
+        tenant_id,
+        task_ids,
+        campaign_instance_ref,
+        graph_version_ref,
+        engagement_ref,
+        policy_snapshot,
+        now,
     )
     execution.mark_running(datetime.now(UTC))
     execution.pause(tenant_id, "manual", datetime.now(UTC))
@@ -560,6 +681,7 @@ def test_rollback_proceeds_from_paused(
 
 
 # ── Task not found ─────────────────────────────────────────────────────────────
+
 
 def test_task_not_found_raises(
     tenant_id: TenantId,
@@ -574,7 +696,13 @@ def test_task_not_found_raises(
     from uuid import uuid4
 
     execution = make_execution(
-        tenant_id, task_ids, campaign_instance_ref, graph_version_ref, engagement_ref, policy_snapshot, now
+        tenant_id,
+        task_ids,
+        campaign_instance_ref,
+        graph_version_ref,
+        engagement_ref,
+        policy_snapshot,
+        now,
     )
     unknown_task = CampaignTaskId(uuid4())
     with pytest.raises(TaskNotFound):
@@ -582,6 +710,7 @@ def test_task_not_found_raises(
 
 
 # ── Complete and fail ──────────────────────────────────────────────────────────
+
 
 def test_complete_from_running(
     tenant_id: TenantId,
@@ -595,7 +724,13 @@ def test_complete_from_running(
     from datetime import UTC, datetime
 
     execution = make_execution(
-        tenant_id, task_ids, campaign_instance_ref, graph_version_ref, engagement_ref, policy_snapshot, now
+        tenant_id,
+        task_ids,
+        campaign_instance_ref,
+        graph_version_ref,
+        engagement_ref,
+        policy_snapshot,
+        now,
     )
     execution.mark_running(datetime.now(UTC))
     execution.complete(tenant_id, datetime.now(UTC))
@@ -614,7 +749,13 @@ def test_abort_from_any_non_terminal(
     from datetime import UTC, datetime
 
     execution = make_execution(
-        tenant_id, task_ids, campaign_instance_ref, graph_version_ref, engagement_ref, policy_snapshot, now
+        tenant_id,
+        task_ids,
+        campaign_instance_ref,
+        graph_version_ref,
+        engagement_ref,
+        policy_snapshot,
+        now,
     )
     execution.mark_running(datetime.now(UTC))
     execution.abort(tenant_id, "force abort", datetime.now(UTC))

@@ -94,9 +94,7 @@ def sample_actions(now: datetime) -> list[AttackActionRecord]:
 
 @pytest.fixture
 def uow() -> FakeUnitOfWork:
-    return FakeUnitOfWork(
-        FakeEvaluationRepository(), FakeMetricsSnapshotRepository()
-    )
+    return FakeUnitOfWork(FakeEvaluationRepository(), FakeMetricsSnapshotRepository())
 
 
 @pytest.fixture
@@ -111,16 +109,18 @@ def graph_port() -> StubSecurityGraphWriteAdapter:
 
 def make_service(
     uow: FakeUnitOfWork,
-    publisher: FakeEventPublisher,
+    publisher: object,
     actions: list[AttackActionRecord] | None = None,
     findings: list[DetectionFindingRecord] | None = None,
     evidence: list[EvidenceRecord] | None = None,
     graph: StubSecurityGraphWriteAdapter | None = None,
 ):
+    from evaluation.application.ports.i_event_publisher import IEventPublisher
     from evaluation.application.services.evaluation_application_service import (
         EvaluationApplicationService,
     )
 
+    assert isinstance(publisher, IEventPublisher)
     return EvaluationApplicationService(
         uow_factory=lambda: uow,
         event_publisher=publisher,

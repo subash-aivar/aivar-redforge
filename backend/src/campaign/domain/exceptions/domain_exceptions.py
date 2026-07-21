@@ -33,17 +33,13 @@ class ObjectiveSealedViolation(CampaignDomainException):
 
 class ArchivedImmutabilityViolation(CampaignDomainException):
     def __init__(self, aggregate_id: str) -> None:
-        super().__init__(
-            f"Archived aggregate '{aggregate_id}' is immutable and cannot be modified"
-        )
+        super().__init__(f"Archived aggregate '{aggregate_id}' is immutable and cannot be modified")
         self.aggregate_id = aggregate_id
 
 
 class TenantMismatch(CampaignDomainException):
     def __init__(self, expected: object, actual: object) -> None:
-        super().__init__(
-            f"Tenant mismatch: expected '{expected}', got '{actual}'"
-        )
+        super().__init__(f"Tenant mismatch: expected '{expected}', got '{actual}'")
         self.expected = expected
         self.actual = actual
 
@@ -57,9 +53,7 @@ class InvalidArgument(CampaignDomainException):
 
 class EngagementNotActive(CampaignDomainException):
     def __init__(self, engagement_id: str, state: str) -> None:
-        super().__init__(
-            f"Engagement '{engagement_id}' is not active (current state: {state})"
-        )
+        super().__init__(f"Engagement '{engagement_id}' is not active (current state: {state})")
         self.engagement_id = engagement_id
         self.state = state
 
@@ -72,9 +66,7 @@ class TargetResolutionFailed(CampaignDomainException):
 
 class DuplicateApproval(CampaignDomainException):
     def __init__(self, approver_id: str, campaign_id: str) -> None:
-        super().__init__(
-            f"Approver '{approver_id}' has already approved campaign '{campaign_id}'"
-        )
+        super().__init__(f"Approver '{approver_id}' has already approved campaign '{campaign_id}'")
         self.approver_id = approver_id
         self.campaign_id = campaign_id
 

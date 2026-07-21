@@ -41,7 +41,6 @@ from evaluation.infrastructure.persistence.models.evaluation_models import (
 )
 
 if TYPE_CHECKING:
-
     from sqlalchemy.ext.asyncio import AsyncSession
 
 
@@ -123,6 +122,7 @@ def _from_row(row: CampaignEvaluationModel) -> CampaignEvaluation:
         for s in (row.objective_specs_json or [])
     ]
     kill_chain = None
+    per_phase: tuple[tuple[str, float], ...] = ()
     if row.kill_chain_json:
         phases = tuple(
             KillChainPhaseOutcome(
@@ -133,7 +133,11 @@ def _from_row(row: CampaignEvaluationModel) -> CampaignEvaluation:
             )
             for p in (row.kill_chain_json.get("phase_outcomes") or [])
         )
-        kill_chain = KillChainProgressionMap(phase_outcomes=phases)
+        if phases:
+            kill_chain = KillChainProgressionMap(phase_outcomes=phases)
+        per_phase = tuple(
+            (str(p[0]), float(p[1])) for p in (row.kill_chain_json.get("per_phase_coverage") or ())
+        )
 
     compliance = [
         ComplianceMappingResult(
@@ -169,6 +173,7 @@ def _from_row(row: CampaignEvaluationModel) -> CampaignEvaluation:
         correlation_window_minutes=row.correlation_window_minutes,
         execution_failed=row.execution_failed,
         version=row.row_version,
+        per_phase_coverage=per_phase,
     )
 
 
@@ -218,8 +223,8 @@ class PgCampaignEvaluationRepository(ICampaignEvaluationRepository):
             }
             for s in evaluation.objective_specs
         ]
-        kill_json = None
-        if evaluation.kill_chain_progression:
+        kill_json: dict[str, Any] | None = None
+        if evaluation.kill_chain_progression or evaluation.per_phase_coverage:
             kill_json = {
                 "phase_outcomes": [
                     {
@@ -228,8 +233,15 @@ class PgCampaignEvaluationRepository(ICampaignEvaluationRepository):
                         "tasks_completed": p.tasks_completed,
                         "tasks_failed": p.tasks_failed,
                     }
-                    for p in evaluation.kill_chain_progression.phase_outcomes
-                ]
+                    for p in (
+                        evaluation.kill_chain_progression.phase_outcomes
+                        if evaluation.kill_chain_progression
+                        else ()
+                    )
+                ],
+                "per_phase_coverage": [
+                    [phase, pct] for phase, pct in evaluation.per_phase_coverage
+                ],
             }
         compliance_json = [
             {
@@ -242,9 +254,7 @@ class PgCampaignEvaluationRepository(ICampaignEvaluationRepository):
             for c in evaluation.compliance_mappings
         ]
 
-        existing = await self._session.get(
-            CampaignEvaluationModel, evaluation.evaluation_id.value
-        )
+        existing = await self._session.get(CampaignEvaluationModel, evaluation.evaluation_id.value)
         if existing is None:
             row = CampaignEvaluationModel(
                 id=evaluation.evaluation_id.value,
@@ -254,9 +264,7 @@ class PgCampaignEvaluationRepository(ICampaignEvaluationRepository):
                 run_number=evaluation.campaign_instance_ref.run_number,
                 state=evaluation.state.value,
                 composite_outcome=(
-                    evaluation.composite_outcome.value
-                    if evaluation.composite_outcome
-                    else None
+                    evaluation.composite_outcome.value if evaluation.composite_outcome else None
                 ),
                 execution_failed=evaluation.execution_failed,
                 correlation_window_minutes=evaluation.correlation_window_minutes,
@@ -275,9 +283,7 @@ class PgCampaignEvaluationRepository(ICampaignEvaluationRepository):
                 raise TenantMismatch(evaluation.tenant_id, existing.tenant_id)
             existing.state = evaluation.state.value
             existing.composite_outcome = (
-                evaluation.composite_outcome.value
-                if evaluation.composite_outcome
-                else None
+                evaluation.composite_outcome.value if evaluation.composite_outcome else None
             )
             existing.execution_failed = evaluation.execution_failed
             existing.correlation_window_minutes = evaluation.correlation_window_minutes
@@ -306,8 +312,7 @@ class PgCampaignEvaluationRepository(ICampaignEvaluationRepository):
         tenant_id: TenantId,
     ) -> CampaignEvaluation | None:
         stmt = select(CampaignEvaluationModel).where(
-            CampaignEvaluationModel.campaign_instance_id
-            == UUID(campaign_instance_id),
+            CampaignEvaluationModel.campaign_instance_id == UUID(campaign_instance_id),
             CampaignEvaluationModel.tenant_id == tenant_id.value,
         )
         result = await self._session.execute(stmt)

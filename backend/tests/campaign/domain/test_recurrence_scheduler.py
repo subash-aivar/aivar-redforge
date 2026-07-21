@@ -17,6 +17,7 @@ def scheduler() -> RecurrenceScheduler:
 
 # ── Cron expression and next fire time ────────────────────────────────────────
 
+
 def test_next_fire_time_hourly_cron(scheduler: RecurrenceScheduler) -> None:
     # Every hour on the hour
     base = datetime(2026, 7, 21, 10, 0, 0, tzinfo=UTC)
@@ -61,6 +62,7 @@ def test_correct_next_10_fire_times(scheduler: RecurrenceScheduler) -> None:
 
 
 # ── Blackout period enforcement ────────────────────────────────────────────────
+
 
 def test_blackout_daily_window_in_window(scheduler: RecurrenceScheduler) -> None:
     policy = RecurrencePolicy(
@@ -141,6 +143,7 @@ def test_no_blackout_periods_never_blocked(scheduler: RecurrenceScheduler) -> No
 
 # ── Overlap prevention ─────────────────────────────────────────────────────────
 
+
 def test_overlap_prevention_blocks_when_running(scheduler: RecurrenceScheduler) -> None:
     """Quality gate: fire skipped if previous instance still running."""
     from unittest.mock import MagicMock
@@ -171,6 +174,7 @@ def test_overlap_prevention_allows_empty_list(scheduler: RecurrenceScheduler) ->
 
 
 # ── Consecutive failure detection ──────────────────────────────────────────────
+
 
 def test_consecutive_failures_pauses_campaign(scheduler: RecurrenceScheduler) -> None:
     """Quality gate: 3 failures → campaign paused; 4th fire does not create instance."""
@@ -256,3 +260,51 @@ def test_consecutive_failures_resets_on_success(scheduler: RecurrenceScheduler) 
 
     result = scheduler.check_consecutive_failures(campaign, instances, datetime.now(UTC))
     assert not result
+
+
+@pytest.mark.asyncio
+async def test_recover_after_restart_excludes_starting_campaigns(
+    scheduler: RecurrenceScheduler,
+) -> None:
+    from uuid import uuid4
+
+    from campaign.domain.value_objects.identifiers import CampaignId, TenantId
+    from campaign.infrastructure.acl.degraded_adapters import StubSchedulerPort
+
+    port = StubSchedulerPort()
+    tenant = TenantId(uuid4())
+    c1 = CampaignId(uuid4())
+    c2 = CampaignId(uuid4())
+    policy = RecurrencePolicy(
+        cron_expression="0 * * * *",
+        execution_window_hours=1,
+        max_consecutive_failures=3,
+        blackout_periods=[],
+    )
+    await port.register_schedule(c1, tenant, policy)
+    await port.register_schedule(c2, tenant, policy)
+
+    recovered = await scheduler.recover_after_restart(
+        port, tenant, campaigns_with_starting_instances={str(c1)}
+    )
+    ids = {e["campaign_id"] for e in recovered}
+    assert str(c1) not in ids
+    assert str(c2) in ids
+
+
+@pytest.mark.asyncio
+async def test_register_one_shot(scheduler: RecurrenceScheduler) -> None:
+    from unittest.mock import MagicMock
+    from uuid import uuid4
+
+    from campaign.domain.value_objects.identifiers import CampaignId, TenantId
+    from campaign.infrastructure.acl.degraded_adapters import StubSchedulerPort
+
+    port = StubSchedulerPort()
+    campaign = MagicMock()
+    campaign.campaign_id = CampaignId(uuid4())
+    campaign.tenant_id = TenantId(uuid4())
+    fire_at = datetime(2026, 8, 1, 12, 0, tzinfo=UTC)
+    job_id = await scheduler.register_one_shot(campaign, fire_at, port)
+    assert job_id.startswith("stub-oneshot-")
+    assert port.registered[-1]["fire_at"] == fire_at.isoformat()

@@ -40,3 +40,5 @@ class InstantiationResultDTO:
     version: str
     suggested_approval_fast_path: str | None = None
     metadata: dict[str, str] = field(default_factory=dict)
+    campaign_id: str | None = None
+    validation_errors: list[str] = field(default_factory=list)

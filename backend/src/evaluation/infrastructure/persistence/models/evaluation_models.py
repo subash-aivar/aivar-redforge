@@ -23,9 +23,7 @@ class CampaignEvaluationModel(EvaluationBase):
     __table_args__ = {"schema": "evaluation"}  # noqa: RUF012
 
     id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), primary_key=True)
-    tenant_id: Mapped[UUID] = mapped_column(
-        PG_UUID(as_uuid=True), nullable=False, index=True
-    )
+    tenant_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False, index=True)
     campaign_instance_id: Mapped[UUID] = mapped_column(
         PG_UUID(as_uuid=True), nullable=False, unique=True, index=True
     )
@@ -33,9 +31,7 @@ class CampaignEvaluationModel(EvaluationBase):
     run_number: Mapped[int] = mapped_column(Integer, nullable=False)
     state: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
     composite_outcome: Mapped[str | None] = mapped_column(String(32), nullable=True)
-    execution_failed: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, default=False
-    )
+    execution_failed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     correlation_window_minutes: Mapped[int] = mapped_column(Integer, nullable=False)
 
     objective_specs_json: Mapped[list[dict[str, Any]]] = mapped_column(
@@ -50,9 +46,7 @@ class CampaignEvaluationModel(EvaluationBase):
     late_detections_json: Mapped[list[dict[str, Any]]] = mapped_column(
         JSONB, nullable=False, default=list
     )
-    metrics_json: Mapped[dict[str, Any]] = mapped_column(
-        JSONB, nullable=False, default=dict
-    )
+    metrics_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
     kill_chain_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
     compliance_mappings_json: Mapped[list[dict[str, Any]]] = mapped_column(
         JSONB, nullable=False, default=list
@@ -65,33 +59,21 @@ class CampaignMetricsSnapshotModel(EvaluationBase):
     __table_args__ = {"schema": "evaluation"}  # noqa: RUF012
 
     id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), primary_key=True)
-    tenant_id: Mapped[UUID] = mapped_column(
-        PG_UUID(as_uuid=True), nullable=False, index=True
-    )
-    campaign_id: Mapped[UUID] = mapped_column(
-        PG_UUID(as_uuid=True), nullable=False, index=True
-    )
+    tenant_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False, index=True)
+    campaign_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False, index=True)
     run_number: Mapped[int] = mapped_column(Integer, nullable=False)
-    snapshot_timestamp: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
-    )
+    snapshot_timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     composite_outcome: Mapped[str] = mapped_column(String(32), nullable=False)
     detection_coverage_percent: Mapped[float] = mapped_column(Float, nullable=False)
     technique_success_rate: Mapped[float] = mapped_column(Float, nullable=False)
     evasion_rate: Mapped[float] = mapped_column(Float, nullable=False)
-    mean_time_to_detect_seconds: Mapped[float | None] = mapped_column(
-        Float, nullable=True
-    )
+    mean_time_to_detect_seconds: Mapped[float | None] = mapped_column(Float, nullable=True)
     objectives_achieved_count: Mapped[int] = mapped_column(Integer, nullable=False)
     objectives_failed_count: Mapped[int] = mapped_column(Integer, nullable=False)
     actions_executed_count: Mapped[int] = mapped_column(Integer, nullable=False)
     actions_failed_count: Mapped[int] = mapped_column(Integer, nullable=False)
-    campaign_duration_seconds: Mapped[float | None] = mapped_column(
-        Float, nullable=True
-    )
+    campaign_duration_seconds: Mapped[float | None] = mapped_column(Float, nullable=True)
     kill_chain_phases_covered_json: Mapped[list[str]] = mapped_column(
         JSONB, nullable=False, default=list
     )
-    metrics_json: Mapped[dict[str, Any]] = mapped_column(
-        JSONB, nullable=False, default=dict
-    )
+    metrics_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)

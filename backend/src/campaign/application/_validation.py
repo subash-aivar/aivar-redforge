@@ -21,6 +21,4 @@ def validate_str(
     if not allow_empty and not value.strip():
         raise ApplicationValidationError(f"'{field}' must not be empty")
     if len(value) > max_len:
-        raise ApplicationValidationError(
-            f"'{field}' must be at most {max_len} characters"
-        )
+        raise ApplicationValidationError(f"'{field}' must be at most {max_len} characters")

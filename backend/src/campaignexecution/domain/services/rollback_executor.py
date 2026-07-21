@@ -14,10 +14,12 @@ if TYPE_CHECKING:
 
 
 class RollbackExecutor:
-    """Coordinates rollback using reverse topological order from taskgraph context.
+    """Coordinates runtime rollback within the campaignexecution context.
 
-    Only tasks with is_rollback_task=True participate in rollback.
-    Each rollback step is dispatched as an M29 operation via the port.
+    Ordering uses reverse completion order of eligible completed tasks
+    (same algorithm as taskgraph RollbackPlanComputer, owned locally to avoid
+    bounded-context leakage). Each rollback step is dispatched as an M29
+    operation via the ACL port.
     """
 
     def compute_rollback_plan(
@@ -25,23 +27,24 @@ class RollbackExecutor:
         execution: TaskGraphExecution,
         rollback_eligible_task_ids: list[CampaignTaskId],
     ) -> list[TaskExecutionRecord]:
-        """Return completed tasks that have rollback configs, in reverse completion order."""
+        """Return completed eligible tasks in reverse completion order."""
         from campaignexecution.domain.value_objects.enums import TaskExecutionState
 
-        eligible_ids = frozenset(rollback_eligible_task_ids)
-        completed_with_rollback = [
+        eligible_ids = {tid.value for tid in rollback_eligible_task_ids}
+        completed_ordered = [
             rec
-            for rec in execution.task_records
-            if rec.state == TaskExecutionState.COMPLETED
-            and rec.task_id in eligible_ids
+            for rec in sorted(
+                (r for r in execution.task_records if r.state == TaskExecutionState.COMPLETED),
+                key=lambda r: r.completed_at or r.dispatched_at or r.task_id.value,
+            )
         ]
-        # Sort by completion time (most recently completed first — rollback in reverse order)
-        fallback = execution.campaign_instance_ref.instance_id
-        completed_with_rollback.sort(
-            key=lambda r: r.completed_at or r.dispatched_at or fallback,
-            reverse=True,
-        )
-        return completed_with_rollback
+        ordered_ids = [
+            rec.task_id.value
+            for rec in reversed(completed_ordered)
+            if rec.task_id.value in eligible_ids
+        ]
+        by_id = {rec.task_id.value: rec for rec in completed_ordered}
+        return [by_id[tid] for tid in ordered_ids if tid in by_id]
 
     async def execute_rollback_step(
         self,

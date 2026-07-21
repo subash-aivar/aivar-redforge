@@ -80,10 +80,7 @@ def test_instantiation_substitutes_parameters(
     tasks = result.task_graph_draft_spec["tasks"]
     assert tasks[0]["parameters"]["target"] == "victim.local"
     assert tasks[1]["parameters"]["account"] == "admin"
-    assert (
-        result.campaign_draft_spec["objectives"][0]["parameters"]["host"]
-        == "victim.local"
-    )
+    assert result.campaign_draft_spec["objectives"][0]["parameters"]["host"] == "victim.local"
 
 
 def test_instantiation_missing_required_param(
@@ -107,18 +104,20 @@ def test_instantiation_missing_required_param(
     # remove default by creating a published-like path.
 
     # Direct unit: create published template then replace parameters list
-    template = ScenarioTemplate.create(**{
-        **template_kwargs,
-        "parameters": [
-            ScenarioParameter(
-                name="must_provide",
-                description="x",
-                required=True,
-                default_value="placeholder",
-                parameter_type="string",
-            )
-        ],
-    })
+    template = ScenarioTemplate.create(
+        **{
+            **template_kwargs,
+            "parameters": [
+                ScenarioParameter(
+                    name="must_provide",
+                    description="x",
+                    required=True,
+                    default_value="placeholder",
+                    parameter_type="string",
+                )
+            ],
+        }
+    )
     template.publish(tenant_id, now)
     # Manually break default to simulate edge (parameter required, no value in map,
     # and no default) — replace parameters on aggregate for test

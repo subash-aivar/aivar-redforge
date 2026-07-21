@@ -109,7 +109,8 @@ class StubSecurityGraphWriteAdapter(ISecurityGraphWritePort):
         succeeded_technique_ids: frozenset[str],
     ) -> None:
         self.technique_edges = [
-            e for e in self.technique_edges
+            e
+            for e in self.technique_edges
             if not (e["tenant_id"] == tenant_id and e["evaluation_id"] == evaluation_id)
         ]
         for ref in technique_refs:
@@ -131,7 +132,8 @@ class StubSecurityGraphWriteAdapter(ISecurityGraphWritePort):
     ) -> None:
         key = (tenant_id, campaign_instance_id, evaluation_id)
         self.evaluated_by_edges = [
-            e for e in self.evaluated_by_edges
+            e
+            for e in self.evaluated_by_edges
             if (e["tenant_id"], e["campaign_instance_id"], e["evaluation_id"]) != key
         ]
         self.evaluated_by_edges.append(

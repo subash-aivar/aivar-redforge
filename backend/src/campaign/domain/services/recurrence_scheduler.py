@@ -77,9 +77,7 @@ class RecurrenceScheduler:
 
         ft = fire_time.astimezone(UTC)
 
-        return any(
-            self._matches_blackout_period(period, ft) for period in policy.blackout_periods
-        )
+        return any(self._matches_blackout_period(period, ft) for period in policy.blackout_periods)
 
     def _matches_blackout_period(self, period: str, ft: object) -> bool:
         from datetime import datetime
@@ -118,7 +116,7 @@ class RecurrenceScheduler:
         # Weekday specification: "weekday:0,6"
         if period.startswith("weekday:"):
             try:
-                days_str = period[len("weekday:"):]
+                days_str = period[len("weekday:") :]
                 days = {int(d.strip()) for d in days_str.split(",")}
                 return ft.weekday() in days
             except ValueError:
@@ -164,8 +162,7 @@ class RecurrenceScheduler:
             return False
 
         all_failed = all(
-            inst.state in {InstanceState.FAILED, InstanceState.ABORTED}
-            for inst in last_n
+            inst.state in {InstanceState.FAILED, InstanceState.ABORTED} for inst in last_n
         )
         if all_failed:
             campaign.pause_recurring_due_to_failures(
@@ -200,3 +197,34 @@ class RecurrenceScheduler:
         it = croniter(cron_expression, after)
         result: datetime = it.get_next(datetime)
         return result
+
+    async def recover_after_restart(
+        self,
+        port: ISchedulerPort,
+        tenant_id: object,
+        campaigns_with_starting_instances: set[str],
+    ) -> list[dict[str, str]]:
+        """List active schedules safe to keep after restart (no duplicate fires).
+
+        Schedules whose campaign already has a Starting instance are excluded so
+        restart mid-window does not create duplicate instances.
+        """
+        active = await port.list_active_schedules(tenant_id)  # type: ignore[arg-type]
+        return [
+            entry
+            for entry in active
+            if entry.get("campaign_id") not in campaigns_with_starting_instances
+        ]
+
+    async def register_one_shot(
+        self,
+        campaign: Campaign,
+        fire_at: datetime,
+        port: ISchedulerPort,
+    ) -> str:
+        """Register a one-shot absolute fire time with the scheduler port."""
+        return await port.register_one_shot(
+            campaign_id=campaign.campaign_id,
+            tenant_id=campaign.tenant_id,
+            fire_at=fire_at,
+        )

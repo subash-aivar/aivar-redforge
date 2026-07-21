@@ -98,9 +98,7 @@ def test_partial_success_at_50_percent() -> None:
     evaluation, tenant, now = _start()
     evaluation.record_assessment(tenant, _assessment("o1", ObjectiveOutcome.ACHIEVED), now)
     evaluation.record_assessment(tenant, _assessment("o2", ObjectiveOutcome.FAILED), now)
-    evaluation.record_coverage(
-        tenant, EvaluationMetrics(), [], [], 0, 0, now
-    )
+    evaluation.record_coverage(tenant, EvaluationMetrics(), [], [], 0, 0, now)
     evaluation.complete(tenant, now)
     assert evaluation.composite_outcome == CompositeOutcome.PARTIAL_SUCCESS
 
@@ -126,9 +124,7 @@ def test_objectives_missed_below_50() -> None:
 
 def test_inconclusive_requires_review() -> None:
     evaluation, tenant, now = _start()
-    evaluation.record_assessment(
-        tenant, _assessment("o1", ObjectiveOutcome.INCONCLUSIVE), now
-    )
+    evaluation.record_assessment(tenant, _assessment("o1", ObjectiveOutcome.INCONCLUSIVE), now)
     evaluation.record_assessment(tenant, _assessment("o2", ObjectiveOutcome.ACHIEVED), now)
     evaluation.record_coverage(tenant, EvaluationMetrics(), [], [], 0, 0, now)
     evaluation.complete(tenant, now)
@@ -142,6 +138,4 @@ def test_sealed_after_complete() -> None:
     evaluation.record_coverage(tenant, EvaluationMetrics(), [], [], 0, 0, now)
     evaluation.complete(tenant, now)
     with pytest.raises(EvaluationAlreadyComplete):
-        evaluation.record_assessment(
-            tenant, _assessment("o3", ObjectiveOutcome.ACHIEVED), now
-        )
+        evaluation.record_assessment(tenant, _assessment("o3", ObjectiveOutcome.ACHIEVED), now)

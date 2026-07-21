@@ -12,26 +12,20 @@ class InvalidStateTransition(TaskGraphDomainException):
         self.from_state = from_state
         self.to_state = to_state
         self.graph_id = graph_id
-        super().__init__(
-            f"Cannot transition from {from_state} to {to_state} on graph {graph_id}"
-        )
+        super().__init__(f"Cannot transition from {from_state} to {to_state} on graph {graph_id}")
 
 
 class SignedGraphImmutabilityViolation(TaskGraphDomainException):
     def __init__(self, graph_id: str) -> None:
         self.graph_id = graph_id
-        super().__init__(
-            f"Task graph {graph_id} is Signed or beyond — topology is immutable"
-        )
+        super().__init__(f"Task graph {graph_id} is Signed or beyond — topology is immutable")
 
 
 class TaskGraphValidationFailed(TaskGraphDomainException):
     def __init__(self, graph_id: str, errors: list[str]) -> None:
         self.graph_id = graph_id
         self.errors = errors
-        super().__init__(
-            f"Task graph {graph_id} validation failed: {'; '.join(errors)}"
-        )
+        super().__init__(f"Task graph {graph_id} validation failed: {'; '.join(errors)}")
 
 
 class CycleDetectedError(TaskGraphDomainException):

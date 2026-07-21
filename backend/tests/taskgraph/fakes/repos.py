@@ -17,9 +17,7 @@ class FakeTaskGraphRepository(ITaskGraphRepository):
         key = (str(graph.graph_id), str(graph.tenant_id))
         self._store[key] = graph
 
-    async def find_by_id(
-        self, graph_id: TaskGraphId, tenant_id: TenantId
-    ) -> TaskGraph | None:
+    async def find_by_id(self, graph_id: TaskGraphId, tenant_id: TenantId) -> TaskGraph | None:
         return self._store.get((str(graph_id), str(tenant_id)))
 
     async def find_signed_version(
@@ -33,7 +31,8 @@ class FakeTaskGraphRepository(ITaskGraphRepository):
                 graph.graph_id == graph_id
                 and graph.tenant_id == tenant_id
                 and str(graph.version) == str(version)
-                and graph.state in {TaskGraphState.SIGNED, TaskGraphState.ACTIVE, TaskGraphState.DEPRECATED}
+                and graph.state
+                in {TaskGraphState.SIGNED, TaskGraphState.ACTIVE, TaskGraphState.DEPRECATED}
             ):
                 return graph
         return None

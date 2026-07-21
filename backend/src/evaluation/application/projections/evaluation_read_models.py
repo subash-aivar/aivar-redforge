@@ -68,16 +68,12 @@ class DetectionCoverageTrendProjection(ProjectionBase):
             }
         )
         runs.sort(key=lambda r: r.get("run_number") or 0)
-        direction = _trend_direction(
-            [float(r["detection_coverage_percent"] or 0) for r in runs]
-        )
+        direction = _trend_direction([float(r["detection_coverage_percent"] or 0) for r in runs])
         doc = {
             "campaign_id": campaign_id,
             "runs": runs,
             "trend_direction": direction,
-            "latest_coverage": (
-                runs[-1]["detection_coverage_percent"] if runs else 0.0
-            ),
+            "latest_coverage": (runs[-1]["detection_coverage_percent"] if runs else 0.0),
         }
         self._store.upsert(key, doc)
         if self._repo is not None:
@@ -140,11 +136,15 @@ class KillChainProgressionProjection(ProjectionBase):
         payload = _payload_as_dict(envelope.payload)
         instance_id = str(payload.get("campaign_instance_id", envelope.aggregate_id))
         key = f"killchain:{envelope.organization_id}:{instance_id}"
+        phases = payload.get("kill_chain_phases") or ()
+        per_phase = payload.get("per_phase_coverage") or ()
         doc = {
             "campaign_instance_id": instance_id,
             "composite_outcome": payload.get("composite_outcome"),
             "objectives_achieved": payload.get("objectives_achieved"),
             "objectives_failed": payload.get("objectives_failed"),
+            "kill_chain_phases": list(phases),
+            "per_phase_coverage": list(per_phase),
         }
         self._store.upsert(key, doc)
         if self._repo is not None:
@@ -169,10 +169,7 @@ class ObjectiveHistoryProjection(ProjectionBase):
     async def on_assessment(self, envelope: EventEnvelope) -> None:
         payload = _payload_as_dict(envelope.payload)
         objective_id = str(payload.get("objective_id", ""))
-        key = (
-            f"objective:{envelope.organization_id}:"
-            f"{envelope.aggregate_id}:{objective_id}"
-        )
+        key = f"objective:{envelope.organization_id}:{envelope.aggregate_id}:{objective_id}"
         doc = {
             "evaluation_id": envelope.aggregate_id,
             "objective_id": objective_id,

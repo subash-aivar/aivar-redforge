@@ -107,6 +107,7 @@ class CampaignSchedule:
         "cron_expression",
         "execution_window_hours",
         "max_consecutive_failures",
+        "scheduler_job_id",
     )
 
     def __init__(
@@ -116,12 +117,14 @@ class CampaignSchedule:
         max_consecutive_failures: int,
         blackout_periods: list[str],
         consecutive_failure_count: int = 0,
+        scheduler_job_id: str | None = None,
     ) -> None:
         self.cron_expression = cron_expression
         self.execution_window_hours = execution_window_hours
         self.max_consecutive_failures = max_consecutive_failures
         self.blackout_periods = list(blackout_periods)
         self.consecutive_failure_count = consecutive_failure_count
+        self.scheduler_job_id = scheduler_job_id
 
     def record_failure(self) -> None:
         self.consecutive_failure_count += 1

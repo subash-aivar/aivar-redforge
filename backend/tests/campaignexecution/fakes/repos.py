@@ -60,8 +60,7 @@ class FakeTaskGraphExecutionRepository(ITaskGraphExecutionRepository):
         for exec_ in self._store.values():
             if exec_.tenant_id == tenant_id:
                 records.extend(
-                    r for r in exec_.task_records
-                    if r.state == TaskExecutionState.READY_TO_DISPATCH
+                    r for r in exec_.task_records if r.state == TaskExecutionState.READY_TO_DISPATCH
                 )
         return records
 

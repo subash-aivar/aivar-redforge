@@ -132,6 +132,7 @@ class CampaignInstanceAborted(BaseDomainEvent):
 
 # ── Phase 4: Scheduling events ────────────────────────────────────────────────
 
+
 @dataclass(frozen=True, slots=True, kw_only=True)
 class CampaignScheduleFired(BaseDomainEvent):
     """Recurring schedule fired; triggers CampaignInstance creation."""

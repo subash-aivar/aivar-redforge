@@ -59,6 +59,7 @@ if TYPE_CHECKING:
     from taskgraph.application.ports.i_event_publisher import IEventPublisher
     from taskgraph.application.ports.i_unit_of_work import IUnitOfWork
     from taskgraph.domain.events.base import BaseDomainEvent
+    from taskgraph.domain.ports.i_security_graph_write_port import ISecurityGraphWritePort
 
 logger = logging.getLogger(__name__)
 
@@ -118,9 +119,11 @@ class TaskGraphApplicationService:
         self,
         uow_factory: Callable[[], IUnitOfWork],
         event_publisher: IEventPublisher,
+        graph_write_port: ISecurityGraphWritePort | None = None,
     ) -> None:
         self._uow_factory = uow_factory
         self._event_publisher = event_publisher
+        self._graph_port = graph_write_port
         self._validator = TaskGraphValidator()
         self._resolver = ExecutionOrderResolver()
 
@@ -152,15 +155,11 @@ class TaskGraphApplicationService:
             raise ApplicationNotFoundError("TaskGraph", str(gid))
         return graph
 
-    async def create_task_graph(
-        self, cmd: CreateTaskGraphCommand
-    ) -> TaskGraphDTO:
+    async def create_task_graph(self, cmd: CreateTaskGraphCommand) -> TaskGraphDTO:
         tenant = self._tenant(cmd.tenant_id)
         name = _as_str("name", cmd.name)
         if cmd.engagement_window_seconds <= 0:
-            raise ApplicationValidationError(
-                "engagement_window_seconds", "must be positive"
-            )
+            raise ApplicationValidationError("engagement_window_seconds", "must be positive")
         now = _now()
         graph = TaskGraph.create(
             graph_id=TaskGraphId.generate(),
@@ -185,9 +184,7 @@ class TaskGraphApplicationService:
         try:
             criticality = TaskCriticality(cmd.criticality)
         except ValueError as exc:
-            raise ApplicationValidationError(
-                "criticality", f"invalid: {cmd.criticality}"
-            ) from exc
+            raise ApplicationValidationError("criticality", f"invalid: {cmd.criticality}") from exc
 
         if cmd.timeout_seconds <= 0:
             raise ApplicationValidationError("timeout_seconds", "must be positive")
@@ -195,9 +192,7 @@ class TaskGraphApplicationService:
         operation_template: TaskOperationTemplate | None = None
         if task_type == TaskType.OPERATION_TASK:
             if not cmd.technique_id:
-                raise ApplicationValidationError(
-                    "technique_id", "required for OperationTask"
-                )
+                raise ApplicationValidationError("technique_id", "required for OperationTask")
             operation_template = TaskOperationTemplate(
                 technique_id=cmd.technique_id,
                 technique_name=cmd.technique_name or "",
@@ -299,9 +294,7 @@ class TaskGraphApplicationService:
             await uow.commit()
         await self._publish_all(graph)
 
-    async def validate_task_graph(
-        self, cmd: ValidateTaskGraphCommand
-    ) -> ValidationResultDTO:
+    async def validate_task_graph(self, cmd: ValidateTaskGraphCommand) -> ValidationResultDTO:
         tenant = self._tenant(cmd.tenant_id)
         now = _now()
         async with self._uow_factory() as uow:
@@ -326,6 +319,39 @@ class TaskGraphApplicationService:
             await uow.task_graphs.save(graph)
             await uow.commit()
         await self._publish_all(graph)
+        if self._graph_port is not None:
+            await self._write_graph_ontology(graph)
+
+    async def _write_graph_ontology(self, graph: TaskGraph) -> None:
+        assert self._graph_port is not None
+        tenant = str(graph.tenant_id)
+        graph_id = str(graph.graph_id)
+        version = str(graph.version)
+        await self._graph_port.upsert_task_graph_node(
+            tenant_id=tenant,
+            graph_id=graph_id,
+            version=version,
+        )
+        for sequence, task in enumerate(graph.tasks):
+            await self._graph_port.upsert_campaign_task_node(
+                tenant_id=tenant,
+                task_id=str(task.task_id),
+                task_type=task.task_type.value,
+                criticality=task.criticality.value,
+            )
+            await self._graph_port.upsert_graph_contains_edge(
+                tenant_id=tenant,
+                graph_id=graph_id,
+                task_id=str(task.task_id),
+                sequence=sequence,
+            )
+        for dep in graph.dependencies:
+            await self._graph_port.upsert_task_depends_on_edge(
+                tenant_id=tenant,
+                from_task_id=str(dep.predecessor_id),
+                to_task_id=str(dep.successor_id),
+                predicate=dep.condition.predicate.value,
+            )
 
     async def activate_task_graph(self, cmd: ActivateTaskGraphCommand) -> None:
         tenant = self._tenant(cmd.tenant_id)

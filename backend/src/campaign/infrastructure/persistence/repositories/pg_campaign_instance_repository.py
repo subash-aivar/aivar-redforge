@@ -110,9 +110,7 @@ class PgCampaignInstanceRepository(ICampaignInstanceRepository):
                 CampaignInstanceModel.id == instance.instance_id.value,
                 CampaignInstanceModel.tenant_id == instance.tenant_id.value,
             )
-            actual = (
-                await self._session.execute(actual_stmt)
-            ).scalar_one_or_none() or 0
+            actual = (await self._session.execute(actual_stmt)).scalar_one_or_none() or 0
             raise OptimisticLockConflict(
                 str(instance.instance_id),
                 expected,
@@ -148,9 +146,7 @@ class PgCampaignInstanceRepository(ICampaignInstanceRepository):
         result = await self._session.execute(stmt)
         return [_to_domain(row) for row in result.scalars().all()]
 
-    async def find_running_by_tenant(
-        self, tenant_id: TenantId
-    ) -> list[CampaignInstance]:
+    async def find_running_by_tenant(self, tenant_id: TenantId) -> list[CampaignInstance]:
         stmt = select(CampaignInstanceModel).where(
             CampaignInstanceModel.tenant_id == tenant_id.value,
             CampaignInstanceModel.state == InstanceState.RUNNING.value,

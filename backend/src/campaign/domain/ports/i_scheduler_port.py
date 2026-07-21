@@ -52,3 +52,12 @@ class ISchedulerPort(ABC):
         tenant_id: TenantId,
     ) -> list[dict[str, str]]:
         """Return active schedule registrations for a tenant (for recovery after restart)."""
+
+    @abstractmethod
+    async def register_one_shot(
+        self,
+        campaign_id: CampaignId,
+        tenant_id: TenantId,
+        fire_at: datetime,
+    ) -> str:
+        """Register a one-shot fire at an absolute time. Returns a scheduler job ID."""

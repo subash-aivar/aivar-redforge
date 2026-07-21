@@ -90,3 +90,19 @@ class ObjectiveStateMap:
 
     def copy(self) -> ObjectiveStateMap:
         return ObjectiveStateMap(states=dict(self.states))
+
+
+@dataclass(frozen=True, slots=True)
+class ActiveBranchPath:
+    """Set of CampaignTaskId values currently on the active execution path."""
+
+    task_ids: frozenset[UUID] = frozenset()
+
+    def with_added(self, *ids: UUID) -> ActiveBranchPath:
+        return ActiveBranchPath(task_ids=self.task_ids.union(ids))
+
+    def with_removed(self, *ids: UUID) -> ActiveBranchPath:
+        return ActiveBranchPath(task_ids=self.task_ids.difference(ids))
+
+    def contains(self, task_id: UUID) -> bool:
+        return task_id in self.task_ids

@@ -38,31 +38,22 @@ class TargetResolutionService:
             raise TargetResolutionFailed("No target selection rules provided")
 
         rules_payload = [
-            {"attribute": r.attribute, "operator": r.operator, "value": r.value}
-            for r in criteria
+            {"attribute": r.attribute, "operator": r.operator, "value": r.value} for r in criteria
         ]
-        resolved: list[TargetRef] = await inventory_port.resolve_targets(
-            rules_payload, tenant_id
-        )
+        resolved: list[TargetRef] = await inventory_port.resolve_targets(rules_payload, tenant_id)
 
         if not resolved:
-            raise TargetResolutionFailed(
-                "No targets matched the provided selection rules"
-            )
+            raise TargetResolutionFailed("No targets matched the provided selection rules")
 
         engagement_status = await engagement_port.get_engagement_status(
             engagement_ref.engagement_id, tenant_id
         )
         if engagement_status is None:
-            raise TargetResolutionFailed(
-                f"Engagement '{engagement_ref.engagement_id}' not found"
-            )
+            raise TargetResolutionFailed(f"Engagement '{engagement_ref.engagement_id}' not found")
 
         if engagement_status.allowed_target_ids is not None:
             # Explicit scope list: None = unrestricted, [] = no targets authorized
-            in_scope = [
-                t for t in resolved if t.asset_id in engagement_status.allowed_target_ids
-            ]
+            in_scope = [t for t in resolved if t.asset_id in engagement_status.allowed_target_ids]
             if not in_scope:
                 raise TargetResolutionFailed(
                     "All resolved targets are outside the engagement scope"

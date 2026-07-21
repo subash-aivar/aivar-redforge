@@ -68,6 +68,7 @@ class CampaignEvaluation:
         "late_detections",
         "metrics",
         "objective_specs",
+        "per_phase_coverage",
         "state",
         "technique_outcomes",
         "tenant_id",
@@ -90,6 +91,7 @@ class CampaignEvaluation:
         correlation_window_minutes: int,
         execution_failed: bool,
         version: int,
+        per_phase_coverage: tuple[tuple[str, float], ...] = (),
     ) -> None:
         self.evaluation_id = evaluation_id
         self.tenant_id = tenant_id
@@ -105,6 +107,7 @@ class CampaignEvaluation:
         self.compliance_mappings = list(compliance_mappings)
         self.correlation_window_minutes = correlation_window_minutes
         self.execution_failed = execution_failed
+        self.per_phase_coverage = per_phase_coverage
         self._version = version
         self._pending_events: list[BaseDomainEvent] = []
 
@@ -250,6 +253,16 @@ class CampaignEvaluation:
         self.kill_chain_progression = progression
         self._mutate()
 
+    def set_per_phase_coverage(
+        self,
+        tenant_id: TenantId,
+        per_phase_coverage: tuple[tuple[str, float], ...],
+    ) -> None:
+        self._assert_tenant(tenant_id)
+        self._assert_mutable()
+        self.per_phase_coverage = per_phase_coverage
+        self._mutate()
+
     def set_compliance_mappings(
         self,
         tenant_id: TenantId,
@@ -273,17 +286,11 @@ class CampaignEvaluation:
         self.composite_outcome = outcome
 
         inconclusive_ids = tuple(
-            a.objective_id
-            for a in self.assessments
-            if a.outcome == ObjectiveOutcome.INCONCLUSIVE
+            a.objective_id for a in self.assessments if a.outcome == ObjectiveOutcome.INCONCLUSIVE
         )
 
-        achieved = sum(
-            1 for a in self.assessments if a.outcome == ObjectiveOutcome.ACHIEVED
-        )
-        failed = sum(
-            1 for a in self.assessments if a.outcome == ObjectiveOutcome.FAILED
-        )
+        achieved = sum(1 for a in self.assessments if a.outcome == ObjectiveOutcome.ACHIEVED)
+        failed = sum(1 for a in self.assessments if a.outcome == ObjectiveOutcome.FAILED)
 
         if self.metrics is not None:
             from evaluation.domain.value_objects.evaluation_vos import EvaluationMetrics
@@ -325,9 +332,7 @@ class CampaignEvaluation:
 
         self.state = EvaluationState.COMPLETE
         self._mutate()
-        coverage = (
-            self.metrics.detection_coverage_percent if self.metrics else 0.0
-        )
+        coverage = self.metrics.detection_coverage_percent if self.metrics else 0.0
         self._emit(
             CampaignEvaluationCompleted(
                 event_id=str(uuid4()),
@@ -340,6 +345,8 @@ class CampaignEvaluation:
                 detection_coverage_percent=coverage,
                 objectives_achieved=achieved,
                 objectives_failed=failed,
+                kill_chain_phases=self._kill_chain_phase_tuples(),
+                per_phase_coverage=self.per_phase_coverage,
             )
         )
 
@@ -363,15 +370,9 @@ class CampaignEvaluation:
 
         self.state = EvaluationState.COMPLETE
         self._mutate()
-        coverage = (
-            self.metrics.detection_coverage_percent if self.metrics else 0.0
-        )
-        achieved = sum(
-            1 for a in self.assessments if a.outcome == ObjectiveOutcome.ACHIEVED
-        )
-        failed = sum(
-            1 for a in self.assessments if a.outcome == ObjectiveOutcome.FAILED
-        )
+        coverage = self.metrics.detection_coverage_percent if self.metrics else 0.0
+        achieved = sum(1 for a in self.assessments if a.outcome == ObjectiveOutcome.ACHIEVED)
+        failed = sum(1 for a in self.assessments if a.outcome == ObjectiveOutcome.FAILED)
         self._emit(
             CampaignEvaluationCompleted(
                 event_id=str(uuid4()),
@@ -384,7 +385,17 @@ class CampaignEvaluation:
                 detection_coverage_percent=coverage,
                 objectives_achieved=achieved,
                 objectives_failed=failed,
+                kill_chain_phases=self._kill_chain_phase_tuples(),
+                per_phase_coverage=self.per_phase_coverage,
             )
+        )
+
+    def _kill_chain_phase_tuples(self) -> tuple[tuple[str, str], ...]:
+        if self.kill_chain_progression is None:
+            return ()
+        return tuple(
+            (p.phase_name, f"{p.tasks_completed}/{p.tasks_planned}")
+            for p in self.kill_chain_progression.phase_outcomes
         )
 
     def _compute_composite_outcome(self) -> CompositeOutcome:
@@ -397,21 +408,15 @@ class CampaignEvaluation:
             # Treat all as required when none flagged
             required_specs = {s.objective_id for s in self.objective_specs}
 
-        required_assessments = [
-            a for a in self.assessments if a.objective_id in required_specs
-        ]
+        required_assessments = [a for a in self.assessments if a.objective_id in required_specs]
         if not required_assessments:
             if self.execution_failed:
                 return CompositeOutcome.EXECUTION_FAILED
             return CompositeOutcome.INCONCLUSIVE
 
-        achieved = [
-            a for a in required_assessments
-            if a.outcome == ObjectiveOutcome.ACHIEVED
-        ]
+        achieved = [a for a in required_assessments if a.outcome == ObjectiveOutcome.ACHIEVED]
         inconclusive = [
-            a for a in required_assessments
-            if a.outcome == ObjectiveOutcome.INCONCLUSIVE
+            a for a in required_assessments if a.outcome == ObjectiveOutcome.INCONCLUSIVE
         ]
 
         if inconclusive and len(achieved) < len(required_assessments):

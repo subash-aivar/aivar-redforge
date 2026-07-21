@@ -17,7 +17,7 @@ class CampaignEvaluationStarted(BaseDomainEvent):
 class ObjectiveAssessmentCompleted(BaseDomainEvent):
     objective_id: str
     objective_type: str
-    outcome: str           # ObjectiveOutcome value
+    outcome: str  # ObjectiveOutcome value
     evidence_count: int
 
 
@@ -37,6 +37,8 @@ class CampaignEvaluationCompleted(BaseDomainEvent):
     detection_coverage_percent: float
     objectives_achieved: int
     objectives_failed: int
+    kill_chain_phases: tuple[tuple[str, str], ...] = ()
+    per_phase_coverage: tuple[tuple[str, float], ...] = ()
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

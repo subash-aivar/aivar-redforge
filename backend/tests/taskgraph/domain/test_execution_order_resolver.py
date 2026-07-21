@@ -83,8 +83,7 @@ class TestExecutionOrderResolver:
     def test_50_node_graph_correct_layer_count(self, tenant_id, now) -> None:
         """Linear chain of 50 nodes should produce 50 layers."""
         graph = make_task_graph(
-            tenant_id=tenant_id, now=now, engagement_window_seconds=999999,
-            pop_events=True
+            tenant_id=tenant_id, now=now, engagement_window_seconds=999999, pop_events=True
         )
         tasks = [make_operation_task(f"Task-{i}", timeout_seconds=100) for i in range(50)]
         for t in tasks:

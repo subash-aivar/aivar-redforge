@@ -56,9 +56,7 @@ class PgMetricsSnapshotRepository(ICampaignMetricsSnapshotRepository):
         self._session = session
 
     async def save(self, snapshot: CampaignMetricsSnapshot) -> None:
-        existing = await self._session.get(
-            CampaignMetricsSnapshotModel, snapshot.snapshot_id.value
-        )
+        existing = await self._session.get(CampaignMetricsSnapshotModel, snapshot.snapshot_id.value)
         if existing is not None:
             return  # immutable — ignore re-saves
 

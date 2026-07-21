@@ -32,18 +32,14 @@ class CannotPublishWithoutParameterDefaults(ScenarioDomainException):
 
 class TemplateImmutableWhenPublished(ScenarioDomainException):
     def __init__(self, template_id: str, state: str) -> None:
-        super().__init__(
-            f"ScenarioTemplate '{template_id}' is immutable in state '{state}'"
-        )
+        super().__init__(f"ScenarioTemplate '{template_id}' is immutable in state '{state}'")
         self.template_id = template_id
         self.state = state
 
 
 class InvalidTemplateState(ScenarioDomainException):
     def __init__(self, current: str, operation: str) -> None:
-        super().__init__(
-            f"Cannot perform '{operation}' when template is in state '{current}'"
-        )
+        super().__init__(f"Cannot perform '{operation}' when template is in state '{current}'")
         self.current = current
         self.operation = operation
 

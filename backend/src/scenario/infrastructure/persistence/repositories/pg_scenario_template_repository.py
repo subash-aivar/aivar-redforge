@@ -21,6 +21,7 @@ from scenario.domain.value_objects.scenario_vos import (
     MitreAttackRef,
     ScenarioKey,
     ScenarioObjectiveBlueprint,
+    ScenarioSubscriptionScope,
     ScenarioTemplateVersion,
     TaskGraphTopologyBlueprint,
     ThreatActorRef,
@@ -88,6 +89,11 @@ def _from_row(row: ScenarioTemplateModel) -> ScenarioTemplate:
     topology = TaskGraphTopologyBlueprint(
         tasks=list((row.task_graph_blueprint_json or {}).get("tasks") or [])
     )
+    sub_data = row.subscription_json or {}
+    subscription = ScenarioSubscriptionScope(tenant_ids=tuple(sub_data.get("tenant_ids") or ()))
+    source_id = (
+        ScenarioTemplateId(row.source_template_id) if row.source_template_id is not None else None
+    )
     return ScenarioTemplate(
         template_id=ScenarioTemplateId(row.id),
         tenant_id=TenantId(row.tenant_id),
@@ -107,6 +113,8 @@ def _from_row(row: ScenarioTemplateModel) -> ScenarioTemplate:
         created_at=row.created_at or datetime.now(UTC),
         updated_at=row.published_at or row.created_at or datetime.now(UTC),
         version=row.row_version,
+        subscription_scope=subscription,
+        source_template_id=source_id,
     )
 
 
@@ -164,9 +172,7 @@ class PgScenarioTemplateRepository(IScenarioTemplateRepository):
         }
         topology_json = {"tasks": list(template.task_graph_topology.tasks)}
 
-        existing = await self._session.get(
-            ScenarioTemplateModel, template.template_id.value
-        )
+        existing = await self._session.get(ScenarioTemplateModel, template.template_id.value)
         if existing is None:
             row = ScenarioTemplateModel(
                 id=template.template_id.value,
@@ -187,6 +193,12 @@ class PgScenarioTemplateRepository(IScenarioTemplateRepository):
                 published_at=(
                     template.updated_at
                     if template.state == ScenarioTemplateState.PUBLISHED
+                    else None
+                ),
+                subscription_json={"tenant_ids": list(template.subscription_scope.tenant_ids)},
+                source_template_id=(
+                    template.source_template_id.value
+                    if template.source_template_id is not None
                     else None
                 ),
                 row_version=template.version,
@@ -211,6 +223,14 @@ class PgScenarioTemplateRepository(IScenarioTemplateRepository):
             existing.objective_blueprints_json = objectives_json
             existing.default_safety_policy_json = policy_json
             existing.task_graph_blueprint_json = topology_json
+            existing.subscription_json = {
+                "tenant_ids": list(template.subscription_scope.tenant_ids)
+            }
+            existing.source_template_id = (
+                template.source_template_id.value
+                if template.source_template_id is not None
+                else None
+            )
             existing.row_version = template.version
             if template.state == ScenarioTemplateState.PUBLISHED:
                 existing.published_at = template.updated_at

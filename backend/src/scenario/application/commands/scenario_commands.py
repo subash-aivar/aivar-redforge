@@ -52,8 +52,33 @@ class InstantiateScenarioCommand:
     tenant_id: UUID
     template_id: UUID
     parameter_map: dict[str, str] = field(default_factory=dict)
+    engagement_id: UUID | None = None
+    owner_id: str | None = None
+    create_campaign_draft: bool = False
 
 
 @dataclass(frozen=True, slots=True)
 class ListPublishedScenariosQuery:
     tenant_id: UUID
+
+
+@dataclass(frozen=True, slots=True)
+class SubscribeScenarioToTenantCommand:
+    """Platform owner tenant subscribes an enterprise tenant (M28 pack model)."""
+
+    tenant_id: UUID
+    template_id: UUID
+    subscriber_tenant_id: UUID
+
+
+@dataclass(frozen=True, slots=True)
+class UnsubscribeScenarioFromTenantCommand:
+    tenant_id: UUID
+    template_id: UUID
+    subscriber_tenant_id: UUID
+
+
+@dataclass(frozen=True, slots=True)
+class ArchiveScenarioTemplateCommand:
+    tenant_id: UUID
+    template_id: UUID

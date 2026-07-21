@@ -32,6 +32,7 @@ class CampaignEvaluationId:
     @classmethod
     def generate(cls) -> CampaignEvaluationId:
         from uuid import uuid4
+
         return cls(value=uuid4())
 
 
@@ -49,6 +50,7 @@ class CampaignMetricsSnapshotId:
     @classmethod
     def generate(cls) -> CampaignMetricsSnapshotId:
         from uuid import uuid4
+
         return cls(value=uuid4())
 
 
@@ -66,4 +68,5 @@ class ObjectiveAssessmentId:
     @classmethod
     def generate(cls) -> ObjectiveAssessmentId:
         from uuid import uuid4
+
         return cls(value=uuid4())

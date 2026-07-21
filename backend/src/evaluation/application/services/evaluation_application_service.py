@@ -71,14 +71,10 @@ def _to_evaluation_dto(evaluation: CampaignEvaluation) -> EvaluationDTO:
         composite_outcome=(
             evaluation.composite_outcome.value if evaluation.composite_outcome else None
         ),
-        detection_coverage_percent=(
-            metrics.detection_coverage_percent if metrics else 0.0
-        ),
+        detection_coverage_percent=(metrics.detection_coverage_percent if metrics else 0.0),
         technique_success_rate=metrics.technique_success_rate if metrics else 0.0,
         evasion_rate=metrics.evasion_rate if metrics else 0.0,
-        mean_time_to_detect_seconds=(
-            metrics.mean_time_to_detect_seconds if metrics else None
-        ),
+        mean_time_to_detect_seconds=(metrics.mean_time_to_detect_seconds if metrics else None),
         objectives_achieved=metrics.objectives_achieved_count if metrics else 0,
         objectives_failed=metrics.objectives_failed_count if metrics else 0,
         correlation_window_minutes=evaluation.correlation_window_minutes,
@@ -161,9 +157,7 @@ class EvaluationApplicationService:
         now = datetime.now(UTC)
 
         async with self._uow_factory() as uow:
-            existing = await uow.evaluations.find_by_campaign_instance(
-                instance_id, tenant_id
-            )
+            existing = await uow.evaluations.find_by_campaign_instance(instance_id, tenant_id)
             if existing is not None and existing.state in {
                 EvaluationState.COMPLETE,
                 EvaluationState.REQUIRES_REVIEW,
@@ -194,9 +188,7 @@ class EvaluationApplicationService:
                 now=now,
             )
 
-            actions = await self._attack_port.list_by_campaign_instance(
-                instance_id, str(tenant_id)
-            )
+            actions = await self._attack_port.list_by_campaign_instance(instance_id, str(tenant_id))
             started = cmd.started_at or now.isoformat()
             completed = cmd.completed_at or now.isoformat()
             findings = await self._finding_port.list_by_campaign_instance(
@@ -207,9 +199,7 @@ class EvaluationApplicationService:
             )
 
             for spec in cmd.objective_specs:
-                assessment = self._objective_engine.evaluate(
-                    spec, actions, findings, evidence, now
-                )
+                assessment = self._objective_engine.evaluate(spec, actions, findings, evidence, now)
                 with contextlib.suppress(ObjectiveAlreadyAssessed):
                     evaluation.record_assessment(tenant_id, assessment, now)
 
@@ -226,6 +216,7 @@ class EvaluationApplicationService:
                 techniques_detected=coverage.techniques_detected,
                 now=now,
             )
+            evaluation.set_per_phase_coverage(tenant_id, coverage.per_phase_coverage)
 
             if cmd.kill_chain_phases:
                 evaluation.set_kill_chain_progression(
@@ -269,10 +260,7 @@ class EvaluationApplicationService:
                 events.extend(snapshot.pop_events())
             await self._publish(events)
 
-            if (
-                self._graph_port is not None
-                and evaluation.state == EvaluationState.COMPLETE
-            ):
+            if self._graph_port is not None and evaluation.state == EvaluationState.COMPLETE:
                 await self._write_graph(evaluation)
 
             return _to_evaluation_dto(evaluation)
@@ -282,13 +270,9 @@ class EvaluationApplicationService:
         tenant = str(evaluation.tenant_id)
         eval_id = str(evaluation.evaluation_id)
         instance_id = str(evaluation.campaign_instance_ref.instance_id)
-        coverage = (
-            evaluation.metrics.detection_coverage_percent if evaluation.metrics else 0.0
-        )
+        coverage = evaluation.metrics.detection_coverage_percent if evaluation.metrics else 0.0
         outcome = (
-            evaluation.composite_outcome.value
-            if evaluation.composite_outcome
-            else "Inconclusive"
+            evaluation.composite_outcome.value if evaluation.composite_outcome else "Inconclusive"
         )
         await self._graph_port.upsert_campaign_evaluation_node(
             tenant_id=tenant,
@@ -303,12 +287,8 @@ class EvaluationApplicationService:
             evaluation_id=eval_id,
         )
         technique_refs = [t.technique_ref for t in evaluation.technique_outcomes]
-        detected = frozenset(
-            t.technique_id for t in evaluation.technique_outcomes if t.detected
-        )
-        succeeded = frozenset(
-            t.technique_id for t in evaluation.technique_outcomes if t.succeeded
-        )
+        detected = frozenset(t.technique_id for t in evaluation.technique_outcomes if t.detected)
+        succeeded = frozenset(t.technique_id for t in evaluation.technique_outcomes if t.succeeded)
         await self._graph_port.upsert_covered_technique_edges(
             tenant_id=tenant,
             evaluation_id=eval_id,
@@ -317,9 +297,7 @@ class EvaluationApplicationService:
             succeeded_technique_ids=succeeded,
         )
 
-    async def resolve_review(
-        self, cmd: ResolveEvaluationReviewCommand
-    ) -> EvaluationDTO:
+    async def resolve_review(self, cmd: ResolveEvaluationReviewCommand) -> EvaluationDTO:
         tenant_id = TenantId(cmd.tenant_id)
         now = datetime.now(UTC)
         async with self._uow_factory() as uow:
@@ -372,9 +350,7 @@ class EvaluationApplicationService:
                 return None
             return _to_evaluation_dto(evaluation)
 
-    async def get_metrics_trend(
-        self, query: GetMetricsTrendQuery
-    ) -> DetectionCoverageTrendDTO:
+    async def get_metrics_trend(self, query: GetMetricsTrendQuery) -> DetectionCoverageTrendDTO:
         tenant_id = TenantId(query.tenant_id)
         async with self._uow_factory() as uow:
             snapshots = await uow.metrics_snapshots.find_by_campaign(

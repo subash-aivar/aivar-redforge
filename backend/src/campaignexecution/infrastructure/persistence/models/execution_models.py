@@ -23,9 +23,7 @@ class TaskGraphExecutionModel(ExecutionBase):
     __table_args__ = {"schema": "campaignexecution"}  # noqa: RUF012
 
     id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), primary_key=True)
-    tenant_id: Mapped[UUID] = mapped_column(
-        PG_UUID(as_uuid=True), nullable=False, index=True
-    )
+    tenant_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False, index=True)
 
     campaign_instance_id: Mapped[UUID] = mapped_column(
         PG_UUID(as_uuid=True), nullable=False, index=True
@@ -44,9 +42,7 @@ class TaskGraphExecutionModel(ExecutionBase):
     )
 
     # Pending approval gate
-    pending_approval_gate_json: Mapped[dict[str, Any] | None] = mapped_column(
-        JSONB, nullable=True
-    )
+    pending_approval_gate_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
 
     # Objective states snapshot
     objective_states_json: Mapped[dict[str, Any]] = mapped_column(
@@ -74,27 +70,15 @@ class TaskExecutionRecordModel(ExecutionBase):
         nullable=False,
         index=True,
     )
-    task_id: Mapped[UUID] = mapped_column(
-        PG_UUID(as_uuid=True), nullable=False, index=True
-    )
+    task_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False, index=True)
     state: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
     outcome: Mapped[str | None] = mapped_column(String(32), nullable=True)
-    operation_id: Mapped[UUID | None] = mapped_column(
-        PG_UUID(as_uuid=True), nullable=True
-    )
-    operation_tenant_id: Mapped[UUID | None] = mapped_column(
-        PG_UUID(as_uuid=True), nullable=True
-    )
-    dispatched_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
-    completed_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    operation_id: Mapped[UUID | None] = mapped_column(PG_UUID(as_uuid=True), nullable=True)
+    operation_tenant_id: Mapped[UUID | None] = mapped_column(PG_UUID(as_uuid=True), nullable=True)
+    dispatched_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     failure_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
-    is_rollback_task: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, default=False
-    )
+    is_rollback_task: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     execution: Mapped[TaskGraphExecutionModel] = relationship(
         "TaskGraphExecutionModel", back_populates="task_records"
@@ -106,9 +90,7 @@ class CampaignSafetyMonitorModel(ExecutionBase):
     __table_args__ = {"schema": "campaignexecution"}  # noqa: RUF012
 
     id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), primary_key=True)
-    tenant_id: Mapped[UUID] = mapped_column(
-        PG_UUID(as_uuid=True), nullable=False, index=True
-    )
+    tenant_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False, index=True)
 
     campaign_instance_id: Mapped[UUID] = mapped_column(
         PG_UUID(as_uuid=True), nullable=False, unique=True, index=True
@@ -116,9 +98,7 @@ class CampaignSafetyMonitorModel(ExecutionBase):
     campaign_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False)
 
     monitor_state: Mapped[str] = mapped_column(String(32), nullable=False)
-    auto_abort_triggered: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, default=False
-    )
+    auto_abort_triggered: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     # Active operation IDs stored as JSONB array
     active_operation_ids_json: Mapped[list[str]] = mapped_column(

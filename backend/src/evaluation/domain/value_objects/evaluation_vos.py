@@ -23,7 +23,7 @@ class CampaignInstanceRef:
 class MitreAttackRef:
     """Reference to a MITRE ATT&CK technique."""
 
-    technique_id: str   # e.g. "T1566.001"
+    technique_id: str  # e.g. "T1566.001"
     technique_name: str
 
 
@@ -35,9 +35,10 @@ class AttackActionRecord:
     operation_id: str
     technique_id: str
     asset_ref: str
-    started_at: str    # ISO-8601
+    started_at: str  # ISO-8601
     completed_at: str  # ISO-8601
-    outcome: str       # "Success" | "Failure" | "PartialSuccess"
+    outcome: str  # "Success" | "Failure" | "PartialSuccess"
+    kill_chain_phase: str = "Unknown"
 
 
 @dataclass(frozen=True, slots=True)
@@ -59,7 +60,7 @@ class ComplianceMappingResult:
     control_id: str
     control_name: str
     framework: str  # e.g. "SOC2", "ISO27001", "NIST"
-    outcome: str    # "Pass" | "Fail" | "Inconclusive"
+    outcome: str  # "Pass" | "Fail" | "Inconclusive"
     objective_id: str
 
 
@@ -122,9 +123,9 @@ class EvidenceRecord:
 class EvaluationMetrics:
     """Computed metrics for a campaign evaluation."""
 
-    detection_coverage_percent: float = 0.0   # (techniques_detected / techniques_executed) * 100
-    technique_success_rate: float = 0.0        # (techniques_succeeded / techniques_attempted) * 100
-    evasion_rate: float = 0.0                  # (techniques_evaded / techniques_executed) * 100
+    detection_coverage_percent: float = 0.0  # (techniques_detected / techniques_executed) * 100
+    technique_success_rate: float = 0.0  # (techniques_succeeded / techniques_attempted) * 100
+    evasion_rate: float = 0.0  # (techniques_evaded / techniques_executed) * 100
     mean_time_to_detect_seconds: float | None = None
     actions_executed_count: int = 0
     actions_failed_count: int = 0

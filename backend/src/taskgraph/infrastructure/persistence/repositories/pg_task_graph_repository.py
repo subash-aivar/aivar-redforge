@@ -45,6 +45,7 @@ if TYPE_CHECKING:
 # JSON serialization helpers
 # ---------------------------------------------------------------------------
 
+
 def _operation_template_to_json(
     tmpl: TaskOperationTemplate | None,
 ) -> dict[str, Any] | None:
@@ -143,6 +144,7 @@ def _rollback_config_from_json(
 # Domain reconstruction
 # ---------------------------------------------------------------------------
 
+
 def _to_domain(row: TaskGraphModel) -> TaskGraph:
     tasks = [
         CampaignTask(
@@ -157,9 +159,7 @@ def _to_domain(row: TaskGraphModel) -> TaskGraph:
             rollback_config=_rollback_config_from_json(t.rollback_config_json),
             task_group_id=TaskGroupId(t.task_group_id) if t.task_group_id else None,
             rollback_task_ref=(
-                CampaignTaskId(t.rollback_task_ref_id)
-                if t.rollback_task_ref_id
-                else None
+                CampaignTaskId(t.rollback_task_ref_id) if t.rollback_task_ref_id else None
             ),
         )
         for t in row.tasks
@@ -268,9 +268,7 @@ class PgTaskGraphRepository(ITaskGraphRepository):
                 TaskGraphModel.id == graph.graph_id.value,
                 TaskGraphModel.tenant_id == graph.tenant_id.value,
             )
-            actual = (
-                await self._session.execute(actual_stmt)
-            ).scalar_one_or_none() or 0
+            actual = (await self._session.execute(actual_stmt)).scalar_one_or_none() or 0
             raise OptimisticLockConflict(
                 str(graph.graph_id),
                 expected,
@@ -280,9 +278,7 @@ class PgTaskGraphRepository(ITaskGraphRepository):
         await self._session.refresh(row)
         await self._sync_children(row, graph)
 
-    async def _sync_children(
-        self, row: TaskGraphModel, graph: TaskGraph
-    ) -> None:
+    async def _sync_children(self, row: TaskGraphModel, graph: TaskGraph) -> None:
         row.tasks.clear()
         row.dependencies.clear()
         await self._session.flush()
@@ -297,21 +293,13 @@ class PgTaskGraphRepository(ITaskGraphRepository):
                     name=task.name,
                     criticality=task.criticality.value,
                     timeout_seconds=task.timeout_seconds,
-                    operation_template_json=_operation_template_to_json(
-                        task.operation_template
-                    ),
-                    human_approval_config_json=_human_approval_to_json(
-                        task.human_approval_config
-                    ),
+                    operation_template_json=_operation_template_to_json(task.operation_template),
+                    human_approval_config_json=_human_approval_to_json(task.human_approval_config),
                     barrier_policy_json=_barrier_policy_to_json(task.barrier_policy),
                     rollback_config_json=_rollback_config_to_json(task.rollback_config),
-                    task_group_id=(
-                        str(task.task_group_id) if task.task_group_id else None
-                    ),
+                    task_group_id=(str(task.task_group_id) if task.task_group_id else None),
                     rollback_task_ref_id=(
-                        task.rollback_task_ref.value
-                        if task.rollback_task_ref
-                        else None
+                        task.rollback_task_ref.value if task.rollback_task_ref else None
                     ),
                 )
             )
@@ -355,8 +343,11 @@ class PgTaskGraphRepository(ITaskGraphRepository):
             TaskGraphModel.version_minor == version.minor,
             TaskGraphModel.version_patch == version.patch,
             TaskGraphModel.state.in_(
-                [TaskGraphState.SIGNED.value, TaskGraphState.ACTIVE.value,
-                 TaskGraphState.DEPRECATED.value]
+                [
+                    TaskGraphState.SIGNED.value,
+                    TaskGraphState.ACTIVE.value,
+                    TaskGraphState.DEPRECATED.value,
+                ]
             ),
         )
         result = await self._session.execute(stmt)

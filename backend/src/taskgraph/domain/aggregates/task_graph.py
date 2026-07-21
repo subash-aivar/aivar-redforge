@@ -160,9 +160,7 @@ class TaskGraph:
         if not name.strip():
             raise InvalidArgument("name", "must not be empty")
         if engagement_window_seconds <= 0:
-            raise InvalidArgument(
-                "engagement_window_seconds", "must be positive"
-            )
+            raise InvalidArgument("engagement_window_seconds", "must be positive")
         graph = cls(
             graph_id=graph_id,
             tenant_id=tenant_id,
@@ -266,9 +264,7 @@ class TaskGraph:
         if successor_id not in task_ids:
             raise TaskNotFound(str(successor_id))
         if predecessor_id == successor_id:
-            raise InvalidArgument(
-                "predecessor_id", "task cannot depend on itself"
-            )
+            raise InvalidArgument("predecessor_id", "task cannot depend on itself")
         dep = TaskDependency(
             predecessor_id=predecessor_id,
             successor_id=successor_id,

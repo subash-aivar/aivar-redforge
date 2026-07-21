@@ -9,7 +9,9 @@ from campaign.application.services.campaign_application_service import (
 )
 from campaign.infrastructure.acl.degraded_adapters import (
     AlwaysActiveEngagementAdapter,
+    StubCampaignGraphWriteAdapter,
     StubInventoryQueryAdapter,
+    StubSchedulerPort,
 )
 from campaign.infrastructure.events.structlog_event_publisher import (
     StructlogEventPublisher,
@@ -22,6 +24,8 @@ if TYPE_CHECKING:
     from campaign.application.ports.i_event_publisher import IEventPublisher
     from campaign.domain.ports.i_engagement_query_port import IEngagementQueryPort
     from campaign.domain.ports.i_inventory_query_port import IInventoryQueryPort
+    from campaign.domain.ports.i_scheduler_port import ISchedulerPort
+    from campaign.domain.ports.i_security_graph_write_port import ISecurityGraphWritePort
 
 
 class CampaignContainer:
@@ -38,16 +42,18 @@ class CampaignContainer:
         *,
         inventory_port: IInventoryQueryPort | None = None,
         engagement_port: IEngagementQueryPort | None = None,
+        scheduler_port: ISchedulerPort | None = None,
+        graph_write_port: ISecurityGraphWritePort | None = None,
     ) -> None:
         self._session_factory = session_factory
-        self.event_publisher: IEventPublisher = (
-            event_publisher or StructlogEventPublisher()
-        )
-        self.inventory_port: IInventoryQueryPort = (
-            inventory_port or StubInventoryQueryAdapter()
-        )
+        self.event_publisher: IEventPublisher = event_publisher or StructlogEventPublisher()
+        self.inventory_port: IInventoryQueryPort = inventory_port or StubInventoryQueryAdapter()
         self.engagement_port: IEngagementQueryPort = (
             engagement_port or AlwaysActiveEngagementAdapter()
+        )
+        self.scheduler_port: ISchedulerPort = scheduler_port or StubSchedulerPort()
+        self.graph_write_port: ISecurityGraphWritePort = (
+            graph_write_port or StubCampaignGraphWriteAdapter()
         )
         uow_factory = make_campaign_uow_factory(session_factory)
         self.campaign_service = CampaignApplicationService(
@@ -55,4 +61,6 @@ class CampaignContainer:
             self.event_publisher,
             self.inventory_port,
             self.engagement_port,
+            scheduler_port=self.scheduler_port,
+            graph_write_port=self.graph_write_port,
         )

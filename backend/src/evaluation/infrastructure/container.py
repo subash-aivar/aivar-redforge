@@ -20,6 +20,7 @@ if TYPE_CHECKING:
 
     from sqlalchemy.ext.asyncio import AsyncSession
 
+    from evaluation.application.ports.i_event_publisher import IEventPublisher
     from evaluation.application.services.evaluation_application_service import (
         EvaluationApplicationService,
     )
@@ -38,6 +39,9 @@ def build_evaluation_application_service(
     evidence_port: IEvidenceQueryPort | None = None,
     compliance_port: IComplianceQueryPort | None = None,
     graph_write_port: ISecurityGraphWritePort | None = None,
+    event_publisher: IEventPublisher | None = None,
+    *,
+    bridge_projections: bool = False,
 ) -> EvaluationApplicationService:
     from evaluation.application.services.evaluation_application_service import (
         EvaluationApplicationService,
@@ -47,13 +51,34 @@ def build_evaluation_application_service(
     def uow_factory() -> PgUnitOfWork:
         return PgUnitOfWork(session_factory())
 
+    publisher: IEventPublisher
+    if event_publisher is not None:
+        publisher = event_publisher
+    elif bridge_projections:
+        from evaluation.application.projections.evaluation_read_models import (
+            DetectionCoverageTrendProjection,
+            KillChainProgressionProjection,
+            ObjectiveHistoryProjection,
+            TechniqueSuccessRateProjection,
+        )
+        from evaluation.infrastructure.events.projection_bridging_publisher import (
+            ProjectionBridgingEventPublisher,
+        )
+
+        bridging = ProjectionBridgingEventPublisher()
+        bridging.register_projection(DetectionCoverageTrendProjection())
+        bridging.register_projection(TechniqueSuccessRateProjection())
+        bridging.register_projection(KillChainProgressionProjection())
+        bridging.register_projection(ObjectiveHistoryProjection())
+        publisher = bridging
+    else:
+        publisher = StructlogEventPublisher()
+
     return EvaluationApplicationService(
         uow_factory=uow_factory,
-        event_publisher=StructlogEventPublisher(),
+        event_publisher=publisher,
         attack_action_port=attack_action_port or StubAttackActionQueryAdapter(),
-        detection_finding_port=(
-            detection_finding_port or StubDetectionFindingQueryAdapter()
-        ),
+        detection_finding_port=(detection_finding_port or StubDetectionFindingQueryAdapter()),
         evidence_port=evidence_port or StubEvidenceQueryAdapter(),
         compliance_port=compliance_port or StubComplianceQueryAdapter(),
         graph_write_port=graph_write_port or StubSecurityGraphWriteAdapter(),

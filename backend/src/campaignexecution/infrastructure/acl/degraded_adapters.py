@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING
 from uuid import uuid7
 
 from campaignexecution.domain.ports.i_attack_action_query_port import IAttackActionQueryPort
+from campaignexecution.domain.ports.i_notification_port import INotificationPort
 from campaignexecution.domain.ports.i_operation_creation_port import IOperationCreationPort
 from campaignexecution.domain.value_objects.enums import TaskOutcome
 from campaignexecution.domain.value_objects.execution_vos import OperationRef
@@ -20,6 +21,48 @@ if TYPE_CHECKING:
     from campaignexecution.domain.ports.i_operation_creation_port import TaskDispatchRequest
 
 log = logging.getLogger(__name__)
+
+
+class StubNotificationAdapter(INotificationPort):
+    """Records notification calls for tests — does not send real notifications."""
+
+    def __init__(self) -> None:
+        self.approval_gates: list[dict[str, object]] = []
+        self.pauses: list[dict[str, str]] = []
+
+    async def notify_human_approval_gate(
+        self,
+        *,
+        tenant_id: str,
+        execution_id: str,
+        task_id: str,
+        required_approver_role: str,
+        gate_timeout_seconds: int,
+    ) -> None:
+        self.approval_gates.append(
+            {
+                "tenant_id": tenant_id,
+                "execution_id": execution_id,
+                "task_id": task_id,
+                "required_approver_role": required_approver_role,
+                "gate_timeout_seconds": gate_timeout_seconds,
+            }
+        )
+
+    async def notify_campaign_paused(
+        self,
+        *,
+        tenant_id: str,
+        execution_id: str,
+        reason: str,
+    ) -> None:
+        self.pauses.append(
+            {
+                "tenant_id": tenant_id,
+                "execution_id": execution_id,
+                "reason": reason,
+            }
+        )
 
 
 class StubOperationCreationAdapter(IOperationCreationPort):

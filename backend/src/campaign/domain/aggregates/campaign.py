@@ -66,20 +66,16 @@ if TYPE_CHECKING:
 
 _ALLOWED_TRANSITIONS: dict[CampaignState, frozenset[CampaignState]] = {
     CampaignState.DRAFT: frozenset({CampaignState.PENDING_APPROVAL}),
-    CampaignState.PENDING_APPROVAL: frozenset(
-        {CampaignState.APPROVED, CampaignState.DRAFT}
-    ),
-    CampaignState.APPROVED: frozenset(
-        {CampaignState.SCHEDULED, CampaignState.RUNNING}
-    ),
+    CampaignState.PENDING_APPROVAL: frozenset({CampaignState.APPROVED, CampaignState.DRAFT}),
+    CampaignState.APPROVED: frozenset({CampaignState.SCHEDULED, CampaignState.RUNNING}),
     CampaignState.SCHEDULED: frozenset(
-        {CampaignState.RUNNING, CampaignState.APPROVED}
+        {CampaignState.RUNNING, CampaignState.APPROVED, CampaignState.PAUSED}
     ),
     CampaignState.RUNNING: frozenset(
         {CampaignState.PAUSED, CampaignState.COMPLETED, CampaignState.FAILED}
     ),
     CampaignState.PAUSED: frozenset(
-        {CampaignState.RUNNING, CampaignState.FAILED}
+        {CampaignState.RUNNING, CampaignState.SCHEDULED, CampaignState.FAILED}
     ),
     CampaignState.COMPLETED: frozenset({CampaignState.ARCHIVED}),
     CampaignState.FAILED: frozenset({CampaignState.ARCHIVED}),
@@ -260,9 +256,7 @@ class Campaign:
         self._assert_tenant(tenant_id)
         self._assert_not_archived()
         if self.state not in {CampaignState.DRAFT, CampaignState.PENDING_APPROVAL}:
-            raise InvalidStateTransition(
-                self.state.value, "add_objective", str(self.campaign_id)
-            )
+            raise InvalidStateTransition(self.state.value, "add_objective", str(self.campaign_id))
         for existing in self.objectives:
             if existing.sealed:
                 raise ObjectiveSealedViolation(str(existing.id))
@@ -323,9 +317,7 @@ class Campaign:
                 "Campaign must have at least one target selection rule",
             )
         if self.kind == CampaignKind.RECURRING and self.campaign_schedule is None:
-            raise InvariantViolation(
-                "schedule", "Recurring campaign must have a CampaignSchedule"
-            )
+            raise InvariantViolation("schedule", "Recurring campaign must have a CampaignSchedule")
         if self.kind == CampaignKind.ONE_SHOT and self.campaign_schedule is not None:
             raise InvariantViolation(
                 "schedule", "OneShot campaign must not have a CampaignSchedule"
@@ -355,9 +347,7 @@ class Campaign:
         self._assert_tenant(tenant_id)
         self._assert_not_archived()
         if self.state != CampaignState.PENDING_APPROVAL:
-            raise InvalidStateTransition(
-                self.state.value, "grant_approval", str(self.campaign_id)
-            )
+            raise InvalidStateTransition(self.state.value, "grant_approval", str(self.campaign_id))
         if not approver_id.strip():
             raise InvalidArgument("approver_id", "must not be empty")
         if not signature.strip():
@@ -414,15 +404,10 @@ class Campaign:
             CampaignState.PENDING_APPROVAL,
             CampaignState.APPROVED,
         }:
-            raise InvalidStateTransition(
-                self.state.value, "revoke_approval", str(self.campaign_id)
-            )
+            raise InvalidStateTransition(self.state.value, "revoke_approval", str(self.campaign_id))
         found = False
         for approval in self.approvals:
-            if (
-                not approval.revoked
-                and approval.record.approver_id == approver_id.strip()
-            ):
+            if not approval.revoked and approval.record.approver_id == approver_id.strip():
                 approval.revoked = True
                 approval.revoked_at = now
                 approval.revoked_by = revoked_by.strip()
@@ -459,9 +444,7 @@ class Campaign:
         self._assert_tenant(tenant_id)
         self._assert_not_archived()
         if self.state != CampaignState.APPROVED:
-            raise InvalidStateTransition(
-                self.state.value, "schedule", str(self.campaign_id)
-            )
+            raise InvalidStateTransition(self.state.value, "schedule", str(self.campaign_id))
         if self.kind not in {CampaignKind.RECURRING, CampaignKind.CONTINUOUS}:
             raise InvariantViolation(
                 "kind",
@@ -491,13 +474,49 @@ class Campaign:
             )
         )
 
+    def schedule_one_shot(
+        self,
+        tenant_id: TenantId,
+        fire_at: datetime,
+        now: datetime,
+    ) -> None:
+        """Schedule a one-shot campaign for an absolute fire time."""
+        self._assert_tenant(tenant_id)
+        self._assert_not_archived()
+        if self.state != CampaignState.APPROVED:
+            raise InvalidStateTransition(
+                self.state.value, "schedule_one_shot", str(self.campaign_id)
+            )
+        if self.kind != CampaignKind.ONE_SHOT:
+            raise InvariantViolation(
+                "kind",
+                "Only OneShot campaigns can use schedule_one_shot",
+            )
+        cron_expression = f"ONESHOT:{fire_at.isoformat()}"
+        self.campaign_schedule = CampaignSchedule(
+            cron_expression=cron_expression,
+            execution_window_hours=1,
+            max_consecutive_failures=1,
+            blackout_periods=[],
+        )
+        self._transition(CampaignState.SCHEDULED)
+        self._mutate(now)
+        self._emit(
+            CampaignScheduled(
+                event_id=str(uuid7()),
+                occurred_at=now,
+                tenant_id=self.tenant_id,
+                aggregate_id=str(self.campaign_id),
+                aggregate_type="Campaign",
+                cron_expression=cron_expression,
+            )
+        )
+
     def cancel_schedule(self, tenant_id: TenantId, now: datetime) -> None:
         self._assert_tenant(tenant_id)
         self._assert_not_archived()
         if self.state != CampaignState.SCHEDULED:
-            raise InvalidStateTransition(
-                self.state.value, "cancel_schedule", str(self.campaign_id)
-            )
+            raise InvalidStateTransition(self.state.value, "cancel_schedule", str(self.campaign_id))
         self.campaign_schedule = None
         self._transition(CampaignState.APPROVED)
         self._mutate(now)
@@ -512,9 +531,7 @@ class Campaign:
         self._assert_tenant(tenant_id)
         self._assert_not_archived()
         if self.state not in {CampaignState.APPROVED, CampaignState.SCHEDULED}:
-            raise InvalidStateTransition(
-                self.state.value, "start_instance", str(self.campaign_id)
-            )
+            raise InvalidStateTransition(self.state.value, "start_instance", str(self.campaign_id))
         self._transition(CampaignState.RUNNING)
         self._mutate(now)
         self._emit(
@@ -641,9 +658,7 @@ class Campaign:
         self._assert_tenant(tenant_id)
         self._assert_not_archived()
         if self.state not in {CampaignState.SCHEDULED, CampaignState.APPROVED}:
-            raise InvalidStateTransition(
-                self.state.value, "fire_schedule", str(self.campaign_id)
-            )
+            raise InvalidStateTransition(self.state.value, "fire_schedule", str(self.campaign_id))
         policy = self.campaign_schedule
         if policy is None:
             raise InvariantViolation(
@@ -697,12 +712,8 @@ class Campaign:
         if self.state in {CampaignState.COMPLETED, CampaignState.ARCHIVED}:
             return  # Do not transition terminal campaigns
         policy = self.campaign_schedule
-        max_fail = (
-            policy.max_consecutive_failures if policy else consecutive_failure_count
-        )
-        allowed_states = {
-            CampaignState.SCHEDULED, CampaignState.RUNNING, CampaignState.APPROVED
-        }
+        max_fail = policy.max_consecutive_failures if policy else consecutive_failure_count
+        allowed_states = {CampaignState.SCHEDULED, CampaignState.RUNNING, CampaignState.APPROVED}
         if self.state not in allowed_states:
             # Allow from any non-archived state
             self.state = CampaignState.PAUSED

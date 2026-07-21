@@ -36,9 +36,7 @@ class TaskGraphModel(Base):
     version_patch: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     engagement_window_seconds: Mapped[int] = mapped_column(Integer, nullable=False)
     signed_by: Mapped[str | None] = mapped_column(String(256), nullable=True)
-    signed_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    signed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     signature: Mapped[str | None] = mapped_column(String(1024), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -84,26 +82,14 @@ class CampaignTaskModel(Base):
     name: Mapped[str] = mapped_column(String(512), nullable=False)
     criticality: Mapped[str] = mapped_column(String(32), nullable=False)
     timeout_seconds: Mapped[int] = mapped_column(Integer, nullable=False)
-    operation_template_json: Mapped[dict[str, Any] | None] = mapped_column(
-        JSONB, nullable=True
-    )
-    human_approval_config_json: Mapped[dict[str, Any] | None] = mapped_column(
-        JSONB, nullable=True
-    )
-    barrier_policy_json: Mapped[dict[str, Any] | None] = mapped_column(
-        JSONB, nullable=True
-    )
-    rollback_config_json: Mapped[dict[str, Any] | None] = mapped_column(
-        JSONB, nullable=True
-    )
+    operation_template_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    human_approval_config_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    barrier_policy_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    rollback_config_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
     task_group_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
-    rollback_task_ref_id: Mapped[UUID | None] = mapped_column(
-        PgUUID(as_uuid=True), nullable=True
-    )
+    rollback_task_ref_id: Mapped[UUID | None] = mapped_column(PgUUID(as_uuid=True), nullable=True)
 
-    graph: Mapped[TaskGraphModel] = relationship(
-        "TaskGraphModel", back_populates="tasks"
-    )
+    graph: Mapped[TaskGraphModel] = relationship("TaskGraphModel", back_populates="tasks")
 
     __table_args__ = (
         Index("ix_campaign_tasks_graph_id", "graph_id"),
@@ -126,9 +112,7 @@ class TaskDependencyModel(Base):
     predicate: Mapped[str] = mapped_column(String(64), nullable=False)
     objective_ref: Mapped[str | None] = mapped_column(String(128), nullable=True)
 
-    graph: Mapped[TaskGraphModel] = relationship(
-        "TaskGraphModel", back_populates="dependencies"
-    )
+    graph: Mapped[TaskGraphModel] = relationship("TaskGraphModel", back_populates="dependencies")
 
     __table_args__ = (
         Index("ix_task_dependencies_graph_id", "graph_id"),

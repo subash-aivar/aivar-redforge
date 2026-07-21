@@ -59,6 +59,7 @@ if TYPE_CHECKING:
 
     from campaignexecution.domain.events.base import BaseDomainEvent
     from campaignexecution.domain.value_objects.execution_vos import (
+        ActiveBranchPath,
         CampaignInstanceRef,
         EngagementRef,
         ObjectiveStateMap,
@@ -71,24 +72,30 @@ if TYPE_CHECKING:
 
 _ALLOWED_TRANSITIONS: dict[ExecutionState, frozenset[ExecutionState]] = {
     ExecutionState.INITIALIZING: frozenset({ExecutionState.RUNNING, ExecutionState.FAILED}),
-    ExecutionState.RUNNING: frozenset({
-        ExecutionState.WAITING_FOR_APPROVAL,
-        ExecutionState.PAUSED,
-        ExecutionState.COMPLETED,
-        ExecutionState.FAILED,
-        ExecutionState.ABORTED,
-    }),
-    ExecutionState.WAITING_FOR_APPROVAL: frozenset({
-        ExecutionState.RUNNING,
-        ExecutionState.PAUSED,
-        ExecutionState.FAILED,
-        ExecutionState.ABORTED,
-    }),
-    ExecutionState.PAUSED: frozenset({
-        ExecutionState.RUNNING,
-        ExecutionState.ROLLING_BACK,
-        ExecutionState.ABORTED,
-    }),
+    ExecutionState.RUNNING: frozenset(
+        {
+            ExecutionState.WAITING_FOR_APPROVAL,
+            ExecutionState.PAUSED,
+            ExecutionState.COMPLETED,
+            ExecutionState.FAILED,
+            ExecutionState.ABORTED,
+        }
+    ),
+    ExecutionState.WAITING_FOR_APPROVAL: frozenset(
+        {
+            ExecutionState.RUNNING,
+            ExecutionState.PAUSED,
+            ExecutionState.FAILED,
+            ExecutionState.ABORTED,
+        }
+    ),
+    ExecutionState.PAUSED: frozenset(
+        {
+            ExecutionState.RUNNING,
+            ExecutionState.ROLLING_BACK,
+            ExecutionState.ABORTED,
+        }
+    ),
     ExecutionState.ROLLING_BACK: frozenset({ExecutionState.FAILED, ExecutionState.ABORTED}),
     ExecutionState.COMPLETED: frozenset(),
     ExecutionState.FAILED: frozenset(),
@@ -107,6 +114,7 @@ class TaskGraphExecution:
     __slots__ = (
         "_pending_events",
         "_version",
+        "active_branch_path",
         "campaign_instance_ref",
         "checkpoints",
         "engagement_ref",
@@ -136,7 +144,10 @@ class TaskGraphExecution:
         objective_states: ObjectiveStateMap,
         pending_approval_gate: PendingApprovalGate | None,
         version: int,
+        active_branch_path: ActiveBranchPath | None = None,
     ) -> None:
+        from campaignexecution.domain.value_objects.execution_vos import ActiveBranchPath
+
         self.execution_id = execution_id
         self.tenant_id = tenant_id
         self.campaign_instance_ref = campaign_instance_ref
@@ -149,6 +160,7 @@ class TaskGraphExecution:
         self.checkpoints = list(checkpoints)
         self.objective_states = objective_states
         self.pending_approval_gate = pending_approval_gate
+        self.active_branch_path = active_branch_path or ActiveBranchPath()
         self._version = version
         self._pending_events: list[BaseDomainEvent] = []
 
@@ -252,8 +264,7 @@ class TaskGraphExecution:
 
     def get_ready_task_ids(self) -> list[CampaignTaskId]:
         return [
-            r.task_id for r in self.task_records
-            if r.state == TaskExecutionState.READY_TO_DISPATCH
+            r.task_id for r in self.task_records if r.state == TaskExecutionState.READY_TO_DISPATCH
         ]
 
     def get_running_task_ids(self) -> list[CampaignTaskId]:
@@ -268,9 +279,7 @@ class TaskGraphExecution:
         self._transition(ExecutionState.RUNNING)
         self._mutate()
 
-    def mark_task_ready(
-        self, tenant_id: TenantId, task_id: CampaignTaskId, now: datetime
-    ) -> None:
+    def mark_task_ready(self, tenant_id: TenantId, task_id: CampaignTaskId, now: datetime) -> None:
         self._assert_tenant(tenant_id)
         rec = self._find_record(task_id)
         if rec.state not in {TaskExecutionState.PENDING}:
@@ -355,8 +364,9 @@ class TaskGraphExecution:
                 try:
                     succ = self._find_record(sid)
                     ready_states = {
-                            TaskExecutionState.PENDING, TaskExecutionState.READY_TO_DISPATCH
-                        }
+                        TaskExecutionState.PENDING,
+                        TaskExecutionState.READY_TO_DISPATCH,
+                    }
                     if succ.state in ready_states:
                         succ.mark_skipped()
                         self._emit(
@@ -374,6 +384,9 @@ class TaskGraphExecution:
                     pass
 
         if ready_successor_ids or skipped_successor_ids:
+            ready_uuids = tuple(tid.value for tid in (ready_successor_ids or []))
+            if ready_uuids:
+                self.active_branch_path = self.active_branch_path.with_added(*ready_uuids)
             self._emit(
                 ConditionalBranchResolved(
                     event_id=str(uuid7()),
@@ -682,12 +695,8 @@ class TaskGraphExecution:
             raise InvalidStateTransition(self.state.value, "complete", str(self.execution_id))
         self._transition(ExecutionState.COMPLETED)
         self._mutate()
-        completed = sum(
-            1 for r in self.task_records if r.state == TaskExecutionState.COMPLETED
-        )
-        skipped = sum(
-            1 for r in self.task_records if r.state == TaskExecutionState.SKIPPED
-        )
+        completed = sum(1 for r in self.task_records if r.state == TaskExecutionState.COMPLETED)
+        skipped = sum(1 for r in self.task_records if r.state == TaskExecutionState.SKIPPED)
         terminal_failed = {TaskExecutionState.FAILED, TaskExecutionState.TIMED_OUT}
         failed = sum(1 for r in self.task_records if r.state in terminal_failed)
         self._emit(
@@ -765,3 +774,62 @@ class TaskGraphExecution:
 
     def all_tasks_terminal(self) -> bool:
         return all(r.is_terminal for r in self.task_records)
+
+    def start_execution_track(
+        self,
+        tenant_id: TenantId,
+        track_id: str,
+        task_ids: list[CampaignTaskId],
+        now: datetime,
+    ) -> None:
+        """Record a parallel execution track and emit ExecutionTrackStarted."""
+        from campaignexecution.domain.events.execution_events import ExecutionTrackStarted
+
+        self._assert_tenant(tenant_id)
+        track = ExecutionTrack(track_id=track_id, task_ids=list(task_ids))
+        self.tracks.append(track)
+        self._mutate()
+        self._emit(
+            ExecutionTrackStarted(
+                event_id=str(uuid7()),
+                occurred_at=now,
+                tenant_id=str(tenant_id),
+                aggregate_id=str(self.execution_id),
+                aggregate_type="TaskGraphExecution",
+                track_id=track_id,
+                task_ids=tuple(str(tid) for tid in task_ids),
+            )
+        )
+
+    def record_evaluation_checkpoint(
+        self,
+        tenant_id: TenantId,
+        checkpoint_task_id: CampaignTaskId,
+        now: datetime,
+    ) -> None:
+        """Record an EvaluationCheckpointReached event at a checkpoint task."""
+        from campaignexecution.domain.events.execution_events import (
+            EvaluationCheckpointReached,
+        )
+
+        self._assert_tenant(tenant_id)
+        self._find_record(checkpoint_task_id)
+        states = tuple(sorted(self.objective_states.states.items()))
+        checkpoint = CheckpointRecord(
+            checkpoint_task_id=checkpoint_task_id,
+            objective_states=states,
+            captured_at=now,
+        )
+        self.checkpoints.append(checkpoint)
+        self._mutate()
+        self._emit(
+            EvaluationCheckpointReached(
+                event_id=str(uuid7()),
+                occurred_at=now,
+                tenant_id=str(tenant_id),
+                aggregate_id=str(self.execution_id),
+                aggregate_type="TaskGraphExecution",
+                checkpoint_task_id=str(checkpoint_task_id),
+                objective_states=states,
+            )
+        )

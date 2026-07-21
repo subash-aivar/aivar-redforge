@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 from campaignexecution.infrastructure.acl.degraded_adapters import (
     StubAttackActionQueryAdapter,
+    StubNotificationAdapter,
     StubOperationCreationAdapter,
 )
 from campaignexecution.infrastructure.events.structlog_event_publisher import (
@@ -23,6 +24,7 @@ if TYPE_CHECKING:
     from campaignexecution.domain.ports.i_attack_action_query_port import (
         IAttackActionQueryPort,
     )
+    from campaignexecution.domain.ports.i_notification_port import INotificationPort
     from campaignexecution.domain.ports.i_operation_creation_port import (
         IOperationCreationPort,
     )
@@ -33,6 +35,7 @@ def build_execution_application_service(
     session_factory: Callable[[], AsyncSession],
     operation_creation_port: IOperationCreationPort | None = None,
     attack_action_query_port: IAttackActionQueryPort | None = None,
+    notification_port: INotificationPort | None = None,
 ) -> ExecutionApplicationService:
     """Build the ExecutionApplicationService with production or stub adapters.
 
@@ -44,12 +47,9 @@ def build_execution_application_service(
     )
     from campaignexecution.infrastructure.persistence.unit_of_work import PgUnitOfWork
 
-    op_port: IOperationCreationPort = (
-        operation_creation_port or StubOperationCreationAdapter()
-    )
-    action_port: IAttackActionQueryPort = (
-        attack_action_query_port or StubAttackActionQueryAdapter()
-    )
+    op_port: IOperationCreationPort = operation_creation_port or StubOperationCreationAdapter()
+    action_port: IAttackActionQueryPort = attack_action_query_port or StubAttackActionQueryAdapter()
+    notify_port: INotificationPort = notification_port or StubNotificationAdapter()
     publisher = StructlogEventPublisher()
 
     def uow_factory() -> PgUnitOfWork:
@@ -61,4 +61,5 @@ def build_execution_application_service(
         event_publisher=publisher,
         operation_creation_port=op_port,
         attack_action_query_port=action_port,
+        notification_port=notify_port,
     )

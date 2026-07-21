@@ -53,8 +53,10 @@ if TYPE_CHECKING:
         CreateCampaignCommand,
         PauseRecurringCampaignCommand,
         ProcessScheduledFireCommand,
+        RecoverSchedulesCommand,
         ResumeRecurringCampaignCommand,
         ScheduleCampaignCommand,
+        ScheduleOneShotCampaignCommand,
         StartCampaignInstanceCommand,
         SubmitCampaignForApprovalCommand,
     )
@@ -65,6 +67,7 @@ if TYPE_CHECKING:
     from campaign.domain.ports.i_engagement_query_port import IEngagementQueryPort
     from campaign.domain.ports.i_inventory_query_port import IInventoryQueryPort
     from campaign.domain.ports.i_scheduler_port import ISchedulerPort
+    from campaign.domain.ports.i_security_graph_write_port import ISecurityGraphWritePort
 
 log = logging.getLogger(__name__)
 
@@ -78,9 +81,7 @@ def _to_campaign_dto(campaign: Campaign) -> CampaignDTO:
         kind=campaign.kind.value,
         state=campaign.state.value,
         owner_id=campaign.owner_id,
-        engagement_id=(
-            campaign.engagement_ref.engagement_id if campaign.engagement_ref else None
-        ),
+        engagement_id=(campaign.engagement_ref.engagement_id if campaign.engagement_ref else None),
         safety_policy={
             "max_concurrent_actions": campaign.safety_policy.max_concurrent_actions,
             "auto_abort_on_detection": campaign.safety_policy.auto_abort_on_detection,
@@ -143,12 +144,14 @@ class CampaignApplicationService:
         inventory_port: IInventoryQueryPort,
         engagement_port: IEngagementQueryPort,
         scheduler_port: ISchedulerPort | None = None,
+        graph_write_port: ISecurityGraphWritePort | None = None,
     ) -> None:
         self._uow_factory = uow_factory
         self._event_publisher = event_publisher
         self._inventory_port = inventory_port
         self._engagement_port = engagement_port
         self._scheduler_port = scheduler_port
+        self._graph_port = graph_write_port
         self._target_resolution = TargetResolutionService()
         self._authorization = CampaignAuthorizationService()
 
@@ -159,9 +162,7 @@ class CampaignApplicationService:
             except Exception:
                 log.exception("Event publication failed — events discarded after commit")
 
-    async def create_campaign(
-        self, cmd: CreateCampaignCommand
-    ) -> CampaignDTO:
+    async def create_campaign(self, cmd: CreateCampaignCommand) -> CampaignDTO:
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_uuid(cmd.engagement_id, "engagement_id")
         validate_str(cmd.name, "name", 512)
@@ -177,9 +178,7 @@ class CampaignApplicationService:
         try:
             kind = CampaignKind(cmd.kind)
         except ValueError:
-            raise ApplicationValidationError(
-                f"Unknown campaign kind '{cmd.kind}'"
-            ) from None
+            raise ApplicationValidationError(f"Unknown campaign kind '{cmd.kind}'") from None
 
         safety_policy = CampaignSafetyPolicyVO(
             max_concurrent_actions=cmd.max_concurrent_actions,
@@ -218,7 +217,51 @@ class CampaignApplicationService:
 
         events = campaign.pop_events()
         await self._publish(events)
+        if self._graph_port is not None:
+            await self._write_campaign_graph(
+                campaign,
+                scenario_template_id=cmd.scenario_template_id,
+                task_graph_id=cmd.task_graph_id,
+                task_graph_version=cmd.task_graph_version,
+            )
         return _to_campaign_dto(campaign)
+
+    async def _write_campaign_graph(
+        self,
+        campaign: Campaign,
+        *,
+        scenario_template_id: object | None = None,
+        task_graph_id: object | None = None,
+        task_graph_version: str | None = None,
+    ) -> None:
+        assert self._graph_port is not None
+        tenant = str(campaign.tenant_id)
+        campaign_id = str(campaign.campaign_id)
+        await self._graph_port.upsert_campaign_node(
+            tenant_id=tenant,
+            campaign_id=campaign_id,
+            classification=campaign.classification.value,
+            kind=campaign.kind.value,
+            state=campaign.state.value,
+        )
+        if scenario_template_id is not None:
+            await self._graph_port.upsert_based_on_scenario_edge(
+                tenant_id=tenant,
+                campaign_id=campaign_id,
+                template_id=str(scenario_template_id),
+            )
+        if task_graph_id is not None and task_graph_version:
+            await self._graph_port.upsert_task_graph_node(
+                tenant_id=tenant,
+                graph_id=str(task_graph_id),
+                version=task_graph_version,
+            )
+            await self._graph_port.upsert_uses_graph_edge(
+                tenant_id=tenant,
+                campaign_id=campaign_id,
+                graph_id=str(task_graph_id),
+                version=task_graph_version,
+            )
 
     async def add_objective(self, cmd: AddCampaignObjectiveCommand) -> None:
         validate_uuid(cmd.tenant_id, "tenant_id")
@@ -240,9 +283,7 @@ class CampaignApplicationService:
         async with self._uow_factory() as uow:
             campaign = await uow.campaigns.find_by_id(campaign_id, tenant_id)
             if campaign is None:
-                raise ApplicationNotFoundError(
-                    f"Campaign '{cmd.campaign_id}' not found"
-                )
+                raise ApplicationNotFoundError(f"Campaign '{cmd.campaign_id}' not found")
             objective = CampaignObjective(
                 id=CampaignObjectiveId.generate(),
                 objective_type=objective_type,
@@ -260,9 +301,7 @@ class CampaignApplicationService:
 
         await self._publish(campaign.pop_events())
 
-    async def add_target_selection_rule(
-        self, cmd: AddTargetSelectionRuleCommand
-    ) -> None:
+    async def add_target_selection_rule(self, cmd: AddTargetSelectionRuleCommand) -> None:
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_uuid(cmd.campaign_id, "campaign_id")
         validate_str(cmd.attribute, "attribute", 256)
@@ -281,18 +320,14 @@ class CampaignApplicationService:
         async with self._uow_factory() as uow:
             campaign = await uow.campaigns.find_by_id(campaign_id, tenant_id)
             if campaign is None:
-                raise ApplicationNotFoundError(
-                    f"Campaign '{cmd.campaign_id}' not found"
-                )
+                raise ApplicationNotFoundError(f"Campaign '{cmd.campaign_id}' not found")
             campaign.add_target_selection_rule(tenant_id, rule, now)
             await uow.campaigns.save(campaign)
             await uow.commit()
 
         await self._publish(campaign.pop_events())
 
-    async def submit_for_approval(
-        self, cmd: SubmitCampaignForApprovalCommand
-    ) -> None:
+    async def submit_for_approval(self, cmd: SubmitCampaignForApprovalCommand) -> None:
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_uuid(cmd.campaign_id, "campaign_id")
 
@@ -303,9 +338,7 @@ class CampaignApplicationService:
         async with self._uow_factory() as uow:
             campaign = await uow.campaigns.find_by_id(campaign_id, tenant_id)
             if campaign is None:
-                raise ApplicationNotFoundError(
-                    f"Campaign '{cmd.campaign_id}' not found"
-                )
+                raise ApplicationNotFoundError(f"Campaign '{cmd.campaign_id}' not found")
             campaign.submit_for_approval(tenant_id, now)
             await uow.campaigns.save(campaign)
             await uow.commit()
@@ -325,9 +358,7 @@ class CampaignApplicationService:
         async with self._uow_factory() as uow:
             campaign = await uow.campaigns.find_by_id(campaign_id, tenant_id)
             if campaign is None:
-                raise ApplicationNotFoundError(
-                    f"Campaign '{cmd.campaign_id}' not found"
-                )
+                raise ApplicationNotFoundError(f"Campaign '{cmd.campaign_id}' not found")
             campaign.grant_approval(tenant_id, cmd.approver_id, cmd.signature, now)
             await uow.campaigns.save(campaign)
             await uow.commit()
@@ -335,13 +366,13 @@ class CampaignApplicationService:
         await self._publish(campaign.pop_events())
 
     async def schedule_campaign(self, cmd: ScheduleCampaignCommand) -> None:
+        from campaign.domain.services.recurrence_scheduler import RecurrenceScheduler
+
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_uuid(cmd.campaign_id, "campaign_id")
         validate_str(cmd.cron_expression, "cron_expression", 256)
         if cmd.execution_window_hours < 1:
-            raise ApplicationValidationError(
-                "'execution_window_hours' must be at least 1"
-            )
+            raise ApplicationValidationError("'execution_window_hours' must be at least 1")
 
         tenant_id = TenantId(cmd.tenant_id)
         campaign_id = CampaignId(cmd.campaign_id)
@@ -350,15 +381,17 @@ class CampaignApplicationService:
         async with self._uow_factory() as uow:
             campaign = await uow.campaigns.find_by_id(campaign_id, tenant_id)
             if campaign is None:
-                raise ApplicationNotFoundError(
-                    f"Campaign '{cmd.campaign_id}' not found"
-                )
+                raise ApplicationNotFoundError(f"Campaign '{cmd.campaign_id}' not found")
             campaign.schedule(
                 tenant_id,
                 cmd.cron_expression,
                 cmd.execution_window_hours,
                 now,
             )
+            if self._scheduler_port is not None:
+                job_id = await RecurrenceScheduler().register(campaign, self._scheduler_port)
+                if campaign.campaign_schedule is not None:
+                    campaign.campaign_schedule.scheduler_job_id = job_id
             await uow.campaigns.save(campaign)
             await uow.commit()
 
@@ -377,22 +410,14 @@ class CampaignApplicationService:
         async with self._uow_factory() as uow:
             campaign = await uow.campaigns.find_by_id(campaign_id, tenant_id)
             if campaign is None:
-                raise ApplicationNotFoundError(
-                    f"Campaign '{cmd.campaign_id}' not found"
-                )
+                raise ApplicationNotFoundError(f"Campaign '{cmd.campaign_id}' not found")
 
-            await self._authorization.authorize(
-                campaign, cmd.tenant_id, self._engagement_port
-            )
+            await self._authorization.authorize(campaign, cmd.tenant_id, self._engagement_port)
 
             if not campaign.target_selection_rules:
-                raise ApplicationValidationError(
-                    "Campaign has no target selection rules"
-                )
+                raise ApplicationValidationError("Campaign has no target selection rules")
             if campaign.engagement_ref is None:
-                raise ApplicationValidationError(
-                    "Campaign has no EngagementRef"
-                )
+                raise ApplicationValidationError("Campaign has no EngagementRef")
 
             target_set = await self._target_resolution.resolve(
                 criteria=list(campaign.target_selection_rules),
@@ -402,9 +427,7 @@ class CampaignApplicationService:
                 engagement_port=self._engagement_port,
             )
 
-            existing = await uow.campaign_instances.find_by_campaign(
-                campaign_id, tenant_id
-            )
+            existing = await uow.campaign_instances.find_by_campaign(campaign_id, tenant_id)
             run_number = len(existing) + 1
 
             instance_id = CampaignInstanceId.generate()
@@ -416,9 +439,7 @@ class CampaignApplicationService:
                 resolved_targets=target_set,
                 now=now,
             )
-            campaign.start_instance(
-                tenant_id, instance_id, target_set.count, now
-            )
+            campaign.start_instance(tenant_id, instance_id, target_set.count, now)
 
             await uow.campaign_instances.save(instance)
             await uow.campaigns.save(campaign)
@@ -426,11 +447,30 @@ class CampaignApplicationService:
 
         all_events = campaign.pop_events() + instance.pop_events()
         await self._publish(all_events)
+        if self._graph_port is not None:
+            tenant = str(tenant_id)
+            await self._graph_port.upsert_campaign_instance_node(
+                tenant_id=tenant,
+                instance_id=str(instance_id),
+                campaign_id=str(campaign_id),
+                run_number=run_number,
+            )
+            await self._graph_port.upsert_instance_of_campaign_edge(
+                tenant_id=tenant,
+                instance_id=str(instance_id),
+                campaign_id=str(campaign_id),
+                run_number=run_number,
+            )
+            await self._graph_port.upsert_campaign_node(
+                tenant_id=tenant,
+                campaign_id=str(campaign_id),
+                classification=campaign.classification.value,
+                kind=campaign.kind.value,
+                state=campaign.state.value,
+            )
         return _to_instance_dto(instance)
 
-    async def abort_campaign_instance(
-        self, cmd: AbortCampaignInstanceCommand
-    ) -> None:
+    async def abort_campaign_instance(self, cmd: AbortCampaignInstanceCommand) -> None:
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_uuid(cmd.campaign_id, "campaign_id")
         validate_uuid(cmd.instance_id, "instance_id")
@@ -444,14 +484,10 @@ class CampaignApplicationService:
         async with self._uow_factory() as uow:
             instance = await uow.campaign_instances.find_by_id(instance_id, tenant_id)
             if instance is None:
-                raise ApplicationNotFoundError(
-                    f"CampaignInstance '{cmd.instance_id}' not found"
-                )
+                raise ApplicationNotFoundError(f"CampaignInstance '{cmd.instance_id}' not found")
             campaign = await uow.campaigns.find_by_id(campaign_id, tenant_id)
             if campaign is None:
-                raise ApplicationNotFoundError(
-                    f"Campaign '{cmd.campaign_id}' not found"
-                )
+                raise ApplicationNotFoundError(f"Campaign '{cmd.campaign_id}' not found")
             instance.abort(tenant_id, cmd.reason, now)
             campaign.fail(tenant_id, instance_id, cmd.reason, now)
             await uow.campaign_instances.save(instance)
@@ -472,9 +508,7 @@ class CampaignApplicationService:
         async with self._uow_factory() as uow:
             campaign = await uow.campaigns.find_by_id(campaign_id, tenant_id)
             if campaign is None:
-                raise ApplicationNotFoundError(
-                    f"Campaign '{cmd.campaign_id}' not found"
-                )
+                raise ApplicationNotFoundError(f"Campaign '{cmd.campaign_id}' not found")
             campaign.archive(tenant_id, now)
             await uow.campaigns.save(campaign)
             await uow.commit()
@@ -497,22 +531,24 @@ class CampaignApplicationService:
 
     # ── Phase 4: Scheduling commands ──────────────────────────────────────────
 
-    async def cancel_campaign_schedule(
-        self, cmd: CancelCampaignScheduleCommand
-    ) -> None:
+    async def cancel_campaign_schedule(self, cmd: CancelCampaignScheduleCommand) -> None:
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_uuid(cmd.campaign_id, "campaign_id")
 
         tenant_id = TenantId(cmd.tenant_id)
         campaign_id = CampaignId(cmd.campaign_id)
         now = datetime.now(UTC)
+        job_id = cmd.job_id
 
         async with self._uow_factory() as uow:
             campaign = await uow.campaigns.find_by_id(campaign_id, tenant_id)
             if campaign is None:
-                raise ApplicationNotFoundError(
-                    f"Campaign '{cmd.campaign_id}' not found"
-                )
+                raise ApplicationNotFoundError(f"Campaign '{cmd.campaign_id}' not found")
+            if (
+                campaign.campaign_schedule is not None
+                and campaign.campaign_schedule.scheduler_job_id
+            ):
+                job_id = campaign.campaign_schedule.scheduler_job_id
             campaign.cancel_schedule(tenant_id, now)
             await uow.campaigns.save(campaign)
             await uow.commit()
@@ -522,16 +558,14 @@ class CampaignApplicationService:
                 await self._scheduler_port.cancel_schedule(
                     campaign_id=campaign_id,
                     tenant_id=tenant_id,
-                    job_id=cmd.job_id,
+                    job_id=job_id,
                 )
             except Exception:
-                log.exception("Failed to cancel scheduler job '%s'", cmd.job_id)
+                log.exception("Failed to cancel scheduler job '%s'", job_id)
 
         await self._publish(campaign.pop_events())
 
-    async def pause_recurring_campaign(
-        self, cmd: PauseRecurringCampaignCommand
-    ) -> CampaignDTO:
+    async def pause_recurring_campaign(self, cmd: PauseRecurringCampaignCommand) -> CampaignDTO:
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_uuid(cmd.campaign_id, "campaign_id")
         validate_str(cmd.reason, "reason", 512)
@@ -539,23 +573,34 @@ class CampaignApplicationService:
         tenant_id = TenantId(cmd.tenant_id)
         campaign_id = CampaignId(cmd.campaign_id)
         now = datetime.now(UTC)
+        job_id: str | None = None
 
         async with self._uow_factory() as uow:
             campaign = await uow.campaigns.find_by_id(campaign_id, tenant_id)
             if campaign is None:
-                raise ApplicationNotFoundError(
-                    f"Campaign '{cmd.campaign_id}' not found"
-                )
+                raise ApplicationNotFoundError(f"Campaign '{cmd.campaign_id}' not found")
+            if campaign.campaign_schedule is not None:
+                job_id = campaign.campaign_schedule.scheduler_job_id
             campaign.pause(tenant_id, cmd.reason, now)
             await uow.campaigns.save(campaign)
             await uow.commit()
 
+        if self._scheduler_port is not None and job_id:
+            try:
+                await self._scheduler_port.cancel_schedule(
+                    campaign_id=campaign_id,
+                    tenant_id=tenant_id,
+                    job_id=job_id,
+                )
+            except Exception:
+                log.exception("Failed to cancel scheduler job on pause '%s'", job_id)
+
         await self._publish(campaign.pop_events())
         return _to_campaign_dto(campaign)
 
-    async def resume_recurring_campaign(
-        self, cmd: ResumeRecurringCampaignCommand
-    ) -> CampaignDTO:
+    async def resume_recurring_campaign(self, cmd: ResumeRecurringCampaignCommand) -> CampaignDTO:
+        from campaign.domain.services.recurrence_scheduler import RecurrenceScheduler
+
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_uuid(cmd.campaign_id, "campaign_id")
 
@@ -566,10 +611,11 @@ class CampaignApplicationService:
         async with self._uow_factory() as uow:
             campaign = await uow.campaigns.find_by_id(campaign_id, tenant_id)
             if campaign is None:
-                raise ApplicationNotFoundError(
-                    f"Campaign '{cmd.campaign_id}' not found"
-                )
+                raise ApplicationNotFoundError(f"Campaign '{cmd.campaign_id}' not found")
             campaign.resume_recurring(tenant_id, now)
+            if self._scheduler_port is not None and campaign.campaign_schedule is not None:
+                job_id = await RecurrenceScheduler().register(campaign, self._scheduler_port)
+                campaign.campaign_schedule.scheduler_job_id = job_id
             await uow.campaigns.save(campaign)
             await uow.commit()
 
@@ -598,9 +644,7 @@ class CampaignApplicationService:
         scheduler_svc = RecurrenceScheduler()
 
         try:
-            fire_time = datetime.fromisoformat(cmd.scheduled_fire_time).replace(
-                tzinfo=UTC
-            )
+            fire_time = datetime.fromisoformat(cmd.scheduled_fire_time).replace(tzinfo=UTC)
         except ValueError:
             raise ApplicationValidationError(
                 "Invalid scheduled_fire_time format; expected ISO-8601"
@@ -609,9 +653,7 @@ class CampaignApplicationService:
         async with self._uow_factory() as uow:
             campaign = await uow.campaigns.find_by_id(campaign_id, tenant_id)
             if campaign is None:
-                raise ApplicationNotFoundError(
-                    f"Campaign '{cmd.campaign_id}' not found"
-                )
+                raise ApplicationNotFoundError(f"Campaign '{cmd.campaign_id}' not found")
 
             policy = campaign.campaign_schedule
             if policy is None:
@@ -635,9 +677,7 @@ class CampaignApplicationService:
 
             # Overlap check: any running instances?
             existing = await uow.campaign_instances.find_by_campaign(campaign_id, tenant_id)
-            running_states = {
-                InstanceState.STARTING, InstanceState.RUNNING, InstanceState.PAUSED
-            }
+            running_states = {InstanceState.STARTING, InstanceState.RUNNING, InstanceState.PAUSED}
             running = [inst for inst in existing if inst.state in running_states]
             if running:
                 consecutive_skips = cmd.consecutive_skips + 1
@@ -654,6 +694,11 @@ class CampaignApplicationService:
                     consecutive_skips=consecutive_skips,
                     now=now,
                 )
+                if consecutive_skips >= max_skips:
+                    campaign.pause_recurring_due_to_failures(
+                        consecutive_failure_count=consecutive_skips,
+                        now=now,
+                    )
                 await uow.campaigns.save(campaign)
                 await uow.commit()
                 await self._publish(campaign.pop_events())
@@ -669,13 +714,9 @@ class CampaignApplicationService:
 
             # Resolve targets and create instance
             if not campaign.target_selection_rules:
-                raise ApplicationValidationError(
-                    "Campaign has no target selection rules"
-                )
+                raise ApplicationValidationError("Campaign has no target selection rules")
             if campaign.engagement_ref is None:
-                raise ApplicationValidationError(
-                    "Campaign has no EngagementRef"
-                )
+                raise ApplicationValidationError("Campaign has no EngagementRef")
 
             target_set = await self._target_resolution.resolve(
                 criteria=list(campaign.target_selection_rules),
@@ -704,3 +745,67 @@ class CampaignApplicationService:
         all_events = campaign.pop_events() + instance.pop_events()
         await self._publish(all_events)
         return _to_instance_dto(instance)
+
+    async def schedule_one_shot_campaign(self, cmd: ScheduleOneShotCampaignCommand) -> None:
+        from campaign.domain.services.recurrence_scheduler import RecurrenceScheduler
+
+        validate_uuid(cmd.tenant_id, "tenant_id")
+        validate_uuid(cmd.campaign_id, "campaign_id")
+
+        tenant_id = TenantId(cmd.tenant_id)
+        campaign_id = CampaignId(cmd.campaign_id)
+        now = datetime.now(UTC)
+        try:
+            fire_at = datetime.fromisoformat(cmd.fire_at).replace(tzinfo=UTC)
+        except ValueError:
+            raise ApplicationValidationError("Invalid fire_at format; expected ISO-8601") from None
+
+        async with self._uow_factory() as uow:
+            campaign = await uow.campaigns.find_by_id(campaign_id, tenant_id)
+            if campaign is None:
+                raise ApplicationNotFoundError(f"Campaign '{cmd.campaign_id}' not found")
+            campaign.schedule_one_shot(tenant_id, fire_at, now)
+            if self._scheduler_port is not None:
+                job_id = await RecurrenceScheduler().register_one_shot(
+                    campaign, fire_at, self._scheduler_port
+                )
+                if campaign.campaign_schedule is not None:
+                    campaign.campaign_schedule.scheduler_job_id = job_id
+            await uow.campaigns.save(campaign)
+            await uow.commit()
+
+        await self._publish(campaign.pop_events())
+
+    async def recover_schedules(self, cmd: RecoverSchedulesCommand) -> list[dict[str, str]]:
+        """Recover active schedules after scheduler restart without duplicates."""
+        from campaign.domain.services.recurrence_scheduler import RecurrenceScheduler
+        from campaign.domain.value_objects.enums import InstanceState
+
+        validate_uuid(cmd.tenant_id, "tenant_id")
+        tenant_id = TenantId(cmd.tenant_id)
+
+        if self._scheduler_port is None:
+            return []
+
+        starting_campaign_ids: set[str] = set()
+        async with self._uow_factory() as uow:
+            active = await self._scheduler_port.list_active_schedules(tenant_id)
+            for entry in active:
+                cid_str = entry.get("campaign_id")
+                if not cid_str:
+                    continue
+                try:
+                    from uuid import UUID
+
+                    campaign_id = CampaignId(UUID(cid_str))
+                except ValueError:
+                    continue
+                instances = await uow.campaign_instances.find_by_campaign(campaign_id, tenant_id)
+                if any(inst.state == InstanceState.STARTING for inst in instances):
+                    starting_campaign_ids.add(cid_str)
+
+        return await RecurrenceScheduler().recover_after_restart(
+            self._scheduler_port,
+            tenant_id,
+            starting_campaign_ids,
+        )

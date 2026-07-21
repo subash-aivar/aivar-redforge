@@ -34,10 +34,18 @@ class TestCycleDetection:
         graph.add_task(tenant_id, t2, now)
         graph.add_task(tenant_id, t3, now)
         graph.add_dependency(
-            tenant_id, t1.task_id, t2.task_id, ConditionalBranchConfig(DependencyPredicate.EXECUTE_ON_SUCCESS), now
+            tenant_id,
+            t1.task_id,
+            t2.task_id,
+            ConditionalBranchConfig(DependencyPredicate.EXECUTE_ON_SUCCESS),
+            now,
         )
         graph.add_dependency(
-            tenant_id, t2.task_id, t3.task_id, ConditionalBranchConfig(DependencyPredicate.EXECUTE_ON_SUCCESS), now
+            tenant_id,
+            t2.task_id,
+            t3.task_id,
+            ConditionalBranchConfig(DependencyPredicate.EXECUTE_ON_SUCCESS),
+            now,
         )
         validator = TaskGraphValidator()
         errors = validator.validate(graph)
@@ -52,9 +60,27 @@ class TestCycleDetection:
         graph.add_task(tenant_id, t2, now)
         graph.add_task(tenant_id, t3, now)
         # A → B → C → A (cycle)
-        graph.add_dependency(tenant_id, t1.task_id, t2.task_id, ConditionalBranchConfig(DependencyPredicate.ALWAYS_EXECUTE), now)
-        graph.add_dependency(tenant_id, t2.task_id, t3.task_id, ConditionalBranchConfig(DependencyPredicate.ALWAYS_EXECUTE), now)
-        graph.add_dependency(tenant_id, t3.task_id, t1.task_id, ConditionalBranchConfig(DependencyPredicate.ALWAYS_EXECUTE), now)
+        graph.add_dependency(
+            tenant_id,
+            t1.task_id,
+            t2.task_id,
+            ConditionalBranchConfig(DependencyPredicate.ALWAYS_EXECUTE),
+            now,
+        )
+        graph.add_dependency(
+            tenant_id,
+            t2.task_id,
+            t3.task_id,
+            ConditionalBranchConfig(DependencyPredicate.ALWAYS_EXECUTE),
+            now,
+        )
+        graph.add_dependency(
+            tenant_id,
+            t3.task_id,
+            t1.task_id,
+            ConditionalBranchConfig(DependencyPredicate.ALWAYS_EXECUTE),
+            now,
+        )
         validator = TaskGraphValidator()
         errors = validator.validate(graph)
         assert any("Cycle" in e for e in errors)
@@ -68,10 +94,34 @@ class TestCycleDetection:
         d = make_operation_task("D")
         for t in [a, b, c, d]:
             graph.add_task(tenant_id, t, now)
-        graph.add_dependency(tenant_id, a.task_id, b.task_id, ConditionalBranchConfig(DependencyPredicate.ALWAYS_EXECUTE), now)
-        graph.add_dependency(tenant_id, a.task_id, c.task_id, ConditionalBranchConfig(DependencyPredicate.ALWAYS_EXECUTE), now)
-        graph.add_dependency(tenant_id, b.task_id, d.task_id, ConditionalBranchConfig(DependencyPredicate.ALWAYS_EXECUTE), now)
-        graph.add_dependency(tenant_id, c.task_id, d.task_id, ConditionalBranchConfig(DependencyPredicate.ALWAYS_EXECUTE), now)
+        graph.add_dependency(
+            tenant_id,
+            a.task_id,
+            b.task_id,
+            ConditionalBranchConfig(DependencyPredicate.ALWAYS_EXECUTE),
+            now,
+        )
+        graph.add_dependency(
+            tenant_id,
+            a.task_id,
+            c.task_id,
+            ConditionalBranchConfig(DependencyPredicate.ALWAYS_EXECUTE),
+            now,
+        )
+        graph.add_dependency(
+            tenant_id,
+            b.task_id,
+            d.task_id,
+            ConditionalBranchConfig(DependencyPredicate.ALWAYS_EXECUTE),
+            now,
+        )
+        graph.add_dependency(
+            tenant_id,
+            c.task_id,
+            d.task_id,
+            ConditionalBranchConfig(DependencyPredicate.ALWAYS_EXECUTE),
+            now,
+        )
         validator = TaskGraphValidator()
         errors = validator.validate(graph)
         assert errors == []
@@ -239,9 +289,7 @@ class TestBarrierTaskValidation:
 class TestLargeGraph:
     def test_50_node_linear_graph_no_cycle(self, tenant_id, now) -> None:
         """Linear chain of 50 nodes should pass cycle detection."""
-        graph = make_task_graph(
-            tenant_id=tenant_id, now=now, engagement_window_seconds=999999
-        )
+        graph = make_task_graph(tenant_id=tenant_id, now=now, engagement_window_seconds=999999)
         tasks = [make_operation_task(f"Task-{i}", timeout_seconds=100) for i in range(50)]
         for task in tasks:
             graph.add_task(tenant_id, task, now)

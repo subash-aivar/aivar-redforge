@@ -72,9 +72,7 @@ class TestCampaignCreation:
                     blast_radius_ceiling="Probe",
                 ),
                 approval_policy=ApprovalPolicy(required_approver_count=1),
-                engagement_ref=EngagementRef(
-                    engagement_id=uuid4(), tenant_id=tenant_id.value
-                ),
+                engagement_ref=EngagementRef(engagement_id=uuid4(), tenant_id=tenant_id.value),
                 now=now,
             )
 
@@ -137,7 +135,9 @@ class TestSubmitForApproval:
 
         new_obj = make_objective(description="new objective")
         with pytest.raises(ObjectiveSealedViolation):
-            campaign.add_objective(tenant_id=tenant_id, objective=new_obj, now=advance(now, minutes=2))
+            campaign.add_objective(
+                tenant_id=tenant_id, objective=new_obj, now=advance(now, minutes=2)
+            )
 
 
 class TestApprovalWorkflow:
@@ -207,12 +207,10 @@ class TestApprovalWorkflow:
         add_target_rule(campaign, tenant_id, now)
         campaign.submit_for_approval(tenant_id=tenant_id, now=advance(now, minutes=1))
         campaign.grant_approval(
-            tenant_id=tenant_id, approver_id="a1", signature="s1",
-            now=advance(now, minutes=2)
+            tenant_id=tenant_id, approver_id="a1", signature="s1", now=advance(now, minutes=2)
         )
         campaign.grant_approval(
-            tenant_id=tenant_id, approver_id="a2", signature="s2",
-            now=advance(now, minutes=3)
+            tenant_id=tenant_id, approver_id="a2", signature="s2", now=advance(now, minutes=3)
         )
         assert campaign.state == CampaignState.APPROVED
 
@@ -307,12 +305,16 @@ class TestCampaignExecution:
         campaign = self._approved_campaign(tenant_id, now)
         instance_id = CampaignInstanceId.generate()
         campaign.start_instance(
-            tenant_id=tenant_id, instance_id=instance_id, resolved_target_count=1,
-            now=advance(now, minutes=5)
+            tenant_id=tenant_id,
+            instance_id=instance_id,
+            resolved_target_count=1,
+            now=advance(now, minutes=5),
         )
         campaign.complete(
-            tenant_id=tenant_id, instance_id=instance_id, composite_outcome="FullSuccess",
-            now=advance(now, minutes=60)
+            tenant_id=tenant_id,
+            instance_id=instance_id,
+            composite_outcome="FullSuccess",
+            now=advance(now, minutes=60),
         )
         campaign.pop_events()
         campaign.archive(tenant_id=tenant_id, now=advance(now, hours=2))
@@ -323,12 +325,16 @@ class TestCampaignExecution:
         campaign = self._approved_campaign(tenant_id, now)
         instance_id = CampaignInstanceId.generate()
         campaign.start_instance(
-            tenant_id=tenant_id, instance_id=instance_id, resolved_target_count=1,
-            now=advance(now, minutes=5)
+            tenant_id=tenant_id,
+            instance_id=instance_id,
+            resolved_target_count=1,
+            now=advance(now, minutes=5),
         )
         campaign.complete(
-            tenant_id=tenant_id, instance_id=instance_id, composite_outcome="FullSuccess",
-            now=advance(now, minutes=60)
+            tenant_id=tenant_id,
+            instance_id=instance_id,
+            composite_outcome="FullSuccess",
+            now=advance(now, minutes=60),
         )
         campaign.archive(tenant_id=tenant_id, now=advance(now, hours=2))
 

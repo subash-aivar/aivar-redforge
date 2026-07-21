@@ -26,9 +26,7 @@ class FakeCampaignRepository(ICampaignRepository):
         key = (str(campaign.campaign_id), str(campaign.tenant_id))
         self._store[key] = campaign
 
-    async def find_by_id(
-        self, campaign_id: CampaignId, tenant_id: TenantId
-    ) -> Campaign | None:
+    async def find_by_id(self, campaign_id: CampaignId, tenant_id: TenantId) -> Campaign | None:
         return self._store.get((str(campaign_id), str(tenant_id)))
 
     async def find_active_by_tenant(self, tenant_id: TenantId) -> list[Campaign]:
@@ -36,12 +34,11 @@ class FakeCampaignRepository(ICampaignRepository):
             c
             for c in self._store.values()
             if c.tenant_id == tenant_id
-            and c.state not in {CampaignState.ARCHIVED, CampaignState.COMPLETED, CampaignState.FAILED}
+            and c.state
+            not in {CampaignState.ARCHIVED, CampaignState.COMPLETED, CampaignState.FAILED}
         ]
 
-    async def find_by_engagement(
-        self, engagement_id: UUID, tenant_id: TenantId
-    ) -> list[Campaign]:
+    async def find_by_engagement(self, engagement_id: UUID, tenant_id: TenantId) -> list[Campaign]:
         return [
             c
             for c in self._store.values()
@@ -50,14 +47,8 @@ class FakeCampaignRepository(ICampaignRepository):
             and c.engagement_ref.engagement_id == engagement_id
         ]
 
-    async def find_by_state(
-        self, state: CampaignState, tenant_id: TenantId
-    ) -> list[Campaign]:
-        return [
-            c
-            for c in self._store.values()
-            if c.tenant_id == tenant_id and c.state == state
-        ]
+    async def find_by_state(self, state: CampaignState, tenant_id: TenantId) -> list[Campaign]:
+        return [c for c in self._store.values() if c.tenant_id == tenant_id and c.state == state]
 
 
 class FakeCampaignInstanceRepository(ICampaignInstanceRepository):
@@ -86,9 +77,7 @@ class FakeCampaignInstanceRepository(ICampaignInstanceRepository):
             if i.campaign_id == campaign_id and i.tenant_id == tenant_id
         ]
 
-    async def find_running_by_tenant(
-        self, tenant_id: TenantId
-    ) -> list[CampaignInstance]:
+    async def find_running_by_tenant(self, tenant_id: TenantId) -> list[CampaignInstance]:
         return [
             i
             for i in self._store.values()

@@ -35,9 +35,7 @@ class TaskGraphValidator:
                     f"Dependency references unknown predecessor task: {dep.predecessor_id}"
                 )
             if dep.successor_id not in task_ids:
-                errors.append(
-                    f"Dependency references unknown successor task: {dep.successor_id}"
-                )
+                errors.append(f"Dependency references unknown successor task: {dep.successor_id}")
         return errors
 
     def _find_cycle(self, graph: TaskGraph) -> list[str]:
@@ -51,9 +49,7 @@ class TaskGraphValidator:
                 in_degree[dep.successor_id] += 1
                 successors[dep.predecessor_id].append(dep.successor_id)
 
-        queue: deque[CampaignTaskId] = deque(
-            tid for tid, deg in in_degree.items() if deg == 0
-        )
+        queue: deque[CampaignTaskId] = deque(tid for tid, deg in in_degree.items() if deg == 0)
         visited_count = 0
 
         while queue:
@@ -65,9 +61,7 @@ class TaskGraphValidator:
                     queue.append(successor)
 
         if visited_count < len(task_ids):
-            cycle_nodes = [
-                str(tid) for tid, deg in in_degree.items() if deg > 0
-            ]
+            cycle_nodes = [str(tid) for tid, deg in in_degree.items() if deg > 0]
             return [f"Cycle detected involving tasks: {', '.join(cycle_nodes)}"]
         return []
 
@@ -85,13 +79,8 @@ class TaskGraphValidator:
                 successors[dep.predecessor_id].append(dep.successor_id)
                 predecessors[dep.successor_id].append(dep.predecessor_id)
 
-        queue: deque[CampaignTaskId] = deque(
-            tid for tid, deg in in_degree.items() if deg == 0
-        )
-        dist: dict[CampaignTaskId, int] = {
-            tid: task_map[tid].timeout_seconds
-            for tid in task_ids
-        }
+        queue: deque[CampaignTaskId] = deque(tid for tid, deg in in_degree.items() if deg == 0)
+        dist: dict[CampaignTaskId, int] = {tid: task_map[tid].timeout_seconds for tid in task_ids}
 
         while queue:
             node = queue.popleft()
@@ -114,24 +103,18 @@ class TaskGraphValidator:
                         f"HumanApprovalTask '{task.task_id}' missing HumanApprovalTaskConfig"
                     )
                 elif task.human_approval_config.gate_timeout_seconds <= 0:
-                    errors.append(
-                        f"HumanApprovalTask '{task.task_id}' must have timeout > 0"
-                    )
+                    errors.append(f"HumanApprovalTask '{task.task_id}' must have timeout > 0")
         return errors
 
     def _validate_barrier_tasks(self, graph: TaskGraph) -> list[str]:
         errors: list[str] = []
         existing_group_ids = frozenset(
-            str(t.task_group_id)
-            for t in graph.tasks
-            if t.task_group_id is not None
+            str(t.task_group_id) for t in graph.tasks if t.task_group_id is not None
         )
         for task in graph.tasks:
             if task.task_type == TaskType.BARRIER_TASK:
                 if task.barrier_policy is None:
-                    errors.append(
-                        f"BarrierTask '{task.task_id}' missing BarrierPolicy"
-                    )
+                    errors.append(f"BarrierTask '{task.task_id}' missing BarrierPolicy")
                 elif task.barrier_policy.task_group_id not in existing_group_ids:
                     errors.append(
                         f"BarrierTask '{task.task_id}' references unknown "
@@ -145,9 +128,7 @@ class TaskGraphValidator:
         for task in graph.tasks:
             if task.task_type == TaskType.ROLLBACK_TASK:
                 if task.rollback_task_ref is None:
-                    errors.append(
-                        f"RollbackTask '{task.task_id}' must have rollback_task_ref set"
-                    )
+                    errors.append(f"RollbackTask '{task.task_id}' must have rollback_task_ref set")
                 elif task.rollback_task_ref not in task_ids:
                     errors.append(
                         f"RollbackTask '{task.task_id}' references unknown task "
@@ -157,9 +138,7 @@ class TaskGraphValidator:
 
     def _validate_critical_path(self, graph: TaskGraph) -> list[str]:
         errors: list[str] = []
-        critical_tasks = [
-            t for t in graph.tasks if t.criticality == TaskCriticality.CRITICAL_PATH
-        ]
+        critical_tasks = [t for t in graph.tasks if t.criticality == TaskCriticality.CRITICAL_PATH]
         if not critical_tasks:
             return errors
 
@@ -177,8 +156,7 @@ class TaskGraphValidator:
         start_nodes = [tid for tid, deg in in_degree.items() if deg == 0]
         if len(start_nodes) != 1:
             errors.append(
-                f"CriticalPath tasks must have exactly one start node, "
-                f"found {len(start_nodes)}"
+                f"CriticalPath tasks must have exactly one start node, found {len(start_nodes)}"
             )
             return errors
 

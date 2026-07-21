@@ -68,10 +68,7 @@ class ObjectiveEvaluationEngine:
         findings: list[DetectionFindingRecord],
     ) -> tuple[ObjectiveOutcome, list[str], str]:
         technique_id = objective.parameters.get("technique_id")
-        matched = [
-            f for f in findings
-            if technique_id is None or f.technique_id == technique_id
-        ]
+        matched = [f for f in findings if technique_id is None or f.technique_id == technique_id]
         if matched:
             return (
                 ObjectiveOutcome.ACHIEVED,
@@ -86,10 +83,7 @@ class ObjectiveEvaluationEngine:
         evidence: list[EvidenceRecord],
     ) -> tuple[ObjectiveOutcome, list[str], str]:
         evidence_type = objective.parameters.get("evidence_type")
-        matched = [
-            e for e in evidence
-            if evidence_type is None or e.evidence_type == evidence_type
-        ]
+        matched = [e for e in evidence if evidence_type is None or e.evidence_type == evidence_type]
         if matched:
             return (
                 ObjectiveOutcome.ACHIEVED,
@@ -105,7 +99,8 @@ class ObjectiveEvaluationEngine:
     ) -> tuple[ObjectiveOutcome, list[str], str]:
         technique_id = objective.parameters.get("technique_id")
         matched = [
-            a for a in actions
+            a
+            for a in actions
             if a.outcome in {"Success", "PartialSuccess"}
             and (technique_id is None or a.technique_id == technique_id)
         ]
@@ -124,10 +119,7 @@ class ObjectiveEvaluationEngine:
     ) -> tuple[ObjectiveOutcome, list[str], str]:
         """Satisfied only if no M28 finding exists in the evaluation window."""
         technique_id = objective.parameters.get("technique_id")
-        matched = [
-            f for f in findings
-            if technique_id is None or f.technique_id == technique_id
-        ]
+        matched = [f for f in findings if technique_id is None or f.technique_id == technique_id]
         if not matched:
             return (
                 ObjectiveOutcome.ACHIEVED,

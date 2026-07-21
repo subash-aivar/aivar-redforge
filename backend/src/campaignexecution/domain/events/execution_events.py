@@ -8,6 +8,7 @@ from campaignexecution.domain.events.base import BaseDomainEvent
 
 # ── TaskGraphExecution events ─────────────────────────────────────────────────
 
+
 @dataclass(frozen=True, slots=True)
 class TaskGraphExecutionInitialized(BaseDomainEvent):
     campaign_instance_id: str
@@ -150,6 +151,7 @@ class SafetyPolicyBreached(BaseDomainEvent):
 
 
 # ── CampaignSafetyMonitor events ──────────────────────────────────────────────
+
 
 @dataclass(frozen=True, slots=True)
 class SafetyMonitorInitialized(BaseDomainEvent):

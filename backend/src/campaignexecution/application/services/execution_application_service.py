@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
+from uuid import uuid7
 
 from campaignexecution.application.dtos.execution_dtos import (
     ExecutionDTO,
@@ -25,6 +26,7 @@ from campaignexecution.domain.value_objects.enums import TaskOutcome
 from campaignexecution.domain.value_objects.execution_vos import (
     CampaignInstanceRef,
     EngagementRef,
+    PendingApprovalGate,
     PolicySnapshot,
     TaskGraphVersionRef,
 )
@@ -47,18 +49,24 @@ if TYPE_CHECKING:
         EvaluateBarrierCommand,
         GetExecutionQuery,
         GrantHumanApprovalCommand,
+        HandleApprovalTimeoutCommand,
+        HandleKillSwitchTriggeredCommand,
         InitializeCampaignExecutionCommand,
         InitiateRollbackCommand,
         PauseCampaignExecutionCommand,
+        ReachHumanApprovalGateCommand,
         RecordTaskCompletionCommand,
         RecordTaskFailureCommand,
+        ResolveConditionalBranchCommand,
         ResumeCampaignExecutionCommand,
+        SuccessorPredicateSpec,
         TriggerAutoAbortOnDetectionCommand,
     )
     from campaignexecution.application.ports.i_event_publisher import IEventPublisher
     from campaignexecution.application.ports.i_unit_of_work import IUnitOfWork
     from campaignexecution.domain.events.base import BaseDomainEvent
     from campaignexecution.domain.ports.i_attack_action_query_port import IAttackActionQueryPort
+    from campaignexecution.domain.ports.i_notification_port import INotificationPort
     from campaignexecution.domain.ports.i_operation_creation_port import IOperationCreationPort
 
 log = logging.getLogger(__name__)
@@ -88,7 +96,8 @@ def _to_execution_dto(execution: TaskGraphExecution) -> ExecutionDTO:
         task_records=records,
         pending_approval_gate_task_id=(
             str(execution.pending_approval_gate.task_id)
-            if execution.pending_approval_gate else None
+            if execution.pending_approval_gate
+            else None
         ),
     )
 
@@ -118,11 +127,13 @@ class ExecutionApplicationService:
         event_publisher: IEventPublisher,
         operation_creation_port: IOperationCreationPort,
         attack_action_query_port: IAttackActionQueryPort,
+        notification_port: INotificationPort,
     ) -> None:
         self._uow_factory = uow_factory
         self._event_publisher = event_publisher
         self._operation_port = operation_creation_port
         self._action_query_port = attack_action_query_port
+        self._notification_port = notification_port
         self._dispatch_svc = TaskDispatchService()
         self._branch_svc = BranchResolutionService()
         self._pause_coordinator = CampaignPauseCoordinator()
@@ -135,9 +146,22 @@ class ExecutionApplicationService:
             except Exception:
                 log.exception("Event publication failed — events discarded after commit")
 
-    async def initialize_execution(
-        self, cmd: InitializeCampaignExecutionCommand
-    ) -> ExecutionDTO:
+    def _resolve_successors(
+        self,
+        execution: TaskGraphExecution,
+        outcome: TaskOutcome,
+        completed_task_id: CampaignTaskId,
+        successors: tuple[SuccessorPredicateSpec, ...],
+    ) -> tuple[list[CampaignTaskId], list[CampaignTaskId]]:
+        specs = [(CampaignTaskId(s.task_id), s.predicate, s.objective_ref) for s in successors]
+        return self._branch_svc.resolve(
+            completed_task_id,
+            outcome,
+            specs,
+            execution.objective_states,
+        )
+
+    async def initialize_execution(self, cmd: InitializeCampaignExecutionCommand) -> ExecutionDTO:
         now = datetime.now(UTC)
         tenant = TenantId(cmd.tenant_id)
         execution_id = TaskGraphExecutionId.generate()
@@ -195,9 +219,23 @@ class ExecutionApplicationService:
         return _to_execution_dto(execution)
 
     async def dispatch_next_task(self, cmd: DispatchNextTasksCommand) -> ExecutionDTO:
+        from campaignexecution.application.commands.execution_commands import DispatchTaskSpec
+
         now = datetime.now(UTC)
         tenant = TenantId(cmd.tenant_id)
-        task_id = CampaignTaskId(cmd.task_id)
+        if cmd.tasks:
+            specs = list(cmd.tasks)
+        elif cmd.task_id is not None:
+            specs = [
+                DispatchTaskSpec(
+                    task_id=cmd.task_id,
+                    technique_id=cmd.technique_id,
+                    technique_name=cmd.technique_name,
+                    parameters=dict(cmd.parameters),
+                )
+            ]
+        else:
+            raise ApplicationValidationError("tasks", "Provide task_id or a non-empty tasks list")
 
         async with self._uow_factory() as uow:
             execution = await uow.executions.find_by_id(
@@ -210,25 +248,32 @@ class ExecutionApplicationService:
                 CampaignInstanceId(execution.campaign_instance_ref.instance_id), tenant
             )
 
-            # Enforce concurrent action ceiling before dispatch
-            if monitor is not None:
-                monitor.register_action(tenant, str(task_id), now)
+            if len(specs) > 1:
+                execution.start_execution_track(
+                    tenant,
+                    track_id=str(uuid7()),
+                    task_ids=[CampaignTaskId(s.task_id) for s in specs],
+                    now=now,
+                )
 
-            # Dispatch to M29 via port
-            operation_ref = await self._dispatch_svc.dispatch(
-                tenant_id=tenant,
-                campaign_instance_id=CampaignInstanceId(
-                    execution.campaign_instance_ref.instance_id
-                ),
-                task_id=task_id,
-                technique_id=cmd.technique_id,
-                technique_name=cmd.technique_name,
-                parameters=cmd.parameters,
-                engagement_ref=execution.engagement_ref,
-                port=self._operation_port,
-            )
+            for spec in specs:
+                task_id = CampaignTaskId(spec.task_id)
+                if monitor is not None:
+                    monitor.register_action(tenant, str(task_id), now)
 
-            execution.record_task_dispatched(tenant, task_id, operation_ref, now)
+                operation_ref = await self._dispatch_svc.dispatch(
+                    tenant_id=tenant,
+                    campaign_instance_id=CampaignInstanceId(
+                        execution.campaign_instance_ref.instance_id
+                    ),
+                    task_id=task_id,
+                    technique_id=spec.technique_id,
+                    technique_name=spec.technique_name,
+                    parameters=dict(spec.parameters),
+                    engagement_ref=execution.engagement_ref,
+                    port=self._operation_port,
+                )
+                execution.record_task_dispatched(tenant, task_id, operation_ref, now)
 
             await uow.executions.save(execution)
             if monitor is not None:
@@ -252,9 +297,6 @@ class ExecutionApplicationService:
         except ValueError:
             raise ApplicationValidationError("outcome", f"Unknown outcome: {cmd.outcome}") from None
 
-        ready_ids = [CampaignTaskId(tid) for tid in cmd.ready_successor_ids]
-        skipped_ids = [CampaignTaskId(tid) for tid in cmd.skipped_successor_ids]
-
         async with self._uow_factory() as uow:
             execution = await uow.executions.find_by_id(
                 TaskGraphExecutionId(cmd.execution_id), tenant
@@ -266,8 +308,19 @@ class ExecutionApplicationService:
                 CampaignInstanceId(execution.campaign_instance_ref.instance_id), tenant
             )
 
+            if cmd.successors:
+                ready_ids, skipped_ids = self._resolve_successors(
+                    execution, outcome, task_id, cmd.successors
+                )
+            else:
+                ready_ids = [CampaignTaskId(tid) for tid in cmd.ready_successor_ids]
+                skipped_ids = [CampaignTaskId(tid) for tid in cmd.skipped_successor_ids]
+
             execution.record_task_completion(
-                tenant, task_id, outcome, now,
+                tenant,
+                task_id,
+                outcome,
+                now,
                 ready_successor_ids=ready_ids,
                 skipped_successor_ids=skipped_ids,
             )
@@ -285,6 +338,41 @@ class ExecutionApplicationService:
         if monitor is not None:
             all_events.extend(monitor.pop_events())
         await self._publish(all_events)
+        return _to_execution_dto(execution)
+
+    async def resolve_conditional_branch(
+        self, cmd: ResolveConditionalBranchCommand
+    ) -> ExecutionDTO:
+        now = datetime.now(UTC)
+        tenant = TenantId(cmd.tenant_id)
+        completed_id = CampaignTaskId(cmd.completed_task_id)
+        try:
+            outcome = TaskOutcome(cmd.outcome)
+        except ValueError:
+            raise ApplicationValidationError("outcome", f"Unknown outcome: {cmd.outcome}") from None
+
+        async with self._uow_factory() as uow:
+            execution = await uow.executions.find_by_id(
+                TaskGraphExecutionId(cmd.execution_id), tenant
+            )
+            if execution is None:
+                raise ApplicationNotFoundError("TaskGraphExecution", str(cmd.execution_id))
+
+            ready_ids, skipped_ids = self._resolve_successors(
+                execution, outcome, completed_id, cmd.successors
+            )
+            execution.record_task_completion(
+                tenant,
+                completed_id,
+                outcome,
+                now,
+                ready_successor_ids=ready_ids,
+                skipped_successor_ids=skipped_ids,
+            )
+            await uow.executions.save(execution)
+            await uow.commit()
+
+        await self._publish(execution.pop_events())
         return _to_execution_dto(execution)
 
     async def record_task_failure(self, cmd: RecordTaskFailureCommand) -> ExecutionDTO:
@@ -339,6 +427,38 @@ class ExecutionApplicationService:
         await self._publish(execution.pop_events())
         return _to_execution_dto(execution)
 
+    async def reach_human_approval_gate(self, cmd: ReachHumanApprovalGateCommand) -> ExecutionDTO:
+        now = datetime.now(UTC)
+        tenant = TenantId(cmd.tenant_id)
+        pending_gate = PendingApprovalGate(
+            task_id=CampaignTaskId(cmd.task_id),
+            gate_created_at=now,
+            gate_timeout_seconds=cmd.gate_timeout_seconds,
+            required_approver_role=cmd.required_approver_role,
+            default_on_timeout=cmd.default_on_timeout,
+        )
+
+        async with self._uow_factory() as uow:
+            execution = await uow.executions.find_by_id(
+                TaskGraphExecutionId(cmd.execution_id), tenant
+            )
+            if execution is None:
+                raise ApplicationNotFoundError("TaskGraphExecution", str(cmd.execution_id))
+
+            self._pause_coordinator.handle_human_approval_gate(execution, tenant, pending_gate, now)
+            await uow.executions.save(execution)
+            await uow.commit()
+
+        await self._notification_port.notify_human_approval_gate(
+            tenant_id=str(tenant),
+            execution_id=str(execution.execution_id),
+            task_id=str(cmd.task_id),
+            required_approver_role=cmd.required_approver_role,
+            gate_timeout_seconds=cmd.gate_timeout_seconds,
+        )
+        await self._publish(execution.pop_events())
+        return _to_execution_dto(execution)
+
     async def grant_human_approval(self, cmd: GrantHumanApprovalCommand) -> ExecutionDTO:
         now = datetime.now(UTC)
         tenant = TenantId(cmd.tenant_id)
@@ -375,6 +495,24 @@ class ExecutionApplicationService:
         await self._publish(execution.pop_events())
         return _to_execution_dto(execution)
 
+    async def handle_approval_timeout(self, cmd: HandleApprovalTimeoutCommand) -> ExecutionDTO:
+        now = datetime.now(UTC)
+        tenant = TenantId(cmd.tenant_id)
+
+        async with self._uow_factory() as uow:
+            execution = await uow.executions.find_by_id(
+                TaskGraphExecutionId(cmd.execution_id), tenant
+            )
+            if execution is None:
+                raise ApplicationNotFoundError("TaskGraphExecution", str(cmd.execution_id))
+
+            execution.handle_approval_timeout(tenant, now)
+            await uow.executions.save(execution)
+            await uow.commit()
+
+        await self._publish(execution.pop_events())
+        return _to_execution_dto(execution)
+
     async def pause_execution(self, cmd: PauseCampaignExecutionCommand) -> ExecutionDTO:
         now = datetime.now(UTC)
         tenant = TenantId(cmd.tenant_id)
@@ -390,6 +528,11 @@ class ExecutionApplicationService:
             await uow.executions.save(execution)
             await uow.commit()
 
+        await self._notification_port.notify_campaign_paused(
+            tenant_id=str(tenant),
+            execution_id=str(execution.execution_id),
+            reason=cmd.reason,
+        )
         await self._publish(execution.pop_events())
         return _to_execution_dto(execution)
 
@@ -411,6 +554,31 @@ class ExecutionApplicationService:
         await self._publish(execution.pop_events())
         return _to_execution_dto(execution)
 
+    async def handle_kill_switch_triggered(
+        self, cmd: HandleKillSwitchTriggeredCommand
+    ) -> ExecutionDTO:
+        now = datetime.now(UTC)
+        tenant = TenantId(cmd.tenant_id)
+
+        async with self._uow_factory() as uow:
+            execution = await uow.executions.find_by_id(
+                TaskGraphExecutionId(cmd.execution_id), tenant
+            )
+            if execution is None:
+                raise ApplicationNotFoundError("TaskGraphExecution", str(cmd.execution_id))
+
+            self._pause_coordinator.handle_kill_switch_triggered(execution, tenant, now)
+            await uow.executions.save(execution)
+            await uow.commit()
+
+        await self._notification_port.notify_campaign_paused(
+            tenant_id=str(tenant),
+            execution_id=str(execution.execution_id),
+            reason="M29 kill switch triggered",
+        )
+        await self._publish(execution.pop_events())
+        return _to_execution_dto(execution)
+
     async def initiate_rollback(self, cmd: InitiateRollbackCommand) -> ExecutionDTO:
         now = datetime.now(UTC)
         tenant = TenantId(cmd.tenant_id)
@@ -423,10 +591,26 @@ class ExecutionApplicationService:
             if execution is None:
                 raise ApplicationNotFoundError("TaskGraphExecution", str(cmd.execution_id))
 
-            rollback_plan = self._rollback_executor.compute_rollback_plan(
-                execution, eligible_ids
-            )
+            rollback_plan = self._rollback_executor.compute_rollback_plan(execution, eligible_ids)
             execution.initiate_rollback(tenant, cmd.trigger_reason, len(rollback_plan), now)
+
+            rolled = 0
+            for step in cmd.steps:
+                await self._rollback_executor.execute_rollback_step(
+                    execution=execution,
+                    tenant_id=tenant,
+                    task_id=CampaignTaskId(step.task_id),
+                    rollback_technique_id=step.technique_id,
+                    rollback_technique_name=step.technique_name,
+                    rollback_parameters=dict(step.parameters),
+                    port=self._operation_port,
+                    now=now,
+                )
+                rolled += 1
+
+            if cmd.steps and rolled == len(cmd.steps):
+                execution.complete_rollback(tenant, rolled, now)
+
             await uow.executions.save(execution)
             await uow.commit()
 
@@ -508,10 +692,29 @@ class ExecutionApplicationService:
                 return None
 
             monitor.trigger_auto_abort_on_detection(tenant, cmd.detection_detail, now)
+            execution = await uow.executions.find_by_campaign_instance(instance_id, tenant)
+            if execution is not None:
+                self._pause_coordinator.handle_safety_breach(
+                    execution,
+                    tenant,
+                    breach_type="AutoAbortOnDetection",
+                    details=cmd.detection_detail,
+                    now=now,
+                )
+                await uow.executions.save(execution)
+
             await uow.safety_monitors.save(monitor)
             await uow.commit()
 
-        await self._publish(monitor.pop_events())
+        events: list[BaseDomainEvent] = list(monitor.pop_events())
+        if execution is not None:
+            events.extend(execution.pop_events())
+            await self._notification_port.notify_campaign_paused(
+                tenant_id=str(tenant),
+                execution_id=str(execution.execution_id),
+                reason=f"Auto-abort on detection: {cmd.detection_detail}",
+            )
+        await self._publish(events)
         return _to_monitor_dto(monitor)
 
     async def get_execution(self, query: GetExecutionQuery) -> ExecutionDTO | None:

@@ -72,9 +72,7 @@ class FakeMetricsSnapshotRepository(ICampaignMetricsSnapshotRepository):
         limit: int = 50,
     ) -> list[CampaignMetricsSnapshot]:
         matched = [
-            s
-            for s in self._items
-            if s.campaign_id == campaign_id and s.tenant_id == tenant_id
+            s for s in self._items if s.campaign_id == campaign_id and s.tenant_id == tenant_id
         ]
         matched.sort(key=lambda s: s.run_number, reverse=True)
         return matched[:limit]
@@ -85,9 +83,7 @@ class FakeMetricsSnapshotRepository(ICampaignMetricsSnapshotRepository):
         since: datetime,
     ) -> list[CampaignMetricsSnapshot]:
         return [
-            s
-            for s in self._items
-            if s.tenant_id == tenant_id and s.snapshot_timestamp >= since
+            s for s in self._items if s.tenant_id == tenant_id and s.snapshot_timestamp >= since
         ]
 
 

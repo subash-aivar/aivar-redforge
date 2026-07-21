@@ -21,6 +21,9 @@ class CreateCampaignCommand:
     auto_abort_on_detection: bool = False
     auto_abort_on_objective_failure: bool = False
     blast_radius_ceiling: str = "Probe"
+    scenario_template_id: UUID | None = None
+    task_graph_id: UUID | None = None
+    task_graph_version: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -86,6 +89,7 @@ class ArchiveCampaignCommand:
 
 # ── Phase 4: Scheduling commands ──────────────────────────────────────────────
 
+
 @dataclass(frozen=True, slots=True)
 class CancelCampaignScheduleCommand:
     tenant_id: UUID
@@ -114,3 +118,15 @@ class ProcessScheduledFireCommand:
     campaign_id: UUID
     scheduled_fire_time: str  # ISO-8601 string
     consecutive_skips: int = 0
+
+
+@dataclass(frozen=True, slots=True)
+class ScheduleOneShotCampaignCommand:
+    tenant_id: UUID
+    campaign_id: UUID
+    fire_at: str  # ISO-8601
+
+
+@dataclass(frozen=True, slots=True)
+class RecoverSchedulesCommand:
+    tenant_id: UUID

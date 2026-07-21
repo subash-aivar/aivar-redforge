@@ -69,9 +69,7 @@ async def test_evaluate_campaign_full_pipeline() -> None:
     assert len(graph.nodes) == 1
     assert len(graph.evaluated_by_edges) == 1
     assert len(graph.technique_edges) >= 1
-    assert any(
-        type(e).__name__ == "CampaignEvaluationCompleted" for e in publisher.events
-    )
+    assert any(type(e).__name__ == "CampaignEvaluationCompleted" for e in publisher.events)
 
 
 @pytest.mark.asyncio

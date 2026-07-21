@@ -358,15 +358,95 @@ class TestExecutionOrderQuery:
         )
         graph_id = create_dto.graph_id
 
-        a = await svc.add_task(AddTaskCommand(tenant_id=tenant_id.value, graph_id=graph_id, task_type="OperationTask", name="A", criticality="Required", timeout_seconds=100, technique_id="T1", technique_name="T1", technique_parameters={}))
-        b = await svc.add_task(AddTaskCommand(tenant_id=tenant_id.value, graph_id=graph_id, task_type="OperationTask", name="B", criticality="Required", timeout_seconds=100, technique_id="T1", technique_name="T1", technique_parameters={}))
-        c = await svc.add_task(AddTaskCommand(tenant_id=tenant_id.value, graph_id=graph_id, task_type="OperationTask", name="C", criticality="Required", timeout_seconds=100, technique_id="T1", technique_name="T1", technique_parameters={}))
-        d = await svc.add_task(AddTaskCommand(tenant_id=tenant_id.value, graph_id=graph_id, task_type="OperationTask", name="D", criticality="Required", timeout_seconds=100, technique_id="T1", technique_name="T1", technique_parameters={}))
+        a = await svc.add_task(
+            AddTaskCommand(
+                tenant_id=tenant_id.value,
+                graph_id=graph_id,
+                task_type="OperationTask",
+                name="A",
+                criticality="Required",
+                timeout_seconds=100,
+                technique_id="T1",
+                technique_name="T1",
+                technique_parameters={},
+            )
+        )
+        b = await svc.add_task(
+            AddTaskCommand(
+                tenant_id=tenant_id.value,
+                graph_id=graph_id,
+                task_type="OperationTask",
+                name="B",
+                criticality="Required",
+                timeout_seconds=100,
+                technique_id="T1",
+                technique_name="T1",
+                technique_parameters={},
+            )
+        )
+        c = await svc.add_task(
+            AddTaskCommand(
+                tenant_id=tenant_id.value,
+                graph_id=graph_id,
+                task_type="OperationTask",
+                name="C",
+                criticality="Required",
+                timeout_seconds=100,
+                technique_id="T1",
+                technique_name="T1",
+                technique_parameters={},
+            )
+        )
+        d = await svc.add_task(
+            AddTaskCommand(
+                tenant_id=tenant_id.value,
+                graph_id=graph_id,
+                task_type="OperationTask",
+                name="D",
+                criticality="Required",
+                timeout_seconds=100,
+                technique_id="T1",
+                technique_name="T1",
+                technique_parameters={},
+            )
+        )
 
-        await svc.add_dependency(AddDependencyCommand(tenant_id=tenant_id.value, graph_id=graph_id, predecessor_task_id=a.task_id, successor_task_id=b.task_id, predicate="AlwaysExecute"))
-        await svc.add_dependency(AddDependencyCommand(tenant_id=tenant_id.value, graph_id=graph_id, predecessor_task_id=a.task_id, successor_task_id=c.task_id, predicate="AlwaysExecute"))
-        await svc.add_dependency(AddDependencyCommand(tenant_id=tenant_id.value, graph_id=graph_id, predecessor_task_id=b.task_id, successor_task_id=d.task_id, predicate="AlwaysExecute"))
-        await svc.add_dependency(AddDependencyCommand(tenant_id=tenant_id.value, graph_id=graph_id, predecessor_task_id=c.task_id, successor_task_id=d.task_id, predicate="AlwaysExecute"))
+        await svc.add_dependency(
+            AddDependencyCommand(
+                tenant_id=tenant_id.value,
+                graph_id=graph_id,
+                predecessor_task_id=a.task_id,
+                successor_task_id=b.task_id,
+                predicate="AlwaysExecute",
+            )
+        )
+        await svc.add_dependency(
+            AddDependencyCommand(
+                tenant_id=tenant_id.value,
+                graph_id=graph_id,
+                predecessor_task_id=a.task_id,
+                successor_task_id=c.task_id,
+                predicate="AlwaysExecute",
+            )
+        )
+        await svc.add_dependency(
+            AddDependencyCommand(
+                tenant_id=tenant_id.value,
+                graph_id=graph_id,
+                predecessor_task_id=b.task_id,
+                successor_task_id=d.task_id,
+                predicate="AlwaysExecute",
+            )
+        )
+        await svc.add_dependency(
+            AddDependencyCommand(
+                tenant_id=tenant_id.value,
+                graph_id=graph_id,
+                predecessor_task_id=c.task_id,
+                successor_task_id=d.task_id,
+                predicate="AlwaysExecute",
+            )
+        )
 
         order_dto = await svc.get_execution_order(
             GetExecutionOrderQuery(tenant_id=tenant_id.value, graph_id=graph_id)

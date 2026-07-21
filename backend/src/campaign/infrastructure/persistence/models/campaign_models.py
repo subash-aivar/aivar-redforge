@@ -34,12 +34,8 @@ class CampaignModel(Base):
     kind: Mapped[str] = mapped_column(String(32), nullable=False)
     owner_id: Mapped[str] = mapped_column(String(256), nullable=False)
     state: Mapped[str] = mapped_column(String(32), nullable=False)
-    engagement_id: Mapped[UUID | None] = mapped_column(
-        PgUUID(as_uuid=True), nullable=True
-    )
-    engagement_tenant_id: Mapped[UUID | None] = mapped_column(
-        PgUUID(as_uuid=True), nullable=True
-    )
+    engagement_id: Mapped[UUID | None] = mapped_column(PgUUID(as_uuid=True), nullable=True)
+    engagement_tenant_id: Mapped[UUID | None] = mapped_column(PgUUID(as_uuid=True), nullable=True)
     safety_policy_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
     approval_policy_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
     schedule_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
@@ -85,14 +81,10 @@ class CampaignApprovalModel(Base):
     approval_scope: Mapped[str] = mapped_column(String(128), nullable=False)
     approved_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     revoked: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-    revoked_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     revoked_by: Mapped[str | None] = mapped_column(String(256), nullable=True)
 
-    campaign: Mapped[CampaignModel] = relationship(
-        "CampaignModel", back_populates="approvals"
-    )
+    campaign: Mapped[CampaignModel] = relationship("CampaignModel", back_populates="approvals")
 
     __table_args__ = (
         Index("ix_campaign_approvals_campaign_id", "campaign_id"),
@@ -111,15 +103,11 @@ class CampaignObjectiveModel(Base):
     )
     objective_type: Mapped[str] = mapped_column(String(64), nullable=False)
     description: Mapped[str] = mapped_column(String(1024), nullable=False)
-    evaluation_criteria_json: Mapped[dict[str, Any]] = mapped_column(
-        JSONB, nullable=False
-    )
+    evaluation_criteria_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
     state: Mapped[str] = mapped_column(String(32), nullable=False)
     sealed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
-    campaign: Mapped[CampaignModel] = relationship(
-        "CampaignModel", back_populates="objectives"
-    )
+    campaign: Mapped[CampaignModel] = relationship("CampaignModel", back_populates="objectives")
 
     __table_args__ = (
         Index("ix_campaign_objectives_campaign_id", "campaign_id"),
@@ -135,13 +123,9 @@ class CampaignInstanceModel(Base):
     tenant_id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), nullable=False)
     run_number: Mapped[int] = mapped_column(Integer, nullable=False)
     state: Mapped[str] = mapped_column(String(32), nullable=False)
-    resolved_targets_json: Mapped[list[Any]] = mapped_column(
-        JSONB, nullable=False, default=list
-    )
+    resolved_targets_json: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    completed_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     failure_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     row_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
 

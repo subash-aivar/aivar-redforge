@@ -191,12 +191,18 @@ class TestInvalidTransitions:
         graph.add_task(tenant_id, t1, now)
         graph.add_task(tenant_id, t2, now)
         graph.add_dependency(
-            tenant_id, t1.task_id, t2.task_id,
-            ConditionalBranchConfig(DependencyPredicate.ALWAYS_EXECUTE), now
+            tenant_id,
+            t1.task_id,
+            t2.task_id,
+            ConditionalBranchConfig(DependencyPredicate.ALWAYS_EXECUTE),
+            now,
         )
         graph.add_dependency(
-            tenant_id, t2.task_id, t1.task_id,
-            ConditionalBranchConfig(DependencyPredicate.ALWAYS_EXECUTE), now
+            tenant_id,
+            t2.task_id,
+            t1.task_id,
+            ConditionalBranchConfig(DependencyPredicate.ALWAYS_EXECUTE),
+            now,
         )
         validator = TaskGraphValidator()
         with pytest.raises(TaskGraphValidationFailed):

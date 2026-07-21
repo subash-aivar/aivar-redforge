@@ -34,6 +34,7 @@ class CoverageComputationResult:
     late_detections: tuple[LateDetectionRecord, ...]
     techniques_executed: int
     techniques_detected: int
+    per_phase_coverage: tuple[tuple[str, float], ...] = ()
 
 
 class DetectionCoverageCalculator:
@@ -55,6 +56,7 @@ class DetectionCoverageCalculator:
                 late_detections=(),
                 techniques_executed=0,
                 techniques_detected=0,
+                per_phase_coverage=(),
             )
 
         window_seconds = config.correlation_window_minutes * 60
@@ -71,9 +73,7 @@ class DetectionCoverageCalculator:
         actions_failed = sum(1 for a in actions if a.outcome == "Failure")
 
         for technique_id, tech_actions in actions_by_technique.items():
-            succeeded = any(
-                a.outcome in {"Success", "PartialSuccess"} for a in tech_actions
-            )
+            succeeded = any(a.outcome in {"Success", "PartialSuccess"} for a in tech_actions)
             if succeeded:
                 techniques_succeeded += 1
 
@@ -90,9 +90,7 @@ class DetectionCoverageCalculator:
                             mttd_samples.append(delay)
                     continue
 
-                heuristic = findings_by_asset_technique.get(
-                    (action.asset_ref, technique_id), []
-                )
+                heuristic = findings_by_asset_technique.get((action.asset_ref, technique_id), [])
                 for f in heuristic:
                     delay = self._delay_seconds(action, f)
                     if delay is None:
@@ -130,9 +128,7 @@ class DetectionCoverageCalculator:
 
         techniques_executed = techniques_attempted
         coverage = (
-            (techniques_detected / techniques_executed) * 100.0
-            if techniques_executed > 0
-            else 0.0
+            (techniques_detected / techniques_executed) * 100.0 if techniques_executed > 0 else 0.0
         )
         success_rate = (
             (techniques_succeeded / techniques_attempted) * 100.0
@@ -141,13 +137,9 @@ class DetectionCoverageCalculator:
         )
         techniques_evaded = sum(1 for t in technique_outcomes if t.evaded)
         evasion = (
-            (techniques_evaded / techniques_executed) * 100.0
-            if techniques_executed > 0
-            else 0.0
+            (techniques_evaded / techniques_executed) * 100.0 if techniques_executed > 0 else 0.0
         )
-        mttd = (
-            sum(mttd_samples) / len(mttd_samples) if mttd_samples else None
-        )
+        mttd = sum(mttd_samples) / len(mttd_samples) if mttd_samples else None
 
         metrics = EvaluationMetrics(
             detection_coverage_percent=round(coverage, 2),
@@ -157,13 +149,33 @@ class DetectionCoverageCalculator:
             actions_executed_count=len(actions),
             actions_failed_count=actions_failed,
         )
+        per_phase = self._per_phase_coverage(actions, technique_outcomes)
         return CoverageComputationResult(
             metrics=metrics,
             technique_outcomes=tuple(technique_outcomes),
             late_detections=tuple(late_detections),
             techniques_executed=techniques_executed,
             techniques_detected=techniques_detected,
+            per_phase_coverage=per_phase,
         )
+
+    def _per_phase_coverage(
+        self,
+        actions: list[AttackActionRecord],
+        technique_outcomes: list[TechniqueOutcomeRecord],
+    ) -> tuple[tuple[str, float], ...]:
+        detected_by_tech = {t.technique_ref.technique_id: t.detected for t in technique_outcomes}
+        phase_totals: dict[str, list[bool]] = {}
+        for action in actions:
+            phase = action.kill_chain_phase or "Unknown"
+            phase_totals.setdefault(phase, []).append(
+                detected_by_tech.get(action.technique_id, False)
+            )
+        result: list[tuple[str, float]] = []
+        for phase, flags in sorted(phase_totals.items()):
+            pct = (sum(1 for f in flags if f) / len(flags)) * 100.0 if flags else 0.0
+            result.append((phase, round(pct, 2)))
+        return tuple(result)
 
     def _group_actions(
         self, actions: list[AttackActionRecord]

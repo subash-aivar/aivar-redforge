@@ -28,6 +28,8 @@ from tests.campaignexecution.fakes.repos import FakeEventPublisher, FakeUnitOfWo
 
 
 def make_service(uow: FakeUnitOfWork, publisher: FakeEventPublisher) -> ExecutionApplicationService:
+    from campaignexecution.infrastructure.acl.degraded_adapters import StubNotificationAdapter
+
     op_port = StubOperationCreationAdapter()
     action_port = StubAttackActionQueryAdapter()
     return ExecutionApplicationService(
@@ -35,6 +37,7 @@ def make_service(uow: FakeUnitOfWork, publisher: FakeEventPublisher) -> Executio
         event_publisher=publisher,
         operation_creation_port=op_port,
         attack_action_query_port=action_port,
+        notification_port=StubNotificationAdapter(),
     )
 
 
@@ -59,6 +62,7 @@ def tenant_id() -> object:
 
 
 # ── Initialization ─────────────────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_initialize_execution_creates_dto(
@@ -105,6 +109,7 @@ async def test_initialize_publishes_events(
 
 # ── Dispatch ───────────────────────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_dispatch_task_returns_running_state(
     service: ExecutionApplicationService,
@@ -132,11 +137,14 @@ async def test_dispatch_task_returns_running_state(
         TaskGraphExecutionId,
         TenantId,
     )
+
     execution = await uow.executions.find_by_id(
-        TaskGraphExecutionId(UUID(exec_id)), TenantId(tenant_id)  # type: ignore[arg-type]
+        TaskGraphExecutionId(UUID(exec_id)),
+        TenantId(tenant_id),  # type: ignore[arg-type]
     )
     assert execution is not None
     from datetime import UTC, datetime
+
     execution.mark_task_ready(TenantId(tenant_id), CampaignTaskId(task_id), datetime.now(UTC))  # type: ignore[arg-type]
 
     dispatch_cmd = DispatchNextTasksCommand(
@@ -153,6 +161,7 @@ async def test_dispatch_task_returns_running_state(
 
 
 # ── Task completion ────────────────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_record_task_completion(
@@ -184,7 +193,8 @@ async def test_record_task_completion(
     exec_id = UUID(dto.execution_id)
 
     execution = await uow.executions.find_by_id(
-        TaskGraphExecutionId(exec_id), TenantId(tenant_id)  # type: ignore[arg-type]
+        TaskGraphExecutionId(exec_id),
+        TenantId(tenant_id),  # type: ignore[arg-type]
     )
     assert execution is not None
     t = CampaignTaskId(task_id)
@@ -205,6 +215,7 @@ async def test_record_task_completion(
 
 
 # ── Task failure ───────────────────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_record_task_failure(
@@ -236,7 +247,8 @@ async def test_record_task_failure(
     exec_id = UUID(dto.execution_id)
 
     execution = await uow.executions.find_by_id(
-        TaskGraphExecutionId(exec_id), TenantId(tenant_id)  # type: ignore[arg-type]
+        TaskGraphExecutionId(exec_id),
+        TenantId(tenant_id),  # type: ignore[arg-type]
     )
     assert execution is not None
     t = CampaignTaskId(task_id)
@@ -256,6 +268,7 @@ async def test_record_task_failure(
 
 
 # ── Pause and resume ───────────────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_pause_and_resume_execution(
@@ -296,6 +309,7 @@ async def test_pause_and_resume_execution(
 
 # ── Not found ──────────────────────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_get_execution_not_found_returns_none(
     service: ExecutionApplicationService,
@@ -310,6 +324,7 @@ async def test_get_execution_not_found_returns_none(
 
 
 # ── Auto-abort on detection ────────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_trigger_auto_abort_on_detection(
@@ -342,6 +357,7 @@ async def test_trigger_auto_abort_on_detection(
 
 # ── Abort ──────────────────────────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_abort_execution(
     service: ExecutionApplicationService,
@@ -371,6 +387,7 @@ async def test_abort_execution(
 
 
 # ── Rollback ───────────────────────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_initiate_rollback_from_paused(
@@ -406,3 +423,199 @@ async def test_initiate_rollback_from_paused(
         )
     )
     assert rollback_dto.state == "RollingBack"
+
+
+# ── Phase 3 wiring: branch resolution, kill switch, approval, parallel ────────
+
+
+@pytest.mark.asyncio
+async def test_record_completion_uses_branch_resolution_service(
+    service: ExecutionApplicationService,
+    uow: FakeUnitOfWork,
+    publisher: FakeEventPublisher,
+    tenant_id: object,
+) -> None:
+    from datetime import UTC, datetime
+    from uuid import UUID
+
+    from campaignexecution.application.commands.execution_commands import (
+        SuccessorPredicateSpec,
+    )
+    from campaignexecution.domain.value_objects.execution_vos import OperationRef
+    from campaignexecution.domain.value_objects.identifiers import (
+        CampaignTaskId,
+        TaskGraphExecutionId,
+        TenantId,
+    )
+
+    task_a = uuid4()
+    task_ok = uuid4()
+    task_fail = uuid4()
+    init_dto = await service.initialize_execution(
+        InitializeCampaignExecutionCommand(
+            tenant_id=tenant_id,  # type: ignore[arg-type]
+            campaign_instance_id=uuid4(),
+            campaign_id=uuid4(),
+            graph_id=uuid4(),
+            graph_version="1.0.0",
+            engagement_id=uuid4(),
+            task_ids=[task_a, task_ok, task_fail],
+        )
+    )
+    exec_id = UUID(init_dto.execution_id)
+    execution = await uow.executions.find_by_id(
+        TaskGraphExecutionId(exec_id),
+        TenantId(tenant_id),  # type: ignore[arg-type]
+    )
+    assert execution is not None
+    tid = TenantId(tenant_id)  # type: ignore[arg-type]
+    now = datetime.now(UTC)
+    execution.mark_task_ready(tid, CampaignTaskId(task_a), now)
+    execution.record_task_dispatched(
+        tid,
+        CampaignTaskId(task_a),
+        OperationRef(operation_id=uuid4(), tenant_id=tenant_id),  # type: ignore[arg-type]
+        now,
+    )
+
+    dto = await service.record_task_completion(
+        RecordTaskCompletionCommand(
+            tenant_id=tenant_id,  # type: ignore[arg-type]
+            execution_id=exec_id,
+            task_id=task_a,
+            outcome="Success",
+            successors=(
+                SuccessorPredicateSpec(task_id=task_ok, predicate="ExecuteOnSuccess"),
+                SuccessorPredicateSpec(task_id=task_fail, predicate="ExecuteOnFailure"),
+            ),
+        )
+    )
+    by_id = {r.task_id: r.state for r in dto.task_records}
+    assert by_id[str(task_ok)] == "ReadyToDispatch"
+    assert by_id[str(task_fail)] == "Skipped"
+    assert any(type(e).__name__ == "ConditionalBranchResolved" for e in publisher.published)
+
+
+@pytest.mark.asyncio
+async def test_kill_switch_pauses_running_execution(
+    service: ExecutionApplicationService,
+    tenant_id: object,
+) -> None:
+    from uuid import UUID
+
+    from campaignexecution.application.commands.execution_commands import (
+        HandleKillSwitchTriggeredCommand,
+    )
+
+    dto = await service.initialize_execution(
+        InitializeCampaignExecutionCommand(
+            tenant_id=tenant_id,  # type: ignore[arg-type]
+            campaign_instance_id=uuid4(),
+            campaign_id=uuid4(),
+            graph_id=uuid4(),
+            graph_version="1.0.0",
+            engagement_id=uuid4(),
+            task_ids=[uuid4()],
+        )
+    )
+    paused = await service.handle_kill_switch_triggered(
+        HandleKillSwitchTriggeredCommand(
+            tenant_id=tenant_id,  # type: ignore[arg-type]
+            execution_id=UUID(dto.execution_id),
+        )
+    )
+    assert paused.state == "Paused"
+
+
+@pytest.mark.asyncio
+async def test_reach_human_approval_gate_notifies(
+    service: ExecutionApplicationService,
+    tenant_id: object,
+) -> None:
+    from uuid import UUID
+
+    from campaignexecution.application.commands.execution_commands import (
+        ReachHumanApprovalGateCommand,
+    )
+    from campaignexecution.infrastructure.acl.degraded_adapters import StubNotificationAdapter
+
+    # Rebuild service with shared notification stub
+    assert isinstance(service._notification_port, StubNotificationAdapter)
+    notify = service._notification_port
+    task_id = uuid4()
+    dto = await service.initialize_execution(
+        InitializeCampaignExecutionCommand(
+            tenant_id=tenant_id,  # type: ignore[arg-type]
+            campaign_instance_id=uuid4(),
+            campaign_id=uuid4(),
+            graph_id=uuid4(),
+            graph_version="1.0.0",
+            engagement_id=uuid4(),
+            task_ids=[task_id],
+        )
+    )
+    result = await service.reach_human_approval_gate(
+        ReachHumanApprovalGateCommand(
+            tenant_id=tenant_id,  # type: ignore[arg-type]
+            execution_id=UUID(dto.execution_id),
+            task_id=task_id,
+            gate_timeout_seconds=60,
+            required_approver_role="campaign_approver",
+            default_on_timeout="abort",
+        )
+    )
+    assert result.state == "WaitingForApproval"
+    assert len(notify.approval_gates) == 1
+
+
+@pytest.mark.asyncio
+async def test_parallel_dispatch_emits_track_started(
+    service: ExecutionApplicationService,
+    uow: FakeUnitOfWork,
+    publisher: FakeEventPublisher,
+    tenant_id: object,
+) -> None:
+    from datetime import UTC, datetime
+    from uuid import UUID
+
+    from campaignexecution.application.commands.execution_commands import DispatchTaskSpec
+    from campaignexecution.domain.value_objects.identifiers import (
+        CampaignTaskId,
+        TaskGraphExecutionId,
+        TenantId,
+    )
+
+    t1, t2 = uuid4(), uuid4()
+    dto = await service.initialize_execution(
+        InitializeCampaignExecutionCommand(
+            tenant_id=tenant_id,  # type: ignore[arg-type]
+            campaign_instance_id=uuid4(),
+            campaign_id=uuid4(),
+            graph_id=uuid4(),
+            graph_version="1.0.0",
+            engagement_id=uuid4(),
+            task_ids=[t1, t2],
+        )
+    )
+    exec_id = UUID(dto.execution_id)
+    execution = await uow.executions.find_by_id(
+        TaskGraphExecutionId(exec_id),
+        TenantId(tenant_id),  # type: ignore[arg-type]
+    )
+    assert execution is not None
+    tid = TenantId(tenant_id)  # type: ignore[arg-type]
+    now = datetime.now(UTC)
+    execution.mark_task_ready(tid, CampaignTaskId(t1), now)
+    execution.mark_task_ready(tid, CampaignTaskId(t2), now)
+
+    await service.dispatch_next_task(
+        DispatchNextTasksCommand(
+            tenant_id=tenant_id,  # type: ignore[arg-type]
+            execution_id=exec_id,
+            tasks=(
+                DispatchTaskSpec(task_id=t1, technique_id="T1", technique_name="A"),
+                DispatchTaskSpec(task_id=t2, technique_id="T2", technique_name="B"),
+            ),
+        )
+    )
+    assert any(type(e).__name__ == "ExecutionTrackStarted" for e in publisher.published)

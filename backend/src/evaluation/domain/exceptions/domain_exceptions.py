@@ -19,9 +19,7 @@ class EvaluationAlreadyComplete(EvaluationDomainException):
 
 class InvalidEvaluationState(EvaluationDomainException):
     def __init__(self, current: str, operation: str) -> None:
-        super().__init__(
-            f"Cannot perform '{operation}' when evaluation is in state '{current}'"
-        )
+        super().__init__(f"Cannot perform '{operation}' when evaluation is in state '{current}'")
         self.current = current
         self.operation = operation
 
@@ -48,6 +46,4 @@ class TenantMismatch(EvaluationDomainException):
 
 class MetricsSnapshotSealed(EvaluationDomainException):
     def __init__(self, snapshot_id: str) -> None:
-        super().__init__(
-            f"MetricsSnapshot '{snapshot_id}' is immutable once created"
-        )
+        super().__init__(f"MetricsSnapshot '{snapshot_id}' is immutable once created")

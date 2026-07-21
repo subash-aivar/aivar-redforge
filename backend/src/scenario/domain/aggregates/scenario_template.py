@@ -7,6 +7,7 @@ from uuid import uuid4
 
 from scenario.domain.events.scenario_events import (
     ScenarioInstantiated,
+    ScenarioSubscriptionChanged,
     ScenarioTemplateCreated,
     ScenarioTemplateDeprecated,
     ScenarioTemplatePublished,
@@ -31,6 +32,7 @@ if TYPE_CHECKING:
         DefaultSafetyPolicy,
         ScenarioKey,
         ScenarioObjectiveBlueprint,
+        ScenarioSubscriptionScope,
         ScenarioTemplateVersion,
         TaskGraphTopologyBlueprint,
         ThreatActorRef,
@@ -56,7 +58,9 @@ class ScenarioTemplate:
         "parameters",
         "phases",
         "scenario_key",
+        "source_template_id",
         "state",
+        "subscription_scope",
         "suggested_approval_fast_path",
         "task_graph_topology",
         "template_id",
@@ -86,7 +90,11 @@ class ScenarioTemplate:
         created_at: datetime,
         updated_at: datetime,
         version: int,
+        subscription_scope: ScenarioSubscriptionScope | None = None,
+        source_template_id: ScenarioTemplateId | None = None,
     ) -> None:
+        from scenario.domain.value_objects.scenario_vos import ScenarioSubscriptionScope
+
         self.template_id = template_id
         self.tenant_id = tenant_id
         self.scenario_key = scenario_key
@@ -104,6 +112,8 @@ class ScenarioTemplate:
         self.suggested_approval_fast_path = suggested_approval_fast_path
         self.created_at = created_at
         self.updated_at = updated_at
+        self.subscription_scope = subscription_scope or ScenarioSubscriptionScope()
+        self.source_template_id = source_template_id
         self._version = version
         self._pending_events: list[BaseDomainEvent] = []
 
@@ -196,14 +206,10 @@ class ScenarioTemplate:
             raise CannotPublishWithoutTechniques(str(self.template_id))
 
         missing_defaults = tuple(
-            p.name
-            for p in self.parameters
-            if p.required and p.default_value is None
+            p.name for p in self.parameters if p.required and p.default_value is None
         )
         if missing_defaults:
-            raise CannotPublishWithoutParameterDefaults(
-                str(self.template_id), missing_defaults
-            )
+            raise CannotPublishWithoutParameterDefaults(str(self.template_id), missing_defaults)
 
         self.state = ScenarioTemplateState.PUBLISHED
         self._mutate(now)
@@ -218,9 +224,7 @@ class ScenarioTemplate:
                 version=self.version_label.value,
                 technique_count=len(self.covered_techniques.techniques),
                 threat_actor_id=(
-                    self.threat_actor_ref.threat_actor_id
-                    if self.threat_actor_ref
-                    else None
+                    self.threat_actor_ref.threat_actor_id if self.threat_actor_ref else None
                 ),
             )
         )
@@ -276,4 +280,90 @@ class ScenarioTemplate:
                 version=self.version_label.value,
                 instantiated_by_tenant_id=str(tenant_id),
             )
+        )
+
+    def subscribe_tenant(
+        self,
+        *,
+        tenant_id: TenantId,
+        subscriber_tenant_id: str,
+        now: datetime,
+        local_template_id: ScenarioTemplateId | None = None,
+    ) -> None:
+        """Record a subscriber on a platform-published template (freeze §17)."""
+        self._assert_tenant(tenant_id)
+        if self.state != ScenarioTemplateState.PUBLISHED:
+            raise InvalidTemplateState(self.state.value, "subscribe")
+        sid = subscriber_tenant_id.strip()
+        if not sid:
+            raise ValueError("subscriber_tenant_id is required")
+        self.subscription_scope = self.subscription_scope.with_subscribed(sid)
+        self._mutate(now)
+        self._emit(
+            ScenarioSubscriptionChanged(
+                event_id=str(uuid4()),
+                occurred_at=now,
+                tenant_id=tenant_id,
+                aggregate_id=str(self.template_id),
+                aggregate_type="ScenarioTemplate",
+                subscribed_tenant_id=sid,
+                action="subscribed",
+                local_template_id=str(local_template_id) if local_template_id else None,
+            )
+        )
+
+    def unsubscribe_tenant(
+        self,
+        *,
+        tenant_id: TenantId,
+        subscriber_tenant_id: str,
+        now: datetime,
+    ) -> None:
+        self._assert_tenant(tenant_id)
+        sid = subscriber_tenant_id.strip()
+        self.subscription_scope = self.subscription_scope.with_unsubscribed(sid)
+        self._mutate(now)
+        self._emit(
+            ScenarioSubscriptionChanged(
+                event_id=str(uuid4()),
+                occurred_at=now,
+                tenant_id=tenant_id,
+                aggregate_id=str(self.template_id),
+                aggregate_type="ScenarioTemplate",
+                subscribed_tenant_id=sid,
+                action="unsubscribed",
+                local_template_id=None,
+            )
+        )
+
+    def create_tenant_local_copy(
+        self,
+        *,
+        local_template_id: ScenarioTemplateId,
+        subscriber_tenant_id: TenantId,
+        now: datetime,
+    ) -> ScenarioTemplate:
+        """Create an immutable tenant-local Published copy (never shared mutable state)."""
+        if self.state != ScenarioTemplateState.PUBLISHED:
+            raise InvalidTemplateState(self.state.value, "create_tenant_local_copy")
+        return ScenarioTemplate(
+            template_id=local_template_id,
+            tenant_id=subscriber_tenant_id,
+            scenario_key=self.scenario_key,
+            version_label=self.version_label,
+            name=self.name,
+            description=self.description,
+            state=ScenarioTemplateState.PUBLISHED,
+            threat_actor_ref=self.threat_actor_ref,
+            covered_techniques=self.covered_techniques,
+            objective_blueprints=list(self.objective_blueprints),
+            default_safety_policy=self.default_safety_policy,
+            task_graph_topology=self.task_graph_topology,
+            parameters=list(self.parameters),
+            phases=list(self.phases),
+            suggested_approval_fast_path=self.suggested_approval_fast_path,
+            created_at=now,
+            updated_at=now,
+            version=1,
+            source_template_id=self.template_id,
         )

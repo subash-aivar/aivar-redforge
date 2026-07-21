@@ -25,13 +25,29 @@ class InitializeCampaignExecutionCommand:
 
 
 @dataclass(frozen=True, slots=True)
-class DispatchNextTasksCommand:
-    tenant_id: UUID
-    execution_id: UUID
+class DispatchTaskSpec:
     task_id: UUID
     technique_id: str
     technique_name: str
     parameters: dict[str, str] = field(default_factory=dict)
+
+
+@dataclass(frozen=True, slots=True)
+class DispatchNextTasksCommand:
+    tenant_id: UUID
+    execution_id: UUID
+    task_id: UUID | None = None
+    technique_id: str = ""
+    technique_name: str = ""
+    parameters: dict[str, str] = field(default_factory=dict)
+    tasks: tuple[DispatchTaskSpec, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class SuccessorPredicateSpec:
+    task_id: UUID
+    predicate: str
+    objective_ref: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -40,9 +56,18 @@ class RecordTaskCompletionCommand:
     execution_id: UUID
     task_id: UUID
     outcome: str
-    # Optional successor resolution results
     ready_successor_ids: list[UUID] = field(default_factory=list)
     skipped_successor_ids: list[UUID] = field(default_factory=list)
+    successors: tuple[SuccessorPredicateSpec, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class ResolveConditionalBranchCommand:
+    tenant_id: UUID
+    execution_id: UUID
+    completed_task_id: UUID
+    outcome: str
+    successors: tuple[SuccessorPredicateSpec, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -62,6 +87,16 @@ class EvaluateBarrierCommand:
 
 
 @dataclass(frozen=True, slots=True)
+class ReachHumanApprovalGateCommand:
+    tenant_id: UUID
+    execution_id: UUID
+    task_id: UUID
+    gate_timeout_seconds: int
+    required_approver_role: str
+    default_on_timeout: str = "abort"
+
+
+@dataclass(frozen=True, slots=True)
 class GrantHumanApprovalCommand:
     tenant_id: UUID
     execution_id: UUID
@@ -74,6 +109,12 @@ class DenyHumanApprovalCommand:
     execution_id: UUID
     approver_id: str
     reason: str
+
+
+@dataclass(frozen=True, slots=True)
+class HandleApprovalTimeoutCommand:
+    tenant_id: UUID
+    execution_id: UUID
 
 
 @dataclass(frozen=True, slots=True)
@@ -90,11 +131,26 @@ class ResumeCampaignExecutionCommand:
 
 
 @dataclass(frozen=True, slots=True)
+class HandleKillSwitchTriggeredCommand:
+    tenant_id: UUID
+    execution_id: UUID
+
+
+@dataclass(frozen=True, slots=True)
+class RollbackStepSpec:
+    task_id: UUID
+    technique_id: str
+    technique_name: str
+    parameters: dict[str, str] = field(default_factory=dict)
+
+
+@dataclass(frozen=True, slots=True)
 class InitiateRollbackCommand:
     tenant_id: UUID
     execution_id: UUID
     trigger_reason: str
     rollback_eligible_task_ids: list[UUID] = field(default_factory=list)
+    steps: tuple[RollbackStepSpec, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)

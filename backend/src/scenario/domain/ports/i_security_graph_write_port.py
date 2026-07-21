@@ -32,3 +32,12 @@ class ISecurityGraphWritePort(ABC):
         confidence: float = 1.0,
     ) -> None:
         """Create or update EMULATES_THREAT_ACTOR edge to ThreatActorNode (M21)."""
+
+    @abstractmethod
+    async def upsert_based_on_scenario_edge(
+        self,
+        tenant_id: str,
+        campaign_id: str,
+        template_id: str,
+    ) -> None:
+        """Create or update BASED_ON_SCENARIO edge from CampaignNode to ScenarioTemplateNode."""

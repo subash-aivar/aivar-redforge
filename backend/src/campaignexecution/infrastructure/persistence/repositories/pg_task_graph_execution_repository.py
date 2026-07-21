@@ -92,10 +92,13 @@ def _execution_from_row(
     pending_gate = None
     if row.pending_approval_gate_json:
         from datetime import datetime
+
         gate_data = row.pending_approval_gate_json
         pending_gate = PendingApprovalGate(
             task_id=CampaignTaskId(UUID(gate_data["task_id"])),
-            gate_created_at=datetime.fromisoformat(gate_data["gate_created_at"]).replace(tzinfo=UTC),
+            gate_created_at=datetime.fromisoformat(gate_data["gate_created_at"]).replace(
+                tzinfo=UTC
+            ),
             gate_timeout_seconds=gate_data["gate_timeout_seconds"],
             required_approver_role=gate_data["required_approver_role"],
             default_on_timeout=gate_data["default_on_timeout"],
@@ -271,12 +274,16 @@ class PgTaskGraphExecutionRepository(ITaskGraphExecutionRepository):
         self,
         tenant_id: TenantId,
     ) -> list[TaskExecutionRecord]:
-        stmt = select(TaskExecutionRecordModel).join(
-            TaskGraphExecutionModel,
-            TaskExecutionRecordModel.execution_id == TaskGraphExecutionModel.id,
-        ).where(
-            TaskGraphExecutionModel.tenant_id == tenant_id.value,
-            TaskExecutionRecordModel.state == TaskExecutionState.READY_TO_DISPATCH.value,
+        stmt = (
+            select(TaskExecutionRecordModel)
+            .join(
+                TaskGraphExecutionModel,
+                TaskExecutionRecordModel.execution_id == TaskGraphExecutionModel.id,
+            )
+            .where(
+                TaskGraphExecutionModel.tenant_id == tenant_id.value,
+                TaskExecutionRecordModel.state == TaskExecutionState.READY_TO_DISPATCH.value,
+            )
         )
         result = await self._session.execute(stmt)
         rows = result.scalars().all()

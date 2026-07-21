@@ -35,9 +35,7 @@ class ScenarioTemplateVersion:
 
     def __post_init__(self) -> None:
         if not _SEMVER_PATTERN.match(self.value.strip()):
-            raise ValueError(
-                f"ScenarioTemplateVersion must be valid semver, got '{self.value}'"
-            )
+            raise ValueError(f"ScenarioTemplateVersion must be valid semver, got '{self.value}'")
 
 
 @dataclass(frozen=True, slots=True)
@@ -130,3 +128,27 @@ class ScenarioParameterSpec:
             raise ValueError("ScenarioParameterSpec.name is required")
         if not self.parameter_type.strip():
             raise ValueError("ScenarioParameterSpec.parameter_type is required")
+
+
+@dataclass(frozen=True, slots=True)
+class ScenarioSubscriptionScope:
+    """Tenants subscribed to a platform-published scenario template (M28 pack model)."""
+
+    tenant_ids: tuple[str, ...] = ()
+
+    def __post_init__(self) -> None:
+        cleaned = tuple(sorted({t.strip() for t in self.tenant_ids if t.strip()}))
+        object.__setattr__(self, "tenant_ids", cleaned)
+
+    def contains(self, tenant_id: str) -> bool:
+        return tenant_id.strip() in self.tenant_ids
+
+    def with_subscribed(self, tenant_id: str) -> ScenarioSubscriptionScope:
+        tid = tenant_id.strip()
+        if not tid or tid in self.tenant_ids:
+            return self
+        return ScenarioSubscriptionScope(tenant_ids=(*self.tenant_ids, tid))
+
+    def with_unsubscribed(self, tenant_id: str) -> ScenarioSubscriptionScope:
+        tid = tenant_id.strip()
+        return ScenarioSubscriptionScope(tenant_ids=tuple(t for t in self.tenant_ids if t != tid))
