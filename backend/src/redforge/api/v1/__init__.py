@@ -10,6 +10,8 @@ from detection.api.v1 import router as detection_router
 from engagement.api.v1 import router as engagement_router
 from evidence.api.v1 import router as evidence_bc_router
 from execution.api.v1 import router as execution_router
+from exposure.api.v1 import router as exposure_router
+from exposure_reporting.api.v1 import router as exposure_reporting_router
 from operation.api.v1 import router as operation_router
 from payload.api.v1 import router as payload_router
 from red_team_operator.api.v1 import router as operator_router
@@ -75,6 +77,7 @@ from redforge.api.v1.threat_intel_reference_data import (
 )
 from redforge.api.v1.validation_executions import router as validation_executions_router
 from redforge.api.v1.validations import router as validations_router
+from remediation_impact.api.v1 import router as remediation_impact_router
 from vulnerability.api.v1 import router as vulnerability_router
 
 router = APIRouter()
@@ -124,9 +127,7 @@ router.include_router(network_security_router, tags=["network-security"])
 router.include_router(admin_rbac_router, tags=["admin-rbac"])
 router.include_router(command_center_router, tags=["command-center"])
 router.include_router(threat_intel_router, tags=["threat-intel"])
-router.include_router(
-    threat_intel_reference_data_router, tags=["threat-intel-reference-data"]
-)
+router.include_router(threat_intel_reference_data_router, tags=["threat-intel-reference-data"])
 router.include_router(feed_sync_router, tags=["threat-intel-feed-sync"])
 router.include_router(threat_fusion_router, tags=["threat-fusion"])
 router.include_router(attack_paths_router, tags=["attack-paths"])
@@ -136,9 +137,7 @@ router.include_router(behavior_router, tags=["behavior"])
 router.include_router(investigations_router, tags=["investigations"])
 router.include_router(compliance_router, tags=["compliance"])
 router.include_router(compliance_assessment_router, tags=["compliance-assessment"])
-router.include_router(
-    compliance_recommendations_router, tags=["compliance-recommendations"]
-)
+router.include_router(compliance_recommendations_router, tags=["compliance-recommendations"])
 router.include_router(compliance_console_router, tags=["compliance-console"])
 router.include_router(credential_vault_router, tags=["credential-vault"])
 router.include_router(vulnerability_router, tags=["vulnerabilities"])
@@ -147,6 +146,9 @@ router.include_router(engagement_router, tags=["engagements"])
 router.include_router(ai_posture_router, tags=["ai-posture"])
 router.include_router(ai_supply_chain_router, tags=["ai-supply-chain"])
 router.include_router(ai_agent_governance_router, tags=["ai-agent-governance"])
+router.include_router(exposure_router, tags=["exposure"])
+router.include_router(remediation_impact_router, tags=["remediation-impact"])
+router.include_router(exposure_reporting_router, tags=["exposure-reporting"])
 router.include_router(operation_router, tags=["operations"])
 router.include_router(execution_router, tags=["execution"])
 router.include_router(operator_router, tags=["red-team-operators"])
