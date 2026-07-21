@@ -1,0 +1,1 @@
+"""Campaign infrastructure events package."""

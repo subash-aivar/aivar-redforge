@@ -1,0 +1,1 @@
+"""Campaign ACL adapters package."""

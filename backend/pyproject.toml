@@ -33,6 +33,7 @@ dependencies = [
     "maxminddb>=2.6,<4.0",  # reads an operator-supplied local GeoLite2 .mmdb file; we never bundle or auto-download the database itself (MaxMind EULA)
     "PyYAML>=6.0,<7.0",  # M26 CSPM policy library (YAML definitions)
     "redis>=5.0,<6.0",  # M29 execution kill switch / rate limit (redis.asyncio)
+    "croniter>=2.0,<3.0",  # M30 Phase 4 recurring campaign cron expression parsing
 ]
 
 [project.optional-dependencies]
@@ -64,6 +65,7 @@ where = ["src"]
 "red_team_operator" = ["py.typed"]
 "evidence" = ["py.typed"]
 "payload" = ["py.typed"]
+"campaign" = ["py.typed"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -98,7 +100,7 @@ select = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["redforge", "credential_vault", "vulnerability", "detection", "engagement", "operation", "execution", "red_team_operator", "evidence", "payload"]
+known-first-party = ["redforge", "credential_vault", "vulnerability", "detection", "engagement", "operation", "execution", "red_team_operator", "evidence", "payload", "campaign"]
 
 [tool.ruff.lint.per-file-ignores]
 "src/redforge/api/**" = ["B008", "TC001", "TC003"]  # FastAPI Depends()/Annotated deps need runtime types
@@ -185,6 +187,28 @@ known-first-party = ["redforge", "credential_vault", "vulnerability", "detection
 "src/payload/domain/aggregates/**" = ["TC001", "TC003"]
 "src/payload/infrastructure/acl/**" = ["TC001", "TC003"]
 "src/payload/infrastructure/container.py" = ["TC001", "TC003"]
+"src/campaign/api/**" = ["B008", "TC001", "TC003"]  # FastAPI Depends()/Annotated deps need runtime types
+"src/campaign/application/**" = ["TC001", "TC003"]  # Application services use domain types at runtime
+"src/campaign/infrastructure/persistence/models/**" = ["N811", "TC001", "TC003"]  # PgUUID; Mapped[] needs runtime types
+"src/campaign/infrastructure/persistence/repositories/**" = ["TC001", "TC003"]  # Repo signatures use UUID/domain types
+"src/campaign/infrastructure/acl/**" = ["TC001", "TC003"]  # ACL adapters need runtime UUID/port types
+"src/campaign/infrastructure/container.py" = ["TC001", "TC003"]
+"src/campaign/domain/exceptions/**" = ["N818"]  # Spec freezes DomainException naming (not *Error)
+"src/campaign/domain/value_objects/**" = ["TC001", "TC003"]  # VO fields referenced at runtime
+"src/campaign/domain/aggregates/**" = ["TC001", "TC003"]  # Aggregate methods use datetime/UUID at runtime
+"src/campaign/domain/entities/**" = ["TC001", "TC003"]  # Entity fields use datetime/UUID at runtime
+"src/campaign/domain/services/**" = ["TC001", "TC003"]  # Service methods use domain types at runtime
+"src/campaign/domain/ports/**" = ["TC001", "TC003"]  # Port interfaces reference domain types at runtime
+"src/taskgraph/application/**" = ["TC001", "TC003"]  # Application services use domain types at runtime
+"src/taskgraph/infrastructure/persistence/models/**" = ["N811", "TC001", "TC003"]  # PgUUID; Mapped[] needs runtime types
+"src/taskgraph/infrastructure/persistence/repositories/**" = ["TC001", "TC003"]  # Repo signatures use UUID/domain types
+"src/taskgraph/infrastructure/container.py" = ["TC001", "TC003"]
+"src/taskgraph/domain/exceptions/**" = ["N818"]  # Spec freezes DomainException naming (not *Error)
+"src/taskgraph/domain/value_objects/**" = ["TC001", "TC003"]  # VO fields referenced at runtime
+"src/taskgraph/domain/aggregates/**" = ["TC001", "TC003"]  # Aggregate methods use datetime/UUID at runtime
+"src/taskgraph/domain/entities/**" = ["TC001", "TC003"]  # Entity fields use datetime/UUID at runtime
+"src/taskgraph/domain/services/**" = ["TC001", "TC003"]  # Service methods use domain types at runtime
+"src/taskgraph/domain/repositories/**" = ["TC001", "TC003"]  # Repository interfaces reference domain types at runtime
 "src/redforge/application/**" = ["TCH001", "TCH004", "TC001", "TC003"]  # Application services use domain types at runtime
 "src/redforge/infrastructure/**" = ["TCH001", "TCH003", "TC001", "TC003"]  # Infrastructure uses types at runtime
 "src/credential_vault/domain/exceptions/**" = ["N818"]  # Spec freezes DomainException naming (not *Error)

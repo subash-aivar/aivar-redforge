@@ -1,0 +1,1 @@
+"""Campaign read-model projections."""

@@ -252,6 +252,17 @@ def _build_projection_registry(
 
     registry.register(RedTeamGraphProjection(repo))
 
+    # M30 Phase 5 — evaluation + campaign summary read models.
+    from campaign.application.projections.campaign_summary_projection import (
+        register_campaign_summary_projection,
+    )
+    from evaluation.application.projections.evaluation_read_models import (
+        register_evaluation_projections,
+    )
+
+    register_evaluation_projections(registry, repo)
+    register_campaign_summary_projection(registry, repo)
+
     return registry
 
 

@@ -1,0 +1,1 @@
+"""Campaign domain exceptions package."""

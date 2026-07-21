@@ -1,0 +1,1 @@
+"""Campaign value objects package."""
