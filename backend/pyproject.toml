@@ -34,6 +34,8 @@ dependencies = [
     "PyYAML>=6.0,<7.0",  # M26 CSPM policy library (YAML definitions)
     "redis>=5.0,<6.0",  # M29 execution kill switch / rate limit (redis.asyncio)
     "croniter>=2.0,<3.0",  # M30 Phase 4 recurring campaign cron expression parsing
+    "numpy>=2.0,<3.0",  # M33 analytics anomaly detection + ML features
+    "scikit-learn>=1.5,<2.0",  # M33 ml_pipeline (Isolation Forest, Random Forest, Linear Regression)
 ]
 
 [project.optional-dependencies]
@@ -72,6 +74,9 @@ where = ["src"]
 "exposure" = ["py.typed"]
 "remediation_impact" = ["py.typed"]
 "exposure_reporting" = ["py.typed"]
+"analytics" = ["py.typed"]
+"reporting" = ["py.typed"]
+"ml_pipeline" = ["py.typed"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -106,7 +111,7 @@ select = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["redforge", "credential_vault", "vulnerability", "detection", "engagement", "operation", "execution", "red_team_operator", "evidence", "payload", "campaign", "ai_posture", "ai_supply_chain", "ai_agent_governance", "exposure", "remediation_impact", "exposure_reporting"]
+known-first-party = ["redforge", "credential_vault", "vulnerability", "detection", "engagement", "operation", "execution", "red_team_operator", "evidence", "payload", "campaign", "ai_posture", "ai_supply_chain", "ai_agent_governance", "exposure", "remediation_impact", "exposure_reporting", "analytics", "reporting", "ml_pipeline"]
 
 [tool.ruff.lint.per-file-ignores]
 "src/redforge/api/**" = ["B008", "TC001", "TC003"]  # FastAPI Depends()/Annotated deps need runtime types
@@ -282,6 +287,51 @@ known-first-party = ["redforge", "credential_vault", "vulnerability", "detection
 "src/exposure_reporting/domain/ports/**" = ["TC001", "TC003"]
 "src/exposure_reporting/domain/repositories/**" = ["TC001", "TC003"]
 "src/exposure_reporting/domain/events/**" = ["TC001", "TC003"]
+"src/analytics/api/**" = ["B008", "TC001", "TC003"]
+"src/analytics/application/**" = ["TC001", "TC003", "TC004"]
+"src/analytics/infrastructure/persistence/**" = ["TC001", "TC003"]
+"src/analytics/infrastructure/acl/**" = ["TC001", "TC003"]
+"src/analytics/infrastructure/container.py" = ["TC001", "TC003"]
+"src/analytics/infrastructure/events/**" = ["TC001", "TC003"]
+"src/analytics/infrastructure/workers/**" = ["TC001", "TC003"]
+"src/analytics/infrastructure/projections/**" = ["TC001", "TC003"]
+"src/analytics/infrastructure/scheduler/**" = ["TC001", "TC003"]
+"src/analytics/domain/exceptions/**" = ["N818"]
+"src/analytics/domain/value_objects/**" = ["TC001", "TC003"]
+"src/analytics/domain/aggregates/**" = ["TC001", "TC003"]
+"src/analytics/domain/services/**" = ["TC001", "TC003"]
+"src/analytics/domain/ports/**" = ["TC001", "TC003"]
+"src/analytics/domain/repositories/**" = ["TC001", "TC003"]
+"src/analytics/domain/events/**" = ["TC001", "TC003"]
+"src/reporting/api/**" = ["B008", "TC001", "TC003"]
+"src/reporting/application/**" = ["TC001", "TC003", "TC004"]
+"src/reporting/infrastructure/persistence/**" = ["TC001", "TC003"]
+"src/reporting/infrastructure/acl/**" = ["TC001", "TC003"]
+"src/reporting/infrastructure/container.py" = ["TC001", "TC003"]
+"src/reporting/infrastructure/events/**" = ["TC001", "TC003"]
+"src/reporting/infrastructure/workers/**" = ["TC001", "TC003"]
+"src/reporting/domain/exceptions/**" = ["N818"]
+"src/reporting/domain/value_objects/**" = ["TC001", "TC003"]
+"src/reporting/domain/aggregates/**" = ["TC001", "TC003"]
+"src/reporting/domain/services/**" = ["TC001", "TC003"]
+"src/reporting/domain/services/report_export_service.py" = ["TC001", "TC003", "E501"]
+"src/reporting/domain/ports/**" = ["TC001", "TC003"]
+"src/reporting/domain/repositories/**" = ["TC001", "TC003"]
+"src/reporting/domain/events/**" = ["TC001", "TC003"]
+"src/ml_pipeline/api/**" = ["B008", "TC001", "TC003"]
+"src/ml_pipeline/application/**" = ["TC001", "TC003", "TC004"]
+"src/ml_pipeline/infrastructure/persistence/**" = ["TC001", "TC003"]
+"src/ml_pipeline/infrastructure/acl/**" = ["TC001", "TC003"]
+"src/ml_pipeline/infrastructure/container.py" = ["TC001", "TC003"]
+"src/ml_pipeline/infrastructure/events/**" = ["TC001", "TC003"]
+"src/ml_pipeline/infrastructure/workers/**" = ["TC001", "TC003"]
+"src/ml_pipeline/domain/exceptions/**" = ["N818"]
+"src/ml_pipeline/domain/value_objects/**" = ["TC001", "TC003"]
+"src/ml_pipeline/domain/aggregates/**" = ["TC001", "TC003"]
+"src/ml_pipeline/domain/services/**" = ["TC001", "TC003"]
+"src/ml_pipeline/domain/ports/**" = ["TC001", "TC003"]
+"src/ml_pipeline/domain/repositories/**" = ["TC001", "TC003"]
+"src/ml_pipeline/domain/events/**" = ["TC001", "TC003"]
 "src/ai_supply_chain/api/**" = ["B008", "TC001", "TC003"]
 "src/ai_supply_chain/application/**" = ["TC001", "TC003", "TC004"]
 "src/ai_supply_chain/infrastructure/persistence/models/**" = ["N811", "TC001", "TC003"]
@@ -368,4 +418,8 @@ module = [
     "google.oauth2.*",
     "googleapiclient.*",
 ]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["sklearn", "sklearn.*"]
 ignore_missing_imports = true

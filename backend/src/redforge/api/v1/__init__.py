@@ -10,8 +10,11 @@ from detection.api.v1 import router as detection_router
 from engagement.api.v1 import router as engagement_router
 from evidence.api.v1 import router as evidence_bc_router
 from execution.api.v1 import router as execution_router
+from analytics.api.v1 import router as analytics_router
 from exposure.api.v1 import router as exposure_router
 from exposure_reporting.api.v1 import router as exposure_reporting_router
+from ml_pipeline.api.v1 import router as ml_pipeline_router
+from reporting.api.v1 import router as reporting_router
 from operation.api.v1 import router as operation_router
 from payload.api.v1 import router as payload_router
 from red_team_operator.api.v1 import router as operator_router
@@ -149,6 +152,9 @@ router.include_router(ai_agent_governance_router, tags=["ai-agent-governance"])
 router.include_router(exposure_router, tags=["exposure"])
 router.include_router(remediation_impact_router, tags=["remediation-impact"])
 router.include_router(exposure_reporting_router, tags=["exposure-reporting"])
+router.include_router(analytics_router, tags=["analytics"])
+router.include_router(reporting_router, tags=["reporting"])
+router.include_router(ml_pipeline_router, tags=["ml-pipeline"])
 router.include_router(operation_router, tags=["operations"])
 router.include_router(execution_router, tags=["execution"])
 router.include_router(operator_router, tags=["red-team-operators"])

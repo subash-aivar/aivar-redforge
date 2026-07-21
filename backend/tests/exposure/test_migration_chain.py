@@ -53,7 +53,7 @@ def test_0085_phase5_business_impact() -> None:
     assert "uq_bim_tenant_asset" in text
 
 
-def test_single_head_0085() -> None:
+def test_single_head_0101() -> None:
     revisions: dict[str, str] = {}
     down_revisions: set[str] = set()
     for path in VERSIONS.glob("*.py"):
@@ -70,4 +70,4 @@ def test_single_head_0085() -> None:
             if down and down != "None":
                 down_revisions.add(down)
     heads = [r for r in revisions if r not in down_revisions]
-    assert heads == ["0085"]
+    assert heads == ["0101"]
