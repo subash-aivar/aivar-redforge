@@ -2,6 +2,9 @@
 
 from fastapi import APIRouter
 
+from ai_agent_governance.api.v1 import router as ai_agent_governance_router
+from ai_posture.api.v1 import router as ai_posture_router
+from ai_supply_chain.api.v1 import router as ai_supply_chain_router
 from credential_vault.api.v1 import router as credential_vault_router
 from detection.api.v1 import router as detection_router
 from engagement.api.v1 import router as engagement_router
@@ -141,6 +144,9 @@ router.include_router(credential_vault_router, tags=["credential-vault"])
 router.include_router(vulnerability_router, tags=["vulnerabilities"])
 router.include_router(detection_router, tags=["detection-rules"])
 router.include_router(engagement_router, tags=["engagements"])
+router.include_router(ai_posture_router, tags=["ai-posture"])
+router.include_router(ai_supply_chain_router, tags=["ai-supply-chain"])
+router.include_router(ai_agent_governance_router, tags=["ai-agent-governance"])
 router.include_router(operation_router, tags=["operations"])
 router.include_router(execution_router, tags=["execution"])
 router.include_router(operator_router, tags=["red-team-operators"])

@@ -66,6 +66,9 @@ where = ["src"]
 "evidence" = ["py.typed"]
 "payload" = ["py.typed"]
 "campaign" = ["py.typed"]
+"ai_posture" = ["py.typed"]
+"ai_supply_chain" = ["py.typed"]
+"ai_agent_governance" = ["py.typed"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -100,7 +103,7 @@ select = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["redforge", "credential_vault", "vulnerability", "detection", "engagement", "operation", "execution", "red_team_operator", "evidence", "payload", "campaign"]
+known-first-party = ["redforge", "credential_vault", "vulnerability", "detection", "engagement", "operation", "execution", "red_team_operator", "evidence", "payload", "campaign", "ai_posture", "ai_supply_chain", "ai_agent_governance"]
 
 [tool.ruff.lint.per-file-ignores]
 "src/redforge/api/**" = ["B008", "TC001", "TC003"]  # FastAPI Depends()/Annotated deps need runtime types
@@ -209,6 +212,51 @@ known-first-party = ["redforge", "credential_vault", "vulnerability", "detection
 "src/taskgraph/domain/entities/**" = ["TC001", "TC003"]  # Entity fields use datetime/UUID at runtime
 "src/taskgraph/domain/services/**" = ["TC001", "TC003"]  # Service methods use domain types at runtime
 "src/taskgraph/domain/repositories/**" = ["TC001", "TC003"]  # Repository interfaces reference domain types at runtime
+"src/ai_posture/api/**" = ["B008", "TC001", "TC003"]  # FastAPI Depends()/Annotated deps need runtime types
+"src/ai_posture/application/**" = ["TC001", "TC003", "TC004"]  # Application services use domain types at runtime
+"src/ai_posture/infrastructure/persistence/models/**" = ["N811", "TC001", "TC003"]  # PgUUID; Mapped[] needs runtime types
+"src/ai_posture/infrastructure/persistence/**" = ["TC001", "TC003"]
+"src/ai_posture/infrastructure/acl/**" = ["TC001", "TC003"]
+"src/ai_posture/infrastructure/container.py" = ["TC001", "TC003"]
+"src/ai_posture/infrastructure/events/**" = ["TC001", "TC003"]
+"src/ai_posture/infrastructure/scheduler/**" = ["TC001", "TC003"]
+"src/ai_posture/domain/exceptions/**" = ["N818"]  # Spec freezes DomainException naming (not *Error)
+"src/ai_posture/domain/value_objects/**" = ["TC001", "TC003"]
+"src/ai_posture/domain/aggregates/**" = ["TC001", "TC003"]
+"src/ai_posture/domain/services/**" = ["TC001", "TC003"]
+"src/ai_posture/domain/ports/**" = ["TC001", "TC003"]
+"src/ai_posture/domain/repositories/**" = ["TC001", "TC003"]
+"src/ai_posture/domain/events/**" = ["TC001", "TC003"]
+"src/ai_supply_chain/api/**" = ["B008", "TC001", "TC003"]
+"src/ai_supply_chain/application/**" = ["TC001", "TC003", "TC004"]
+"src/ai_supply_chain/infrastructure/persistence/models/**" = ["N811", "TC001", "TC003"]
+"src/ai_supply_chain/infrastructure/persistence/**" = ["TC001", "TC003"]
+"src/ai_supply_chain/infrastructure/acl/**" = ["TC001", "TC003"]
+"src/ai_supply_chain/infrastructure/providers/**" = ["TC001", "TC003"]
+"src/ai_supply_chain/infrastructure/container.py" = ["TC001", "TC003"]
+"src/ai_supply_chain/infrastructure/events/**" = ["TC001", "TC003"]
+"src/ai_supply_chain/domain/exceptions/**" = ["N818"]
+"src/ai_supply_chain/domain/value_objects/**" = ["TC001", "TC003"]
+"src/ai_supply_chain/domain/aggregates/**" = ["TC001", "TC003"]
+"src/ai_supply_chain/domain/entities/**" = ["TC001", "TC003"]
+"src/ai_supply_chain/domain/services/**" = ["TC001", "TC003"]
+"src/ai_supply_chain/domain/ports/**" = ["TC001", "TC003"]
+"src/ai_supply_chain/domain/repositories/**" = ["TC001", "TC003"]
+"src/ai_supply_chain/domain/events/**" = ["TC001", "TC003"]
+"src/ai_supply_chain/domain/policies/**" = ["TC001", "TC003"]
+"src/ai_agent_governance/api/**" = ["B008", "TC001", "TC003"]
+"src/ai_agent_governance/application/**" = ["TC001", "TC003", "TC004"]
+"src/ai_agent_governance/infrastructure/persistence/models/**" = ["N811", "TC001", "TC003"]
+"src/ai_agent_governance/infrastructure/persistence/**" = ["TC001", "TC003"]
+"src/ai_agent_governance/infrastructure/container.py" = ["TC001", "TC003"]
+"src/ai_agent_governance/infrastructure/events/**" = ["TC001", "TC003"]
+"src/ai_agent_governance/domain/exceptions/**" = ["N818"]
+"src/ai_agent_governance/domain/value_objects/**" = ["TC001", "TC003"]
+"src/ai_agent_governance/domain/aggregates/**" = ["TC001", "TC003"]
+"src/ai_agent_governance/domain/entities/**" = ["TC001", "TC003"]
+"src/ai_agent_governance/domain/services/**" = ["TC001", "TC003"]
+"src/ai_agent_governance/domain/repositories/**" = ["TC001", "TC003"]
+"src/ai_agent_governance/domain/events/**" = ["TC001", "TC003"]
 "src/redforge/application/**" = ["TCH001", "TCH004", "TC001", "TC003"]  # Application services use domain types at runtime
 "src/redforge/infrastructure/**" = ["TCH001", "TCH003", "TC001", "TC003"]  # Infrastructure uses types at runtime
 "src/credential_vault/domain/exceptions/**" = ["N818"]  # Spec freezes DomainException naming (not *Error)
