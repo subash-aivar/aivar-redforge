@@ -3,9 +3,11 @@ from __future__ import annotations
 from uuid import UUID, uuid4
 
 import pytest
-from fastapi import FastAPI
+from fastapi import FastAPI, Header
 from fastapi.testclient import TestClient
 
+from redforge.api.security import TenantContext, get_tenant_context
+from redforge.domain.identity.value_objects import MembershipRole, Permission
 from threat_hunt.api.dependencies import get_container
 from threat_hunt.api.v1 import router
 from threat_hunt.application.commands.hunt_commands import (
@@ -128,12 +130,25 @@ async def test_llm_isolation(i: int) -> None:
         await llm.generate(HuntLLMPrompt(uuid4(), "t", "c"), uuid4())
 
 
+def _override_tenant_context(
+    x_tenant_id: str = Header(..., alias="X-Tenant-Id"),
+) -> TenantContext:
+    return TenantContext(
+        user_id=str(uuid4()),
+        email="threat-hunt-test@example.com",
+        organization_id=x_tenant_id,
+        role=MembershipRole.OWNER,
+        permissions=frozenset(Permission),
+    )
+
+
 @pytest.fixture()
 def client() -> TestClient:
     app = FastAPI()
     app.include_router(router)
     c = ThreatHuntContainer()
     app.dependency_overrides[get_container] = lambda: c
+    app.dependency_overrides[get_tenant_context] = _override_tenant_context
     return TestClient(app)
 
 

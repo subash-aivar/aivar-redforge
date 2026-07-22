@@ -3,9 +3,11 @@ from __future__ import annotations
 from uuid import UUID, uuid4
 
 import pytest
-from fastapi import FastAPI
+from fastapi import FastAPI, Header
 from httpx import ASGITransport, AsyncClient
 
+from redforge.api.security import TenantContext, get_tenant_context
+from redforge.domain.identity.value_objects import MembershipRole, Permission
 from reporting.api import dependencies as deps
 from reporting.api.v1 import router
 from reporting.domain.ports.i_analytics_kpi_query_port import KPISnapshotDTO
@@ -14,6 +16,18 @@ from reporting.infrastructure.acl.analytics_kpi_query_adapter import (
     StaticAnalyticsKPIQueryAdapter,
 )
 from reporting.infrastructure.container import ReportingContainer
+
+
+def _override_tenant_context(
+    x_tenant_id: str = Header(..., alias="X-Tenant-Id"),
+) -> TenantContext:
+    return TenantContext(
+        user_id=str(uuid4()),
+        email="reporting-test@example.com",
+        organization_id=x_tenant_id,
+        role=MembershipRole.OWNER,
+        permissions=frozenset(Permission),
+    )
 
 
 @pytest.fixture
@@ -29,6 +43,7 @@ def app() -> FastAPI:
     )
     application = FastAPI()
     application.include_router(router, prefix="/api/v1")
+    application.dependency_overrides[get_tenant_context] = _override_tenant_context
     return application
 
 
