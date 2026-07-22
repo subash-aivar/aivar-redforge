@@ -79,9 +79,6 @@ def _validate_config(settings: Settings, errors: list[str]) -> None:
         )
 
 
-_EXPECTED_MIGRATION_HEAD = "0070"
-
-
 async def _check_database_connectivity(engine: AsyncEngine, errors: list[str]) -> None:
     from sqlalchemy import text
     from sqlalchemy.exc import SQLAlchemyError
@@ -100,7 +97,10 @@ async def _check_migration_head(engine: AsyncEngine, errors: list[str]) -> None:
     from sqlalchemy import text
     from sqlalchemy.exc import SQLAlchemyError
 
+    from redforge.infrastructure.database.migration_head import get_expected_migration_head
+
     try:
+        expected_head = get_expected_migration_head()
         async with engine.connect() as conn:
             result = await conn.execute(
                 text("SELECT version_num FROM alembic_version")
@@ -110,10 +110,10 @@ async def _check_migration_head(engine: AsyncEngine, errors: list[str]) -> None:
             errors.append(
                 "alembic_version table is empty — run 'alembic upgrade head' before starting"
             )
-        elif row[0] != _EXPECTED_MIGRATION_HEAD:
+        elif row[0] != expected_head:
             errors.append(
                 f"Database migration '{row[0]}' does not match expected head "
-                f"'{_EXPECTED_MIGRATION_HEAD}' — run 'alembic upgrade head'"
+                f"'{expected_head}' — run 'alembic upgrade head'"
             )
     except SQLAlchemyError as exc:
         errors.append(f"Migration check failed: {type(exc).__name__}: {exc}")

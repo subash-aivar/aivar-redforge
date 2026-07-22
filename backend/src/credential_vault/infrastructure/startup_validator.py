@@ -26,8 +26,6 @@ if TYPE_CHECKING:
 
 logger = structlog.get_logger(__name__)
 
-_EXPECTED_MIGRATION_HEAD = "0053"
-
 
 async def validate_credential_vault(container: CredentialVaultContainer) -> None:
     errors: list[str] = []
@@ -51,13 +49,16 @@ async def _check_database(container: CredentialVaultContainer, errors: list[str]
 
 
 async def _check_migration_head(container: CredentialVaultContainer, errors: list[str]) -> None:
+    from redforge.infrastructure.database.migration_head import get_expected_migration_head
+
     try:
+        expected_head = get_expected_migration_head()
         async with container._session_factory() as session:
             result = await session.execute(text("SELECT version_num FROM alembic_version LIMIT 1"))
             head = result.scalar_one_or_none()
-            if head != _EXPECTED_MIGRATION_HEAD:
+            if head != expected_head:
                 errors.append(
-                    f"migration head mismatch: expected {_EXPECTED_MIGRATION_HEAD}, got {head}"
+                    f"migration head mismatch: expected {expected_head}, got {head}"
                 )
     except Exception as exc:
         logger.warning("migration_head_check_skipped", error=str(exc))

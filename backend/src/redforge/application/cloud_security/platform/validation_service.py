@@ -13,7 +13,6 @@ from redforge.application.cloud_security.platform.observability import new_opera
 from redforge.domain.cloud_security.value_objects import OrganizationId
 from redforge.domain.security_graph.ontology import ONTOLOGY_VERSION
 
-_EXPECTED_MIGRATION_HEAD = "0053"
 _EXPECTED_ONTOLOGY_VERSION = 15
 _MIN_CSPM_POLICIES = 25
 
@@ -24,7 +23,7 @@ class CloudPlatformValidationService:
         *,
         session_factory: Any | None = None,
         validation_repo_factory: Any | None = None,
-        expected_migration_head: str = _EXPECTED_MIGRATION_HEAD,
+        expected_migration_head: str | None = None,
         expected_ontology_version: int = _EXPECTED_ONTOLOGY_VERSION,
     ) -> None:
         self._session_factory = session_factory
@@ -41,7 +40,7 @@ class CloudPlatformValidationService:
         op_id = new_operation_id()
         checks: list[ValidationCheckDTO] = []
 
-        checks.append(self._check_migration_head())
+        checks.append(await self._check_migration_head())
         checks.append(self._check_ontology_version())
         checks.append(self._check_cspm_policies())
         checks.append(self._check_risk_weights())
@@ -125,14 +124,43 @@ class CloudPlatformValidationService:
             operation_id=str(raw.get("operation_id") or ""),
         )
 
-    def _check_migration_head(self) -> ValidationCheckDTO:
-        # Static expectation — runtime alembic head is verified at platform startup.
-        return ValidationCheckDTO(
-            name="migration_head",
-            passed=True,
-            message=f"expected migration head {_EXPECTED_MIGRATION_HEAD}",
-            details={"expected": self._expected_migration_head},
-        )
+    async def _check_migration_head(self) -> ValidationCheckDTO:
+        from redforge.infrastructure.database.migration_head import get_expected_migration_head
+
+        expected = self._expected_migration_head or get_expected_migration_head()
+
+        if self._session_factory is None:
+            return ValidationCheckDTO(
+                name="migration_head",
+                passed=True,
+                message=f"expected migration head {expected} (no session — unverified)",
+                details={"expected": expected, "verified": False},
+            )
+
+        from sqlalchemy import text
+
+        try:
+            async with self._session_factory() as session:
+                result = await session.execute(text("SELECT version_num FROM alembic_version LIMIT 1"))
+                actual = result.scalar_one_or_none()
+            passed = actual == expected
+            return ValidationCheckDTO(
+                name="migration_head",
+                passed=passed,
+                message=(
+                    f"migration head {actual} matches expected {expected}"
+                    if passed
+                    else f"migration head mismatch: expected {expected}, got {actual}"
+                ),
+                details={"expected": expected, "actual": actual, "verified": True},
+            )
+        except Exception as exc:
+            return ValidationCheckDTO(
+                name="migration_head",
+                passed=False,
+                message=f"migration head check failed: {type(exc).__name__}",
+                details={"expected": expected, "verified": False},
+            )
 
     def _check_ontology_version(self) -> ValidationCheckDTO:
         passed = self._expected_ontology_version == ONTOLOGY_VERSION

@@ -79,12 +79,14 @@ class TestStartupValidatorInTestEnv:
 
 class TestStartupValidatorDBConnectivity:
     async def test_passes_when_db_is_reachable(self) -> None:
+        from redforge.infrastructure.database.migration_head import get_expected_migration_head
+
         settings = _test_settings(environment="development")
         mock_engine = MagicMock()
         mock_conn = AsyncMock()
         # SELECT 1 returns an ignored result; migration check needs fetchone() = head
         migration_result = MagicMock()
-        migration_result.fetchone.return_value = ("0070",)
+        migration_result.fetchone.return_value = (get_expected_migration_head(),)
         mock_conn.execute = AsyncMock(side_effect=[None, migration_result])
         cm = AsyncMock()
         cm.__aenter__ = AsyncMock(return_value=mock_conn)

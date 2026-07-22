@@ -278,20 +278,24 @@ def _make_migration_engine_mock(version_row: tuple[str, ...] | None) -> object:
 
 async def test_migration_check_passes_on_correct_version() -> None:
     """_check_migration_head passes when alembic_version = head."""
+    from redforge.infrastructure.database.migration_head import get_expected_migration_head
+
     errors: list[str] = []
-    mock_engine = _make_migration_engine_mock(("0070",))
+    mock_engine = _make_migration_engine_mock((get_expected_migration_head(),))
     await _check_migration_head(mock_engine, errors)  # type: ignore[arg-type]
     assert errors == []
 
 
 async def test_migration_check_fails_on_wrong_version() -> None:
     """_check_migration_head appends error when version != head."""
+    from redforge.infrastructure.database.migration_head import get_expected_migration_head
+
     errors: list[str] = []
     mock_engine = _make_migration_engine_mock(("0007",))
     await _check_migration_head(mock_engine, errors)  # type: ignore[arg-type]
     assert len(errors) == 1
     assert "0007" in errors[0]
-    assert "0070" in errors[0]
+    assert get_expected_migration_head() in errors[0]
 
 
 async def test_migration_check_fails_when_table_empty() -> None:
