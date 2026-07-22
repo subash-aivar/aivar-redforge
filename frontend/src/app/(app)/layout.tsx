@@ -75,6 +75,7 @@ const NAV_GROUPS: NavGroup[] = [
     title: "Investigation",
     items: [
       { label: "Investigations", href: "/investigations", icon: "⊕", perm: "investigations:read" },
+      { label: "Incident Response", href: "/incident-response", icon: "🚨", perm: "incident:read" },
       { label: "Compliance", href: "/compliance", icon: "▣", perm: "compliance:read" },
     ],
   },
