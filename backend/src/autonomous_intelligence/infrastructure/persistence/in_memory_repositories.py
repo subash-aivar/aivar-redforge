@@ -91,6 +91,11 @@ class InMemorySuggestionOutcomeRepository(ISuggestionOutcomeRepository):
     async def append(self, outcome: SuggestionOutcome) -> None:
         self._items.append(outcome)
 
+    async def update_measurement(self, outcome: SuggestionOutcome, tenant_id: TenantId) -> None:
+        # No-op: this store holds the same object reference append() added,
+        # so record_measurement()'s in-place mutation is already visible.
+        del outcome, tenant_id
+
     async def find_for_suggestion(
         self, suggestion_id: UUID, tenant_id: TenantId
     ) -> list[SuggestionOutcome]:

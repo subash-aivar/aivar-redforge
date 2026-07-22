@@ -55,6 +55,19 @@ class ISuggestionOutcomeRepository(ABC):
     async def append(self, outcome: SuggestionOutcome) -> None: ...
 
     @abstractmethod
+    async def update_measurement(self, outcome: SuggestionOutcome, tenant_id: TenantId) -> None:
+        """Persist a measurement recorded via SuggestionOutcome.record_measurement()
+        on an outcome that was already append()'d. Separate from append()
+        because SuggestionOutcome is conceptually append-only (append once
+        when pending, then transitions in place) rather than re-inserted —
+        a real backing store needs an explicit write for that transition;
+        an in-memory list holding object references doesn't, which is why
+        this method was missing until OutcomeMeasurementWorker's mutation
+        was found to silently no-op against Postgres.
+        """
+        ...
+
+    @abstractmethod
     async def find_for_suggestion(
         self, suggestion_id: UUID, tenant_id: TenantId
     ) -> list[SuggestionOutcome]: ...

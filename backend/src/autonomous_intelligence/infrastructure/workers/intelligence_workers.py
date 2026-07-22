@@ -89,6 +89,7 @@ class OutcomeMeasurementWorker:
         count = 0
         for outcome in pending:
             outcome.record_measurement(outcome.baseline_metric - 0.05, datetime.now(UTC))
+            await self._outcomes.update_measurement(outcome, TenantId(tenant_id))
             model = await self._models.find_deployed(TenantId(tenant_id), outcome.target_type)
             if model:
                 feedback.ingest(model, outcome)

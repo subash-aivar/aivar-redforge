@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from autonomous_intelligence.application.services.intelligence_application_service import (
     IntelligenceApplicationService,
 )
@@ -25,13 +27,43 @@ from autonomous_intelligence.infrastructure.workers.intelligence_workers import 
     SuggestionGenerationWorker,
 )
 
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
+    from autonomous_intelligence.domain.repositories.i_repositories import (
+        IAutonomousOperationsPolicyRepository,
+        IIntelligenceSuggestionRepository,
+        IOptimizationModelRepository,
+        ISuggestionOutcomeRepository,
+    )
+
 
 class AutonomousIntelligenceContainer:
-    def __init__(self) -> None:
-        self.suggestions = InMemoryIntelligenceSuggestionRepository()
-        self.models = InMemoryOptimizationModelRepository()
-        self.outcomes = InMemorySuggestionOutcomeRepository()
-        self.policies = InMemoryAutonomousOperationsPolicyRepository()
+    suggestions: IIntelligenceSuggestionRepository
+    models: IOptimizationModelRepository
+    outcomes: ISuggestionOutcomeRepository
+    policies: IAutonomousOperationsPolicyRepository
+
+    def __init__(
+        self, session_factory: async_sessionmaker[AsyncSession] | None = None
+    ) -> None:
+        if session_factory is not None:
+            from autonomous_intelligence.infrastructure.persistence.postgres_repositories import (
+                PgAutonomousOperationsPolicyRepository,
+                PgIntelligenceSuggestionRepository,
+                PgOptimizationModelRepository,
+                PgSuggestionOutcomeRepository,
+            )
+
+            self.suggestions = PgIntelligenceSuggestionRepository(session_factory)
+            self.models = PgOptimizationModelRepository(session_factory)
+            self.outcomes = PgSuggestionOutcomeRepository(session_factory)
+            self.policies = PgAutonomousOperationsPolicyRepository(session_factory)
+        else:
+            self.suggestions = InMemoryIntelligenceSuggestionRepository()
+            self.models = InMemoryOptimizationModelRepository()
+            self.outcomes = InMemorySuggestionOutcomeRepository()
+            self.policies = InMemoryAutonomousOperationsPolicyRepository()
         self.llm = InMemoryLLMInferenceAdapter()
         self.event_sink: list[object] = []
         self.audit_log: list[dict[str, object]] = []
