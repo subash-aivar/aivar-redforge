@@ -9,14 +9,12 @@ from uuid import UUID
 from sqlalchemy import DateTime, Float, Integer, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PgUUID
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column
+
+from redforge.infrastructure.database.base import Base
 
 
-class ExposureReportingBase(DeclarativeBase):
-    pass
-
-
-class ExposureReportModel(ExposureReportingBase):
+class ExposureReportModel(Base):
     __tablename__ = "exposure_reports"
     __table_args__ = ({"schema": "exposure_reporting"},)
 
@@ -36,7 +34,7 @@ class ExposureReportModel(ExposureReportingBase):
     delivered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
-class BusinessImpactMappingModel(ExposureReportingBase):
+class BusinessImpactMappingModel(Base):
     __tablename__ = "business_impact_mappings"
     __table_args__ = (
         UniqueConstraint("tenant_id", "asset_ref_id", name="uq_bim_tenant_asset"),
@@ -57,7 +55,7 @@ class BusinessImpactMappingModel(ExposureReportingBase):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
-class ExposureKpiProjectionModel(ExposureReportingBase):
+class ExposureKpiProjectionModel(Base):
     __tablename__ = "exposure_kpi_projections"
     __table_args__ = ({"schema": "exposure_reporting"},)
 
@@ -66,7 +64,7 @@ class ExposureKpiProjectionModel(ExposureReportingBase):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
-class ExposureTrendProjectionModel(ExposureReportingBase):
+class ExposureTrendProjectionModel(Base):
     __tablename__ = "exposure_trend_projections"
     __table_args__ = ({"schema": "exposure_reporting"},)
 

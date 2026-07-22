@@ -46,6 +46,8 @@ from exposure_reporting.infrastructure.workers.reporting_worker import (
 )
 
 if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
     from exposure_reporting.application.ports.i_exposure_data_query_port import (
         IExposureDataQueryPort,
     )
@@ -58,9 +60,20 @@ if TYPE_CHECKING:
     from exposure_reporting.domain.repositories.i_exposure_report_repository import (
         IExposureReportRepository,
     )
+    from exposure_reporting.infrastructure.projections.kpi_projection_store import (
+        IKpiProjectionStore,
+    )
+    from exposure_reporting.infrastructure.projections.trend_projection_store import (
+        ITrendProjectionStore,
+    )
 
 
 class ExposureReportingContainer:
+    report_repo: IExposureReportRepository
+    mapping_repo: IBusinessImpactMappingRepository
+    kpi_store: IKpiProjectionStore
+    trend_store: ITrendProjectionStore
+
     def __init__(
         self,
         *,
@@ -69,16 +82,47 @@ class ExposureReportingContainer:
         exposure_port: IExposureDataQueryPort | None = None,
         graph_port: ISecurityGraphWritePort | None = None,
         settings: ExposureReportingSettings | None = None,
+        session_factory: async_sessionmaker[AsyncSession] | None = None,
     ) -> None:
         self.settings = settings or ExposureReportingSettings.from_env()
         self.metrics = ReportingMetrics(labels={"context": "exposure_reporting", "phase": "5"})
-        self.report_repo = report_repo or InMemoryExposureReportRepository()
-        self.mapping_repo = mapping_repo or InMemoryBusinessImpactMappingRepository()
+        if report_repo is not None:
+            self.report_repo = report_repo
+        elif session_factory is not None:
+            from exposure_reporting.infrastructure.persistence.postgres_repositories import (
+                PgExposureReportRepository,
+            )
+
+            self.report_repo = PgExposureReportRepository(session_factory)
+        else:
+            self.report_repo = InMemoryExposureReportRepository()
+
+        if mapping_repo is not None:
+            self.mapping_repo = mapping_repo
+        elif session_factory is not None:
+            from exposure_reporting.infrastructure.persistence.postgres_repositories import (
+                PgBusinessImpactMappingRepository,
+            )
+
+            self.mapping_repo = PgBusinessImpactMappingRepository(session_factory)
+        else:
+            self.mapping_repo = InMemoryBusinessImpactMappingRepository()
+
         self.exposure_port = exposure_port or StaticExposureDataQueryAdapter()
         self.graph_port = graph_port or InMemorySecurityGraphWriteAdapter()
         self.event_publisher = StructlogEventPublisher()
-        self.kpi_store = KpiProjectionStore()
-        self.trend_store = TrendProjectionStore()
+
+        if session_factory is not None:
+            from exposure_reporting.infrastructure.persistence.postgres_projection_stores import (
+                PgKpiProjectionStore,
+                PgTrendProjectionStore,
+            )
+
+            self.kpi_store = PgKpiProjectionStore(session_factory)
+            self.trend_store = PgTrendProjectionStore(session_factory)
+        else:
+            self.kpi_store = KpiProjectionStore()
+            self.trend_store = TrendProjectionStore()
         self.mapping_service = BusinessImpactMappingService(self.mapping_repo, self.event_publisher)
         self.report_service = ExposureReportGenerationService(
             self.report_repo,

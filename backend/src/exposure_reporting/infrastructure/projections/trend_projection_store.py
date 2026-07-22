@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Protocol
 
 if TYPE_CHECKING:
     from datetime import datetime
@@ -16,6 +16,23 @@ class TrendPoint:
     tenant_exposure_score: float
     asset_count: int
     score_input_version: str
+
+
+class ITrendProjectionStore(Protocol):
+    """Structural port — satisfied by both TrendProjectionStore (in-memory)
+    and PgTrendProjectionStore (postgres_projection_stores.py)."""
+
+    async def append(
+        self,
+        tenant_id: UUID,
+        *,
+        tenant_exposure_score: float,
+        asset_count: int,
+        at: datetime,
+        score_input_version: str,
+    ) -> None: ...
+    async def list_points(self, tenant_id: UUID) -> list[TrendPoint]: ...
+    async def clear(self, tenant_id: UUID) -> None: ...
 
 
 class TrendProjectionStore:

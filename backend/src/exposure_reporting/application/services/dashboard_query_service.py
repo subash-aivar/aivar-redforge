@@ -27,10 +27,10 @@ if TYPE_CHECKING:
         IBusinessImpactMappingRepository,
     )
     from exposure_reporting.infrastructure.projections.kpi_projection_store import (
-        KpiProjectionStore,
+        IKpiProjectionStore,
     )
     from exposure_reporting.infrastructure.projections.trend_projection_store import (
-        TrendProjectionStore,
+        ITrendProjectionStore,
     )
 
 
@@ -39,8 +39,8 @@ class DashboardQueryService:
         self,
         exposure_port: IExposureDataQueryPort,
         mapping_repo: IBusinessImpactMappingRepository,
-        kpi_store: KpiProjectionStore,
-        trend_store: TrendProjectionStore,
+        kpi_store: IKpiProjectionStore,
+        trend_store: ITrendProjectionStore,
     ) -> None:
         self._exposure = exposure_port
         self._mappings = mapping_repo
