@@ -5,6 +5,8 @@
 **Last verified**: 2026-07-17 against source code (M22 Phase 4 — Threat Fusion + Phase 5 — Attack Path Engine)
 **Test baseline**: Prior non-integration baseline retained; +21 new Phase 4/5 tests (18 domain unit + 3 PostgreSQL integration), all passing. M22 Phase 4/5 PostgreSQL integration: 3 passed (STIX-catalog → Fusion → Attack Path E2E, migration head, weight override). Ruff clean on all Phase 4/5 files. Mypy clean on 24 Phase 4/5 modules (0 errors). Migration head: `0038` (`0037` Threat Fusion, `0038` Attack Path Engine; verified upgrade/downgrade on scratch DB).
 
+> **STALE BEYOND M22** (2026-07-22): the repository has since completed M23–M36 (migration head `0149`, 34 bounded contexts) — none of that work is reflected below. The body of this document remains an accurate historical record of the M1–M22 architecture and is still useful for understanding those contexts, but do not treat it as current for anything after M22. The root [`README.md`](../README.md) — "Current Status" and "Platform Capabilities (M19–M36)" — reflects verified current state; a full rewrite of this document through M36 is tracked as follow-up work rather than attempted here piecemeal.
+>
 > This document is the canonical onboarding reference for any future AI coding session or new engineer.
 > **Trust the source code, not this document alone.** Run `pytest`, `ruff check`, and `mypy --strict` after every change.
 

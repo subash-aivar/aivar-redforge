@@ -13,6 +13,11 @@ from httpx import ASGITransport, AsyncClient
 from redforge.app import create_app
 from redforge.core.config import Settings
 
+# Must live in the top-level conftest — pytest 9 rejects `pytest_plugins`
+# declared in a non-rootdir conftest (tests/credential_vault/conftest.py
+# used to declare this, which broke collecting the whole tests/ tree).
+pytest_plugins = ["tests.credential_vault.infrastructure.conftest"]
+
 
 @pytest.fixture
 def test_settings() -> Settings:

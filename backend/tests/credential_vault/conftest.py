@@ -26,7 +26,8 @@ from credential_vault.domain.value_objects.payloads import EncryptedPayload, Key
 from credential_vault.domain.value_objects.rotation_context import RotationContext
 from credential_vault.domain.value_objects.states import VersionState
 
-pytest_plugins = ["tests.credential_vault.infrastructure.conftest"]
+# pytest_plugins for this fixture module lives in the top-level
+# tests/conftest.py (pytest 9 rejects it here — see that file's comment).
 
 
 def pytest_configure(config: pytest.Config) -> None:
