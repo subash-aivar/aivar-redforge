@@ -1,37 +1,28 @@
 import { api } from "@/lib/api";
 
-export interface PostureForecast {
+// ─── Types ───────────────────────────────────────────────────────────────────
+
+export interface PostureForecastDTO {
   forecast_id: string;
   tenant_id: string;
-  horizon_days: number;
-  predicted_score: number;
-  confidence: number;
-  risk_drivers: RiskDriver[];
+  predicted_30d: number;
+  predicted_60d: number;
+  predicted_90d: number;
+  baseline_exposure_score: number;
   generated_at: string;
 }
 
-export interface RiskDriver {
-  driver_type: string;
-  contribution: number;
-  description: string;
+// ─── API ─────────────────────────────────────────────────────────────────────
+
+export function generateForecast(body: {
+  baseline_exposure_score: number;
+  remediation_velocity_per_day?: number;
+  open_critical_count?: number;
+  open_high_count?: number;
+}): Promise<PostureForecastDTO> {
+  return api.post<PostureForecastDTO>("/api/v1/posture-forecasting/forecasts", body);
 }
 
-export interface TrendPoint {
-  date: string;
-  score: number;
-  actual: boolean;
-}
-
-export function getLatestForecast(): Promise<PostureForecast> {
-  return api.get<PostureForecast>("/api/v1/posture-forecasting/latest");
-}
-
-export function generateForecast(horizonDays = 30): Promise<PostureForecast> {
-  return api.post<PostureForecast>("/api/v1/posture-forecasting/generate", {
-    horizon_days: horizonDays,
-  });
-}
-
-export function getTrend(days = 90): Promise<TrendPoint[]> {
-  return api.get<TrendPoint[]>(`/api/v1/posture-forecasting/trend?days=${days}`);
+export function getLatestForecast(): Promise<PostureForecastDTO> {
+  return api.get<PostureForecastDTO>("/api/v1/posture-forecasting/forecasts/latest");
 }

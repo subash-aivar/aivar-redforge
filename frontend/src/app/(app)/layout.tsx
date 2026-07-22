@@ -116,6 +116,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: "Analytics", href: "/analytics", icon: "📊", perm: "analytics:read" },
       { label: "Reporting", href: "/reporting", icon: "🗎" },
+      { label: "Posture Forecasting", href: "/posture-forecasting", icon: "🔮" },
       { label: "AI Posture", href: "/ai-posture", icon: "🤖", perm: "ai_posture:read" },
       { label: "AI Agent Governance", href: "/ai-governance", icon: "🛡", perm: "ai_posture:read" },
       { label: "AI Supply Chain", href: "/ai-supply-chain", icon: "🔗", perm: "ai_posture:read" },
