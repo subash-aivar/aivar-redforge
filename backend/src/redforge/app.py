@@ -31,6 +31,7 @@ from redforge.application.platform.replay_worker import DLQReplayWorker
 from redforge.application.platform.runtime_container import build_runtime_container
 from redforge.application.platform.runtime_contracts import DeadLetterEntry
 from redforge.application.platform.startup_validator import validate_startup
+from redforge.application.platform.tenant_periodic_runner import TenantPeriodicRunner
 from redforge.core.config import Settings, get_settings
 from redforge.core.logging import configure_logging, get_logger
 from redforge.infrastructure.database.engine import create_engine, dispose_engine
@@ -826,6 +827,295 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
         coordinator.register_startup("m22_ti_sync_workers", _start_m22_ti_sync_workers)
 
+        # ── Tenant-scheduler-backed bounded contexts ────────────────────────
+        # These contexts define a Scheduler.tick()/tick_all() entry point but,
+        # unlike the claim-based pollers above, have no internal poll loop —
+        # TenantPeriodicRunner supplies it. See its module docstring.
+        def _make_tenant_query_service() -> Any:
+            from redforge.application.platform_identity.query_service import (
+                PlatformQueryService,
+            )
+
+            sf = _session_factory
+            if sf is None:
+                return None
+            return PlatformQueryService(sf)
+
+        async def _start_analytics_scheduler() -> None:
+            from analytics.api.dependencies import get_container
+
+            container = get_container()
+            app.state.analytics_container = container
+            tqs = _make_tenant_query_service()
+            if tqs is None:
+                logger.warning("analytics_scheduler_no_session_factory")
+                return
+            runner = TenantPeriodicRunner(
+                "analytics_scheduler",
+                container.scheduler.daily_tick,
+                per_tenant=True,
+                tenant_query_service=tqs,
+                poll_interval_s=getattr(settings, "runtime_analytics_scheduler_poll_s", 3600.0),
+            )
+            await runner.start()
+            runtime.analytics_scheduler_runner = runner  # type: ignore[attr-defined]
+            logger.info("analytics_scheduler_started")
+
+        coordinator.register_startup("analytics_scheduler", _start_analytics_scheduler)
+
+        async def _start_automated_action_scheduler() -> None:
+            sf = _session_factory
+            if sf is None:
+                logger.warning("automated_action_scheduler_no_session_factory")
+                return
+            from automated_action.infrastructure.container import AutomatedActionContainer
+
+            container = AutomatedActionContainer(session_factory=sf)
+            app.state.automated_action_container = container
+            tqs = _make_tenant_query_service()
+            runner = TenantPeriodicRunner(
+                "automated_action_scheduler",
+                container.scheduler.tick_all,
+                per_tenant=True,
+                tenant_query_service=tqs,
+                poll_interval_s=getattr(settings, "runtime_automated_action_poll_s", 30.0),
+            )
+            await runner.start()
+            runtime.automated_action_scheduler_runner = runner  # type: ignore[attr-defined]
+            logger.info("automated_action_scheduler_started")
+
+        coordinator.register_startup(
+            "automated_action_scheduler", _start_automated_action_scheduler
+        )
+
+        async def _start_autonomous_intelligence_scheduler() -> None:
+            sf = _session_factory
+            if sf is None:
+                logger.warning("autonomous_intelligence_scheduler_no_session_factory")
+                return
+            from autonomous_intelligence.infrastructure.container import (
+                AutonomousIntelligenceContainer,
+            )
+
+            container = AutonomousIntelligenceContainer(session_factory=sf)
+            app.state.autonomous_intelligence_container = container
+            tqs = _make_tenant_query_service()
+            runner = TenantPeriodicRunner(
+                "autonomous_intelligence_scheduler",
+                container.scheduler.tick_all,
+                per_tenant=True,
+                tenant_query_service=tqs,
+                poll_interval_s=getattr(
+                    settings, "runtime_autonomous_intelligence_poll_s", 300.0
+                ),
+            )
+            await runner.start()
+            runtime.autonomous_intelligence_scheduler_runner = runner  # type: ignore[attr-defined]
+            logger.info("autonomous_intelligence_scheduler_started")
+
+        coordinator.register_startup(
+            "autonomous_intelligence_scheduler", _start_autonomous_intelligence_scheduler
+        )
+
+        async def _start_exposure_reporting_scheduler() -> None:
+            from exposure_reporting.api.dependencies import get_container
+
+            container = get_container()
+            app.state.exposure_reporting_container = container
+            tqs = _make_tenant_query_service()
+            if tqs is None:
+                logger.warning("exposure_reporting_scheduler_no_session_factory")
+                return
+
+            async def _tick(tenant_id: Any) -> None:
+                await container.worker.rebuild_projections(tenant_id, ("exposure:admin",))
+
+            runner = TenantPeriodicRunner(
+                "exposure_reporting_scheduler",
+                _tick,
+                per_tenant=True,
+                tenant_query_service=tqs,
+                poll_interval_s=getattr(settings, "runtime_exposure_reporting_poll_s", 900.0),
+            )
+            await runner.start()
+            runtime.exposure_reporting_scheduler_runner = runner  # type: ignore[attr-defined]
+            logger.info("exposure_reporting_scheduler_started")
+
+        coordinator.register_startup(
+            "exposure_reporting_scheduler", _start_exposure_reporting_scheduler
+        )
+
+        async def _start_incident_scheduler() -> None:
+            sf = _session_factory
+            if sf is None:
+                logger.warning("incident_scheduler_no_session_factory")
+                return
+            from incident.infrastructure.container import IncidentContainer
+
+            container = IncidentContainer(session_factory=sf)
+            app.state.incident_container = container
+            runner = TenantPeriodicRunner(
+                "incident_scheduler",
+                container.scheduler.tick_all,
+                per_tenant=False,
+                poll_interval_s=getattr(settings, "runtime_incident_scheduler_poll_s", 60.0),
+            )
+            await runner.start()
+            runtime.incident_scheduler_runner = runner  # type: ignore[attr-defined]
+            logger.info("incident_scheduler_started")
+
+        coordinator.register_startup("incident_scheduler", _start_incident_scheduler)
+
+        async def _start_playbook_scheduler() -> None:
+            sf = _session_factory
+            if sf is None:
+                logger.warning("playbook_scheduler_no_session_factory")
+                return
+            from playbook.infrastructure.container import PlaybookContainer
+
+            container = PlaybookContainer(session_factory=sf)
+            app.state.playbook_container = container
+
+            async def _tick() -> None:
+                container.scheduler.tick_all()
+
+            runner = TenantPeriodicRunner(
+                "playbook_scheduler",
+                _tick,
+                per_tenant=False,
+                poll_interval_s=getattr(settings, "runtime_playbook_scheduler_poll_s", 30.0),
+            )
+            await runner.start()
+            runtime.playbook_scheduler_runner = runner  # type: ignore[attr-defined]
+            logger.info("playbook_scheduler_started")
+
+        coordinator.register_startup("playbook_scheduler", _start_playbook_scheduler)
+
+        async def _start_posture_forecasting_scheduler() -> None:
+            sf = _session_factory
+            if sf is None:
+                logger.warning("posture_forecasting_scheduler_no_session_factory")
+                return
+            from posture_forecasting.infrastructure.container import (
+                PostureForecastingContainer,
+            )
+
+            container = PostureForecastingContainer(session_factory=sf)
+            app.state.posture_forecasting_container = container
+            tqs = _make_tenant_query_service()
+            runner = TenantPeriodicRunner(
+                "posture_forecasting_scheduler",
+                container.scheduler.tick_all,
+                per_tenant=True,
+                tenant_query_service=tqs,
+                poll_interval_s=getattr(
+                    settings, "runtime_posture_forecasting_poll_s", 3600.0
+                ),
+            )
+            await runner.start()
+            runtime.posture_forecasting_scheduler_runner = runner  # type: ignore[attr-defined]
+            logger.info("posture_forecasting_scheduler_started")
+
+        coordinator.register_startup(
+            "posture_forecasting_scheduler", _start_posture_forecasting_scheduler
+        )
+
+        async def _start_regulatory_notification_scheduler() -> None:
+            from regulatory_notification.infrastructure.container import (
+                RegulatoryNotificationContainer,
+            )
+
+            container = RegulatoryNotificationContainer()
+            app.state.regulatory_container = container
+
+            async def _tick() -> None:
+                await container.scheduler.tick_all()
+
+            runner = TenantPeriodicRunner(
+                "regulatory_notification_scheduler",
+                _tick,
+                per_tenant=False,
+                poll_interval_s=getattr(
+                    settings, "runtime_regulatory_notification_poll_s", 300.0
+                ),
+            )
+            await runner.start()
+            runtime.regulatory_notification_scheduler_runner = runner  # type: ignore[attr-defined]
+            logger.info("regulatory_notification_scheduler_started")
+
+        coordinator.register_startup(
+            "regulatory_notification_scheduler", _start_regulatory_notification_scheduler
+        )
+
+        async def _start_reporting_scheduler() -> None:
+            from reporting.api.dependencies import get_container
+
+            container = await get_container()
+            app.state.reporting_container = container
+
+            async def _tick() -> None:
+                await container.scheduler_worker.tick()
+
+            runner = TenantPeriodicRunner(
+                "reporting_scheduler",
+                _tick,
+                per_tenant=False,
+                poll_interval_s=getattr(settings, "runtime_reporting_scheduler_poll_s", 60.0),
+            )
+            await runner.start()
+            runtime.reporting_scheduler_runner = runner  # type: ignore[attr-defined]
+            logger.info("reporting_scheduler_started")
+
+        coordinator.register_startup("reporting_scheduler", _start_reporting_scheduler)
+
+        async def _start_threat_hunt_scheduler() -> None:
+            sf = _session_factory
+            if sf is None:
+                logger.warning("threat_hunt_scheduler_no_session_factory")
+                return
+            from threat_hunt.infrastructure.container import ThreatHuntContainer
+
+            container = ThreatHuntContainer(session_factory=sf)
+            app.state.threat_hunt_container = container
+            tqs = _make_tenant_query_service()
+            runner = TenantPeriodicRunner(
+                "threat_hunt_scheduler",
+                container.scheduler.tick,
+                per_tenant=True,
+                tenant_query_service=tqs,
+                poll_interval_s=getattr(settings, "runtime_threat_hunt_poll_s", 300.0),
+            )
+            await runner.start()
+            runtime.threat_hunt_scheduler_runner = runner  # type: ignore[attr-defined]
+            logger.info("threat_hunt_scheduler_started")
+
+        coordinator.register_startup("threat_hunt_scheduler", _start_threat_hunt_scheduler)
+
+        async def _start_integration_hub_scheduler() -> None:
+            sf = _session_factory
+            if sf is None:
+                logger.warning("integration_hub_scheduler_no_session_factory")
+                return
+            from integration_hub.infrastructure.container import IntegrationHubContainer
+
+            container = IntegrationHubContainer(session_factory=sf)
+            app.state.integration_hub_container = container
+            tqs = _make_tenant_query_service()
+            runner = TenantPeriodicRunner(
+                "integration_hub_scheduler",
+                container.scheduler.tick,
+                per_tenant=True,
+                tenant_query_service=tqs,
+                poll_interval_s=getattr(settings, "runtime_integration_hub_poll_s", 300.0),
+            )
+            await runner.start()
+            runtime.integration_hub_scheduler_runner = runner  # type: ignore[attr-defined]
+            logger.info("integration_hub_scheduler_started")
+
+        coordinator.register_startup(
+            "integration_hub_scheduler", _start_integration_hub_scheduler
+        )
+
         # Register shutdown hooks (run in reverse registration order)
         async def _shutdown_ddos_detection_worker() -> None:
             worker = getattr(runtime, "ddos_detection_worker", None)
@@ -877,6 +1167,35 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             if worker is not None:
                 await worker.stop()
                 logger.info("feed_sync_scheduler_stopped")
+
+        def _make_tenant_periodic_shutdown(runtime_attr: str) -> Any:
+            async def _shutdown() -> None:
+                runner = getattr(runtime, runtime_attr, None)
+                if runner is not None:
+                    await runner.stop()
+                    logger.info(f"{runtime_attr}_stopped")
+
+            return _shutdown
+
+        _tenant_periodic_runner_names = (
+            "analytics_scheduler_runner",
+            "automated_action_scheduler_runner",
+            "autonomous_intelligence_scheduler_runner",
+            "exposure_reporting_scheduler_runner",
+            "incident_scheduler_runner",
+            "playbook_scheduler_runner",
+            "posture_forecasting_scheduler_runner",
+            "regulatory_notification_scheduler_runner",
+            "reporting_scheduler_runner",
+            "threat_hunt_scheduler_runner",
+            "integration_hub_scheduler_runner",
+        )
+        for _runner_attr in _tenant_periodic_runner_names:
+            coordinator.register_shutdown(
+                _runner_attr,
+                _make_tenant_periodic_shutdown(_runner_attr),
+                timeout_s=settings.runtime_shutdown_timeout_s,
+            )
 
         coordinator.register_shutdown(
             "credential_vault_workers",
