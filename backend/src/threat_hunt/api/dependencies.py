@@ -10,7 +10,13 @@ from threat_hunt.infrastructure.container import ThreatHuntContainer
 def get_container(request: Request) -> ThreatHuntContainer:
     c = getattr(request.app.state, "threat_hunt_container", None)
     if c is None:
-        c = ThreatHuntContainer()
+        from redforge.api.dependencies import get_session_factory
+
+        try:
+            session_factory = get_session_factory()
+        except RuntimeError:
+            session_factory = None
+        c = ThreatHuntContainer(session_factory=session_factory)
         request.app.state.threat_hunt_container = c
     return c
 
