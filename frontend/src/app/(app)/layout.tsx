@@ -105,6 +105,12 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    title: "Analytics & AI Governance",
+    items: [
+      { label: "Analytics", href: "/analytics", icon: "📊", perm: "analytics:read" },
+    ],
+  },
+  {
     title: "Administration",
     items: [
       { label: "Roles & Permissions", href: "/roles", icon: "🛡", perm: "roles:read" },
