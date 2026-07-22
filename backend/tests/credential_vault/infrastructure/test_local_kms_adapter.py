@@ -38,3 +38,25 @@ async def test_unwrap_wrong_key_id_raises(adapter: LocalAesKwKmsAdapter) -> None
 async def test_dek_bytes_are_32(adapter: LocalAesKwKmsAdapter) -> None:
     dek, _ = await adapter.generate_dek()
     assert len(dek) == 32
+
+
+@pytest.mark.asyncio
+async def test_rewrap_to_registered_key_round_trips() -> None:
+    adapter = LocalAesKwKmsAdapter(
+        master_key=b"\xab" * 32,
+        master_key_id="key-v1",
+        other_keys={"key-v2": b"\xcd" * 32},
+    )
+    dek, envelope = await adapter.generate_dek()
+    new_envelope = await adapter.rewrap_dek(envelope, "key-v2")
+    assert new_envelope.master_key_id == "key-v2"
+
+    rewrapped_dek = await adapter.unwrap_dek(new_envelope)
+    assert bytes(rewrapped_dek) == dek
+
+
+@pytest.mark.asyncio
+async def test_rewrap_to_unknown_key_raises(adapter: LocalAesKwKmsAdapter) -> None:
+    _, envelope = await adapter.generate_dek()
+    with pytest.raises(KmsKeyNotFound):
+        await adapter.rewrap_dek(envelope, "unknown-key")

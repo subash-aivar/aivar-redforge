@@ -26,7 +26,7 @@ from credential_vault.domain.services.recovery_service import RecoveryService
 from credential_vault.infrastructure.encryption.aes_gcm_encryption_adapter import (
     AesGcmEncryptionAdapter,
 )
-from credential_vault.infrastructure.encryption.local_kms_adapter import LocalAesKwKmsAdapter
+from credential_vault.infrastructure.encryption.kms_factory import build_kms_adapter
 from credential_vault.infrastructure.events.structlog_event_publisher import (
     StructlogEventPublisher,
 )
@@ -78,7 +78,7 @@ class CredentialVaultContainer:
     ) -> None:
         self._session_factory = session_factory
         self.encryption_adapter = encryption_adapter or AesGcmEncryptionAdapter()
-        self.kms_adapter = kms_adapter or LocalAesKwKmsAdapter.from_env()
+        self.kms_adapter = kms_adapter or build_kms_adapter()
         self.event_publisher = event_publisher or StructlogEventPublisher()
 
         if permission_adapter is not None:

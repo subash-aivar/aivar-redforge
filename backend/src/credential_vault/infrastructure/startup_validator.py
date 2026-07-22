@@ -65,7 +65,7 @@ async def _check_migration_head(container: CredentialVaultContainer, errors: lis
 
 
 async def _check_kms(container: CredentialVaultContainer, errors: list[str]) -> None:
-    environment = os.environ.get("ENVIRONMENT", "development")
+    environment = os.environ.get("REDFORGE_ENVIRONMENT", "development")
     try:
         dek, envelope = await container.kms_adapter.generate_dek()
         _ = envelope
