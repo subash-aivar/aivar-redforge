@@ -10,7 +10,16 @@ from incident.infrastructure.container import IncidentContainer
 def get_container(request: Request) -> IncidentContainer:
     container = getattr(request.app.state, "incident_container", None)
     if container is None:
-        container = IncidentContainer()
+        from redforge.api.dependencies import get_session_factory
+
+        try:
+            session_factory = get_session_factory()
+        except RuntimeError:
+            # Engine not initialized (e.g. tests that build this router
+            # without running the app's startup lifespan) — fall back to
+            # the in-memory repositories rather than failing the request.
+            session_factory = None
+        container = IncidentContainer(session_factory=session_factory)
         request.app.state.incident_container = container
     return container
 
