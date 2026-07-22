@@ -12,7 +12,13 @@ _container: RemediationImpactContainer | None = None
 def get_container() -> RemediationImpactContainer:
     global _container
     if _container is None:
-        _container = RemediationImpactContainer()
+        from redforge.api.dependencies import get_session_factory
+
+        try:
+            session_factory = get_session_factory()
+        except RuntimeError:
+            session_factory = None
+        _container = RemediationImpactContainer(session_factory=session_factory)
     return _container
 
 

@@ -9,14 +9,12 @@ from uuid import UUID
 from sqlalchemy import DateTime, Float, Integer, String
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PgUUID
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column
+
+from redforge.infrastructure.database.base import Base
 
 
-class RemediationImpactBase(DeclarativeBase):
-    pass
-
-
-class ExposureReductionPlanModel(RemediationImpactBase):
+class ExposureReductionPlanModel(Base):
     __tablename__ = "exposure_reduction_plans"
     __table_args__ = ({"schema": "remediation_impact"},)
 

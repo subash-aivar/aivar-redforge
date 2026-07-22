@@ -21,6 +21,8 @@ from remediation_impact.infrastructure.workers.simulation_worker import (
 )
 
 if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
     from remediation_impact.application.ports.i_exposure_score_query_port import (
         IExposureScoreQueryPort,
     )
@@ -35,8 +37,18 @@ class RemediationImpactContainer:
         *,
         repo: IExposureReductionPlanRepository | None = None,
         score_port: IExposureScoreQueryPort | None = None,
+        session_factory: async_sessionmaker[AsyncSession] | None = None,
     ) -> None:
-        self.repo = repo or InMemoryExposureReductionPlanRepository()
+        if repo is not None:
+            self.repo = repo
+        elif session_factory is not None:
+            from remediation_impact.infrastructure.persistence.postgres_plan_repository import (
+                PgExposureReductionPlanRepository,
+            )
+
+            self.repo = PgExposureReductionPlanRepository(session_factory)
+        else:
+            self.repo = InMemoryExposureReductionPlanRepository()
         self.event_publisher = StructlogEventPublisher()
         self.score_port = score_port or StaticExposureScoreQueryAdapter()
         self.plan_service = ExposureReductionPlanService(
