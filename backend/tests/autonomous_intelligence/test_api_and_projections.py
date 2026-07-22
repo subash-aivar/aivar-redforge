@@ -3,7 +3,7 @@ from __future__ import annotations
 from uuid import uuid4
 
 import pytest
-from fastapi import FastAPI
+from fastapi import FastAPI, Header
 from fastapi.testclient import TestClient
 
 from autonomous_intelligence.api.dependencies import get_container
@@ -19,6 +19,24 @@ from autonomous_intelligence.infrastructure.workers.intelligence_workers import 
     M36AnalyticsProjector,
     M36SecurityGraphWorker,
 )
+from redforge.api.security import TenantContext, get_tenant_context
+from redforge.domain.identity.value_objects import MembershipRole, Permission
+
+
+def _override_tenant_context(
+    x_tenant_id: str = Header(..., alias="X-Tenant-Id"),
+) -> TenantContext:
+    """Test-only stand-in for JWT verification: mints a TenantContext for
+    whatever X-Tenant-Id the test sends, since these tests exercise
+    role-based authorization (X-Roles) without a full login flow.
+    """
+    return TenantContext(
+        user_id=str(uuid4()),
+        email="autonomous-intelligence-test@example.com",
+        organization_id=x_tenant_id,
+        role=MembershipRole.OWNER,
+        permissions=frozenset(Permission),
+    )
 
 
 @pytest.fixture()
@@ -27,6 +45,7 @@ def client() -> TestClient:
     app.include_router(router)
     c = AutonomousIntelligenceContainer()
     app.dependency_overrides[get_container] = lambda: c
+    app.dependency_overrides[get_tenant_context] = _override_tenant_context
     return TestClient(app)
 
 
