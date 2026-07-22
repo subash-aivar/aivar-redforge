@@ -91,6 +91,8 @@ const NAV_GROUPS: NavGroup[] = [
       { label: "Validation Operations", href: "/validation-operations", icon: "✓" },
       { label: "Continuous Validation", href: "/continuous-validation", icon: "↻" },
       { label: "Authorization", href: "/authorization", icon: "🔒" },
+      { label: "Threat Hunt", href: "/threat-hunt", icon: "🎯", perm: "threat_hunt:read" },
+      { label: "Playbooks", href: "/playbooks", icon: "▶", perm: "playbooks:read" },
     ],
   },
   {
