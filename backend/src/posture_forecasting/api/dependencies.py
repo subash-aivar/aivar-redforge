@@ -10,7 +10,13 @@ from posture_forecasting.infrastructure.container import PostureForecastingConta
 def get_container(request: Request) -> PostureForecastingContainer:
     c = getattr(request.app.state, "posture_forecasting_container", None)
     if c is None:
-        c = PostureForecastingContainer()
+        from redforge.api.dependencies import get_session_factory
+
+        try:
+            session_factory = get_session_factory()
+        except RuntimeError:
+            session_factory = None
+        c = PostureForecastingContainer(session_factory=session_factory)
         request.app.state.posture_forecasting_container = c
     return c
 
