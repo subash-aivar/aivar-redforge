@@ -4,6 +4,11 @@ import hashlib
 from typing import TYPE_CHECKING
 
 from ml_pipeline.domain.exceptions.domain_exceptions import ArtifactNotFoundError
+from ml_pipeline.domain.repositories.i_ml_repositories import (
+    IMLModelArtifactStore,
+    IMLModelRepository,
+    IPredictiveRiskSignalRepository,
+)
 from ml_pipeline.domain.value_objects.enums import MLModelStatus
 
 if TYPE_CHECKING:
@@ -19,7 +24,7 @@ if TYPE_CHECKING:
     )
 
 
-class InMemoryMLModelRepository:
+class InMemoryMLModelRepository(IMLModelRepository):
     def __init__(self) -> None:
         self._rows: dict[str, dict[str, MLModel]] = {}
 
@@ -62,7 +67,7 @@ class InMemoryMLModelRepository:
         return out
 
 
-class InMemoryPredictiveRiskSignalRepository:
+class InMemoryPredictiveRiskSignalRepository(IPredictiveRiskSignalRepository):
     def __init__(self) -> None:
         self._rows: dict[str, list[PredictiveRiskSignal]] = {}
 
@@ -88,7 +93,7 @@ class InMemoryPredictiveRiskSignalRepository:
         ]
 
 
-class InMemoryMLModelArtifactStore:
+class InMemoryMLModelArtifactStore(IMLModelArtifactStore):
     """Tenant-scoped BYTEA-like artifact store with SHA-256 integrity."""
 
     def __init__(self) -> None:

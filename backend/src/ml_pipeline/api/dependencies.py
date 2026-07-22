@@ -12,7 +12,13 @@ _container: MLPipelineContainer | None = None
 def get_container() -> MLPipelineContainer:
     global _container
     if _container is None:
-        _container = MLPipelineContainer()
+        from redforge.api.dependencies import get_session_factory
+
+        try:
+            session_factory = get_session_factory()
+        except RuntimeError:
+            session_factory = None
+        _container = MLPipelineContainer(session_factory=session_factory)
     return _container
 
 

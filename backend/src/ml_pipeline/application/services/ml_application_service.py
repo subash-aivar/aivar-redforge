@@ -26,22 +26,22 @@ if TYPE_CHECKING:
     from ml_pipeline.domain.ports.i_security_graph_write_port import (
         ISecurityGraphWritePort,
     )
+    from ml_pipeline.domain.repositories.i_ml_repositories import (
+        IMLModelArtifactStore,
+        IMLModelRepository,
+        IPredictiveRiskSignalRepository,
+    )
     from ml_pipeline.infrastructure.events.structlog_event_publisher import (
         StructlogEventPublisher,
-    )
-    from ml_pipeline.infrastructure.persistence.in_memory_repositories import (
-        InMemoryMLModelArtifactStore,
-        InMemoryMLModelRepository,
-        InMemoryPredictiveRiskSignalRepository,
     )
 
 
 class MLApplicationService:
     def __init__(
         self,
-        models: InMemoryMLModelRepository,
-        signals: InMemoryPredictiveRiskSignalRepository,
-        artifacts: InMemoryMLModelArtifactStore,
+        models: IMLModelRepository,
+        signals: IPredictiveRiskSignalRepository,
+        artifacts: IMLModelArtifactStore,
         graph: ISecurityGraphWritePort,
         events: StructlogEventPublisher,
     ) -> None:

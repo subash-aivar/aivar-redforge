@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from ml_pipeline.application.services.ml_application_service import MLApplicationService
 from ml_pipeline.infrastructure.acl.security_graph_write_adapter import (
     InMemorySecurityGraphWriteAdapter,
@@ -20,12 +22,38 @@ from ml_pipeline.infrastructure.workers.ml_workers import (
     MLTrainingWorker,
 )
 
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
+    from ml_pipeline.domain.repositories.i_ml_repositories import (
+        IMLModelArtifactStore,
+        IMLModelRepository,
+        IPredictiveRiskSignalRepository,
+    )
+
 
 class MLPipelineContainer:
-    def __init__(self) -> None:
-        self.models = InMemoryMLModelRepository()
-        self.signals = InMemoryPredictiveRiskSignalRepository()
-        self.artifacts = InMemoryMLModelArtifactStore()
+    models: IMLModelRepository
+    signals: IPredictiveRiskSignalRepository
+    artifacts: IMLModelArtifactStore
+
+    def __init__(
+        self, session_factory: async_sessionmaker[AsyncSession] | None = None
+    ) -> None:
+        if session_factory is not None:
+            from ml_pipeline.infrastructure.persistence.postgres_repositories import (
+                PgMLModelArtifactStore,
+                PgMLModelRepository,
+                PgPredictiveRiskSignalRepository,
+            )
+
+            self.models = PgMLModelRepository(session_factory)
+            self.signals = PgPredictiveRiskSignalRepository(session_factory)
+            self.artifacts = PgMLModelArtifactStore(session_factory)
+        else:
+            self.models = InMemoryMLModelRepository()
+            self.signals = InMemoryPredictiveRiskSignalRepository()
+            self.artifacts = InMemoryMLModelArtifactStore()
         self.graph = InMemorySecurityGraphWriteAdapter()
         self.events = StructlogEventPublisher()
         self.app = MLApplicationService(
