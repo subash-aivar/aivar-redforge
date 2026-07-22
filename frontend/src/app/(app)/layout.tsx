@@ -130,6 +130,7 @@ const NAV_GROUPS: NavGroup[] = [
       { label: "Roles & Permissions", href: "/roles", icon: "🛡", perm: "roles:read" },
       { label: "Groups", href: "/groups-rbac", icon: "◫", perm: "groups:read" },
       { label: "Access Explorer", href: "/access-explorer", icon: "🔍" },
+      { label: "Credential Vault", href: "/credential-vault", icon: "🔐" },
     ],
   },
 ];
