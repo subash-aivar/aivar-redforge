@@ -1,8 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import {
-  getBootstrapStatus,
+  AsyncContent,
+  DataConsole,
+  KpiTile,
+  PageHeader,
+  Panel,
+  StatusPill,
+  fmtTime,
+  useAsync,
+  type ConsoleColumn,
+} from "@/components/cc";
+import {
   getPlatformAudit,
   listPlatformAccess,
   listPlatformOrganizations,
@@ -10,112 +19,116 @@ import {
   type PlatformAuditEntry,
 } from "@/lib/platform";
 
-type Metric = { value: number; loaded: boolean; failed: boolean };
-
-const EMPTY_METRIC: Metric = { value: 0, loaded: false, failed: false };
-
 export default function PlatformOverviewPage() {
-  const [users, setUsers] = useState<Metric>(EMPTY_METRIC);
-  const [orgs, setOrgs] = useState<Metric>(EMPTY_METRIC);
-  const [access, setAccess] = useState<Metric>(EMPTY_METRIC);
-  const [recentAudit, setRecentAudit] = useState<PlatformAuditEntry[] | null>(null);
-  const [auditFailed, setAuditFailed] = useState(false);
+  const users = useAsync(() => listPlatformUsers(), []);
+  const orgs = useAsync(() => listPlatformOrganizations(), []);
+  const access = useAsync(() => listPlatformAccess(), []);
+  const audit = useAsync(() => getPlatformAudit(), []);
 
-  useEffect(() => {
-    listPlatformUsers()
-      .then((u) => setUsers({ value: u.length, loaded: true, failed: false }))
-      .catch(() => setUsers({ value: 0, loaded: true, failed: true }));
+  const activeAccessCount =
+    access.data?.filter((a) => a.status === "active").length ?? null;
 
-    listPlatformOrganizations()
-      .then((o) => setOrgs({ value: o.length, loaded: true, failed: false }))
-      .catch(() => setOrgs({ value: 0, loaded: true, failed: true }));
-
-    listPlatformAccess()
-      .then((a) =>
-        setAccess({
-          value: a.filter((x) => x.status === "active").length,
-          loaded: true,
-          failed: false,
-        })
-      )
-      .catch(() => setAccess({ value: 0, loaded: true, failed: true }));
-
-    getPlatformAudit()
-      .then((entries) => setRecentAudit(entries.slice(0, 10)))
-      .catch(() => setAuditFailed(true));
-
-    // Bootstrap status has no metric card but is checked so this page
-    // doesn't silently omit whether bootstrap is still open — surfaced
-    // via a banner only when relevant (available === true implies no
-    // Super Admin exists yet, which would be unusual on this page).
-    getBootstrapStatus().catch(() => {});
-  }, []);
+  const columns: ConsoleColumn<PlatformAuditEntry>[] = [
+    { key: "action", header: "Action", width: "24%", render: (r) => (
+      <span className="font-mono text-purple-300">{r.action}</span>
+    ) },
+    { key: "actor", header: "Actor", width: "18%", render: (r) => (
+      <span className="font-mono text-[11px] text-gray-400">{r.actor_id.slice(0, 10)}…</span>
+    ) },
+    { key: "target", header: "Target", width: "18%", render: (r) => (
+      <span className="font-mono text-[11px] text-gray-400">{r.target_id.slice(0, 10)}…</span>
+    ) },
+    { key: "role", header: "Role", width: "14%", render: (r) => r.role ? <StatusPill status={r.role} /> : "—" },
+    { key: "outcome", header: "Outcome", width: "12%", render: (r) => (
+      <span className={r.outcome === "success" ? "text-emerald-400" : "text-red-400"}>
+        {r.outcome}
+      </span>
+    ) },
+    { key: "time", header: "Time", width: "14%", render: (r) => (
+      <span className="text-gray-500">{fmtTime(r.timestamp)}</span>
+    ) },
+  ];
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-white">Platform Overview</h1>
-      <p className="mt-1 text-sm text-gray-400">
-        Platform-wide governance metrics. This is not tenant security data —
-        no organization&apos;s findings, evidence, or credentials are visible here.
-      </p>
+    <>
+      <PageHeader
+        title="Platform Overview"
+        subtitle="Platform-wide governance metrics — not tenant security data. No organization's findings, evidence, or credentials are visible here."
+        actions={
+          <button
+            type="button"
+            onClick={() => {
+              users.reload();
+              orgs.reload();
+              access.reload();
+              audit.reload();
+            }}
+            className="rounded-md border border-gray-700 px-3 py-1.5 text-xs text-gray-300 hover:border-purple-700 hover:text-purple-300"
+          >
+            Refresh
+          </button>
+        }
+      />
 
-      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <MetricCard label="Registered Users" metric={users} />
-        <MetricCard label="Organizations" metric={orgs} />
-        <MetricCard label="Active Platform Access Grants" metric={access} />
+      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <MetricPanel label="Registered Users" state={users} accent="default" />
+        <MetricPanel label="Organizations" state={orgs} accent="default" />
+        <MetricPanel
+          label="Active Platform Access Grants"
+          state={access}
+          value={activeAccessCount ?? undefined}
+          accent="ok"
+        />
       </div>
 
-      <div className="mt-8">
-        <h2 className="text-sm font-medium text-gray-400">Recent Platform Security Audit</h2>
-        {auditFailed ? (
-          <div className="mt-2 rounded-lg border border-red-800 bg-red-950 px-4 py-3 text-sm text-red-300">
-            UNAVAILABLE — failed to load audit activity.
-          </div>
-        ) : recentAudit === null ? (
-          <div className="mt-2 text-sm text-gray-500">Loading…</div>
-        ) : recentAudit.length === 0 ? (
-          <div className="mt-2 rounded-lg border border-gray-800 bg-gray-900 px-4 py-3 text-sm text-gray-500">
-            No platform security events recorded yet.
-          </div>
-        ) : (
-          <div className="mt-2 space-y-2">
-            {recentAudit.map((e, i) => (
-              <div
-                key={i}
-                className="rounded-lg border border-gray-800 bg-gray-900 px-4 py-2 font-mono text-xs"
-              >
-                <span className="text-purple-300">{e.action}</span>
-                <span className="text-gray-600"> · actor=</span>
-                <span className="text-gray-400">{e.actor_id.slice(0, 10)}…</span>
-                <span className="text-gray-600"> · target=</span>
-                <span className="text-gray-400">{e.target_id.slice(0, 10)}…</span>
-                <span className="text-gray-600"> · </span>
-                <span className={e.outcome === "success" ? "text-green-400" : "text-red-400"}>
-                  {e.outcome}
-                </span>
-                <span className="text-gray-600"> · {new Date(e.timestamp).toLocaleString()}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
+      <Panel
+        title="Recent Platform Security Audit"
+        right={
+          <span className="text-[10px] uppercase tracking-widest text-gray-600">
+            Append-only log
+          </span>
+        }
+      >
+        <AsyncContent state={audit} emptyLabel="No platform security events recorded yet.">
+          {(rows) => (
+            <DataConsole
+              columns={columns}
+              rows={rows.slice(0, 15)}
+              rowKey={(r) => `${r.action}-${r.actor_id}-${r.target_id}-${r.timestamp}`}
+              emptyLabel="No platform security events recorded yet."
+            />
+          )}
+        </AsyncContent>
+      </Panel>
+    </>
   );
 }
 
-function MetricCard({ label, metric }: { label: string; metric: Metric }) {
+function MetricPanel({
+  label,
+  state,
+  value,
+  accent,
+}: {
+  label: string;
+  state: { loading: boolean; error: string | null; forbidden: boolean; data: unknown[] | null };
+  value?: number;
+  accent: "default" | "ok";
+}) {
+  if (state.loading) {
+    return <KpiTile label={label} value="…" />;
+  }
+  if (state.forbidden) {
+    return <KpiTile label={label} value="—" hint="No permission" tone="warning" />;
+  }
+  if (state.error || state.data === null) {
+    return <KpiTile label={label} value="UNAVAILABLE" tone="danger" />;
+  }
   return (
-    <div className="rounded-xl border border-gray-800 bg-gray-900 p-4">
-      <div className="text-xs text-gray-500">{label}</div>
-      <div className="mt-1 text-2xl font-bold text-white">
-        {!metric.loaded ? (
-          <span className="text-base text-gray-600">Loading…</span>
-        ) : metric.failed ? (
-          <span className="text-base text-red-400">UNAVAILABLE</span>
-        ) : (
-          metric.value
-        )}
-      </div>
-    </div>
+    <KpiTile
+      label={label}
+      value={value ?? state.data.length}
+      tone={accent === "ok" ? "ok" : "default"}
+    />
   );
 }
