@@ -10,7 +10,13 @@ from lessons_learned.infrastructure.container import LessonsLearnedContainer
 def get_container(request: Request) -> LessonsLearnedContainer:
     c = getattr(request.app.state, "lessons_container", None)
     if c is None:
-        c = LessonsLearnedContainer()
+        from redforge.api.dependencies import get_session_factory
+
+        try:
+            session_factory = get_session_factory()
+        except RuntimeError:
+            session_factory = None
+        c = LessonsLearnedContainer(session_factory=session_factory)
         request.app.state.lessons_container = c
     return c
 
