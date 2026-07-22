@@ -67,7 +67,7 @@ export default function LessonsLearnedPage() {
             <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
               <KpiTile label="Total Reviews" value={list.length} />
               <KpiTile label="In Progress" value={list.filter(r => r.status === "in_progress" || r.status === "open").length} tone="warning" />
-              <KpiTile label="Finalized" value={list.filter(r => r.status === "finalized" || r.status === "closed").length} tone="low" />
+              <KpiTile label="Finalized" value={list.filter(r => r.status === "finalized" || r.status === "closed").length} tone="ok" />
               <KpiTile label="Total Actions" value={list.reduce((sum, r) => sum + r.actions.length, 0)} />
             </div>
             <DataConsole
@@ -75,7 +75,7 @@ export default function LessonsLearnedPage() {
               rows={list}
               rowKey={(r) => r.review_id}
               onRowClick={(r) => setSelected(r)}
-              emptyMessage="No post-incident reviews. Create one after an incident is resolved."
+              emptyLabel="No post-incident reviews. Create one after an incident is resolved."
             />
           </>
         )}
@@ -83,51 +83,51 @@ export default function LessonsLearnedPage() {
 
       {selected && (
         <InvestigationDrawer
+          open
           title={`Review: ${selected.incident_id.slice(0, 12)}…`}
           onClose={() => setSelected(null)}
-        >
-          <div className="space-y-4 p-4">
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div><span className="text-gray-500">Status:</span> <StatusPill status={selected.status} /></div>
-              <div><span className="text-gray-500">Incident:</span> <span className="font-mono text-gray-200">{selected.incident_id}</span></div>
-            </div>
-
-            {selected.lessons.length > 0 && (
-              <Panel title={`Lessons (${selected.lessons.length})`}>
-                <div className="divide-y divide-gray-800">
-                  {selected.lessons.map((l) => (
-                    <div key={l.lesson_id} className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <span className="rounded border border-gray-700 px-1.5 py-0.5 text-[10px] text-gray-400">{l.category}</span>
-                      </div>
-                      <p className="mt-1 text-sm text-gray-300">{l.description}</p>
-                      <p className="mt-0.5 text-xs text-gray-500">Impact: {l.impact_summary}</p>
+          fields={[
+            { label: "Status", value: <StatusPill status={selected.status} /> },
+            { label: "Incident", value: <span className="font-mono">{selected.incident_id}</span> },
+            ...(selected.lessons.length > 0
+              ? [{
+                  label: `Lessons (${selected.lessons.length})`,
+                  value: (
+                    <div className="divide-y divide-gray-800">
+                      {selected.lessons.map((l) => (
+                        <div key={l.lesson_id} className="py-2">
+                          <span className="rounded border border-gray-700 px-1.5 py-0.5 text-[10px] text-gray-400">{l.category}</span>
+                          <p className="mt-1 text-sm text-gray-300">{l.description}</p>
+                          <p className="mt-0.5 text-xs text-gray-500">Impact: {l.impact_summary}</p>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </Panel>
-            )}
-
-            {selected.actions.length > 0 && (
-              <Panel title={`Actions (${selected.actions.length})`}>
-                <div className="divide-y divide-gray-800">
-                  {selected.actions.map((a) => (
-                    <div key={a.action_id} className="flex items-center justify-between px-4 py-2">
-                      <div>
-                        <span className="text-sm text-gray-200">{a.title}</span>
-                        <span className="ml-2 text-xs text-gray-500">→ {a.owner}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] text-gray-500">{a.priority}</span>
-                        <StatusPill status={a.status} />
-                      </div>
+                  ),
+                }]
+              : []),
+            ...(selected.actions.length > 0
+              ? [{
+                  label: `Actions (${selected.actions.length})`,
+                  value: (
+                    <div className="divide-y divide-gray-800">
+                      {selected.actions.map((a) => (
+                        <div key={a.action_id} className="flex items-center justify-between py-2">
+                          <div>
+                            <span className="text-sm text-gray-200">{a.title}</span>
+                            <span className="ml-2 text-xs text-gray-500">→ {a.owner}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] text-gray-500">{a.priority}</span>
+                            <StatusPill status={a.status} />
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </Panel>
-            )}
-          </div>
-        </InvestigationDrawer>
+                  ),
+                }]
+              : []),
+          ]}
+        />
       )}
     </>
   );

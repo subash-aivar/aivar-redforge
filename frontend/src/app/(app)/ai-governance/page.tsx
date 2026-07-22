@@ -40,13 +40,13 @@ export default function AIGovernancePage() {
           {(p) => <KpiTile label="Policies" value={p.length} />}
         </AsyncContent>
         <AsyncContent state={violations}>
-          {(v) => <KpiTile label="Violations" value={v.length} tone={v.length > 0 ? "critical" : "low"} />}
+          {(v) => <KpiTile label="Violations" value={v.length} tone={v.length > 0 ? "danger" : "ok"} />}
         </AsyncContent>
         <AsyncContent state={agents}>
           {(a) => <KpiTile label="Agents" value={a.length} />}
         </AsyncContent>
         <AsyncContent state={agents}>
-          {(a) => <KpiTile label="Active" value={a.filter(ag => ag.status === "active").length} tone="low" />}
+          {(a) => <KpiTile label="Active" value={a.filter(ag => ag.status === "active").length} tone="ok" />}
         </AsyncContent>
       </div>
 
@@ -82,7 +82,7 @@ function PoliciesTab({ state }: { state: ReturnType<typeof useAsync<AgentPolicy[
   ];
   return (
     <AsyncContent state={state}>
-      {(list) => <DataConsole columns={cols} rows={list} rowKey={(r) => r.policy_id} emptyMessage="No governance policies configured." />}
+      {(list) => <DataConsole columns={cols} rows={list} rowKey={(r) => r.policy_id} emptyLabel="No governance policies configured." />}
     </AsyncContent>
   );
 }
@@ -98,7 +98,7 @@ function ViolationsTab({ state }: { state: ReturnType<typeof useAsync<Governance
   ];
   return (
     <AsyncContent state={state}>
-      {(list) => <DataConsole columns={cols} rows={list} rowKey={(r) => r.violation_id} emptyMessage="No governance violations detected." />}
+      {(list) => <DataConsole columns={cols} rows={list} rowKey={(r) => r.violation_id} emptyLabel="No governance violations detected." />}
     </AsyncContent>
   );
 }
@@ -114,7 +114,7 @@ function AgentsTab({ state }: { state: ReturnType<typeof useAsync<AgentRegistrat
   ];
   return (
     <AsyncContent state={state}>
-      {(list) => <DataConsole columns={cols} rows={list} rowKey={(r) => r.agent_id} emptyMessage="No AI agents registered." />}
+      {(list) => <DataConsole columns={cols} rows={list} rowKey={(r) => r.agent_id} emptyLabel="No AI agents registered." />}
     </AsyncContent>
   );
 }

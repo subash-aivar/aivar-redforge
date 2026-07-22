@@ -7,7 +7,6 @@ import {
   InvestigationDrawer,
   KpiTile,
   PageHeader,
-  Panel,
   StatusPill,
   fmtTime,
   useAsync,
@@ -81,16 +80,16 @@ export default function IntegrationHubPage() {
           <>
             <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
               <KpiTile label="Total" value={list.length} />
-              <KpiTile label="Active" value={list.filter(i => i.status === "active" || i.status === "enabled").length} tone="low" />
+              <KpiTile label="Active" value={list.filter(i => i.status === "active" || i.status === "enabled").length} tone="ok" />
               <KpiTile label="Disabled" value={list.filter(i => i.status === "disabled" || i.status === "inactive").length} tone="warning" />
-              <KpiTile label="Error" value={list.filter(i => i.status === "error").length} tone="critical" />
+              <KpiTile label="Error" value={list.filter(i => i.status === "error").length} tone="danger" />
             </div>
             <DataConsole
               columns={columns}
               rows={list}
               rowKey={(r) => r.integration_id}
               onRowClick={(r) => setSelected(r)}
-              emptyMessage="No integrations configured. Connect external services to enrich security intelligence."
+              emptyLabel="No integrations configured. Connect external services to enrich security intelligence."
             />
           </>
         )}
@@ -98,34 +97,37 @@ export default function IntegrationHubPage() {
 
       {selected && (
         <InvestigationDrawer
+          open
           title={selected.name}
           onClose={() => setSelected(null)}
-        >
-          <div className="space-y-4 p-4">
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div><span className="text-gray-500">Type:</span> <span className="text-gray-200">{selected.integration_type}</span></div>
-              <div><span className="text-gray-500">Status:</span> <StatusPill status={selected.status} /></div>
-              <div><span className="text-gray-500">Last Synced:</span> <span className="text-gray-200">{fmtTime(selected.last_synced_at)}</span></div>
-              <div><span className="text-gray-500">Created:</span> <span className="text-gray-200">{fmtTime(selected.created_at)}</span></div>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => handleToggle(selected)}
-                disabled={busy}
-                className="rounded-md border border-gray-700 px-3 py-1.5 text-xs text-gray-300 hover:border-red-800 hover:text-red-300 disabled:opacity-50"
-              >
-                {selected.status === "active" || selected.status === "enabled" ? "Disable" : "Enable"}
-              </button>
-              <button
-                onClick={() => handleSync(selected)}
-                disabled={busy}
-                className="rounded-md border border-gray-700 px-3 py-1.5 text-xs text-gray-300 hover:border-red-800 hover:text-red-300 disabled:opacity-50"
-              >
-                Sync Now
-              </button>
-            </div>
-          </div>
-        </InvestigationDrawer>
+          fields={[
+            { label: "Type", value: selected.integration_type },
+            { label: "Status", value: <StatusPill status={selected.status} /> },
+            { label: "Last Synced", value: fmtTime(selected.last_synced_at) },
+            { label: "Created", value: fmtTime(selected.created_at) },
+            {
+              label: "Actions",
+              value: (
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleToggle(selected)}
+                    disabled={busy}
+                    className="rounded-md border border-gray-700 px-3 py-1.5 text-xs text-gray-300 hover:border-red-800 hover:text-red-300 disabled:opacity-50"
+                  >
+                    {selected.status === "active" || selected.status === "enabled" ? "Disable" : "Enable"}
+                  </button>
+                  <button
+                    onClick={() => handleSync(selected)}
+                    disabled={busy}
+                    className="rounded-md border border-gray-700 px-3 py-1.5 text-xs text-gray-300 hover:border-red-800 hover:text-red-300 disabled:opacity-50"
+                  >
+                    Sync Now
+                  </button>
+                </div>
+              ),
+            },
+          ]}
+        />
       )}
     </>
   );

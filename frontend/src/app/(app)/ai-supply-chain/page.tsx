@@ -66,8 +66,8 @@ export default function AISupplyChainPage() {
           <>
             <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
               <KpiTile label="Total Artifacts" value={list.length} />
-              <KpiTile label="High Risk" value={list.filter(a => a.risk_score >= 7).length} tone="critical" />
-              <KpiTile label="Vulnerabilities" value={list.reduce((s, a) => s + a.vulnerabilities, 0)} tone="high" />
+              <KpiTile label="High Risk" value={list.filter(a => a.risk_score >= 7).length} tone="danger" />
+              <KpiTile label="Vulnerabilities" value={list.reduce((s, a) => s + a.vulnerabilities, 0)} tone="danger" />
               <KpiTile label="Unscanned" value={list.filter(a => !a.last_scanned_at).length} tone="warning" />
             </div>
             <DataConsole
@@ -75,48 +75,58 @@ export default function AISupplyChainPage() {
               rows={list}
               rowKey={(r) => r.artifact_id}
               onRowClick={(r) => setSelected(r)}
-              emptyMessage="No model artifacts tracked. Register ML models to monitor supply chain risk."
+              emptyLabel="No model artifacts tracked. Register ML models to monitor supply chain risk."
             />
           </>
         )}
       </AsyncContent>
 
       {selected && (
-        <InvestigationDrawer title={selected.name} onClose={() => setSelected(null)}>
-          <div className="space-y-4 p-4">
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div><span className="text-gray-500">Version:</span> <span className="text-gray-200">{selected.version}</span></div>
-              <div><span className="text-gray-500">Registry:</span> <span className="text-gray-200">{selected.registry}</span></div>
-              <div><span className="text-gray-500">Status:</span> <StatusPill status={selected.status} /></div>
-              <div><span className="text-gray-500">Risk Score:</span> <span className="text-gray-200">{selected.risk_score.toFixed(1)}</span></div>
-            </div>
-            {selected.licenses.length > 0 && (
-              <div>
-                <span className="text-xs text-gray-500">Licenses:</span>
-                <div className="mt-1 flex flex-wrap gap-1">
-                  {selected.licenses.map((l) => (
-                    <span key={l} className="rounded bg-gray-800 px-1.5 py-0.5 text-[10px] text-gray-300">{l}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-            {selected.dependencies.length > 0 && (
-              <div>
-                <span className="text-xs text-gray-500">Dependencies ({selected.dependencies.length}):</span>
-                <div className="mt-1 max-h-32 overflow-y-auto rounded bg-gray-950 p-2 text-[11px] text-gray-400">
-                  {selected.dependencies.join(", ")}
-                </div>
-              </div>
-            )}
-            <button
-              onClick={() => handleScan(selected)}
-              disabled={busy}
-              className="rounded-md border border-red-800 bg-red-950/50 px-3 py-1.5 text-xs text-red-300 hover:bg-red-900/50 disabled:opacity-50"
-            >
-              Scan Now
-            </button>
-          </div>
-        </InvestigationDrawer>
+        <InvestigationDrawer
+          open
+          title={selected.name}
+          onClose={() => setSelected(null)}
+          fields={[
+            { label: "Version", value: selected.version },
+            { label: "Registry", value: selected.registry },
+            { label: "Status", value: <StatusPill status={selected.status} /> },
+            { label: "Risk Score", value: selected.risk_score.toFixed(1) },
+            ...(selected.licenses.length > 0
+              ? [{
+                  label: "Licenses",
+                  value: (
+                    <div className="flex flex-wrap gap-1">
+                      {selected.licenses.map((l) => (
+                        <span key={l} className="rounded bg-gray-800 px-1.5 py-0.5 text-[10px] text-gray-300">{l}</span>
+                      ))}
+                    </div>
+                  ),
+                }]
+              : []),
+            ...(selected.dependencies.length > 0
+              ? [{
+                  label: `Dependencies (${selected.dependencies.length})`,
+                  value: (
+                    <div className="max-h-32 overflow-y-auto rounded bg-gray-950 p-2 text-[11px] text-gray-400">
+                      {selected.dependencies.join(", ")}
+                    </div>
+                  ),
+                }]
+              : []),
+            {
+              label: "Actions",
+              value: (
+                <button
+                  onClick={() => handleScan(selected)}
+                  disabled={busy}
+                  className="rounded-md border border-red-800 bg-red-950/50 px-3 py-1.5 text-xs text-red-300 hover:bg-red-900/50 disabled:opacity-50"
+                >
+                  Scan Now
+                </button>
+              ),
+            },
+          ]}
+        />
       )}
     </>
   );

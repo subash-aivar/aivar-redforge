@@ -51,11 +51,11 @@ export default function ExposureDashboardPage() {
         {(p) => (
           <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
             <KpiTile label="Total Assets" value={p.total_assets} />
-            <KpiTile label="Avg Score" value={p.avg_score.toFixed(1)} tone="neutral" />
-            <KpiTile label="Critical" value={p.critical_count} tone="critical" />
-            <KpiTile label="High" value={p.high_count} tone="high" />
+            <KpiTile label="Avg Score" value={p.avg_score.toFixed(1)} />
+            <KpiTile label="Critical" value={p.critical_count} tone="danger" />
+            <KpiTile label="High" value={p.high_count} tone="danger" />
             <KpiTile label="Medium" value={p.medium_count} tone="warning" />
-            <KpiTile label="Low" value={p.low_count} tone="low" />
+            <KpiTile label="Low" value={p.low_count} tone="ok" />
           </div>
         )}
       </AsyncContent>
