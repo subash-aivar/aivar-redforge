@@ -156,6 +156,12 @@ class AuditAction(StrEnum):
     THREAT_INTEL_SYNC_TRIGGERED = "threat_intel.sync_triggered"
     INVESTIGATION_ATTACK_PATH_LINKED = "investigation.attack_path_linked"
 
+    # Enterprise Integration Hub — connector plugin registration/credentials
+    CONNECTOR_REGISTERED = "connector.registered"
+    CONNECTOR_CREDENTIAL_CONFIGURED = "connector.credential_configured"
+    CONNECTOR_HEALTH_CHECK_FAILED = "connector.health_check_failed"
+    CONNECTOR_DISABLED = "connector.disabled"
+
 
 @dataclass(frozen=True, slots=True)
 class AuditEntry:

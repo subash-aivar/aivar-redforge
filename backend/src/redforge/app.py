@@ -1098,7 +1098,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 return
             from integration_hub.infrastructure.container import IntegrationHubContainer
 
-            container = IntegrationHubContainer(session_factory=sf)
+            cv_container = getattr(app.state, "cv_container", None)
+            credential_service = (
+                cv_container.credential_service if cv_container is not None else None
+            )
+            container = IntegrationHubContainer(
+                session_factory=sf, credential_service=credential_service
+            )
             app.state.integration_hub_container = container
             tqs = _make_tenant_query_service()
             runner = TenantPeriodicRunner(

@@ -11,3 +11,7 @@ class ApplicationNotFoundError(ApplicationError):
 
 class ApplicationForbiddenError(ApplicationError):
     pass
+
+
+class ApplicationValidationError(ApplicationError):
+    pass

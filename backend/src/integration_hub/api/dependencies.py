@@ -17,7 +17,13 @@ def get_container(request: Request) -> IntegrationHubContainer:
             session_factory = get_session_factory()
         except RuntimeError:
             session_factory = None
-        c = IntegrationHubContainer(session_factory=session_factory)
+        cv_container = getattr(request.app.state, "cv_container", None)
+        credential_service = (
+            cv_container.credential_service if cv_container is not None else None
+        )
+        c = IntegrationHubContainer(
+            session_factory=session_factory, credential_service=credential_service
+        )
         request.app.state.integration_hub_container = c
     return c
 

@@ -18,6 +18,24 @@ class RegisterConnector:
 
 
 @dataclass(frozen=True, slots=True)
+class RegisterConnectorWithCredential:
+    """Self-service registration: the platform creates the credential_vault
+    entry itself from the plaintext secret submitted through the setup
+    wizard, then registers the connector holding only the vault pointer.
+    The plaintext secret is never persisted outside credential_vault."""
+
+    tenant_id: UUID
+    connector_id: str  # ConnectorPluginCatalog key, e.g. "openai"
+    display_name: str
+    plaintext_secret: str
+    vault_backend_id: UUID
+    owner_principal_id: UUID
+    registered_by: str
+    roles: tuple[str, ...]
+    configuration: dict[str, object] | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class DisableConnector:
     tenant_id: UUID
     connector_id: UUID

@@ -165,6 +165,14 @@ class Permission(StrEnum):
     AI_POSTURE_READ = "ai_posture:read"
     AI_POSTURE_MANAGE = "ai_posture:manage"
 
+    # Enterprise Integration Hub — connector catalog, registration, and
+    # credential-configuration wizard. MANAGE gates registering/disabling
+    # connectors and entering credentials through the wizard (which itself
+    # only ever writes to credential_vault, never inline); READ gates
+    # viewing the catalog/registered connectors/health.
+    INTEGRATION_HUB_READ = "integration_hub:read"
+    INTEGRATION_HUB_MANAGE = "integration_hub:manage"
+
 
 @unique
 class MembershipRole(StrEnum):
@@ -271,6 +279,8 @@ ROLE_PERMISSIONS: dict[MembershipRole, frozenset[Permission]] = {
         Permission.PLAYBOOKS_MANAGE,
         Permission.AI_POSTURE_READ,
         Permission.AI_POSTURE_MANAGE,
+        Permission.INTEGRATION_HUB_READ,
+        Permission.INTEGRATION_HUB_MANAGE,
     }),
     MembershipRole.SECURITY_MANAGER: frozenset({
         Permission.ORG_READ,
@@ -316,6 +326,8 @@ ROLE_PERMISSIONS: dict[MembershipRole, frozenset[Permission]] = {
         Permission.PLAYBOOKS_MANAGE,
         Permission.AI_POSTURE_READ,
         Permission.AI_POSTURE_MANAGE,
+        Permission.INTEGRATION_HUB_READ,
+        Permission.INTEGRATION_HUB_MANAGE,
     }),
     MembershipRole.ANALYST: frozenset({
         Permission.ORG_READ,
@@ -345,6 +357,7 @@ ROLE_PERMISSIONS: dict[MembershipRole, frozenset[Permission]] = {
         Permission.ANALYTICS_READ,
         Permission.PLAYBOOKS_READ,
         Permission.AI_POSTURE_READ,
+        Permission.INTEGRATION_HUB_READ,
     }),
     MembershipRole.MEMBER: frozenset({
         Permission.ORG_READ,
@@ -373,6 +386,7 @@ ROLE_PERMISSIONS: dict[MembershipRole, frozenset[Permission]] = {
         Permission.ANALYTICS_READ,
         Permission.PLAYBOOKS_READ,
         Permission.AI_POSTURE_READ,
+        Permission.INTEGRATION_HUB_READ,
     }),
     MembershipRole.VIEWER: frozenset({
         Permission.ORG_READ,
@@ -394,6 +408,7 @@ ROLE_PERMISSIONS: dict[MembershipRole, frozenset[Permission]] = {
         Permission.THREAT_HUNT_READ,
         Permission.ANALYTICS_READ,
         Permission.AI_POSTURE_READ,
+        Permission.INTEGRATION_HUB_READ,
     }),
 }
 

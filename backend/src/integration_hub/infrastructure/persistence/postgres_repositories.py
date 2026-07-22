@@ -41,7 +41,7 @@ def _registration_to_row(reg: ConnectorRegistration) -> ConnectorRegistrationMod
     return ConnectorRegistrationModel(
         id=reg.connector_id.value,
         tenant_id=reg.tenant_id.value,
-        connector_type=reg.connector_type.value,
+        connector_type=str(reg.connector_type),
         display_name=reg.display_name,
         status=reg.status.value,
         credential_vault_key=reg.credential_ref.vault_key,
@@ -61,7 +61,7 @@ def _row_to_registration(row: ConnectorRegistrationModel) -> ConnectorRegistrati
     return ConnectorRegistration(
         connector_id=ConnectorId(row.id),
         tenant_id=TenantId(row.tenant_id),
-        connector_type=ConnectorType(row.connector_type),
+        connector_type=row.connector_type,
         display_name=row.display_name,
         status=ConnectorStatus(row.status),
         credential_ref=CredentialRef(
@@ -111,7 +111,7 @@ class PgConnectorRegistrationRepository(IConnectorRegistrationRepository):
                 await session.execute(
                     select(ConnectorRegistrationModel).where(
                         ConnectorRegistrationModel.tenant_id == tenant_id.value,
-                        ConnectorRegistrationModel.connector_type == connector_type.value,
+                        ConnectorRegistrationModel.connector_type == str(connector_type),
                         ConnectorRegistrationModel.status.in_(
                             [ConnectorStatus.HEALTHY.value, ConnectorStatus.REGISTERED.value]
                         ),

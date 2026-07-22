@@ -43,7 +43,7 @@ class ConnectorRegistration:
         self,
         connector_id: ConnectorId,
         tenant_id: TenantId,
-        connector_type: ConnectorType,
+        connector_type: ConnectorType | str,
         display_name: str,
         status: ConnectorStatus,
         credential_ref: CredentialRef,
@@ -97,7 +97,7 @@ class ConnectorRegistration:
     def register(
         cls,
         tenant_id: TenantId,
-        connector_type: ConnectorType,
+        connector_type: ConnectorType | str,
         display_name: str,
         credential_vault_key: str,
         credential_type: str,
@@ -122,7 +122,7 @@ class ConnectorRegistration:
                 tenant_id=str(tenant_id),
                 aggregate_id=str(reg.connector_id),
                 connector_id=str(reg.connector_id),
-                connector_type=connector_type.value,
+                connector_type=str(connector_type),
                 display_name=display_name,
                 registered_at=now.isoformat(),
             )
