@@ -98,7 +98,10 @@ class LocalAesKwKmsAdapter(IKeyManagementPort):
         new_key = self._keys.get(new_master_key_id)
         if new_key is None:
             raise KmsKeyNotFound(new_master_key_id)
-        dek = await self.unwrap_dek(old_envelope)
+        # unwrap_dek's declared return type is bytes (per IKeyManagementPort),
+        # but this adapter always actually returns a bytearray (see its own
+        # ignored return-type mismatch above) so it can be zeroed after use.
+        dek = bytearray(await self.unwrap_dek(old_envelope))
         try:
             wrapped = aes_key_wrap(
                 wrapping_key=new_key,

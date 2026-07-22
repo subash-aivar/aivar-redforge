@@ -22,9 +22,12 @@ This factory makes the choice explicit and env-driven:
 from __future__ import annotations
 
 import os
+from typing import TYPE_CHECKING
 
-from credential_vault.domain.ports.i_key_management_port import IKeyManagementPort
 from credential_vault.infrastructure.encryption.local_kms_adapter import LocalAesKwKmsAdapter
+
+if TYPE_CHECKING:
+    from credential_vault.domain.ports.i_key_management_port import IKeyManagementPort
 
 
 class KmsConfigurationError(RuntimeError):
@@ -71,7 +74,9 @@ def _build_aws_kms_adapter() -> IKeyManagementPort:
     try:
         import boto3
     except ImportError as exc:  # pragma: no cover - boto3 is a declared dependency
-        raise KmsConfigurationError("boto3 is required for CREDENTIAL_VAULT_KMS_PROVIDER=aws") from exc
+        raise KmsConfigurationError(
+            "boto3 is required for CREDENTIAL_VAULT_KMS_PROVIDER=aws"
+        ) from exc
 
     region = (
         os.environ.get("CREDENTIAL_VAULT_AWS_REGION")

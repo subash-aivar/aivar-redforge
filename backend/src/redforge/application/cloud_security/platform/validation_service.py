@@ -141,7 +141,9 @@ class CloudPlatformValidationService:
 
         try:
             async with self._session_factory() as session:
-                result = await session.execute(text("SELECT version_num FROM alembic_version LIMIT 1"))
+                result = await session.execute(
+                    text("SELECT version_num FROM alembic_version LIMIT 1")
+                )
                 actual = result.scalar_one_or_none()
             passed = actual == expected
             return ValidationCheckDTO(
