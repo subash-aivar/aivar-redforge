@@ -51,7 +51,7 @@ def test_0099_to_0101_phase4_phase5() -> None:
     assert 'down_revision: str = "0100"' in _read("0101_analytics_operational_metrics.py")
 
 
-def test_single_head_0113() -> None:
+def test_single_head_0149() -> None:
     revisions: dict[str, str] = {}
     down_revisions: set[str] = set()
     for path in VERSIONS.glob("*.py"):
@@ -68,4 +68,4 @@ def test_single_head_0113() -> None:
             if down and down != "None":
                 down_revisions.add(down)
     heads = [r for r in revisions if r not in down_revisions]
-    assert heads == ["0130"]
+    assert heads == ["0149"]

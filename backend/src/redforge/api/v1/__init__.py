@@ -7,6 +7,7 @@ from ai_posture.api.v1 import router as ai_posture_router
 from ai_supply_chain.api.v1 import router as ai_supply_chain_router
 from analytics.api.v1 import router as analytics_router
 from automated_action.api.v1 import router as automated_action_router
+from autonomous_intelligence.api.v1 import router as autonomous_intelligence_router
 from credential_vault.api.v1 import router as credential_vault_router
 from detection.api.v1 import router as detection_router
 from engagement.api.v1 import router as engagement_router
@@ -21,6 +22,7 @@ from ml_pipeline.api.v1 import router as ml_pipeline_router
 from operation.api.v1 import router as operation_router
 from payload.api.v1 import router as payload_router
 from playbook.api.v1 import router as playbook_router
+from posture_forecasting.api.v1 import router as posture_forecasting_router
 from red_team_operator.api.v1 import router as operator_router
 from redforge.api.v1.admin_rbac import router as admin_rbac_router
 from redforge.api.v1.ai_targets import router as ai_targets_router
@@ -87,6 +89,7 @@ from redforge.api.v1.validations import router as validations_router
 from regulatory_notification.api.v1 import router as regulatory_notification_router
 from remediation_impact.api.v1 import router as remediation_impact_router
 from reporting.api.v1 import router as reporting_router
+from threat_hunt.api.v1 import router as threat_hunt_router
 from vulnerability.api.v1 import router as vulnerability_router
 
 router = APIRouter()
@@ -163,6 +166,9 @@ router.include_router(reporting_router, tags=["reporting"])
 router.include_router(ml_pipeline_router, tags=["ml-pipeline"])
 router.include_router(incident_router, tags=["incident"])
 router.include_router(playbook_router, tags=["playbook"])
+router.include_router(autonomous_intelligence_router, tags=["autonomous-intelligence"])
+router.include_router(posture_forecasting_router, tags=["posture-forecasting"])
+router.include_router(threat_hunt_router, tags=["threat-hunt"])
 router.include_router(automated_action_router, tags=["automated-action"])
 router.include_router(integration_hub_router, tags=["integration-hub"])
 router.include_router(regulatory_notification_router, tags=["regulatory-notification"])
