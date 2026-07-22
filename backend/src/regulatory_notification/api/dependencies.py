@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from fastapi import Header, Request
+from fastapi import Depends, Header, Request
 
+from redforge.api.security import TenantContext, get_tenant_context
 from regulatory_notification.infrastructure.container import RegulatoryNotificationContainer
 
 
@@ -15,8 +16,17 @@ def get_container(request: Request) -> RegulatoryNotificationContainer:
     return c
 
 
-def tenant_id_header(x_tenant_id: str = Header(..., alias="X-Tenant-Id")) -> UUID:
-    return UUID(x_tenant_id)
+def tenant_id_header(tenant: TenantContext = Depends(get_tenant_context)) -> UUID:
+    """Verified tenant scope from the caller's signed access token.
+
+    Previously read the client-supplied `X-Tenant-Id` header directly —
+    any caller could set that header to an arbitrary organization UUID
+    and read/write that org's regulatory-notification data.
+    get_tenant_context verifies the bearer token and its `org` claim
+    server-side, so organization_id can no longer be spoofed via a
+    request header.
+    """
+    return UUID(tenant.organization_id)
 
 
 def roles_header(

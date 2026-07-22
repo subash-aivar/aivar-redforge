@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from uuid import uuid4
 
 import pytest
-from fastapi import FastAPI
+from fastapi import FastAPI, Header
 from fastapi.testclient import TestClient
 
 from posture_forecasting.api.dependencies import get_container
@@ -22,6 +22,8 @@ from posture_forecasting.infrastructure.acl.m32_exposure_translator import (
     M32ExposureTranslator,
 )
 from posture_forecasting.infrastructure.container import PostureForecastingContainer
+from redforge.api.security import TenantContext, get_tenant_context
+from redforge.domain.identity.value_objects import MembershipRole, Permission
 
 
 def _snap(tenant: TenantId, baseline: float = 80.0, velocity: float = 1.0) -> ForecastInputSnapshot:
@@ -79,12 +81,25 @@ async def test_worker_ticks(i: int) -> None:
     assert result["forecast_runs"] >= 1
 
 
+def _override_tenant_context(
+    x_tenant_id: str = Header(..., alias="X-Tenant-Id"),
+) -> TenantContext:
+    return TenantContext(
+        user_id=str(uuid4()),
+        email="posture-forecasting-test@example.com",
+        organization_id=x_tenant_id,
+        role=MembershipRole.OWNER,
+        permissions=frozenset(Permission),
+    )
+
+
 @pytest.fixture()
 def client() -> TestClient:
     app = FastAPI()
     app.include_router(router)
     c = PostureForecastingContainer()
     app.dependency_overrides[get_container] = lambda: c
+    app.dependency_overrides[get_tenant_context] = _override_tenant_context
     return TestClient(app)
 
 
