@@ -1,5 +1,12 @@
 # M1 — Platform Identity & Super Admin Bootstrap — Completion Report
 
+> For step-by-step operational instructions on provisioning the first
+> Platform Super Administrator in a real deployment (required env vars,
+> exact API/UI steps, verification, troubleshooting), see
+> [`RUNBOOK_PLATFORM_SUPER_ADMIN_BOOTSTRAP.md`](./RUNBOOK_PLATFORM_SUPER_ADMIN_BOOTSTRAP.md).
+> This document explains the architecture and proves its security
+> properties; it is not itself a runbook.
+
 **Date**: 2026-07-11
 **Baseline entering M1**: 3,383 backend tests passing, 5 skipped; 31 frontend tests passing.
 **Baseline exiting M1**: 3,412 backend tests passing, 5 skipped (+29); 31 frontend tests passing (unchanged — M1 is primarily backend/API work plus new UI screens, not new frontend unit-test surface).
