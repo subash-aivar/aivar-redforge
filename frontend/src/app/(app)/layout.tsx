@@ -108,6 +108,7 @@ const NAV_GROUPS: NavGroup[] = [
     title: "Analytics & AI Governance",
     items: [
       { label: "Analytics", href: "/analytics", icon: "📊", perm: "analytics:read" },
+      { label: "AI Posture", href: "/ai-posture", icon: "🤖", perm: "ai_posture:read" },
     ],
   },
   {
