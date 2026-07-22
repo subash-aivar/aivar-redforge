@@ -51,21 +51,18 @@ def test_0099_to_0101_phase4_phase5() -> None:
     assert 'down_revision: str = "0100"' in _read("0101_analytics_operational_metrics.py")
 
 
-def test_single_head_0149() -> None:
-    revisions: dict[str, str] = {}
-    down_revisions: set[str] = set()
-    for path in VERSIONS.glob("*.py"):
-        text = path.read_text()
-        rev = None
-        down = None
-        for line in text.splitlines():
-            if line.startswith("revision:"):
-                rev = line.split("=")[1].strip().strip('"')
-            if line.startswith("down_revision:"):
-                down = line.split("=")[1].strip().strip('"')
-        if rev:
-            revisions[rev] = path.name
-            if down and down != "None":
-                down_revisions.add(down)
-    heads = [r for r in revisions if r not in down_revisions]
-    assert heads == ["0149"]
+def test_single_head() -> None:
+    """The chain has exactly one head — not literally "0149" forever, since
+    later milestones (and this repository's own post-M36 hardening pass)
+    legitimately extend it. Reuses the same ScriptDirectory-based lookup
+    the app's own startup validators use
+    (redforge/infrastructure/database/migration_head.py), so this can't go
+    stale the way the hardcoded-literal version of this test did — it
+    already broke twice independently (incident, playbook) before this
+    third occurrence.
+    """
+    from redforge.infrastructure.database.migration_head import get_expected_migration_head
+
+    # get_current_head() itself raises if there is more than one head, so
+    # a successful call here already proves single-headedness.
+    assert get_expected_migration_head()

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, Any
+
 from analytics.application.services.analytics_application_service import (
     AnalyticsApplicationService,
 )
@@ -32,15 +34,47 @@ from analytics.infrastructure.workers.analytics_workers import (
     RetentionPolicyWorker,
 )
 
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
 
 class AnalyticsContainer:
-    def __init__(self) -> None:
+    # No stable domain ABC covers these 4 (the ones in domain/repositories/
+    # are stale — see postgres_repositories.py docstring), so kept as Any
+    # rather than typing against either the stale ABC or one concrete impl.
+    datasets: Any
+    kpis: Any
+    baselines: Any
+    queries: Any
+
+    def __init__(
+        self, session_factory: async_sessionmaker[AsyncSession] | None = None
+    ) -> None:
         self.settings = AnalyticsSettings.from_env()
+        # EventProjectionStore (raw event ingestion + idempotency +
+        # kpi_snapshots/anomalies/checkpoints tracking) is a separate,
+        # larger persistence unit than the 4 aggregate repositories below —
+        # migration 0091 has real tables for it (processed_analytics_events,
+        # kpi_snapshots, anomaly_detections, projection_checkpoints) but
+        # converting it is out of scope for this pass; still in-memory.
         self.store = EventProjectionStore()
-        self.datasets = InMemoryAnalyticsDataSetRepository()
-        self.kpis = InMemorySecurityKPIRepository()
-        self.baselines = InMemoryAnomalyDetectionBaselineRepository()
-        self.queries = InMemoryAnalyticsQueryRepository()
+        if session_factory is not None:
+            from analytics.infrastructure.persistence.postgres_repositories import (
+                PgAnalyticsDataSetRepository,
+                PgAnalyticsQueryRepository,
+                PgAnomalyDetectionBaselineRepository,
+                PgSecurityKPIRepository,
+            )
+
+            self.datasets = PgAnalyticsDataSetRepository(session_factory)
+            self.kpis = PgSecurityKPIRepository(session_factory)
+            self.baselines = PgAnomalyDetectionBaselineRepository(session_factory)
+            self.queries = PgAnalyticsQueryRepository(session_factory)
+        else:
+            self.datasets = InMemoryAnalyticsDataSetRepository()
+            self.kpis = InMemorySecurityKPIRepository()
+            self.baselines = InMemoryAnomalyDetectionBaselineRepository()
+            self.queries = InMemoryAnalyticsQueryRepository()
         self.event_publisher = StructlogEventPublisher()
         self.graph = InMemorySecurityGraphWriteAdapter()
         self.ml_anomaly = StubMLAnomalyScoreAdapter()
