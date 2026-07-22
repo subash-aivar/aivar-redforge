@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from automated_action.application.services.automation_application_service import (
     AutomationApplicationService,
 )
@@ -29,12 +31,38 @@ from automated_action.infrastructure.workers.automation_workers import (
     RetryWorker,
 )
 
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
+    from automated_action.domain.repositories.i_automation_repositories import (
+        IAutomatedActionRecordRepository,
+        IAutomationExecutionRepository,
+        IRollbackRecordRepository,
+    )
+
 
 class AutomatedActionContainer:
-    def __init__(self) -> None:
-        self.executions = InMemoryAutomationExecutionRepository()
-        self.records = InMemoryAutomatedActionRecordRepository()
-        self.rollbacks = InMemoryRollbackRecordRepository()
+    executions: IAutomationExecutionRepository
+    records: IAutomatedActionRecordRepository
+    rollbacks: IRollbackRecordRepository
+
+    def __init__(
+        self, session_factory: async_sessionmaker[AsyncSession] | None = None
+    ) -> None:
+        if session_factory is not None:
+            from automated_action.infrastructure.persistence.postgres_repositories import (
+                PgAutomatedActionRecordRepository,
+                PgAutomationExecutionRepository,
+                PgRollbackRecordRepository,
+            )
+
+            self.executions = PgAutomationExecutionRepository(session_factory)
+            self.records = PgAutomatedActionRecordRepository(session_factory)
+            self.rollbacks = PgRollbackRecordRepository(session_factory)
+        else:
+            self.executions = InMemoryAutomationExecutionRepository()
+            self.records = InMemoryAutomatedActionRecordRepository()
+            self.rollbacks = InMemoryRollbackRecordRepository()
         self.playbook_lookup = InMemoryPlaybookLookup()
         self.connector_port = InMemoryConnectorExecutionPort()
         self.event_sink: list[object] = []

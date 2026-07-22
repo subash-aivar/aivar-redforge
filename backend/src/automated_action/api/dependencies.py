@@ -10,7 +10,13 @@ from automated_action.infrastructure.container import AutomatedActionContainer
 def get_container(request: Request) -> AutomatedActionContainer:
     c = getattr(request.app.state, "automated_action_container", None)
     if c is None:
-        c = AutomatedActionContainer()
+        from redforge.api.dependencies import get_session_factory
+
+        try:
+            session_factory = get_session_factory()
+        except RuntimeError:
+            session_factory = None
+        c = AutomatedActionContainer(session_factory=session_factory)
         request.app.state.automated_action_container = c
     return c
 
