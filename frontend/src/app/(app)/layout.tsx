@@ -85,6 +85,7 @@ const NAV_GROUPS: NavGroup[] = [
       { label: "Exposure Management", href: "/exposure-management", icon: "◉" },
       { label: "Exposure Intelligence", href: "/exposure", icon: "◎" },
       { label: "Exposure Reporting", href: "/exposure-reporting", icon: "📄" },
+      { label: "Remediation Impact", href: "/remediation-impact", icon: "🛠" },
       { label: "Vulnerability", href: "/vulnerability", icon: "⊘" },
       { label: "Attack Surface", href: "/attack-surface", icon: "◆" },
       { label: "Security Graph", href: "/security-graph", icon: "❖" },
