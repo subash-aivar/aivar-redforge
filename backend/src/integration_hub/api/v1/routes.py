@@ -251,6 +251,3 @@ async def test_connection(
         return asdict(dto)
     except Exception as exc:
         raise _map(exc) from exc
-
-
-router.include_router(catalog_router)

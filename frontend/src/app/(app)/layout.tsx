@@ -121,7 +121,7 @@ const NAV_GROUPS: NavGroup[] = [
       { label: "AI Posture", href: "/ai-posture", icon: "🤖", perm: "ai_posture:read" },
       { label: "AI Agent Governance", href: "/ai-governance", icon: "🛡", perm: "ai_posture:read" },
       { label: "AI Supply Chain", href: "/ai-supply-chain", icon: "🔗", perm: "ai_posture:read" },
-      { label: "Integration Hub", href: "/integration-hub", icon: "🔌" },
+      { label: "Integration Hub", href: "/integrations", icon: "🔌", perm: "integration_hub:read" },
     ],
   },
   {
