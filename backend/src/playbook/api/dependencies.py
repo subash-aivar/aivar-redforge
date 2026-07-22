@@ -10,7 +10,13 @@ from playbook.infrastructure.container import PlaybookContainer
 def get_container(request: Request) -> PlaybookContainer:
     c = getattr(request.app.state, "playbook_container", None)
     if c is None:
-        c = PlaybookContainer()
+        from redforge.api.dependencies import get_session_factory
+
+        try:
+            session_factory = get_session_factory()
+        except RuntimeError:
+            session_factory = None
+        c = PlaybookContainer(session_factory=session_factory)
         request.app.state.playbook_container = c
     return c
 

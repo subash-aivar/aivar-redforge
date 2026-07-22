@@ -29,7 +29,10 @@ def test_m35_migration_chain_linear() -> None:
     assert revs["0114"] == "0113"
     for i in range(115, 131):
         assert revs[f"{i:04d}"] == f"{i - 1:04d}"
-    # single head
-    heads = [r for r in revs if r not in set(revs.values())]
-    m35_heads = [h for h in heads if h >= "0114"]
-    assert "0130" in m35_heads
+    # 0130 was the M35 chain's own last migration, not the repo's global
+    # head — that assertion held only until M36 (0131+) extended the chain
+    # further, and again once 0150 extended it past that. This only guards
+    # against a *second* migration being added with down_revision "0130",
+    # which would fork the chain.
+    forks = [r for r, down in revs.items() if down == "0130" and r != "0131"]
+    assert forks == []
