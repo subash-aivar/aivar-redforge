@@ -68,4 +68,4 @@ def test_single_head_0113() -> None:
             if down and down != "None":
                 down_revisions.add(down)
     heads = [r for r in revisions if r not in down_revisions]
-    assert heads == ["0113"]
+    assert heads == ["0130"]

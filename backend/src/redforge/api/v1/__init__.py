@@ -6,6 +6,7 @@ from ai_agent_governance.api.v1 import router as ai_agent_governance_router
 from ai_posture.api.v1 import router as ai_posture_router
 from ai_supply_chain.api.v1 import router as ai_supply_chain_router
 from analytics.api.v1 import router as analytics_router
+from automated_action.api.v1 import router as automated_action_router
 from credential_vault.api.v1 import router as credential_vault_router
 from detection.api.v1 import router as detection_router
 from engagement.api.v1 import router as engagement_router
@@ -14,10 +15,12 @@ from execution.api.v1 import router as execution_router
 from exposure.api.v1 import router as exposure_router
 from exposure_reporting.api.v1 import router as exposure_reporting_router
 from incident.api.v1 import router as incident_router
+from integration_hub.api.v1 import router as integration_hub_router
 from lessons_learned.api.v1 import router as lessons_learned_router
 from ml_pipeline.api.v1 import router as ml_pipeline_router
 from operation.api.v1 import router as operation_router
 from payload.api.v1 import router as payload_router
+from playbook.api.v1 import router as playbook_router
 from red_team_operator.api.v1 import router as operator_router
 from redforge.api.v1.admin_rbac import router as admin_rbac_router
 from redforge.api.v1.ai_targets import router as ai_targets_router
@@ -159,6 +162,9 @@ router.include_router(analytics_router, tags=["analytics"])
 router.include_router(reporting_router, tags=["reporting"])
 router.include_router(ml_pipeline_router, tags=["ml-pipeline"])
 router.include_router(incident_router, tags=["incident"])
+router.include_router(playbook_router, tags=["playbook"])
+router.include_router(automated_action_router, tags=["automated-action"])
+router.include_router(integration_hub_router, tags=["integration-hub"])
 router.include_router(regulatory_notification_router, tags=["regulatory-notification"])
 router.include_router(lessons_learned_router, tags=["lessons-learned"])
 router.include_router(operation_router, tags=["operations"])
