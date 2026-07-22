@@ -147,6 +147,24 @@ class Permission(StrEnum):
     REDTEAM_CISO = "redteam:ciso"
     REDTEAM_AUDITOR = "redteam:auditor"
 
+    # Phase 3B frontend integration — nav-visibility/UI-gating permissions
+    # for bounded contexts that previously had no frontend. These gate the
+    # frontend nav item and page only; the underlying APIs (incident,
+    # threat_hunt, analytics, playbook, ai_posture) still authenticate via
+    # JWT-verified tenant context (redforge/api/security.py get_tenant_context)
+    # but do not yet enforce require_permission() themselves — see the
+    # residual RBAC gap noted in the Phase 3A JWT-migration commits.
+    INCIDENT_READ = "incident:read"
+    INCIDENT_MANAGE = "incident:manage"
+    THREAT_HUNT_READ = "threat_hunt:read"
+    THREAT_HUNT_MANAGE = "threat_hunt:manage"
+    ANALYTICS_READ = "analytics:read"
+    ANALYTICS_MANAGE = "analytics:manage"
+    PLAYBOOKS_READ = "playbooks:read"
+    PLAYBOOKS_MANAGE = "playbooks:manage"
+    AI_POSTURE_READ = "ai_posture:read"
+    AI_POSTURE_MANAGE = "ai_posture:manage"
+
 
 @unique
 class MembershipRole(StrEnum):
@@ -243,6 +261,16 @@ ROLE_PERMISSIONS: dict[MembershipRole, frozenset[Permission]] = {
         Permission.REDTEAM_ADMIN,
         Permission.REDTEAM_CISO,
         Permission.REDTEAM_AUDITOR,
+        Permission.INCIDENT_READ,
+        Permission.INCIDENT_MANAGE,
+        Permission.THREAT_HUNT_READ,
+        Permission.THREAT_HUNT_MANAGE,
+        Permission.ANALYTICS_READ,
+        Permission.ANALYTICS_MANAGE,
+        Permission.PLAYBOOKS_READ,
+        Permission.PLAYBOOKS_MANAGE,
+        Permission.AI_POSTURE_READ,
+        Permission.AI_POSTURE_MANAGE,
     }),
     MembershipRole.SECURITY_MANAGER: frozenset({
         Permission.ORG_READ,
@@ -278,6 +306,16 @@ ROLE_PERMISSIONS: dict[MembershipRole, frozenset[Permission]] = {
         Permission.REDTEAM_APPROVER,
         Permission.REDTEAM_ADMIN,
         Permission.REDTEAM_AUDITOR,
+        Permission.INCIDENT_READ,
+        Permission.INCIDENT_MANAGE,
+        Permission.THREAT_HUNT_READ,
+        Permission.THREAT_HUNT_MANAGE,
+        Permission.ANALYTICS_READ,
+        Permission.ANALYTICS_MANAGE,
+        Permission.PLAYBOOKS_READ,
+        Permission.PLAYBOOKS_MANAGE,
+        Permission.AI_POSTURE_READ,
+        Permission.AI_POSTURE_MANAGE,
     }),
     MembershipRole.ANALYST: frozenset({
         Permission.ORG_READ,
@@ -302,6 +340,11 @@ ROLE_PERMISSIONS: dict[MembershipRole, frozenset[Permission]] = {
         Permission.REDTEAM_OPERATOR,
         Permission.REDTEAM_PLANNER,
         Permission.REDTEAM_AUDITOR,
+        Permission.INCIDENT_READ,
+        Permission.THREAT_HUNT_READ,
+        Permission.ANALYTICS_READ,
+        Permission.PLAYBOOKS_READ,
+        Permission.AI_POSTURE_READ,
     }),
     MembershipRole.MEMBER: frozenset({
         Permission.ORG_READ,
@@ -325,6 +368,11 @@ ROLE_PERMISSIONS: dict[MembershipRole, frozenset[Permission]] = {
         Permission.REDTEAM_ANALYST,
         Permission.REDTEAM_OPERATOR,
         Permission.REDTEAM_AUDITOR,
+        Permission.INCIDENT_READ,
+        Permission.THREAT_HUNT_READ,
+        Permission.ANALYTICS_READ,
+        Permission.PLAYBOOKS_READ,
+        Permission.AI_POSTURE_READ,
     }),
     MembershipRole.VIEWER: frozenset({
         Permission.ORG_READ,
@@ -342,6 +390,10 @@ ROLE_PERMISSIONS: dict[MembershipRole, frozenset[Permission]] = {
         Permission.COMPLIANCE_READ,
         Permission.REDTEAM_READER,
         Permission.REDTEAM_AUDITOR,
+        Permission.INCIDENT_READ,
+        Permission.THREAT_HUNT_READ,
+        Permission.ANALYTICS_READ,
+        Permission.AI_POSTURE_READ,
     }),
 }
 
