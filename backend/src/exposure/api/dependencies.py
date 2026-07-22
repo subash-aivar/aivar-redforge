@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from fastapi import Header, HTTPException
+from fastapi import Depends, Header
 
 from exposure.infrastructure.container import ExposureContainer
+from redforge.api.security import TenantContext, get_tenant_context
 
 _container: ExposureContainer | None = None
 
@@ -21,13 +22,16 @@ def reset_container() -> None:
     _container = None
 
 
-async def get_tenant_id(
-    x_tenant_id: str = Header(..., alias="X-Tenant-Id"),
-) -> UUID:
-    try:
-        return UUID(x_tenant_id)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail="Invalid X-Tenant-Id") from exc
+async def get_tenant_id(tenant: TenantContext = Depends(get_tenant_context)) -> UUID:
+    """Verified tenant scope from the caller's signed access token.
+
+    Previously read the client-supplied `X-Tenant-Id` header directly —
+    any caller could set that header to an arbitrary organization UUID
+    and read/write that org's exposure data. get_tenant_context verifies
+    the bearer token and its `org` claim server-side, so organization_id
+    can no longer be spoofed via a request header.
+    """
+    return UUID(tenant.organization_id)
 
 
 async def get_actor_roles(
