@@ -39,7 +39,7 @@ def _headers(tenant: str, role: str) -> dict[str, str]:
 @pytest.mark.asyncio
 async def test_reporting_api_flow(app: FastAPI) -> None:
     tenant = str(uuid4())
-    container = deps.get_container()
+    container = await deps.get_container()
     template_id = container.template_id_for(ReportType.SECURITY_PROGRAM_DASHBOARD)
     assert template_id is not None
 
@@ -103,7 +103,7 @@ async def test_reporting_api_flow(app: FastAPI) -> None:
 @pytest.mark.asyncio
 async def test_viewer_forbidden_on_generate(app: FastAPI) -> None:
     tenant = str(uuid4())
-    container = deps.get_container()
+    container = await deps.get_container()
     template_id = container.template_id_for(ReportType.KPI_TREND_REPORT)
     assert template_id is not None
 

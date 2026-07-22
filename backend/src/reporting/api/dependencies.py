@@ -9,10 +9,23 @@ from reporting.infrastructure.container import ReportingContainer
 _container: ReportingContainer | None = None
 
 
-def get_container() -> ReportingContainer:
+async def get_container() -> ReportingContainer:
     global _container
     if _container is None:
-        _container = ReportingContainer()
+        from redforge.api.dependencies import get_session_factory
+
+        try:
+            session_factory = get_session_factory()
+        except RuntimeError:
+            session_factory = None
+        _container = ReportingContainer(session_factory=session_factory)
+        if session_factory is not None:
+            # The in-memory path self-seeds platform templates synchronously
+            # in __init__ (_seed_platform_templates); the Postgres-backed
+            # template repo needs the real async path so a fresh database
+            # actually has the 7 platform templates report generation
+            # depends on.
+            await _container.ensure_templates()
     return _container
 
 

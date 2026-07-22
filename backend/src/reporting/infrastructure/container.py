@@ -39,6 +39,8 @@ from reporting.infrastructure.persistence.in_memory_repositories import (
 from reporting.infrastructure.workers.report_scheduler_worker import ReportSchedulerWorker
 
 if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
     from reporting.domain.ports.i_analytics_kpi_query_port import IAnalyticsKPIQueryPort
     from reporting.domain.ports.i_bi_export_port import IBIExportPort
     from reporting.domain.ports.i_ml_signal_query_port import IMLSignalQueryPort
@@ -93,6 +95,10 @@ _PLATFORM_TEMPLATES: tuple[tuple[ReportType, str, list[str]], ...] = (
 
 
 class ReportingContainer:
+    template_repo: IReportTemplateRepository
+    schedule_repo: IScheduledReportRepository
+    instance_repo: IReportInstanceRepository
+
     def __init__(
         self,
         *,
@@ -104,10 +110,44 @@ class ReportingContainer:
         delivery_port: IReportDeliveryPort | None = None,
         bi_export_port: IBIExportPort | None = None,
         seed_templates: bool = True,
+        session_factory: async_sessionmaker[AsyncSession] | None = None,
     ) -> None:
-        self.template_repo = template_repo or InMemoryReportTemplateRepository()
-        self.schedule_repo = schedule_repo or InMemoryScheduledReportRepository()
-        self.instance_repo = instance_repo or InMemoryReportInstanceRepository()
+        if template_repo is not None:
+            self.template_repo = template_repo
+        elif session_factory is not None:
+            from reporting.infrastructure.persistence.postgres_repositories import (
+                PgReportTemplateRepository,
+            )
+
+            self.template_repo = PgReportTemplateRepository(session_factory)
+            # Postgres path can't self-seed synchronously — see
+            # api/dependencies.py::get_container, which awaits
+            # ensure_templates() after construction.
+            seed_templates = False
+        else:
+            self.template_repo = InMemoryReportTemplateRepository()
+
+        if schedule_repo is not None:
+            self.schedule_repo = schedule_repo
+        elif session_factory is not None:
+            from reporting.infrastructure.persistence.postgres_repositories import (
+                PgScheduledReportRepository,
+            )
+
+            self.schedule_repo = PgScheduledReportRepository(session_factory)
+        else:
+            self.schedule_repo = InMemoryScheduledReportRepository()
+
+        if instance_repo is not None:
+            self.instance_repo = instance_repo
+        elif session_factory is not None:
+            from reporting.infrastructure.persistence.postgres_repositories import (
+                PgReportInstanceRepository,
+            )
+
+            self.instance_repo = PgReportInstanceRepository(session_factory)
+        else:
+            self.instance_repo = InMemoryReportInstanceRepository()
         self.kpi_port = kpi_port or StaticAnalyticsKPIQueryAdapter()
         self.ml_port = ml_port or StubMLSignalQueryAdapter()
         self.delivery_audit = DeliveryAuditStore()
