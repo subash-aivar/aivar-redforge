@@ -83,6 +83,8 @@ const NAV_GROUPS: NavGroup[] = [
     title: "Detection & Response",
     items: [
       { label: "Exposure Management", href: "/exposure-management", icon: "◉" },
+      { label: "Exposure Intelligence", href: "/exposure", icon: "◎" },
+      { label: "Vulnerability", href: "/vulnerability", icon: "⊘" },
       { label: "Attack Surface", href: "/attack-surface", icon: "◆" },
       { label: "Security Graph", href: "/security-graph", icon: "❖" },
       { label: "Identity Security", href: "/identity-security", icon: "⚑" },
@@ -94,6 +96,8 @@ const NAV_GROUPS: NavGroup[] = [
       { label: "Authorization", href: "/authorization", icon: "🔒" },
       { label: "Threat Hunt", href: "/threat-hunt", icon: "🎯", perm: "threat_hunt:read" },
       { label: "Playbooks", href: "/playbooks", icon: "▶", perm: "playbooks:read" },
+      { label: "Automated Actions", href: "/automated-actions", icon: "⚡", perm: "playbooks:read" },
+      { label: "Lessons Learned", href: "/lessons-learned", icon: "📝", perm: "incident:read" },
     ],
   },
   {
@@ -109,6 +113,9 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: "Analytics", href: "/analytics", icon: "📊", perm: "analytics:read" },
       { label: "AI Posture", href: "/ai-posture", icon: "🤖", perm: "ai_posture:read" },
+      { label: "AI Agent Governance", href: "/ai-governance", icon: "🛡", perm: "ai_posture:read" },
+      { label: "AI Supply Chain", href: "/ai-supply-chain", icon: "🔗", perm: "ai_posture:read" },
+      { label: "Integration Hub", href: "/integration-hub", icon: "🔌" },
     ],
   },
   {
