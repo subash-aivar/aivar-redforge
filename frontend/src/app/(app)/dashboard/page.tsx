@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import type { RuntimeHealth, ReadinessCheck, Target, Finding, RiskIncident } from "@/lib/types";
-import { bootstrapSuperAdmin, getBootstrapStatus } from "@/lib/platform";
+import { PlatformBootstrapCard } from "@/components/PlatformBootstrapCard";
 
 export default function DashboardPage() {
   const [health, setHealth] = useState<RuntimeHealth | null>(null);
@@ -12,31 +12,6 @@ export default function DashboardPage() {
   const [findings, setFindings] = useState<Finding[]>([]);
   const [risk, setRisk] = useState<RiskIncident[]>([]);
   const [error, setError] = useState("");
-  const [bootstrapAvailable, setBootstrapAvailable] = useState(false);
-  const [bootstrapping, setBootstrapping] = useState(false);
-  const [bootstrapError, setBootstrapError] = useState("");
-  const [bootstrapDone, setBootstrapDone] = useState(false);
-
-  useEffect(() => {
-    getBootstrapStatus()
-      .then((s) => setBootstrapAvailable(s.available))
-      .catch(() => {});
-  }, []);
-
-  async function doBootstrap() {
-    setBootstrapping(true);
-    setBootstrapError("");
-    try {
-      await bootstrapSuperAdmin();
-      setBootstrapDone(true);
-      setBootstrapAvailable(false);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Bootstrap failed";
-      setBootstrapError(msg);
-    } finally {
-      setBootstrapping(false);
-    }
-  }
 
   useEffect(() => {
     Promise.allSettled([
@@ -70,32 +45,9 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {bootstrapDone && (
-        <div className="mt-4 rounded-lg border border-purple-800 bg-purple-950 px-4 py-3 text-sm text-purple-300">
-          Platform Super Admin bootstrap succeeded. Refresh to see the Platform
-          Control Plane link in the sidebar.
-        </div>
-      )}
-
-      {bootstrapAvailable && !bootstrapDone && (
-        <div className="mt-4 rounded-lg border border-purple-800 bg-purple-950 px-4 py-3">
-          <p className="text-sm text-purple-300">
-            No platform Super Admin has been established yet. If this server is
-            configured to recognize your account as the initial owner, you can
-            bootstrap platform access now. This can only be done once.
-          </p>
-          {bootstrapError && (
-            <p className="mt-2 text-xs text-red-300">{bootstrapError}</p>
-          )}
-          <button
-            onClick={doBootstrap}
-            disabled={bootstrapping}
-            className="mt-2 rounded-lg bg-purple-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-purple-500 disabled:opacity-50"
-          >
-            {bootstrapping ? "Bootstrapping…" : "Bootstrap Platform Super Admin"}
-          </button>
-        </div>
-      )}
+      <div className="mt-4">
+        <PlatformBootstrapCard />
+      </div>
 
       {/* Metric cards */}
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">

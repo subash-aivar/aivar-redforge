@@ -4,6 +4,10 @@ import * as api from "@/lib/api";
 import * as platform from "@/lib/platform";
 import DashboardPage from "./page";
 
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn() }),
+}));
+
 vi.mock("@/lib/api", async () => {
   const actual = await vi.importActual<typeof import("@/lib/api")>("@/lib/api");
   return { ...actual, api: { ...actual.api, get: vi.fn() } };
