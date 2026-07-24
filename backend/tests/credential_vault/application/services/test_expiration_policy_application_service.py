@@ -59,7 +59,7 @@ def _create_cmd(
 ) -> CreateExpirationPolicyCommand:
     return CreateExpirationPolicyCommand(
         tenant_id=tenant_id or uuid4(),
-        principal_id=principal_id or uuid4(),
+        principal_id=principal_id or EntityId.generate(),
         name=name,
         ttl_days=ttl_days,
         warn_days_before=warn_days_before,
@@ -169,7 +169,7 @@ async def test_update_expiration_policy_success(
     cmd = UpdateExpirationPolicyCommand(
         tenant_id=tenant_uuid,
         policy_id=policy.policy_id.value,
-        principal_id=uuid4(),
+        principal_id=EntityId.generate(),
         ttl_days=180,
         warn_days_before=30,
         hard_expire=False,
@@ -196,7 +196,7 @@ async def test_update_expiration_policy_access_denied(
     cmd = UpdateExpirationPolicyCommand(
         tenant_id=EntityId.generate(),
         policy_id=uuid4(),
-        principal_id=uuid4(),
+        principal_id=EntityId.generate(),
         ttl_days=90,
         warn_days_before=14,
         hard_expire=True,
@@ -215,7 +215,7 @@ async def test_update_expiration_policy_validation_failure_warn_ge_ttl(
     cmd = UpdateExpirationPolicyCommand(
         tenant_id=EntityId.generate(),
         policy_id=uuid4(),
-        principal_id=uuid4(),
+        principal_id=EntityId.generate(),
         ttl_days=7,
         warn_days_before=14,
         hard_expire=True,
@@ -240,7 +240,7 @@ async def test_update_expiration_policy_publish_failure_nonfatal(
     cmd = UpdateExpirationPolicyCommand(
         tenant_id=tenant_uuid,
         policy_id=policy.policy_id.value,
-        principal_id=uuid4(),
+        principal_id=EntityId.generate(),
         ttl_days=120,
         warn_days_before=10,
         hard_expire=True,
@@ -266,7 +266,7 @@ async def test_delete_expiration_policy_success(
     cmd = DeleteExpirationPolicyCommand(
         tenant_id=tenant_uuid,
         policy_id=policy.policy_id.value,
-        principal_id=uuid4(),
+        principal_id=EntityId.generate(),
     )
 
     await service.delete_expiration_policy(cmd)
@@ -294,7 +294,7 @@ async def test_delete_expiration_policy_access_denied(
     cmd = DeleteExpirationPolicyCommand(
         tenant_id=EntityId.generate(),
         policy_id=uuid4(),
-        principal_id=uuid4(),
+        principal_id=EntityId.generate(),
     )
 
     with pytest.raises(AccessDenied):
@@ -311,7 +311,7 @@ async def test_delete_expiration_policy_validation_failure(
     cmd = DeleteExpirationPolicyCommand(
         tenant_id=UUID(int=0),
         policy_id=uuid4(),
-        principal_id=uuid4(),
+        principal_id=EntityId.generate(),
     )
 
     with pytest.raises(ApplicationValidationError) as exc_info:
@@ -333,7 +333,7 @@ async def test_delete_expiration_policy_publish_failure_nonfatal(
     cmd = DeleteExpirationPolicyCommand(
         tenant_id=tenant_uuid,
         policy_id=policy.policy_id.value,
-        principal_id=uuid4(),
+        principal_id=EntityId.generate(),
     )
 
     await service.delete_expiration_policy(cmd)
@@ -355,7 +355,7 @@ async def test_get_expiration_policy_success(
     qry = GetExpirationPolicyQuery(
         tenant_id=tenant_uuid,
         policy_id=policy.policy_id.value,
-        principal_id=uuid4(),
+        principal_id=EntityId.generate(),
     )
 
     dto = await service.get_expiration_policy(qry)
@@ -375,7 +375,7 @@ async def test_get_expiration_policy_access_denied(
     qry = GetExpirationPolicyQuery(
         tenant_id=EntityId.generate(),
         policy_id=uuid4(),
-        principal_id=uuid4(),
+        principal_id=EntityId.generate(),
     )
 
     with pytest.raises(AccessDenied):
@@ -397,7 +397,7 @@ async def test_list_expiration_policies_success(
         make_expiration_policy(tenant_id=tenant_uuid, name="b"),
     ]
     mock_uow.expiration_policies.list_by_tenant.return_value = policies
-    qry = ListExpirationPoliciesQuery(tenant_id=tenant_uuid, principal_id=uuid4())
+    qry = ListExpirationPoliciesQuery(tenant_id=tenant_uuid, principal_id=EntityId.generate())
 
     result = await service.list_expiration_policies(qry)
 
@@ -413,7 +413,7 @@ async def test_list_expiration_policies_access_denied(
     mock_permission_port: AsyncMock,
 ) -> None:
     mock_permission_port.has_permission.return_value = False
-    qry = ListExpirationPoliciesQuery(tenant_id=EntityId.generate(), principal_id=uuid4())
+    qry = ListExpirationPoliciesQuery(tenant_id=EntityId.generate(), principal_id=EntityId.generate())
 
     with pytest.raises(AccessDenied):
         await service.list_expiration_policies(qry)

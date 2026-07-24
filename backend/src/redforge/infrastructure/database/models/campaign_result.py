@@ -5,12 +5,14 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import Boolean, DateTime, Float, Integer, String, Text
+from sqlalchemy import JSON, Boolean, DateTime, Float, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy.types import JSON
 
 from redforge.infrastructure.database.base import Base
+
+_JSONB_PORTABLE = JSON().with_variant(JSONB, "postgresql")
+
 
 
 class CampaignResultModel(Base):
@@ -37,7 +39,5 @@ class CampaignResultModel(Base):
     intelligence_confidence: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     duration_ms: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     failure_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
-    graph_snapshot: Mapped[Any] = mapped_column(
-        JSON().with_variant(JSONB, "postgresql"), nullable=True
-    )
+    graph_snapshot: Mapped[Any] = mapped_column(_JSONB_PORTABLE, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

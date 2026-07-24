@@ -29,7 +29,7 @@ from execution.infrastructure.redis.in_memory_rate_limit_store import InMemoryRa
 
 def test_journal_hash_chain_verified() -> None:
     now = datetime.now(UTC)
-    tenant = TenantId(uuid7())
+    tenant = TenantId.from_uuid(uuid7())
     journal = ExecutionJournal.create(tenant, EngagementId(uuid7()), now)
     op = OperatorId(uuid7())
     journal.append_entry(
@@ -45,7 +45,7 @@ def test_journal_hash_chain_verified() -> None:
 
 def test_journal_broken_chain_detected() -> None:
     now = datetime.now(UTC)
-    tenant = TenantId(uuid7())
+    tenant = TenantId.from_uuid(uuid7())
     journal = ExecutionJournal.create(tenant, EngagementId(uuid7()), now)
     journal.append_entry(
         tenant, JournalEntryType.ACTION_STARTED, "start", now, system_attribution="sys"
@@ -76,7 +76,7 @@ def test_rate_limit_destruct_decide() -> None:
 async def test_rate_limit_destruct_nx_once_per_engagement_target() -> None:
     store = InMemoryRateLimitStore()
     svc = RateLimitEvaluationService(store)
-    tenant = TenantId(uuid7())
+    tenant = TenantId.from_uuid(uuid7())
     target = TargetId(uuid7())
     engagement = uuid7()
     tech = TechniqueRef("T1499", "impact", ImpactCeiling.DESTRUCT)

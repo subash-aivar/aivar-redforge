@@ -20,7 +20,7 @@ class DegradedPlanInvalidationAdapter(IPlanInvalidationPort):
     """Records invalidation calls; does not touch operation plans."""
 
     def __init__(self) -> None:
-        self.calls: list[tuple[UUID, UUID]] = []
+        self.calls: list[tuple[TenantId, UUID]] = []
 
     async def invalidate_plans_for_payload(
         self, tenant_id: TenantId, payload_id: UUID

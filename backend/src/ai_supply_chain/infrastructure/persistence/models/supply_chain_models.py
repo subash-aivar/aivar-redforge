@@ -7,6 +7,7 @@ from typing import Any
 from uuid import UUID
 
 from sqlalchemy import (
+    JSON,
     Boolean,
     DateTime,
     Integer,
@@ -17,6 +18,9 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+_JSONB_PORTABLE = JSON().with_variant(JSONB, "postgresql")
+
 
 
 class SupplyChainBase(DeclarativeBase):
@@ -39,11 +43,21 @@ class ModelProvenanceModel(SupplyChainBase):
     integrity_status: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
     operational_status: Mapped[str] = mapped_column(String(64), nullable=False)
     artifact_size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
-    current_checksum_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
-    last_verified_checksum_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
-    signature_chain_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
-    source_registry_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
-    training_lineage_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    current_checksum_json: Mapped[dict[str, Any] | None] = mapped_column(
+        _JSONB_PORTABLE, nullable=True,
+    )
+    last_verified_checksum_json: Mapped[dict[str, Any] | None] = mapped_column(
+        _JSONB_PORTABLE, nullable=True,
+    )
+    signature_chain_json: Mapped[dict[str, Any] | None] = mapped_column(
+        _JSONB_PORTABLE, nullable=True,
+    )
+    source_registry_json: Mapped[dict[str, Any] | None] = mapped_column(
+        _JSONB_PORTABLE, nullable=True,
+    )
+    training_lineage_json: Mapped[dict[str, Any] | None] = mapped_column(
+        _JSONB_PORTABLE, nullable=True,
+    )
     last_verified_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
@@ -95,7 +109,9 @@ class MBOMComponentModel(SupplyChainBase):
     version: Mapped[str] = mapped_column(String(128), nullable=False)
     source: Mapped[str] = mapped_column(String(256), nullable=False)
     checksum: Mapped[str] = mapped_column(String(128), nullable=False)
-    known_cve_ids_json: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
+    known_cve_ids_json: Mapped[list[Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=list,
+    )
 
 
 class AIDiscoveryScanRunModel(SupplyChainBase):
@@ -105,15 +121,19 @@ class AIDiscoveryScanRunModel(SupplyChainBase):
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True)
     tenant_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), nullable=False, index=True)
     state: Mapped[str] = mapped_column(String(64), nullable=False)
-    sources_json: Mapped[list[Any]] = mapped_column(JSONB, nullable=False)
+    sources_json: Mapped[list[Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     discovered_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     unmatched_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    failed_partitions_json: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
+    failed_partitions_json: Mapped[list[Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=list,
+    )
     api_calls_used: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     partial: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-    payload_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    payload_json: Mapped[dict[str, Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=dict,
+    )
 
 
 class TenantVerificationSettingsModel(SupplyChainBase):

@@ -6,12 +6,15 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import Boolean, DateTime, Float, Integer, String, Text
+from sqlalchemy import JSON, Boolean, DateTime, Float, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from redforge.infrastructure.database.base import Base
+
+_JSONB_PORTABLE = JSON().with_variant(JSONB, "postgresql")
+
 
 _SCHEMA = "autonomous_intelligence"
 
@@ -25,7 +28,7 @@ class OptimizationModelModel(Base):
     target_type: Mapped[str] = mapped_column(String(80), nullable=False)
     model_version: Mapped[int] = mapped_column(Integer, nullable=False)
     status: Mapped[str] = mapped_column(String(30), nullable=False)
-    accuracy_metrics: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    accuracy_metrics: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
     conformity_assessment_ref: Mapped[str | None] = mapped_column(Text, nullable=True)
     feedback_sample_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     retraining_threshold: Mapped[int] = mapped_column(Integer, nullable=False, default=50)
@@ -47,8 +50,8 @@ class IntelligenceSuggestionModel(Base):
     model_id: Mapped[str] = mapped_column(String(128), nullable=False)
     model_version: Mapped[int] = mapped_column(Integer, nullable=False)
     rationale_summary: Mapped[str] = mapped_column(Text, nullable=False)
-    supporting_signal_refs: Mapped[list[Any]] = mapped_column(JSONB, nullable=False)
-    proposed_change_payload: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    supporting_signal_refs: Mapped[list[Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
+    proposed_change_payload: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
     priority: Mapped[str] = mapped_column(String(20), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     review_deadline_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -82,6 +85,6 @@ class AutonomousOperationsPolicyModel(Base):
     tenant_id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), primary_key=True)
     kill_switch_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     review_required: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
-    min_confidence_by_type: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
-    enabled_target_types: Mapped[list[Any]] = mapped_column(JSONB, nullable=False)
+    min_confidence_by_type: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
+    enabled_target_types: Mapped[list[Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

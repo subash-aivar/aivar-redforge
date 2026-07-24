@@ -72,6 +72,7 @@ from detection.domain.value_objects.pack import (
     PackMetadata,
 )
 from detection.infrastructure.persistence.serialization import coverage_to_json
+from redforge.shared.identifiers import EntityId
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -258,7 +259,7 @@ class PackExceptionEvidenceApplicationService:
         return self._pack_dto(pack)
 
     async def list_packs(
-        self, tenant_uuid: UUID, *, limit: int = 100, offset: int = 0
+        self, tenant_uuid: EntityId, *, limit: int = 100, offset: int = 0
     ) -> PackPageDTO:
         validate_uuid(tenant_uuid, "tenant_id")
         limit = validate_limit(limit)
@@ -391,7 +392,7 @@ class PackExceptionEvidenceApplicationService:
 
     async def _exception_action(
         self,
-        tenant_uuid: UUID,
+        tenant_uuid: EntityId,
         exception_uuid: UUID,
         mutator: Any,
     ) -> DetectionExceptionDTO:
@@ -422,7 +423,7 @@ class PackExceptionEvidenceApplicationService:
         return self._exception_dto(exc)
 
     async def list_exceptions(
-        self, tenant_uuid: UUID, *, limit: int = 100, offset: int = 0
+        self, tenant_uuid: EntityId, *, limit: int = 100, offset: int = 0
     ) -> ExceptionPageDTO:
         validate_uuid(tenant_uuid, "tenant_id")
         limit = validate_limit(limit)

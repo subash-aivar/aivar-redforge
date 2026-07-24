@@ -11,8 +11,6 @@ from analytics.domain.ports.i_ml_anomaly_score_port import (
 )
 
 if TYPE_CHECKING:
-    from uuid import UUID
-
     from analytics.domain.value_objects.identifiers import TenantId
 
 
@@ -29,7 +27,7 @@ class CallableMLAnomalyScoreAdapter(IMLAnomalyScorePort):
 
     def __init__(
         self,
-        fn: Callable[[UUID, list[float]], Awaitable[MLAnomalyScoreResult]],
+        fn: Callable[[TenantId, list[float]], Awaitable[MLAnomalyScoreResult]],
     ) -> None:
         self._fn = fn
 

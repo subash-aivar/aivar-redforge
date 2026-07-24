@@ -29,20 +29,21 @@ pytestmark = pytest.mark.asyncio
 async def factory():
     engine = create_async_engine("sqlite+aiosqlite://", echo=False)
     async with engine.begin() as conn:
-        # Excludes tables using raw postgresql.JSONB (platform_events,
-        # platform_snapshots, platform_read_models, dead_letter_entries)
-        # — those don't compile against SQLite. A whole-metadata
-        # create_all() only "worked" before by luck of import order (this
-        # test never touches those tables); scoping explicitly makes it
-        # correct regardless of what else has been imported this session.
-        sqlite_safe_tables = [
-            t for t in Base.metadata.sorted_tables
-            if t.name not in {
-                "platform_events", "platform_snapshots",
-                "platform_read_models", "dead_letter_entries",
-            }
-        ]
-        await conn.run_sync(Base.metadata.create_all, tables=sqlite_safe_tables)
+        # Scoped to only the tables this test actually touches. A
+        # whole-metadata create_all() only "worked" before by luck of
+        # import order — the shared `Base` also carries schema-qualified
+        # tables (e.g. cloud_security.*, unsupported by SQLite) and tables
+        # with raw postgresql.JSONB columns (e.g. platform_events,
+        # compliance_frameworks) that don't compile against SQLite either.
+        # Scoping explicitly makes this correct regardless of what else has
+        # been imported this session.
+        await conn.run_sync(
+            Base.metadata.create_all,
+            tables=[
+                SecurityGraphNodeModel.__table__,
+                SecurityGraphEdgeModel.__table__,
+            ],
+        )
     yield async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
     await engine.dispose()
 

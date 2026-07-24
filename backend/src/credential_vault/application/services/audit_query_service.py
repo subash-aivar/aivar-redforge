@@ -65,7 +65,7 @@ class AuditQueryService:
 
         credential_id = CredentialId(qry.credential_id)
         tenant_id = qry.tenant_id
-        principal = PrincipalId(qry.principal_id)
+        principal = PrincipalId(qry.principal_id.value.to_uuid())
 
         allowed = await self._permission_port.has_permission(
             principal,

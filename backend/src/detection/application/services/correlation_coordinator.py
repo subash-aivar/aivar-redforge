@@ -15,6 +15,7 @@ from detection.application.exceptions import (
 from detection.domain.services.correlation import CorrelationService
 from detection.domain.value_objects.enums import CorrelationStatus
 from detection.domain.value_objects.identifiers import DetectionFindingId, TenantId
+from redforge.shared.identifiers import EntityId
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -55,7 +56,7 @@ class CorrelationCoordinator:
     async def correlate_finding(
         self,
         *,
-        tenant_uuid: UUID,
+        tenant_uuid: EntityId,
         finding_id: UUID,
         refresh: bool = False,
     ) -> dict[str, object]:
@@ -178,7 +179,7 @@ class CorrelationCoordinator:
     def schedule_correlate(
         self,
         *,
-        tenant_uuid: UUID,
+        tenant_uuid: EntityId,
         finding_id: UUID,
     ) -> asyncio.Task[dict[str, object]]:
         """Fire-and-forget async correlation (does not block finding creation)."""

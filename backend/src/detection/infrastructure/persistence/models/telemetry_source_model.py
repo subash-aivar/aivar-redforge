@@ -6,12 +6,15 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import DateTime, Float, Index, Integer, String, Text, UniqueConstraint
+from sqlalchemy import JSON, DateTime, Float, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from redforge.infrastructure.database.base import Base
+
+_JSONB_PORTABLE = JSON().with_variant(JSONB, "postgresql")
+
 
 _SCHEMA = "detection"
 
@@ -20,7 +23,7 @@ class TelemetrySourceModel(Base):
     """
     Persistence for TelemetrySource configuration metadata.
 
-    Schema / connection / health stored as JSONB metadata — never stores
+    Schema / connection / health stored as _JSONB_PORTABLE metadata — never stores
     telemetry event payloads.
     """
 
@@ -36,14 +39,14 @@ class TelemetrySourceModel(Base):
 
     # Schema metadata
     schema_version: Mapped[str] = mapped_column(String(64), nullable=False)
-    schema_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    schema_json: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
 
     # Connection / routing metadata (no credentials)
-    connection_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    connection_json: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
 
     # Health metadata
     health_status: Mapped[str] = mapped_column(String(32), nullable=False)
-    health_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    health_json: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
 
     # Latency / retention profiles
     latency_expected_seconds: Mapped[float] = mapped_column(Float, nullable=False)

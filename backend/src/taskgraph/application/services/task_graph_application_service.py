@@ -99,7 +99,7 @@ def _now() -> datetime:
 def graph_to_dto(graph: TaskGraph) -> TaskGraphDTO:
     return TaskGraphDTO(
         graph_id=graph.graph_id.value,
-        tenant_id=graph.tenant_id.value,
+        tenant_id=graph.tenant_id,
         name=graph.name,
         description=graph.description,
         state=graph.state.value,

@@ -29,7 +29,7 @@ from execution.infrastructure.redis.in_memory_rate_limit_store import InMemoryRa
 @pytest.mark.asyncio
 async def test_in_memory_kill_switch_store_unavailability() -> None:
     store = InMemoryKillSwitchStore()
-    tenant = TenantId(uuid7())
+    tenant = TenantId.from_uuid(uuid7())
     now = datetime.now(UTC)
     ks = KillSwitchState.create_armed(
         tenant, KillSwitchScope.ENGAGEMENT, uuid7(), now
@@ -47,7 +47,7 @@ async def test_in_memory_kill_switch_store_unavailability() -> None:
 @pytest.mark.asyncio
 async def test_in_memory_rate_limit_sliding_window() -> None:
     store = InMemoryRateLimitStore()
-    tenant = TenantId(uuid7())
+    tenant = TenantId.from_uuid(uuid7())
     target = TargetId(uuid7())
     policy = RateLimitPolicy(2, 60, "execution")
     d1 = await store.evaluate_and_consume(

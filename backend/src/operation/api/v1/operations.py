@@ -250,7 +250,7 @@ async def sign_execution_plan(
         SignExecutionPlan(
             tenant_id=tenant_id,
             operation_id=operation_id,
-            operator_id=principal_id,
+            operator_id=principal_id.value.to_uuid(),
             signature=body.signature,
         )
     )
@@ -290,7 +290,7 @@ async def approve_operation(
         ApproveOperation(
             tenant_id=tenant_id,
             operation_id=operation_id,
-            operator_id=principal_id,
+            operator_id=principal_id.value.to_uuid(),
             authority=body.authority,
             signature=body.signature,
         )

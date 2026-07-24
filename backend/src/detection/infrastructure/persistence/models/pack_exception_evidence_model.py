@@ -6,12 +6,15 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from redforge.infrastructure.database.base import Base
+
+_JSONB_PORTABLE = JSON().with_variant(JSONB, "postgresql")
+
 
 _SCHEMA = "detection"
 
@@ -26,18 +29,18 @@ class DetectionPackModel(Base):
     category: Mapped[str] = mapped_column(String(64), nullable=False)
     lifecycle_state: Mapped[str] = mapped_column(String(32), nullable=False)
     semver: Mapped[str] = mapped_column(String(32), nullable=False)
-    maintainer_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    maintainer_json: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
     subscription_json: Mapped[dict[str, Any]] = mapped_column(
-        JSONB, nullable=False, default=dict
+        _JSONB_PORTABLE, nullable=False, default=dict
     )
     compliance_framework_json: Mapped[dict[str, Any] | None] = mapped_column(
-        JSONB, nullable=True
+        _JSONB_PORTABLE, nullable=True
     )
     coverage_json: Mapped[dict[str, Any]] = mapped_column(
-        JSONB, nullable=False, default=dict
+        _JSONB_PORTABLE, nullable=False, default=dict
     )
     metadata_json: Mapped[dict[str, Any]] = mapped_column(
-        JSONB, nullable=False, default=dict
+        _JSONB_PORTABLE, nullable=False, default=dict
     )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -85,7 +88,7 @@ class DetectionPackVersionModel(Base):
     tenant_id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), nullable=False)
     version: Mapped[str] = mapped_column(String(32), nullable=False)
     rule_snapshots_json: Mapped[list[Any]] = mapped_column(
-        JSONB, nullable=False, default=list
+        _JSONB_PORTABLE, nullable=False, default=list
     )
     release_notes: Mapped[str] = mapped_column(Text, nullable=False, default="")
     released_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -104,15 +107,15 @@ class DetectionExceptionModel(Base):
     tenant_id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), nullable=False)
     exception_type: Mapped[str] = mapped_column(String(64), nullable=False)
     state: Mapped[str] = mapped_column(String(32), nullable=False)
-    scope_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
-    justification_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    scope_json: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
+    justification_json: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
     requester: Mapped[str] = mapped_column(String(256), nullable=False)
     approver: Mapped[str | None] = mapped_column(String(256), nullable=True)
     valid_until: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     affected_rules_json: Mapped[list[Any]] = mapped_column(
-        JSONB, nullable=False, default=list
+        _JSONB_PORTABLE, nullable=False, default=list
     )
-    asset_scope_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    asset_scope_json: Mapped[dict[str, Any] | None] = mapped_column(_JSONB_PORTABLE, nullable=True)
     compliance_impact_acknowledged: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False
     )

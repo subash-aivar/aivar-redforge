@@ -7,6 +7,7 @@ from typing import Any
 from uuid import UUID
 
 from sqlalchemy import (
+    JSON,
     Boolean,
     DateTime,
     ForeignKey,
@@ -21,6 +22,9 @@ from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from redforge.infrastructure.database.base import Base
+
+_JSONB_PORTABLE = JSON().with_variant(JSONB, "postgresql")
+
 
 _SCHEMA = "engagement"
 
@@ -37,11 +41,11 @@ class EngagementModel(Base):
     kill_switch_state: Mapped[str] = mapped_column(String(32), nullable=False)
     engagement_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     scope_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
-    approval_policy_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
-    window_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
-    objectives_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    approval_policy_json: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
+    window_json: Mapped[dict[str, Any] | None] = mapped_column(_JSONB_PORTABLE, nullable=True)
+    objectives_json: Mapped[dict[str, Any] | None] = mapped_column(_JSONB_PORTABLE, nullable=True)
     pending_scope_expansion_json: Mapped[list[Any] | None] = mapped_column(
-        JSONB, nullable=True
+        _JSONB_PORTABLE, nullable=True
     )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -186,7 +190,7 @@ class RulesOfEngagementModel(Base):
     )
     tenant_id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), nullable=False)
     version: Mapped[int] = mapped_column(Integer, nullable=False)
-    constraints_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    constraints_json: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
     signed_by: Mapped[str | None] = mapped_column(String(256), nullable=True)
     signature: Mapped[str | None] = mapped_column(Text, nullable=True)
     signed_at: Mapped[datetime | None] = mapped_column(
@@ -245,8 +249,8 @@ class TargetAuthorizationModel(Base):
     engagement_id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), nullable=False)
     asset_id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), nullable=False)
     display_name: Mapped[str | None] = mapped_column(String(512), nullable=True)
-    techniques_json: Mapped[list[Any]] = mapped_column(JSONB, nullable=False)
-    constraints_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    techniques_json: Mapped[list[Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
+    constraints_json: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
     granted_by: Mapped[str] = mapped_column(String(256), nullable=False)
     valid_until: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     state: Mapped[str] = mapped_column(String(32), nullable=False)

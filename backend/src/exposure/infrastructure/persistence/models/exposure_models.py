@@ -7,6 +7,7 @@ from typing import Any
 from uuid import UUID
 
 from sqlalchemy import (
+    JSON,
     Boolean,
     DateTime,
     Float,
@@ -18,6 +19,9 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+_JSONB_PORTABLE = JSON().with_variant(JSONB, "postgresql")
+
 
 
 class ExposureBase(DeclarativeBase):
@@ -49,10 +53,16 @@ class ExposureRecordModel(ExposureBase):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     suppression_justification: Mapped[str | None] = mapped_column(Text, nullable=True)
-    amplifiers_json: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
-    technique_refs_json: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
-    cve_ids_json: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
-    asset_classes_json: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
+    amplifiers_json: Mapped[list[Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=list,
+    )
+    technique_refs_json: Mapped[list[Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=list,
+    )
+    cve_ids_json: Mapped[list[Any]] = mapped_column(_JSONB_PORTABLE, nullable=False, default=list)
+    asset_classes_json: Mapped[list[Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=list,
+    )
 
 
 class ThreatActorMatchCacheModel(ExposureBase):
@@ -60,14 +70,18 @@ class ThreatActorMatchCacheModel(ExposureBase):
     __table_args__ = ({"schema": "exposure"},)
 
     tenant_id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), primary_key=True)
-    entries_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    entries_json: Mapped[dict[str, Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=dict,
+    )
     asset_class_entries_json: Mapped[dict[str, Any]] = mapped_column(
-        JSONB, nullable=False, default=dict
+        _JSONB_PORTABLE, nullable=False, default=dict
     )
     technique_entries_json: Mapped[dict[str, Any]] = mapped_column(
-        JSONB, nullable=False, default=dict
+        _JSONB_PORTABLE, nullable=False, default=dict
     )
-    ioc_entries_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    ioc_entries_json: Mapped[dict[str, Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=dict,
+    )
     last_event_update_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
@@ -88,7 +102,9 @@ class ExposureScoreSnapshotModel(ExposureBase):
     score_input_version: Mapped[int] = mapped_column(Integer, nullable=False)
     computed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     job_id: Mapped[str] = mapped_column(String(128), nullable=False)
-    record_scores_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    record_scores_json: Mapped[dict[str, Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=dict,
+    )
 
 
 class AmplifierWeightConfigurationModel(ExposureBase):
@@ -101,7 +117,7 @@ class AmplifierWeightConfigurationModel(ExposureBase):
     id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), primary_key=True)
     tenant_id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), nullable=False, index=True)
     version: Mapped[int] = mapped_column(Integer, nullable=False)
-    weights_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    weights_json: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
     change_rationale: Mapped[str] = mapped_column(Text, nullable=False)
     changed_by: Mapped[str] = mapped_column(String(256), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -135,9 +151,13 @@ class TenantExposureProfileModel(ExposureBase):
     __table_args__ = ({"schema": "exposure"},)
 
     tenant_id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), primary_key=True)
-    asset_scores_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    asset_scores_json: Mapped[dict[str, Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=dict,
+    )
     recomputing: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     recomputation_failed_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
-    metadata_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    metadata_json: Mapped[dict[str, Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=dict,
+    )

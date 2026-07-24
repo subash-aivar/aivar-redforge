@@ -112,7 +112,7 @@ async def test_list_audit_entries_success(
     qry = ListAuditEntriesQuery(
         tenant_id=tenant_uuid,
         credential_id=credential_uuid,
-        principal_id=uuid4(),
+        principal_id=EntityId.generate(),
         since=since,
         operations=["CREATED", "ACCESSED"],
         limit=50,
@@ -150,7 +150,7 @@ async def test_list_audit_entries_access_denied(
     qry = ListAuditEntriesQuery(
         tenant_id=EntityId.generate(),
         credential_id=uuid4(),
-        principal_id=uuid4(),
+        principal_id=EntityId.generate(),
     )
 
     with pytest.raises(AccessDenied) as exc_info:
@@ -169,7 +169,7 @@ async def test_list_audit_entries_invalid_operation_string(
     qry = ListAuditEntriesQuery(
         tenant_id=EntityId.generate(),
         credential_id=uuid4(),
-        principal_id=uuid4(),
+        principal_id=EntityId.generate(),
         operations=["NOT_AN_OPERATION"],
     )
 
@@ -197,7 +197,7 @@ async def test_list_audit_entries_never_calls_append_entry(
     qry = ListAuditEntriesQuery(
         tenant_id=tenant_uuid,
         credential_id=credential_uuid,
-        principal_id=uuid4(),
+        principal_id=EntityId.generate(),
     )
 
     await service.list_audit_entries(qry)
@@ -221,7 +221,7 @@ async def test_list_audit_entries_uses_get_by_credential_then_list_entries(
     qry = ListAuditEntriesQuery(
         tenant_id=tenant_uuid,
         credential_id=credential_uuid,
-        principal_id=uuid4(),
+        principal_id=EntityId.generate(),
     )
 
     await service.list_audit_entries(qry)
@@ -237,7 +237,7 @@ async def test_list_audit_entries_invalid_limit(
     qry = ListAuditEntriesQuery(
         tenant_id=EntityId.generate(),
         credential_id=uuid4(),
-        principal_id=uuid4(),
+        principal_id=EntityId.generate(),
         limit=0,
     )
 

@@ -228,7 +228,9 @@ class PgMLModelArtifactStore(IMLModelArtifactStore):
     def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
         self._session_factory = session_factory
 
-    async def store_artifact(self, tenant_id: TenantId, model_id: UUID, artifact_bytes: bytes) -> str:
+    async def store_artifact(
+        self, tenant_id: TenantId, model_id: UUID, artifact_bytes: bytes
+    ) -> str:
         digest = hashlib.sha256(artifact_bytes).hexdigest()
         async with self._session_factory() as session:
             await session.execute(

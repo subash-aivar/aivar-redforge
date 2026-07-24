@@ -82,7 +82,10 @@ async def session_factory() -> async_sessionmaker[AsyncSession]:
             connect_args={"timeout": 30},
         )
         async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
+            await conn.run_sync(
+            Base.metadata.create_all,
+            tables=[t for t in Base.metadata.sorted_tables if t.schema is None],
+        )
         factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
         yield factory
         await engine.dispose()

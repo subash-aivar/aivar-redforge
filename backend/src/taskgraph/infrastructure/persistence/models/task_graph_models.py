@@ -7,6 +7,7 @@ from typing import Any
 from uuid import UUID
 
 from sqlalchemy import (
+    JSON,
     DateTime,
     ForeignKey,
     Index,
@@ -19,6 +20,9 @@ from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from redforge.infrastructure.database.base import Base
+
+_JSONB_PORTABLE = JSON().with_variant(JSONB, "postgresql")
+
 
 _SCHEMA = "taskgraph"
 
@@ -82,10 +86,18 @@ class CampaignTaskModel(Base):
     name: Mapped[str] = mapped_column(String(512), nullable=False)
     criticality: Mapped[str] = mapped_column(String(32), nullable=False)
     timeout_seconds: Mapped[int] = mapped_column(Integer, nullable=False)
-    operation_template_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
-    human_approval_config_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
-    barrier_policy_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
-    rollback_config_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    operation_template_json: Mapped[dict[str, Any] | None] = mapped_column(
+        _JSONB_PORTABLE, nullable=True,
+    )
+    human_approval_config_json: Mapped[dict[str, Any] | None] = mapped_column(
+        _JSONB_PORTABLE, nullable=True,
+    )
+    barrier_policy_json: Mapped[dict[str, Any] | None] = mapped_column(
+        _JSONB_PORTABLE, nullable=True,
+    )
+    rollback_config_json: Mapped[dict[str, Any] | None] = mapped_column(
+        _JSONB_PORTABLE, nullable=True,
+    )
     task_group_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
     rollback_task_ref_id: Mapped[UUID | None] = mapped_column(PgUUID(as_uuid=True), nullable=True)
 

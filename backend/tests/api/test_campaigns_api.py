@@ -53,7 +53,10 @@ from redforge.infrastructure.middleware.error_handler import ErrorHandlerMiddlew
 async def engine():
     eng = create_async_engine("sqlite+aiosqlite://", echo=False)
     async with eng.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+        await conn.run_sync(
+            Base.metadata.create_all,
+            tables=[t for t in Base.metadata.sorted_tables if t.schema is None],
+        )
     yield eng
     await eng.dispose()
 

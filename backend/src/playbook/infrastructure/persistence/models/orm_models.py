@@ -6,12 +6,15 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import DateTime, Integer, String, Text
+from sqlalchemy import JSON, DateTime, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from redforge.infrastructure.database.base import Base
+
+_JSONB_PORTABLE = JSON().with_variant(JSONB, "postgresql")
+
 
 _SCHEMA = "playbook"
 
@@ -30,7 +33,9 @@ class PlaybookModel(Base):
     created_by: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    approved_by_json: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
+    approved_by_json: Mapped[list[Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=list,
+    )
 
 
 class PlaybookVersionModel(Base):
@@ -59,9 +64,11 @@ class PlaybookActionStepModel(Base):
     action_type: Mapped[str] = mapped_column(Text, nullable=False)
     connector_type: Mapped[str] = mapped_column(String(50), nullable=False)
     target_selector_expr: Mapped[str] = mapped_column(Text, nullable=False)
-    parameters: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    parameters: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
     impact_level: Mapped[str] = mapped_column(String(20), nullable=False)
-    rollback_definition: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    rollback_definition: Mapped[dict[str, Any] | None] = mapped_column(
+        _JSONB_PORTABLE, nullable=True,
+    )
     max_execution_seconds: Mapped[int] = mapped_column(Integer, nullable=False, default=120)
 
 
@@ -75,7 +82,7 @@ class PlaybookTriggerConfigModel(Base):
     source_context: Mapped[str] = mapped_column(String(40), nullable=False)
     trigger_type: Mapped[str] = mapped_column(Text, nullable=False)
     severity_threshold: Mapped[str | None] = mapped_column(String(40), nullable=True)
-    asset_tag_filter: Mapped[list[Any] | None] = mapped_column(JSONB, nullable=True)
+    asset_tag_filter: Mapped[list[Any] | None] = mapped_column(_JSONB_PORTABLE, nullable=True)
     rate_limit_window_seconds: Mapped[int] = mapped_column(Integer, nullable=False, default=300)
     rate_limit_max_invocations: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
 
@@ -92,7 +99,7 @@ class PlaybookTestResultModel(Base):
     outcome: Mapped[str] = mapped_column(String(20), nullable=False)
     steps_tested: Mapped[int] = mapped_column(Integer, nullable=False)
     steps_passed: Mapped[int] = mapped_column(Integer, nullable=False)
-    coverage_paths: Mapped[list[Any]] = mapped_column(JSONB, nullable=False)
+    coverage_paths: Mapped[list[Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
     executed_by: Mapped[str] = mapped_column(Text, nullable=False)
     executed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     duration_ms: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -110,5 +117,7 @@ class AutomationPolicyModel(Base):
     kill_switch_triggered_by: Mapped[str | None] = mapped_column(Text, nullable=True)
     max_concurrent_executions: Mapped[int] = mapped_column(Integer, nullable=False, default=5)
     max_actions_per_hour: Mapped[int] = mapped_column(Integer, nullable=False, default=100)
-    allowed_connector_types: Mapped[list[Any] | None] = mapped_column(JSONB, nullable=True)
+    allowed_connector_types: Mapped[list[Any] | None] = mapped_column(
+        _JSONB_PORTABLE, nullable=True,
+    )
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

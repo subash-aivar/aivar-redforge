@@ -157,7 +157,9 @@ class ComplianceMappingApplicationService:
             await self._publisher.publish_batch(mapping.pop_events())
         return _to_dto(mapping)
 
-    async def list_for_asset(self, tenant_id: TenantId, asset_id: UUID) -> list[AIComplianceMappingDTO]:
+    async def list_for_asset(
+        self, tenant_id: TenantId, asset_id: UUID
+    ) -> list[AIComplianceMappingDTO]:
         tenant = tenant_id
         async with self._uow_factory() as uow:
             items = await uow.compliance_mappings.find_by_asset(AISystemAssetId(asset_id), tenant)

@@ -14,6 +14,7 @@ from typing import Any
 from uuid import UUID
 
 from integration_hub.domain.value_objects.credentials import ResolvedCredential
+from redforge.shared.identifiers import EntityId
 
 
 class CredentialVaultAdapter:
@@ -76,7 +77,7 @@ class CredentialVaultAdapter:
                 category=category,
                 subtype=subtype,
                 schema_id=None,
-                owner_principal_id=owner_principal_id,
+                owner_principal_id=EntityId.from_uuid(owner_principal_id),
                 vault_backend_id=vault_backend_id,
                 plaintext_secret=plaintext_secret,
                 description=description,

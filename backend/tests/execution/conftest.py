@@ -30,7 +30,7 @@ def now() -> datetime:
 
 @pytest.fixture
 def tenant_id() -> TenantId:
-    return TenantId(uuid7())
+    return TenantId.from_uuid(uuid7())
 
 
 @pytest.fixture

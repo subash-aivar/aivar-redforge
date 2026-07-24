@@ -95,7 +95,7 @@ class RiskScoringApplicationService:
         *,
         provenance_port: IProvenanceIntegrityQueryPort | None = None,
         agent_port: IAgentDeviationStatsPort | None = None,
-        gap_count_fn: Callable[[UUID, UUID], Awaitable[int]] | None = None,
+        gap_count_fn: Callable[[TenantId, UUID], Awaitable[int]] | None = None,
     ) -> None:
         self._uow_factory = uow_factory
         self._publisher = event_publisher
@@ -155,7 +155,9 @@ class RiskScoringApplicationService:
         METRICS.risk_scores_computed_total += 1
         return _to_dto(snap, now=now)
 
-    async def get_latest(self, tenant_id: TenantId, asset_id: UUID) -> AIRiskScoreSnapshotDTO | None:
+    async def get_latest(
+        self, tenant_id: TenantId, asset_id: UUID
+    ) -> AIRiskScoreSnapshotDTO | None:
         """Read path — returns cached snapshot only; never computes."""
         tenant = tenant_id
         now = datetime.now(UTC)

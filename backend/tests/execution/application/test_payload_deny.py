@@ -99,7 +99,7 @@ def _build(
 
 @pytest.mark.asyncio
 async def test_payload_hash_mismatch_denies_authorize() -> None:
-    tenant = TenantId(uuid7())
+    tenant = TenantId.from_uuid(uuid7())
     engagement = EngagementId(uuid7())
     target = TargetId(uuid7())
     now = datetime.now(UTC)

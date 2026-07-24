@@ -6,10 +6,13 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import DateTime, Index, Integer, String, Text
+from sqlalchemy import JSON, DateTime, Index, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+_JSONB_PORTABLE = JSON().with_variant(JSONB, "postgresql")
+
 
 _SCHEMA = "payload"
 
@@ -33,8 +36,8 @@ class PayloadModel(PayloadBase):
     impact_ceiling: Mapped[str] = mapped_column(String(32), nullable=False)
     approval_state: Mapped[str] = mapped_column(String(32), nullable=False)
     current_version: Mapped[str | None] = mapped_column(String(64), nullable=True)
-    versions_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
-    engagement_classes_json: Mapped[list[Any]] = mapped_column(JSONB, nullable=False)
+    versions_json: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
+    engagement_classes_json: Mapped[list[Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
     signature: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -54,7 +57,7 @@ class PluginRegistrationModel(PayloadBase):
     plugin_type: Mapped[str] = mapped_column(String(64), nullable=False)
     plugin_version: Mapped[str] = mapped_column(String(64), nullable=False)
     plugin_hash: Mapped[str] = mapped_column(String(64), nullable=False)
-    technique_ids_json: Mapped[list[Any]] = mapped_column(JSONB, nullable=False)
+    technique_ids_json: Mapped[list[Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
     trust_level: Mapped[str] = mapped_column(String(32), nullable=False)
     approval_state: Mapped[str] = mapped_column(String(32), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

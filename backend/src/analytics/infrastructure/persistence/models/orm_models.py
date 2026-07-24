@@ -18,12 +18,15 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import Boolean, DateTime, Float, Integer, String, Text
+from sqlalchemy import JSON, Boolean, DateTime, Float, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from redforge.infrastructure.database.base import Base
+
+_JSONB_PORTABLE = JSON().with_variant(JSONB, "postgresql")
+
 
 _SCHEMA = "analytics"
 
@@ -72,7 +75,7 @@ class AnomalyDetectionBaselineModel(Base):
     window_days: Mapped[int] = mapped_column(Integer, nullable=False)
     bootstrapped: Mapped[bool] = mapped_column(Boolean, nullable=False)
     observation_count: Mapped[int] = mapped_column(Integer, nullable=False)
-    params_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    params_json: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
@@ -85,7 +88,7 @@ class AnalyticsQueryModel(Base):
     name: Mapped[str] = mapped_column(String(256), nullable=False)
     template: Mapped[str] = mapped_column(Text, nullable=False)
     domain: Mapped[str] = mapped_column(String(64), nullable=False)
-    parameters_json: Mapped[list[Any]] = mapped_column(JSONB, nullable=False)
+    parameters_json: Mapped[list[Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
     created_by: Mapped[str] = mapped_column(String(256), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="ACTIVE")

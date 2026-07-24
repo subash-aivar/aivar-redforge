@@ -6,12 +6,15 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import Boolean, DateTime, Float, Integer, LargeBinary, String, Text
+from sqlalchemy import JSON, Boolean, DateTime, Float, Integer, LargeBinary, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from redforge.infrastructure.database.base import Base
+
+_JSONB_PORTABLE = JSON().with_variant(JSONB, "postgresql")
+
 
 _SCHEMA = "ml_pipeline"
 
@@ -26,7 +29,7 @@ class MLModelModel(Base):
     algorithm: Mapped[str] = mapped_column(String(64), nullable=False)
     status: Mapped[str] = mapped_column(String(32), nullable=False)
     dataset_id: Mapped[UUID | None] = mapped_column(PgUUID(as_uuid=True), nullable=True)
-    accuracy_metrics_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    accuracy_metrics_json: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
     artifact_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
     failure_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -37,7 +40,7 @@ class MLModelModel(Base):
         DateTime(timezone=True), nullable=True
     )
     psi_score: Mapped[float | None] = mapped_column(Float, nullable=True)
-    governance_history_json: Mapped[list[Any]] = mapped_column(JSONB, nullable=False)
+    governance_history_json: Mapped[list[Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
 
 
 class MLModelArtifactModel(Base):
@@ -67,4 +70,4 @@ class PredictiveRiskSignalModel(Base):
     confidence: Mapped[float] = mapped_column(Float, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    features_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    features_json: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)

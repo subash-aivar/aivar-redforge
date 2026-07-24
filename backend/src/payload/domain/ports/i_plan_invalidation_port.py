@@ -5,10 +5,10 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
-from payload.domain.value_objects.identifiers import TenantId
-
 if TYPE_CHECKING:
     from uuid import UUID
+
+    from payload.domain.value_objects.identifiers import TenantId
 
 
 class IPlanInvalidationPort(ABC):

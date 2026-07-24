@@ -6,12 +6,15 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import DateTime, Index, Integer, String
+from sqlalchemy import JSON, DateTime, Index, Integer, String
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from redforge.infrastructure.database.base import Base
+
+_JSONB_PORTABLE = JSON().with_variant(JSONB, "postgresql")
+
 
 _SCHEMA = "detection"
 
@@ -29,9 +32,13 @@ class DetectionExecutionModel(Base):
     window_end: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     state: Mapped[str] = mapped_column(String(32), nullable=False)
     trigger: Mapped[str] = mapped_column(String(32), nullable=False)
-    stats_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
-    error_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
-    finding_refs_json: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
+    stats_json: Mapped[dict[str, Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=dict,
+    )
+    error_json: Mapped[dict[str, Any] | None] = mapped_column(_JSONB_PORTABLE, nullable=True)
+    finding_refs_json: Mapped[list[Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=list,
+    )
     scheduled_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -69,10 +76,12 @@ class DetectionFindingModel(Base):
     observed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     detected_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    mitre_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
-    correlation_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
-    analyst_note_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
-    escalation_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    mitre_json: Mapped[dict[str, Any] | None] = mapped_column(_JSONB_PORTABLE, nullable=True)
+    correlation_json: Mapped[dict[str, Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=dict,
+    )
+    analyst_note_json: Mapped[dict[str, Any] | None] = mapped_column(_JSONB_PORTABLE, nullable=True)
+    escalation_json: Mapped[dict[str, Any] | None] = mapped_column(_JSONB_PORTABLE, nullable=True)
     reopened_from: Mapped[UUID | None] = mapped_column(PgUUID(as_uuid=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

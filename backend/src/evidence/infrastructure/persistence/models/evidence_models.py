@@ -7,10 +7,13 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import Boolean, DateTime, Index, Integer, String, Text
+from sqlalchemy import JSON, Boolean, DateTime, Index, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+_JSONB_PORTABLE = JSON().with_variant(JSONB, "postgresql")
+
 
 _SCHEMA = "evidence"
 
@@ -42,7 +45,7 @@ class ExecutionEvidenceModel(EvidenceBase):
     integrity_status: Mapped[str] = mapped_column(String(32), nullable=False)
     retention_class: Mapped[str] = mapped_column(String(32), nullable=False)
     corrections_ref: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True), nullable=True)
-    custody_chain_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    custody_chain_json: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
     quarantined: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     retention_expired: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -64,7 +67,7 @@ class EvidenceChainModel(EvidenceBase):
     state: Mapped[str] = mapped_column(String(32), nullable=False)
     chain_hash: Mapped[str] = mapped_column(String(64), nullable=False)
     integrity_status: Mapped[str] = mapped_column(String(32), nullable=False)
-    entries_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    entries_json: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
     sealed_by_operator_id: Mapped[UUID | None] = mapped_column(
         PGUUID(as_uuid=True), nullable=True
     )

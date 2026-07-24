@@ -63,7 +63,10 @@ _SENTINEL_AUTH_REF = "REDFORGE_TEST_PROVIDER_ENV_VAR"
 async def engine():
     eng = create_async_engine("sqlite+aiosqlite://", echo=False)
     async with eng.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+        await conn.run_sync(
+            Base.metadata.create_all,
+            tables=[t for t in Base.metadata.sorted_tables if t.schema is None],
+        )
         # providers table is a JSON document store (migration 0004) — not in Base.metadata
         await conn.execute(
             __import__("sqlalchemy", fromlist=["text"]).text(

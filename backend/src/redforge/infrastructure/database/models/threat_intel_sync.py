@@ -3,11 +3,14 @@
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import DateTime, Integer, String, Text
+from sqlalchemy import JSON, DateTime, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from redforge.infrastructure.database.base import Base
+
+_JSONB_PORTABLE = JSON().with_variant(JSONB, "postgresql")
+
 
 
 class ThreatIntelSyncStateModel(Base):
@@ -22,7 +25,9 @@ class ThreatIntelSyncStateModel(Base):
     )
     last_status: Mapped[str] = mapped_column(String(20), nullable=False, default="idle")
     last_error: Mapped[str | None] = mapped_column(Text, nullable=True)
-    last_result: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    last_result: Mapped[dict[str, Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=dict,
+    )
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 

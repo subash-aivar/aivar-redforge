@@ -24,6 +24,7 @@ from execution.application.services.replay_application_service import (
 )
 from redforge.api.security import TenantContext, require_permission
 from redforge.domain.identity.value_objects import Permission
+from redforge.shared.identifiers import EntityId
 
 projections_router = APIRouter()
 
@@ -74,7 +75,7 @@ async def projection_replay(
     tenant_id: TenantIdDep,
     _tenant: TenantContext = Depends(require_permission(Permission.REDTEAM_ADMIN)),
 ) -> dict[str, Any]:
-    org = body.tenant_id or tenant_id
+    org = EntityId.from_string(body.tenant_id) if body.tenant_id else tenant_id
     return await service.replay(tenant_id=org, from_position=body.from_position)
 
 

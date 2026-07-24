@@ -4,12 +4,15 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import DateTime, Index, Integer, String, Text, UniqueConstraint
+from sqlalchemy import JSON, DateTime, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from redforge.infrastructure.database.base import Base
+
+_JSONB_PORTABLE = JSON().with_variant(JSONB, "postgresql")
+
 
 
 class CredentialModel(Base):
@@ -28,7 +31,7 @@ class CredentialModel(Base):
     expiration_policy_id: Mapped[UUID | None] = mapped_column(PgUUID(as_uuid=True), nullable=True)
     vault_backend_id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
-    tags_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    tags_json: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     row_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)

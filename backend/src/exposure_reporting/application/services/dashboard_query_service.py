@@ -46,7 +46,9 @@ class DashboardQueryService:
         self._kpi = kpi_store
         self._trends = trend_store
 
-    async def get_dashboard(self, tenant_id: TenantId, actor_roles: tuple[str, ...]) -> DashboardDTO:
+    async def get_dashboard(
+        self, tenant_id: TenantId, actor_roles: tuple[str, ...]
+    ) -> DashboardDTO:
         require_at_least(actor_roles, ReportingRole.VIEWER)
         now = datetime.now(UTC)
         snap = await self._exposure.load_snapshot(tenant_id)
@@ -113,7 +115,9 @@ class DashboardQueryService:
             score_input_version=version,
         )
 
-    async def get_kpis(self, tenant_id: TenantId, actor_roles: tuple[str, ...]) -> dict[str, object]:
+    async def get_kpis(
+        self, tenant_id: TenantId, actor_roles: tuple[str, ...]
+    ) -> dict[str, object]:
         require_at_least(actor_roles, ReportingRole.VIEWER)
         row = await self._kpi.get(tenant_id)
         if row is None:

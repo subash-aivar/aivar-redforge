@@ -4,10 +4,13 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import Boolean, DateTime, Integer, String, Text, UniqueConstraint
+from sqlalchemy import JSON, Boolean, DateTime, Integer, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+_JSONB_PORTABLE = JSON().with_variant(JSONB, "postgresql")
+
 
 
 class AgentGovernanceBase(DeclarativeBase):
@@ -32,14 +35,18 @@ class AgentOperationalEnvelopeModel(AgentGovernanceBase):
     state: Mapped[str] = mapped_column(String(64), nullable=False)
     envelope_version: Mapped[int] = mapped_column(Integer, nullable=False)
     is_current: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
-    actions_json: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
-    resource_scopes_json: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
-    max_data_sensitivity: Mapped[str] = mapped_column(String(64), nullable=False)
-    rate_ceilings_json: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
-    requires_human_approval_json: Mapped[list[Any]] = mapped_column(
-        JSONB, nullable=False, default=list
+    actions_json: Mapped[list[Any]] = mapped_column(_JSONB_PORTABLE, nullable=False, default=list)
+    resource_scopes_json: Mapped[list[Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=list,
     )
-    approved_by_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    max_data_sensitivity: Mapped[str] = mapped_column(String(64), nullable=False)
+    rate_ceilings_json: Mapped[list[Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=list,
+    )
+    requires_human_approval_json: Mapped[list[Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=list
+    )
+    approved_by_json: Mapped[dict[str, Any] | None] = mapped_column(_JSONB_PORTABLE, nullable=True)
     effective_from: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     effective_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     row_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
@@ -56,7 +63,7 @@ class AgentDeviationEventModel(AgentGovernanceBase):
     ai_system_asset_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), nullable=False)
     deviation_type: Mapped[str] = mapped_column(String(64), nullable=False)
     severity: Mapped[str] = mapped_column(String(64), nullable=False)
-    observed_action_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    observed_action_json: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
     detected_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     review_state: Mapped[str] = mapped_column(String(64), nullable=False)
     review_notes: Mapped[str] = mapped_column(Text, nullable=False, default="")

@@ -70,7 +70,7 @@ def _to_domain(row: CredentialModel) -> Credential:
 def _from_domain(credential: Credential) -> CredentialModel:
     return CredentialModel(
         id=credential.credential_id.value,
-        tenant_id=credential.tenant_id.value,
+        tenant_id=credential.tenant_id,
         name=credential.name.value,
         cred_category=credential.credential_type.category.value,
         cred_subtype=credential.credential_type.subtype,
@@ -130,7 +130,7 @@ class PgCredentialRepository(ICredentialRepository):
 
         actual = await self._current_row_version(
             credential.credential_id.value,
-            credential.tenant_id.value,
+            credential.tenant_id,
         )
         if credential.version == actual + 1 or credential.version == actual:
             expected_version = actual
@@ -145,7 +145,7 @@ class PgCredentialRepository(ICredentialRepository):
             update(CredentialModel)
             .where(
                 CredentialModel.id == credential.credential_id.value,
-                CredentialModel.tenant_id == credential.tenant_id.value,
+                CredentialModel.tenant_id == credential.tenant_id,
                 CredentialModel.row_version == expected_version,
             )
             .values(
@@ -182,7 +182,7 @@ class PgCredentialRepository(ICredentialRepository):
         if new_version is None:
             actual = await self._current_row_version(
                 credential.credential_id.value,
-                credential.tenant_id.value,
+                credential.tenant_id,
             )
             raise OptimisticLockConflict(
                 str(credential.credential_id),

@@ -48,10 +48,26 @@ def test_0080_phase5_chain() -> None:
     assert "ai_security_graph_nodes" in source
 
 
-def test_single_head_0080() -> None:
-    heads = []
-    for path in VERSIONS.glob("*.py"):
-        text = path.read_text()
-        if 'revision: str = "0080"' in text:
-            heads.append(path.name)
-    assert heads == ["0080_ai_posture_phase5_compliance_read_models.py"]
+def test_0080_extended_exactly_once() -> None:
+    """0080 was the ai_posture context's own last migration in M31.
+
+    This does not assert 0080 is the *global* migration head — later
+    milestones legitimately extend the chain past it (0081 onward). It only
+    guards against a second, conflicting migration being added with
+    down_revision="0080", which would fork the chain.
+
+    (The original version of this test scanned for the substring
+    'revision: str = "0080"' across every migration file — which also
+    incidentally matches inside any later file's own
+    'down_revision: str = "0080"' line, since "down_revision" ends with
+    "revision". That false positive is what broke this test once 0081
+    legitimately declared 0080 as its down_revision; see
+    tests/incident/test_migration_chain.py::test_0113_extended_exactly_once
+    for the same fork-guard pattern this now follows.)
+    """
+    children = [
+        path.name
+        for path in VERSIONS.glob("*.py")
+        if 'down_revision: str = "0080"' in path.read_text()
+    ]
+    assert children == ["0081_exposure_phase1_foundation.py"]

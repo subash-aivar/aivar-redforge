@@ -5,12 +5,15 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import DateTime, Index, Integer, String, Text
+from sqlalchemy import JSON, DateTime, Index, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from redforge.infrastructure.database.base import Base
+
+_JSONB_PORTABLE = JSON().with_variant(JSONB, "postgresql")
+
 
 _SCHEMA = "operator"
 
@@ -24,9 +27,9 @@ class RedTeamOperatorModel(Base):
     display_name: Mapped[str] = mapped_column(String(256), nullable=False)
     clearance_level: Mapped[str] = mapped_column(String(32), nullable=False)
     state: Mapped[str] = mapped_column(String(32), nullable=False)
-    certifications_json: Mapped[list[str]] = mapped_column(JSONB, nullable=False)
-    approval_scopes_json: Mapped[list[str]] = mapped_column(JSONB, nullable=False)
-    active_engagement_ids_json: Mapped[list[str]] = mapped_column(JSONB, nullable=False)
+    certifications_json: Mapped[list[str]] = mapped_column(_JSONB_PORTABLE, nullable=False)
+    approval_scopes_json: Mapped[list[str]] = mapped_column(_JSONB_PORTABLE, nullable=False)
+    active_engagement_ids_json: Mapped[list[str]] = mapped_column(_JSONB_PORTABLE, nullable=False)
     status_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     status_authority: Mapped[str | None] = mapped_column(String(256), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

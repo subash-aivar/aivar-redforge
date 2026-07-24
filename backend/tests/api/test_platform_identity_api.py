@@ -66,7 +66,10 @@ _TEST_MFA_KEY = "JCBz3tgnOeWF7cKJJpMOD9iTL4pc0h9KLX3kgCyj-9g="
 async def engine():
     eng = create_async_engine("sqlite+aiosqlite://", echo=False)
     async with eng.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+        await conn.run_sync(
+            Base.metadata.create_all,
+            tables=[t for t in Base.metadata.sorted_tables if t.schema is None],
+        )
         # platform_bootstrap_state needs its seeded singleton row, which
         # migration 0011 inserts — replicate that here for the test engine.
         await conn.execute(

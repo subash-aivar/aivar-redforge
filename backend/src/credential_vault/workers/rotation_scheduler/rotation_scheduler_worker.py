@@ -23,6 +23,7 @@ from credential_vault.workers.rotation_scheduler.rotation_schedule_repository im
     RotationScheduleItem,
     RotationScheduleRepository,
 )
+from redforge.shared.identifiers import EntityId
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -164,7 +165,7 @@ class RotationSchedulerWorker:
 
         payload_size = active.encrypted_payload.payload_size
         new_secret = os.urandom(payload_size or 32)
-        principal = self._system_principal_id
+        principal = EntityId.from_uuid(self._system_principal_id)
         await self._credential_service.rotate_credential(
             RotateCredentialCommand(
                 tenant_id=item.tenant_id,

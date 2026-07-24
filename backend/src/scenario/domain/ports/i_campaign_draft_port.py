@@ -5,10 +5,10 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any
 
-from scenario.domain.value_objects.identifiers import TenantId
-
 if TYPE_CHECKING:
     from uuid import UUID
+
+    from scenario.domain.value_objects.identifiers import TenantId
 
 
 class ICampaignDraftPort(ABC):

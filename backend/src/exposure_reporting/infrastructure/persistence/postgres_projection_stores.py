@@ -32,7 +32,9 @@ class PgKpiProjectionStore:
     async def upsert(self, tenant_id: TenantId, kpi: dict[str, Any], at: datetime) -> None:
         async with self._session_factory() as session:
             await session.merge(
-                ExposureKpiProjectionModel(tenant_id=tenant_id, kpi_json=dict(kpi), updated_at=at)
+                ExposureKpiProjectionModel(
+                    tenant_id=tenant_id.value.to_uuid(), kpi_json=dict(kpi), updated_at=at
+                )
             )
             await session.commit()
 
@@ -41,7 +43,7 @@ class PgKpiProjectionStore:
             row = (
                 await session.execute(
                     select(ExposureKpiProjectionModel).where(
-                        ExposureKpiProjectionModel.tenant_id == tenant_id
+                        ExposureKpiProjectionModel.tenant_id == tenant_id.value.to_uuid()
                     )
                 )
             ).scalar_one_or_none()
@@ -54,7 +56,7 @@ class PgKpiProjectionStore:
             row = (
                 await session.execute(
                     select(ExposureKpiProjectionModel).where(
-                        ExposureKpiProjectionModel.tenant_id == tenant_id
+                        ExposureKpiProjectionModel.tenant_id == tenant_id.value.to_uuid()
                     )
                 )
             ).scalar_one_or_none()
@@ -80,7 +82,7 @@ class PgTrendProjectionStore:
             session.add(
                 ExposureTrendProjectionModel(
                     id=uuid4(),
-                    tenant_id=tenant_id,
+                    tenant_id=tenant_id.value.to_uuid(),
                     tenant_exposure_score=tenant_exposure_score,
                     asset_count=asset_count,
                     score_input_version=score_input_version,
@@ -94,7 +96,7 @@ class PgTrendProjectionStore:
             rows = (
                 await session.execute(
                     select(ExposureTrendProjectionModel)
-                    .where(ExposureTrendProjectionModel.tenant_id == tenant_id)
+                    .where(ExposureTrendProjectionModel.tenant_id == tenant_id.value.to_uuid())
                     .order_by(ExposureTrendProjectionModel.computed_at)
                 )
             ).scalars().all()
@@ -114,7 +116,7 @@ class PgTrendProjectionStore:
         async with self._session_factory() as session:
             await session.execute(
                 delete(ExposureTrendProjectionModel).where(
-                    ExposureTrendProjectionModel.tenant_id == tenant_id
+                    ExposureTrendProjectionModel.tenant_id == tenant_id.value.to_uuid()
                 )
             )
             await session.commit()

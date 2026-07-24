@@ -4,10 +4,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import DateTime, Integer, String, Text
+from sqlalchemy import JSON, DateTime, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+_JSONB_PORTABLE = JSON().with_variant(JSONB, "postgresql")
+
 
 if TYPE_CHECKING:
     from datetime import datetime
@@ -30,26 +33,30 @@ class ScenarioTemplateModel(ScenarioBase):
     version: Mapped[str] = mapped_column(String(32), nullable=False)
     state: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
 
-    threat_actor_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    threat_actor_json: Mapped[dict[str, Any] | None] = mapped_column(_JSONB_PORTABLE, nullable=True)
     covered_techniques_json: Mapped[list[dict[str, Any]]] = mapped_column(
-        JSONB, nullable=False, default=list
+        _JSONB_PORTABLE, nullable=False, default=list
     )
     parameters_json: Mapped[list[dict[str, Any]]] = mapped_column(
-        JSONB, nullable=False, default=list
+        _JSONB_PORTABLE, nullable=False, default=list
     )
-    phases_json: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, nullable=False, default=list)
+    phases_json: Mapped[list[dict[str, Any]]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=list,
+    )
     objective_blueprints_json: Mapped[list[dict[str, Any]]] = mapped_column(
-        JSONB, nullable=False, default=list
+        _JSONB_PORTABLE, nullable=False, default=list
     )
     default_safety_policy_json: Mapped[dict[str, Any]] = mapped_column(
-        JSONB, nullable=False, default=dict
+        _JSONB_PORTABLE, nullable=False, default=dict
     )
     task_graph_blueprint_json: Mapped[dict[str, Any]] = mapped_column(
-        JSONB, nullable=False, default=dict
+        _JSONB_PORTABLE, nullable=False, default=dict
     )
     created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    subscription_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    subscription_json: Mapped[dict[str, Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=dict,
+    )
     source_template_id: Mapped[UUID | None] = mapped_column(
         PG_UUID(as_uuid=True), nullable=True, index=True
     )

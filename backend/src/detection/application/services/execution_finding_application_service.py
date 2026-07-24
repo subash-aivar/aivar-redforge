@@ -67,6 +67,7 @@ from detection.infrastructure.persistence.serialization import (
     execution_stats_to_json,
     mitre_ref_to_json,
 )
+from redforge.shared.identifiers import EntityId
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -445,7 +446,7 @@ class ExecutionFindingApplicationService:
 
     async def _lifecycle(
         self,
-        tenant_uuid: UUID,
+        tenant_uuid: EntityId,
         finding_uuid: UUID,
         mutator: Any,
         now: datetime | None = None,

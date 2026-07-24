@@ -231,8 +231,8 @@ class ReportingApplicationService:
             schedule.mark_error(tenant)
             await self._schedules.save(tenant, schedule)
             raise ApplicationNotFoundError(str(schedule.template_id))
-        bundle = await self._kpis.load_kpi_bundle(tenant.value)
-        ml_bundle = await self._ml.load_active_signals(tenant.value)
+        bundle = await self._kpis.load_kpi_bundle(tenant)
+        ml_bundle = await self._ml.load_active_signals(tenant)
         try:
             instance = self._generation.build_instance(
                 tenant_id=tenant,
@@ -253,7 +253,7 @@ class ReportingApplicationService:
         await self._events.publish_batch(instance.pop_events())
         if instance.artifact_ref and schedule.recipients:
             await self._delivery.deliver(
-                tenant.value,
+                tenant,
                 instance.instance_id.value,
                 list(schedule.recipients),
                 instance.artifact_ref,

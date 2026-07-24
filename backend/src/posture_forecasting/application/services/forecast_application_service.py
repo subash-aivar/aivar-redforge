@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from typing import Any
-from uuid import UUID
 
 from posture_forecasting.application._auth import require_any
 from posture_forecasting.application.commands.forecast_commands import (
@@ -27,7 +26,7 @@ class ForecastApplicationService:
         self._gen = ForecastGenerationService()
         self._acc = ForecastAccuracyService()
 
-    def _tenant(self, value: UUID) -> TenantId:
+    def _tenant(self, value: TenantId) -> TenantId:
         if isinstance(value, TenantId):
             return value
         return TenantId.from_string(str(value))

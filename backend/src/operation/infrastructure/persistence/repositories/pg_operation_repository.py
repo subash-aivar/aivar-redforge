@@ -384,7 +384,7 @@ class PgOperationRepository(IOperationRepository):
         if model is None:
             return None
         steps, deps, approvals, objectives = await self._load_children(
-            model.id, tenant_id.value
+            model.id, tenant_id
         )
         return self._to_domain(model, steps, deps, approvals, objectives)
 
@@ -410,7 +410,7 @@ class PgOperationRepository(IOperationRepository):
         operations: list[Operation] = []
         for model in models:
             steps, deps, approvals, objectives = await self._load_children(
-                model.id, tenant_id.value
+                model.id, tenant_id
             )
             operations.append(self._to_domain(model, steps, deps, approvals, objectives))
         return operations

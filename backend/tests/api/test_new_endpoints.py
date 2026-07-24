@@ -73,7 +73,10 @@ async def app() -> FastAPI:
     JSONB-document services backed by InMemoryUnitOfWork."""
     engine = create_async_engine("sqlite+aiosqlite://", echo=False)
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+        await conn.run_sync(
+            Base.metadata.create_all,
+            tables=[t for t in Base.metadata.sorted_tables if t.schema is None],
+        )
 
     session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
     events = InMemoryEventPublisher()

@@ -214,7 +214,7 @@ async def test_ciso_flow_inventory_and_reports(
         partial=True,
         failed_partitions=["CloudProviderScan:bad"],
     )
-    rebuilt = await phase5_container.rebuild_service.rebuild_tenant(tenant_id.value, ADMIN)
+    rebuilt = await phase5_container.rebuild_service.rebuild_tenant(tenant_id, ADMIN)
     assert rebuilt["store"]["inventory"] >= 1
 
     inventory_view = await phase5_container.report_queries.inventory(

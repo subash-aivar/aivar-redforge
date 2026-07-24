@@ -5,6 +5,7 @@ from typing import Any
 from uuid import UUID
 
 from sqlalchemy import (
+    JSON,
     Boolean,
     DateTime,
     Float,
@@ -22,6 +23,12 @@ from redforge.infrastructure.database.base import Base
 
 _SCHEMA = "cloud_security"
 
+# JSONB on PostgreSQL (production), plain JSON on any other dialect — see
+# redforge/infrastructure/platform/models.py for the established idiom. This
+# lets a SQLite-backed test do Base.metadata.create_all() without the SQLite
+# type compiler choking on a Postgres-only JSONB column.
+_JSONB_PORTABLE = JSON().with_variant(JSONB, "postgresql")
+
 
 class CloudProviderModel(Base):
     __tablename__ = "cloud_providers"
@@ -38,7 +45,7 @@ class CloudProviderModel(Base):
     organization_id: Mapped[str] = mapped_column(String(26), nullable=False, index=True)
     provider_type: Mapped[str] = mapped_column(String(16), nullable=False)
     display_name: Mapped[str] = mapped_column(String(256), nullable=False)
-    discovery_config: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    discovery_config: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
     status: Mapped[str] = mapped_column(String(32), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -67,13 +74,13 @@ class CloudAccountModel(Base):
     external_id: Mapped[str] = mapped_column(String(256), nullable=False)
     display_name: Mapped[str] = mapped_column(String(256), nullable=False)
     account_type: Mapped[str] = mapped_column(String(32), nullable=False)
-    regions: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
-    credential_ref: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
-    sync_state: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    regions: Mapped[list[Any]] = mapped_column(_JSONB_PORTABLE, nullable=False, default=list)
+    credential_ref: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
+    sync_state: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
     account_metadata: Mapped[dict[str, Any]] = mapped_column(
-        "metadata", JSONB, nullable=False, default=dict
+        "metadata", _JSONB_PORTABLE, nullable=False, default=dict
     )
-    tags: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    tags: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     row_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
@@ -100,14 +107,16 @@ class CloudAssetModel(Base):
     organization_id: Mapped[str] = mapped_column(String(26), nullable=False, index=True)
     asset_type: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
     provider_id: Mapped[str] = mapped_column(String(2048), nullable=False)
-    region: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
-    availability_zone: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    region: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
+    availability_zone: Mapped[dict[str, Any] | None] = mapped_column(_JSONB_PORTABLE, nullable=True)
     display_name: Mapped[str] = mapped_column(String(512), nullable=False)
-    provider_metadata: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
-    normalized_config: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
-    tags: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
-    relationships: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
-    posture_state: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    provider_metadata: Mapped[dict[str, Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=dict
+    )
+    normalized_config: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
+    tags: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False, default=dict)
+    relationships: Mapped[list[Any]] = mapped_column(_JSONB_PORTABLE, nullable=False, default=list)
+    posture_state: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
     last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     first_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     is_deleted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
@@ -139,15 +148,21 @@ class CloudIAMPrincipalModel(Base):
     principal_type: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
     provider_id: Mapped[str] = mapped_column(String(2048), nullable=False)
     display_name: Mapped[str] = mapped_column(String(512), nullable=False)
-    attached_policies: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
-    trust_relationships: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
+    attached_policies: Mapped[list[Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=list
+    )
+    trust_relationships: Mapped[list[Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=list
+    )
     privilege_level: Mapped[str] = mapped_column(String(32), nullable=False, default="NONE")
     is_federated: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     is_human: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     last_activity_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
-    risk_indicators: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
+    risk_indicators: Mapped[list[Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=list
+    )
     is_disabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     is_deleted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -167,13 +182,15 @@ class CSPMPolicyModel(Base):
     title: Mapped[str] = mapped_column(String(512), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
     severity: Mapped[str] = mapped_column(String(32), nullable=False)
-    version: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
-    provider_types: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
-    asset_types: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
-    metadata_: Mapped[dict[str, Any]] = mapped_column("metadata", JSONB, nullable=False)
-    remediation: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
-    compliance_mapping: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
-    rule: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    version: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
+    provider_types: Mapped[list[Any]] = mapped_column(_JSONB_PORTABLE, nullable=False, default=list)
+    asset_types: Mapped[list[Any]] = mapped_column(_JSONB_PORTABLE, nullable=False, default=list)
+    metadata_: Mapped[dict[str, Any]] = mapped_column("metadata", _JSONB_PORTABLE, nullable=False)
+    remediation: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
+    compliance_mapping: Mapped[list[Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=list
+    )
+    rule: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
     inherits_from: Mapped[str | None] = mapped_column(String(128), nullable=True)
     enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, index=True)
     evaluation_strategy: Mapped[str] = mapped_column(String(64), nullable=False, default="boolean")
@@ -202,11 +219,13 @@ class CSPMFindingModel(Base):
     confidence: Mapped[str] = mapped_column(String(32), nullable=False)
     title: Mapped[str] = mapped_column(String(512), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
-    remediation: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
-    compliance_mapping: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
+    remediation: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
+    compliance_mapping: Mapped[list[Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=list
+    )
     status: Mapped[str] = mapped_column(String(32), nullable=False)
-    evidence: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
-    history: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
+    evidence: Mapped[list[Any]] = mapped_column(_JSONB_PORTABLE, nullable=False, default=list)
+    history: Mapped[list[Any]] = mapped_column(_JSONB_PORTABLE, nullable=False, default=list)
     first_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     detected_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -233,13 +252,15 @@ class CSPMEvaluationModel(Base):
     organization_id: Mapped[str] = mapped_column(String(26), nullable=False, index=True)
     cloud_account_id: Mapped[UUID | None] = mapped_column(PgUUID(as_uuid=True), nullable=True)
     status: Mapped[str] = mapped_column(String(32), nullable=False)
-    context: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
-    results: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
+    context: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
+    results: Mapped[list[Any]] = mapped_column(_JSONB_PORTABLE, nullable=False, default=list)
     assets_evaluated: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     policies_evaluated: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     findings_opened: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     findings_resolved: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    diagnostics: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    diagnostics: Mapped[dict[str, Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=dict
+    )
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -263,7 +284,7 @@ class CSPMDriftBaselineModel(Base):
     cloud_asset_id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), nullable=False, index=True)
     drift_kind: Mapped[str] = mapped_column(String(64), nullable=False)
     baseline_hash: Mapped[str] = mapped_column(String(128), nullable=False)
-    baseline_snapshot: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    baseline_snapshot: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
     captured_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
@@ -289,11 +310,11 @@ class KubernetesClusterModel(Base):
     api_server_endpoint: Mapped[str] = mapped_column(String(512), nullable=False)
     region: Mapped[str] = mapped_column(String(64), nullable=False)
     credential_ref_id: Mapped[str] = mapped_column(String(256), nullable=False)
-    labels: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    labels: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False, default=dict)
     pod_security_standards: Mapped[dict[str, Any]] = mapped_column(
-        JSONB, nullable=False, default=dict
+        _JSONB_PORTABLE, nullable=False, default=dict
     )
-    security_score: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    security_score: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
     discovered_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     last_synced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -309,10 +330,14 @@ class KubernetesNamespaceModel(Base):
     cluster_id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), nullable=False, index=True)
     organization_id: Mapped[str] = mapped_column(String(26), nullable=False, index=True)
     name: Mapped[str] = mapped_column(String(253), nullable=False)
-    labels: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
-    annotations: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    labels: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False, default=dict)
+    annotations: Mapped[dict[str, Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=dict
+    )
     pod_security_level: Mapped[str] = mapped_column(String(32), nullable=False)
-    resource_quotas: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    resource_quotas: Mapped[dict[str, Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=dict
+    )
     has_network_policy: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -330,16 +355,18 @@ class KubernetesWorkloadModel(Base):
     name: Mapped[str] = mapped_column(String(253), nullable=False)
     kind: Mapped[str] = mapped_column(String(32), nullable=False)
     uid: Mapped[str] = mapped_column(String(128), nullable=False)
-    service_account: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
-    containers: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
+    service_account: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
+    containers: Mapped[list[Any]] = mapped_column(_JSONB_PORTABLE, nullable=False, default=list)
     host_network: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     host_pid: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     host_ipc: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     privileged: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     security_level: Mapped[str] = mapped_column(String(32), nullable=False)
     exposure: Mapped[str] = mapped_column(String(32), nullable=False)
-    labels: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
-    annotations: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    labels: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False, default=dict)
+    annotations: Mapped[dict[str, Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=dict
+    )
     replicas: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -358,9 +385,9 @@ class KubernetesNodeModel(Base):
     kubelet_version: Mapped[str] = mapped_column(String(64), nullable=False)
     os_image: Mapped[str] = mapped_column(String(256), nullable=False)
     container_runtime: Mapped[str] = mapped_column(String(128), nullable=False)
-    roles: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
-    labels: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
-    taints: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
+    roles: Mapped[list[Any]] = mapped_column(_JSONB_PORTABLE, nullable=False, default=list)
+    labels: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False, default=dict)
+    taints: Mapped[list[Any]] = mapped_column(_JSONB_PORTABLE, nullable=False, default=list)
     unschedulable: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -378,10 +405,12 @@ class KubernetesServiceModel(Base):
     name: Mapped[str] = mapped_column(String(253), nullable=False)
     service_type: Mapped[str] = mapped_column(String(64), nullable=False)
     cluster_ip: Mapped[str] = mapped_column(String(64), nullable=False)
-    external_ips: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
-    load_balancer_ingress: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
-    ports: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
-    selector: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    external_ips: Mapped[list[Any]] = mapped_column(_JSONB_PORTABLE, nullable=False, default=list)
+    load_balancer_ingress: Mapped[list[Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=list
+    )
+    ports: Mapped[list[Any]] = mapped_column(_JSONB_PORTABLE, nullable=False, default=list)
+    selector: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False, default=dict)
     exposure: Mapped[str] = mapped_column(String(32), nullable=False)
     is_public: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -399,10 +428,12 @@ class KubernetesRBACPrincipalModel(Base):
     kind: Mapped[str] = mapped_column(String(32), nullable=False)
     name: Mapped[str] = mapped_column(String(253), nullable=False)
     namespace: Mapped[str] = mapped_column(String(253), nullable=False)
-    bindings: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
-    roles: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
-    cluster_roles: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
-    trust_references: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
+    bindings: Mapped[list[Any]] = mapped_column(_JSONB_PORTABLE, nullable=False, default=list)
+    roles: Mapped[list[Any]] = mapped_column(_JSONB_PORTABLE, nullable=False, default=list)
+    cluster_roles: Mapped[list[Any]] = mapped_column(_JSONB_PORTABLE, nullable=False, default=list)
+    trust_references: Mapped[list[Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=list
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     row_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
@@ -417,10 +448,12 @@ class KubernetesNetworkPolicyModel(Base):
     organization_id: Mapped[str] = mapped_column(String(26), nullable=False, index=True)
     namespace: Mapped[str] = mapped_column(String(253), nullable=False)
     name: Mapped[str] = mapped_column(String(253), nullable=False)
-    pod_selector: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
-    policy_types: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
-    ingress_rules: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
-    egress_rules: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
+    pod_selector: Mapped[dict[str, Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=dict
+    )
+    policy_types: Mapped[list[Any]] = mapped_column(_JSONB_PORTABLE, nullable=False, default=list)
+    ingress_rules: Mapped[list[Any]] = mapped_column(_JSONB_PORTABLE, nullable=False, default=list)
+    egress_rules: Mapped[list[Any]] = mapped_column(_JSONB_PORTABLE, nullable=False, default=list)
     allows_cross_namespace: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -437,8 +470,8 @@ class KubernetesAdmissionPolicyModel(Base):
     name: Mapped[str] = mapped_column(String(253), nullable=False)
     mode: Mapped[str] = mapped_column(String(32), nullable=False)
     controller: Mapped[str] = mapped_column(String(128), nullable=False)
-    rules: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
-    violations: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
+    rules: Mapped[list[Any]] = mapped_column(_JSONB_PORTABLE, nullable=False, default=list)
+    violations: Mapped[list[Any]] = mapped_column(_JSONB_PORTABLE, nullable=False, default=list)
     evaluated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -473,17 +506,23 @@ class CloudRuntimeEventModel(Base):
     event_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), primary_key=True)
     ingested_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     provider_event_id: Mapped[str] = mapped_column(String(512), nullable=False)
-    identity: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
-    host: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
-    container: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    identity: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False, default=dict)
+    host: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False, default=dict)
+    container: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False, default=dict)
     metadata_: Mapped[dict[str, Any]] = mapped_column(
-        "metadata", JSONB, nullable=False, default=dict
+        "metadata", _JSONB_PORTABLE, nullable=False, default=dict
     )
-    correlation_refs: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
-    correlation_links: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
-    artifacts: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
-    evidence: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
-    raw_payload: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    correlation_refs: Mapped[dict[str, Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=dict
+    )
+    correlation_links: Mapped[list[Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=list
+    )
+    artifacts: Mapped[list[Any]] = mapped_column(_JSONB_PORTABLE, nullable=False, default=list)
+    evidence: Mapped[list[Any]] = mapped_column(_JSONB_PORTABLE, nullable=False, default=list)
+    raw_payload: Mapped[dict[str, Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=dict
+    )
     source_ip: Mapped[str] = mapped_column(String(128), nullable=False, default="")
     target_resource: Mapped[str] = mapped_column(String(512), nullable=False, default="")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -546,7 +585,7 @@ class RuntimeIdentitySessionModel(Base):
     id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), primary_key=True)
     organization_id: Mapped[str] = mapped_column(String(26), nullable=False, index=True)
     runtime_event_id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), nullable=False)
-    identity: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    identity: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False, default=dict)
     session_id: Mapped[str] = mapped_column(String(256), nullable=False, default="")
     mfa_used: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     source_ip: Mapped[str] = mapped_column(String(128), nullable=False, default="")
@@ -566,7 +605,9 @@ class RuntimeExecutionContextModel(Base):
     container_id: Mapped[str] = mapped_column(String(128), nullable=False, default="")
     host_id: Mapped[str] = mapped_column(String(128), nullable=False, default="")
     workload_ref: Mapped[str] = mapped_column(String(256), nullable=False, default="")
-    environment: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    environment: Mapped[dict[str, Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=dict
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     row_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
 
@@ -584,7 +625,7 @@ class RuntimeArtifactModel(Base):
     digest: Mapped[str] = mapped_column(String(256), nullable=False, default="")
     path: Mapped[str] = mapped_column(String(2048), nullable=False, default="")
     size_bytes: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    payload: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    payload: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     row_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
 
@@ -613,12 +654,18 @@ class CloudRiskScoreModel(Base):
     cspm_score: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     kubernetes_score: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     runtime_score: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
-    score_components: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
-    evidence: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
-    history: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
-    exceptions: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
-    weight_profile: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
-    calculation_version: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    score_components: Mapped[list[Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=list
+    )
+    evidence: Mapped[list[Any]] = mapped_column(_JSONB_PORTABLE, nullable=False, default=list)
+    history: Mapped[list[Any]] = mapped_column(_JSONB_PORTABLE, nullable=False, default=list)
+    exceptions: Mapped[list[Any]] = mapped_column(_JSONB_PORTABLE, nullable=False, default=list)
+    weight_profile: Mapped[dict[str, Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=dict
+    )
+    calculation_version: Mapped[dict[str, Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=dict
+    )
     confidence: Mapped[str] = mapped_column(String(32), nullable=False)
     trend: Mapped[str] = mapped_column(String(32), nullable=False)
     state: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
@@ -639,7 +686,9 @@ class CloudRiskHistoryModel(Base):
     cloud_asset_id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), nullable=False)
     risk_score_id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), nullable=False, index=True)
     overall_score: Mapped[float] = mapped_column(Float, nullable=False)
-    dimensions: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    dimensions: Mapped[dict[str, Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=dict
+    )
     calculation_version: Mapped[str] = mapped_column(String(128), nullable=False)
     recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     reason: Mapped[str] = mapped_column(String(512), nullable=False, default="")
@@ -659,9 +708,9 @@ class CloudRiskFactorModel(Base):
     score: Mapped[float] = mapped_column(Float, nullable=False)
     severity: Mapped[str] = mapped_column(String(32), nullable=False)
     confidence: Mapped[str] = mapped_column(String(32), nullable=False)
-    evidence: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
+    evidence: Mapped[list[Any]] = mapped_column(_JSONB_PORTABLE, nullable=False, default=list)
     metadata_: Mapped[dict[str, Any]] = mapped_column(
-        "metadata", JSONB, nullable=False, default=dict
+        "metadata", _JSONB_PORTABLE, nullable=False, default=dict
     )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -690,7 +739,7 @@ class CloudRiskExposureModel(Base):
         String(64), nullable=False, default="UNKNOWN"
     )
     exposure_score: Mapped[float] = mapped_column(Float, nullable=False)
-    details: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    details: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     row_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
@@ -709,7 +758,9 @@ class CloudRiskAssessmentModel(Base):
     risks_created: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     risks_updated: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     calculation_version: Mapped[str] = mapped_column(String(128), nullable=False)
-    diagnostics: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    diagnostics: Mapped[dict[str, Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=dict
+    )
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -725,8 +776,10 @@ class CloudOrchestrationRunModel(Base):
     scope: Mapped[str] = mapped_column(String(32), nullable=False)
     target_id: Mapped[str] = mapped_column(String(128), nullable=False)
     status: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
-    steps: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
-    diagnostics: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    steps: Mapped[list[Any]] = mapped_column(_JSONB_PORTABLE, nullable=False, default=list)
+    diagnostics: Mapped[dict[str, Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=dict
+    )
     operation_id: Mapped[str] = mapped_column(String(64), nullable=False)
     correlation_id: Mapped[str] = mapped_column(String(64), nullable=False, default="")
     request_id: Mapped[str] = mapped_column(String(64), nullable=False, default="")
@@ -749,5 +802,5 @@ class CloudPlatformValidationReportModel(Base):
 
     id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), primary_key=True)
     organization_id: Mapped[str] = mapped_column(String(26), nullable=False, index=True)
-    report: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    report: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

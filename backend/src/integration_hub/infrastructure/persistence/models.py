@@ -7,12 +7,15 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from redforge.infrastructure.database.base import Base
+
+_JSONB_PORTABLE = JSON().with_variant(JSONB, "postgresql")
+
 
 _SCHEMA = "integration_hub"
 
@@ -29,7 +32,7 @@ class ConnectorRegistrationModel(Base):
     credential_vault_key: Mapped[str] = mapped_column(Text, nullable=False)
     credential_type: Mapped[str] = mapped_column(String(30), nullable=False)
     base_url: Mapped[str | None] = mapped_column(Text, nullable=True)
-    configuration: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    configuration: Mapped[dict[str, Any] | None] = mapped_column(_JSONB_PORTABLE, nullable=True)
     circuit_state: Mapped[str] = mapped_column(String(20), nullable=False)
     circuit_failure_count: Mapped[int] = mapped_column(Integer, nullable=False)
     circuit_opened_at: Mapped[datetime | None] = mapped_column(
@@ -73,11 +76,11 @@ class DiscoveredAssetModel(Base):
     compliance_state: Mapped[str] = mapped_column(String(20), nullable=False)
     health_status: Mapped[str | None] = mapped_column(String(30), nullable=True)
     risk_score: Mapped[int] = mapped_column(Integer, nullable=False)
-    tags: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    tags: Mapped[dict[str, Any] | None] = mapped_column(_JSONB_PORTABLE, nullable=True)
     metadata_: Mapped[dict[str, Any] | None] = mapped_column(
-        "metadata", JSONB, nullable=True
+        "metadata", _JSONB_PORTABLE, nullable=True
     )
-    configuration: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    configuration: Mapped[dict[str, Any] | None] = mapped_column(_JSONB_PORTABLE, nullable=True)
     config_hash: Mapped[str] = mapped_column(String(64), nullable=False)
     discovered_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     last_synced_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -99,7 +102,7 @@ class AssetRelationshipModel(Base):
     target_external_id: Mapped[str] = mapped_column(Text, nullable=False)
     relationship_type: Mapped[str] = mapped_column(String(30), nullable=False)
     metadata_: Mapped[dict[str, Any] | None] = mapped_column(
-        "metadata", JSONB, nullable=True
+        "metadata", _JSONB_PORTABLE, nullable=True
     )
 
 

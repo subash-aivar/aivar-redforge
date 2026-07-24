@@ -52,7 +52,7 @@ class StubAssetRegistrationAdapter(IAssetRegistrationPort):
     ) -> AssetRef:
         asset_id = uuid4()
         ref = AssetRef(asset_id, "AIAsset")
-        self._inventory.seed(asset_id, tenant_id.value)
+        self._inventory.seed(asset_id, tenant_id)
         return ref
 
 

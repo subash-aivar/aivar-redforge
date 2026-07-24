@@ -54,7 +54,7 @@ class DegradedPayloadQueryAdapter(IPayloadQueryPort):
     """
 
     def __init__(self) -> None:
-        self.calls: list[tuple[UUID, UUID, str | None]] = []
+        self.calls: list[tuple[TenantId, UUID, str | None]] = []
 
     async def verify_for_dispatch(
         self,

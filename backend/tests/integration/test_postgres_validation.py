@@ -60,7 +60,10 @@ async def pg_engine():
     url = os.environ["REDFORGE_DATABASE_URL"]
     engine = create_async_engine(url, echo=False)
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+        await conn.run_sync(
+            Base.metadata.create_all,
+            tables=[t for t in Base.metadata.sorted_tables if t.schema is None],
+        )
     yield engine
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)

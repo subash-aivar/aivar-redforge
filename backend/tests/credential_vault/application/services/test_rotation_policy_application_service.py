@@ -60,7 +60,7 @@ def _create_cmd(
 ) -> CreateRotationPolicyCommand:
     return CreateRotationPolicyCommand(
         tenant_id=tenant_id or uuid4(),
-        principal_id=principal_id or uuid4(),
+        principal_id=principal_id or EntityId.generate(),
         name=name,
         interval_days=interval_days,
         max_versions_kept=max_versions_kept,
@@ -164,7 +164,7 @@ async def test_update_rotation_policy_success(
     cmd = UpdateRotationPolicyCommand(
         tenant_id=tenant_uuid,
         policy_id=policy.policy_id.value,
-        principal_id=uuid4(),
+        principal_id=EntityId.generate(),
         interval_days=60,
         max_versions_kept=10,
         notify_days_before=3,
@@ -195,7 +195,7 @@ async def test_update_rotation_policy_access_denied(
     cmd = UpdateRotationPolicyCommand(
         tenant_id=EntityId.generate(),
         policy_id=policy_id,
-        principal_id=uuid4(),
+        principal_id=EntityId.generate(),
         interval_days=30,
         max_versions_kept=5,
         notify_days_before=7,
@@ -216,7 +216,7 @@ async def test_update_rotation_policy_validation_failure(
     cmd = UpdateRotationPolicyCommand(
         tenant_id=EntityId.generate(),
         policy_id=uuid4(),
-        principal_id=uuid4(),
+        principal_id=EntityId.generate(),
         interval_days=30,
         max_versions_kept=0,
         notify_days_before=7,
@@ -242,7 +242,7 @@ async def test_update_rotation_policy_publish_failure_nonfatal(
     cmd = UpdateRotationPolicyCommand(
         tenant_id=tenant_uuid,
         policy_id=policy.policy_id.value,
-        principal_id=uuid4(),
+        principal_id=EntityId.generate(),
         interval_days=45,
         max_versions_kept=5,
         notify_days_before=7,
@@ -269,7 +269,7 @@ async def test_delete_rotation_policy_success(
     cmd = DeleteRotationPolicyCommand(
         tenant_id=tenant_uuid,
         policy_id=policy.policy_id.value,
-        principal_id=uuid4(),
+        principal_id=EntityId.generate(),
     )
 
     await service.delete_rotation_policy(cmd)
@@ -297,7 +297,7 @@ async def test_delete_rotation_policy_access_denied(
     cmd = DeleteRotationPolicyCommand(
         tenant_id=EntityId.generate(),
         policy_id=uuid4(),
-        principal_id=uuid4(),
+        principal_id=EntityId.generate(),
     )
 
     with pytest.raises(AccessDenied):
@@ -316,7 +316,7 @@ async def test_delete_rotation_policy_validation_failure(
     cmd = DeleteRotationPolicyCommand(
         tenant_id=UUID(int=0),
         policy_id=uuid4(),
-        principal_id=uuid4(),
+        principal_id=EntityId.generate(),
     )
 
     with pytest.raises(ApplicationValidationError) as exc_info:
@@ -338,7 +338,7 @@ async def test_delete_rotation_policy_publish_failure_nonfatal(
     cmd = DeleteRotationPolicyCommand(
         tenant_id=tenant_uuid,
         policy_id=policy.policy_id.value,
-        principal_id=uuid4(),
+        principal_id=EntityId.generate(),
     )
 
     await service.delete_rotation_policy(cmd)
@@ -360,7 +360,7 @@ async def test_get_rotation_policy_success(
     qry = GetRotationPolicyQuery(
         tenant_id=tenant_uuid,
         policy_id=policy.policy_id.value,
-        principal_id=uuid4(),
+        principal_id=EntityId.generate(),
     )
 
     dto = await service.get_rotation_policy(qry)
@@ -381,7 +381,7 @@ async def test_get_rotation_policy_access_denied(
     qry = GetRotationPolicyQuery(
         tenant_id=EntityId.generate(),
         policy_id=uuid4(),
-        principal_id=uuid4(),
+        principal_id=EntityId.generate(),
     )
 
     with pytest.raises(AccessDenied):
@@ -403,7 +403,7 @@ async def test_list_rotation_policies_success(
         make_rotation_policy(tenant_id=tenant_uuid, name="b"),
     ]
     mock_uow.rotation_policies.list_by_tenant.return_value = policies
-    qry = ListRotationPoliciesQuery(tenant_id=tenant_uuid, principal_id=uuid4())
+    qry = ListRotationPoliciesQuery(tenant_id=tenant_uuid, principal_id=EntityId.generate())
 
     result = await service.list_rotation_policies(qry)
 
@@ -419,7 +419,7 @@ async def test_list_rotation_policies_access_denied(
     mock_permission_port: AsyncMock,
 ) -> None:
     mock_permission_port.has_permission.return_value = False
-    qry = ListRotationPoliciesQuery(tenant_id=EntityId.generate(), principal_id=uuid4())
+    qry = ListRotationPoliciesQuery(tenant_id=EntityId.generate(), principal_id=EntityId.generate())
 
     with pytest.raises(AccessDenied):
         await service.list_rotation_policies(qry)

@@ -4,10 +4,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
-from analytics.domain.value_objects.identifiers import TenantId
+if TYPE_CHECKING:
+    from analytics.domain.value_objects.identifiers import TenantId
 
 
 @dataclass

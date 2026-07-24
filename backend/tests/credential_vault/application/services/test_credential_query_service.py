@@ -77,7 +77,7 @@ async def test_get_credential_success(
     qry = GetCredentialQuery(
         tenant_id=tenant_uuid,
         credential_id=credential_uuid,
-        principal_id=uuid4(),
+        principal_id=EntityId.generate(),
     )
 
     dto = await service.get_credential(qry)
@@ -103,7 +103,7 @@ async def test_get_credential_access_denied(
     qry = GetCredentialQuery(
         tenant_id=EntityId.generate(),
         credential_id=uuid4(),
-        principal_id=uuid4(),
+        principal_id=EntityId.generate(),
     )
 
     with pytest.raises(AccessDenied) as exc_info:
@@ -129,7 +129,7 @@ async def test_list_credentials_success(
     credential_repo.list_by_tenant.return_value = credentials
     qry = ListCredentialsQuery(
         tenant_id=tenant_uuid,
-        principal_id=uuid4(),
+        principal_id=EntityId.generate(),
         states=["ACTIVE"],
         limit=50,
         offset=10,
@@ -155,7 +155,7 @@ async def test_list_credentials_invalid_state_string(
 ) -> None:
     qry = ListCredentialsQuery(
         tenant_id=EntityId.generate(),
-        principal_id=uuid4(),
+        principal_id=EntityId.generate(),
         states=["NOT_A_STATE"],
     )
 
@@ -173,7 +173,7 @@ async def test_list_credentials_invalid_limit(
 ) -> None:
     qry = ListCredentialsQuery(
         tenant_id=EntityId.generate(),
-        principal_id=uuid4(),
+        principal_id=EntityId.generate(),
         limit=0,
     )
 
@@ -190,7 +190,7 @@ async def test_list_credentials_invalid_offset(
 ) -> None:
     qry = ListCredentialsQuery(
         tenant_id=EntityId.generate(),
-        principal_id=uuid4(),
+        principal_id=EntityId.generate(),
         offset=-1,
     )
 
@@ -209,7 +209,7 @@ async def test_list_credentials_clamps_limit(
     credential_repo.list_by_tenant.return_value = []
     qry = ListCredentialsQuery(
         tenant_id=tenant_uuid,
-        principal_id=uuid4(),
+        principal_id=EntityId.generate(),
         limit=5000,
         offset=0,
     )
@@ -246,7 +246,7 @@ async def test_get_version_success(
         tenant_id=tenant_uuid,
         credential_id=credential_uuid,
         version_id=version_uuid,
-        principal_id=uuid4(),
+        principal_id=EntityId.generate(),
     )
 
     dto = await service.get_version(qry)
@@ -272,7 +272,7 @@ async def test_get_version_access_denied(
         tenant_id=EntityId.generate(),
         credential_id=uuid4(),
         version_id=uuid4(),
-        principal_id=uuid4(),
+        principal_id=EntityId.generate(),
     )
 
     with pytest.raises(AccessDenied):
@@ -308,7 +308,7 @@ async def test_list_versions_success(
     qry = ListVersionsQuery(
         tenant_id=tenant_uuid,
         credential_id=credential_uuid,
-        principal_id=uuid4(),
+        principal_id=EntityId.generate(),
         states=["ACTIVE", "PENDING"],
     )
 
@@ -333,7 +333,7 @@ async def test_list_versions_access_denied(
     qry = ListVersionsQuery(
         tenant_id=EntityId.generate(),
         credential_id=uuid4(),
-        principal_id=uuid4(),
+        principal_id=EntityId.generate(),
     )
 
     with pytest.raises(AccessDenied):
@@ -349,7 +349,7 @@ async def test_list_versions_invalid_state_string(
     qry = ListVersionsQuery(
         tenant_id=EntityId.generate(),
         credential_id=uuid4(),
-        principal_id=uuid4(),
+        principal_id=EntityId.generate(),
         states=["BOGUS"],
     )
 

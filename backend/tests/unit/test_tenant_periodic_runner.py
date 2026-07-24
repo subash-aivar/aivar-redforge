@@ -14,11 +14,11 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass
-from uuid import UUID, uuid4
 
 import pytest
 
 from redforge.application.platform.tenant_periodic_runner import TenantPeriodicRunner
+from redforge.shared.identifiers import EntityId
 
 
 @dataclass(frozen=True)
@@ -54,10 +54,10 @@ async def test_tenant_agnostic_calls_tick_with_no_args() -> None:
 
 @pytest.mark.asyncio
 async def test_per_tenant_pages_through_all_orgs() -> None:
-    org_ids = [str(uuid4()) for _ in range(5)]
-    seen: list[UUID] = []
+    org_ids = [str(EntityId.generate()) for _ in range(5)]
+    seen: list[EntityId] = []
 
-    async def tick(tenant_id: UUID) -> None:
+    async def tick(tenant_id: EntityId) -> None:
         seen.append(tenant_id)
 
     qs = _FakeQueryService(org_ids)
@@ -76,10 +76,10 @@ async def test_per_tenant_pages_through_all_orgs() -> None:
 
 @pytest.mark.asyncio
 async def test_per_tenant_tick_failure_is_isolated() -> None:
-    org_ids = [str(uuid4()) for _ in range(3)]
+    org_ids = [str(EntityId.generate()) for _ in range(3)]
     processed: list[str] = []
 
-    async def tick(tenant_id: UUID) -> None:
+    async def tick(tenant_id: EntityId) -> None:
         if str(tenant_id) == org_ids[1]:
             raise RuntimeError("boom")
         processed.append(str(tenant_id))
@@ -136,7 +136,7 @@ async def test_start_stop_lifecycle() -> None:
 
 
 def test_per_tenant_without_query_service_raises() -> None:
-    async def tick(tenant_id: UUID) -> None:
+    async def tick(tenant_id: EntityId) -> None:
         pass
 
     with pytest.raises(ValueError):

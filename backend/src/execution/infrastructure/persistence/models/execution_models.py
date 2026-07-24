@@ -6,12 +6,15 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint
+from sqlalchemy import JSON, DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from redforge.infrastructure.database.base import Base
+
+_JSONB_PORTABLE = JSON().with_variant(JSONB, "postgresql")
+
 
 _SCHEMA = "execution"
 
@@ -128,8 +131,8 @@ class AttackActionModel(Base):
     state: Mapped[str] = mapped_column(String(32), nullable=False)
     action_hash: Mapped[str] = mapped_column(String(64), nullable=False)
     input_hash: Mapped[str] = mapped_column(String(64), nullable=False)
-    action_input_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
-    safety_check_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    action_input_json: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
+    safety_check_json: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
     completion_timestamp: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
@@ -159,7 +162,7 @@ class ExecutionWorkerModel(Base):
     trust_level: Mapped[str] = mapped_column(String(32), nullable=False)
     health_status: Mapped[str] = mapped_column(String(32), nullable=False)
     network_zone: Mapped[str] = mapped_column(String(128), nullable=False)
-    capabilities_json: Mapped[list[Any]] = mapped_column(JSONB, nullable=False)
+    capabilities_json: Mapped[list[Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
     manifest_hash: Mapped[str] = mapped_column(String(64), nullable=False)
     signer_operator_id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), nullable=False)
     registered_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

@@ -53,7 +53,7 @@ from redforge.shared.identifiers import EntityId
 
 
 def _tenant() -> TenantId:
-    return TenantId(uuid7())
+    return TenantId.from_uuid(uuid7())
 
 
 def _now() -> datetime:

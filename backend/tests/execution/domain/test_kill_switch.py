@@ -31,7 +31,7 @@ from execution.infrastructure.redis.in_memory_kill_switch_store import InMemoryK
 
 def test_kill_switch_armed_to_triggered_to_released_to_armed() -> None:
     now = datetime.now(UTC)
-    tenant = TenantId(uuid7())
+    tenant = TenantId.from_uuid(uuid7())
     eng = uuid7()
     ks = KillSwitchState.create_armed(tenant, KillSwitchScope.ENGAGEMENT, eng, now)
     op1 = OperatorId(uuid7())
@@ -47,7 +47,7 @@ def test_kill_switch_armed_to_triggered_to_released_to_armed() -> None:
 
 def test_same_operator_cannot_release() -> None:
     now = datetime.now(UTC)
-    tenant = TenantId(uuid7())
+    tenant = TenantId.from_uuid(uuid7())
     ks = KillSwitchState.create_armed(
         tenant, KillSwitchScope.ENGAGEMENT, uuid7(), now
     )
@@ -59,9 +59,9 @@ def test_same_operator_cannot_release() -> None:
 
 def test_platform_wide_requires_ciso_and_oversight() -> None:
     now = datetime.now(UTC)
-    tenant = TenantId(uuid7())
+    tenant = TenantId.from_uuid(uuid7())
     ks = KillSwitchState.create_armed(
-        tenant, KillSwitchScope.PLATFORM_WIDE, tenant.value, now
+        tenant, KillSwitchScope.PLATFORM_WIDE, tenant.value.to_uuid(), now
     )
     trigger_op = OperatorId(uuid7())
     ciso = OperatorId(uuid7())
@@ -91,7 +91,7 @@ def test_platform_wide_requires_ciso_and_oversight() -> None:
 async def test_kill_switch_evaluation_fail_safe_on_unavailable() -> None:
     store = InMemoryKillSwitchStore(unavailable=True)
     svc = KillSwitchEvaluationService(store)
-    tenant = TenantId(uuid7())
+    tenant = TenantId.from_uuid(uuid7())
     state = await svc.evaluate(tenant, EngagementId(uuid7()))
     assert state == KillSwitchArmedState.TRIGGERED
 
@@ -99,11 +99,11 @@ async def test_kill_switch_evaluation_fail_safe_on_unavailable() -> None:
 @pytest.mark.asyncio
 async def test_kill_switch_evaluation_platform_first() -> None:
     store = InMemoryKillSwitchStore()
-    tenant = TenantId(uuid7())
+    tenant = TenantId.from_uuid(uuid7())
     engagement = EngagementId(uuid7())
     now = datetime.now(UTC)
     platform = KillSwitchState.create_armed(
-        tenant, KillSwitchScope.PLATFORM_WIDE, tenant.value, now
+        tenant, KillSwitchScope.PLATFORM_WIDE, tenant.value.to_uuid(), now
     )
     platform.trigger(
         tenant,

@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from uuid import UUID
-
 from fastapi import Depends, Header
 
 from ai_posture.infrastructure.container import AIPostureContainer
@@ -25,7 +23,7 @@ def reset_container() -> None:
     _container = None
 
 
-async def get_tenant_id(tenant: TenantContext = Depends(get_tenant_context)) -> UUID:
+async def get_tenant_id(tenant: TenantContext = Depends(get_tenant_context)) -> EntityId:
     """Verified tenant scope from the caller's signed access token.
 
     Previously read the client-supplied `X-Tenant-Id` header directly —

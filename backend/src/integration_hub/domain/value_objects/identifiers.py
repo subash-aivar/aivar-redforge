@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from uuid import UUID, uuid4
 
-from redforge.shared.identifiers import EntityId
+from redforge.shared.identifiers import EntityId as EntityId
 
 # TenantId is the shared platform EntityId (ULID-backed) per ADR-0005.
 # Phase 1 convergence: no local UUID-backed TenantId type.

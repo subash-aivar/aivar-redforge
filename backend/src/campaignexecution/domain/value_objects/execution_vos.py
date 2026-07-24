@@ -5,14 +5,13 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
-from campaignexecution.domain.value_objects.identifiers import TenantId
-
 if TYPE_CHECKING:
     from datetime import datetime
     from uuid import UUID
 
     from campaignexecution.domain.value_objects.identifiers import (
         CampaignTaskId,
+        TenantId,
     )
 
 

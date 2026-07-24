@@ -5,10 +5,10 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
-from campaignexecution.domain.value_objects.identifiers import TenantId
-
 if TYPE_CHECKING:
     from uuid import UUID
+
+    from campaignexecution.domain.value_objects.identifiers import TenantId
 
 
 @dataclass(frozen=True, slots=True)

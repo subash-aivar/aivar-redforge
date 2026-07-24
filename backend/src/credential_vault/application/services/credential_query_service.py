@@ -101,7 +101,7 @@ class CredentialQueryService:
 
         credential_id = CredentialId(qry.credential_id)
         tenant_id = qry.tenant_id
-        principal = PrincipalId(qry.principal_id)
+        principal = PrincipalId(qry.principal_id.value.to_uuid())
 
         await self._require_read(principal, credential_id, tenant_id)
         credential = await self._credential_repo.get_by_id(credential_id, tenant_id)
@@ -132,7 +132,7 @@ class CredentialQueryService:
 
         credential_id = CredentialId(qry.credential_id)
         tenant_id = qry.tenant_id
-        principal = PrincipalId(qry.principal_id)
+        principal = PrincipalId(qry.principal_id.value.to_uuid())
 
         await self._require_read(principal, credential_id, tenant_id)
         version = await self._version_repo.get_by_id(VersionId(qry.version_id), tenant_id)
@@ -145,7 +145,7 @@ class CredentialQueryService:
 
         credential_id = CredentialId(qry.credential_id)
         tenant_id = qry.tenant_id
-        principal = PrincipalId(qry.principal_id)
+        principal = PrincipalId(qry.principal_id.value.to_uuid())
         parsed_states = self._parse_version_states(qry.states)
 
         await self._require_read(principal, credential_id, tenant_id)

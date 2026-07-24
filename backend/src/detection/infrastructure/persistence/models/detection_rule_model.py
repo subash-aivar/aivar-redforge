@@ -7,6 +7,7 @@ from typing import Any
 from uuid import UUID
 
 from sqlalchemy import (
+    JSON,
     Boolean,
     DateTime,
     Float,
@@ -22,6 +23,9 @@ from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from redforge.infrastructure.database.base import Base
+
+_JSONB_PORTABLE = JSON().with_variant(JSONB, "postgresql")
+
 
 _SCHEMA = "detection"
 
@@ -40,13 +44,17 @@ class DetectionRuleModel(Base):
     lifecycle_state: Mapped[str] = mapped_column(String(32), nullable=False)
     author_identity: Mapped[str] = mapped_column(String(256), nullable=False)
     reviewer_identity: Mapped[str | None] = mapped_column(String(256), nullable=True)
-    current_logic_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
-    telemetry_sources_json: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
-    asset_scope_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
-    throttle_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
-    fp_profile_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
-    tags_json: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
-    external_refs_json: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
+    current_logic_json: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
+    telemetry_sources_json: Mapped[list[Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=list,
+    )
+    asset_scope_json: Mapped[dict[str, Any] | None] = mapped_column(_JSONB_PORTABLE, nullable=True)
+    throttle_json: Mapped[dict[str, Any] | None] = mapped_column(_JSONB_PORTABLE, nullable=True)
+    fp_profile_json: Mapped[dict[str, Any] | None] = mapped_column(_JSONB_PORTABLE, nullable=True)
+    tags_json: Mapped[list[Any]] = mapped_column(_JSONB_PORTABLE, nullable=False, default=list)
+    external_refs_json: Mapped[list[Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=list,
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     row_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
@@ -96,7 +104,7 @@ class RuleVersionModel(Base):
     )
     tenant_id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), nullable=False)
     semver: Mapped[str] = mapped_column(String(32), nullable=False)
-    logic_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    logic_json: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
     change_summary: Mapped[str] = mapped_column(Text, nullable=False)
     published_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     published_by: Mapped[str] = mapped_column(String(256), nullable=False)
@@ -122,7 +130,7 @@ class RuleTestCaseModel(Base):
     )
     tenant_id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), nullable=False)
     name: Mapped[str] = mapped_column(String(256), nullable=False)
-    input_payload_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    input_payload_json: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
     expected_match: Mapped[bool] = mapped_column(Boolean, nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
 

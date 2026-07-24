@@ -118,7 +118,7 @@ class PgKillSwitchRepository(IKillSwitchRepository):
 
     async def find_platform_wide(self, tenant_id: TenantId) -> KillSwitchState | None:
         return await self.find_by_scope(
-            tenant_id, KillSwitchScope.PLATFORM_WIDE, tenant_id.value
+            tenant_id, KillSwitchScope.PLATFORM_WIDE, tenant_id.value.to_uuid()
         )
 
     def _to_model(self, ks: KillSwitchState) -> KillSwitchStateModel:

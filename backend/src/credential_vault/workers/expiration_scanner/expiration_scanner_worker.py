@@ -16,6 +16,7 @@ from credential_vault.domain.events.credential_events import CredentialExpiratio
 from credential_vault.domain.value_objects.identifiers import CredentialId
 from credential_vault.domain.value_objects.states import CredentialState
 from credential_vault.infrastructure import metrics
+from redforge.shared.identifiers import EntityId
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -162,7 +163,9 @@ class ExpirationScannerWorker:
         if self._policy_evaluator.is_version_expired(active, expiration_policy, now):
             await self._credential_service.expire_credential(
                 ExpireCredentialCommand(
-                    item.tenant_id, item.credential_id, self._system_principal_id
+                    item.tenant_id,
+                    item.credential_id,
+                    EntityId.from_uuid(self._system_principal_id),
                 )
             )
             await self._schedule_repo.mark_scanned(

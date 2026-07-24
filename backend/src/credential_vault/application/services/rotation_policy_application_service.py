@@ -105,7 +105,7 @@ class RotationPolicyApplicationService:
 
         policy_uuid = uuid7()
         tenant_id = cmd.tenant_id
-        principal = PrincipalId(cmd.principal_id)
+        principal = PrincipalId(cmd.principal_id.value.to_uuid())
         await self._require_manage_policy(principal, CredentialId(policy_uuid), tenant_id)
 
         now = datetime.now(UTC)
@@ -140,7 +140,7 @@ class RotationPolicyApplicationService:
 
         tenant_id = cmd.tenant_id
         policy_id = RotationPolicyId(cmd.policy_id)
-        principal = PrincipalId(cmd.principal_id)
+        principal = PrincipalId(cmd.principal_id.value.to_uuid())
         await self._require_manage_policy(principal, CredentialId(cmd.policy_id), tenant_id)
 
         now = datetime.now(UTC)
@@ -170,7 +170,7 @@ class RotationPolicyApplicationService:
 
         tenant_id = cmd.tenant_id
         policy_id = RotationPolicyId(cmd.policy_id)
-        principal = PrincipalId(cmd.principal_id)
+        principal = PrincipalId(cmd.principal_id.value.to_uuid())
         await self._require_manage_policy(principal, CredentialId(cmd.policy_id), tenant_id)
 
         now = datetime.now(UTC)
@@ -190,7 +190,7 @@ class RotationPolicyApplicationService:
         tenant_id = qry.tenant_id
         policy_id = RotationPolicyId(qry.policy_id)
         await self._require_manage_policy(
-            PrincipalId(qry.principal_id),
+            PrincipalId(qry.principal_id.value.to_uuid()),
             CredentialId(qry.policy_id),
             tenant_id,
         )
@@ -207,7 +207,9 @@ class RotationPolicyApplicationService:
 
         tenant_id = qry.tenant_id
         resource_id = CredentialId(uuid7())
-        await self._require_manage_policy(PrincipalId(qry.principal_id), resource_id, tenant_id)
+        await self._require_manage_policy(
+            PrincipalId(qry.principal_id.value.to_uuid()), resource_id, tenant_id
+        )
 
         async with self._uow_factory() as uow:
             policies = await uow.rotation_policies.list_by_tenant(tenant_id)

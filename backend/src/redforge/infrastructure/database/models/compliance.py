@@ -6,6 +6,7 @@ from datetime import datetime
 from typing import Any
 
 from sqlalchemy import (
+    JSON,
     Boolean,
     DateTime,
     Float,
@@ -21,6 +22,15 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from redforge.infrastructure.database.base import Base
 
+_JSONB_PORTABLE = JSON().with_variant(JSONB, "postgresql")
+
+# Native ARRAY(String) on PostgreSQL (production); a JSON-encoded list on any
+# other dialect (SQLite test fixtures) — same portability rationale as
+# _JSONB_PORTABLE above. The Python-level type stays list[str] on both
+# dialects; only the storage representation differs.
+_ARRAY_PORTABLE = JSON().with_variant(ARRAY(String), "postgresql")
+
+
 
 class ComplianceFrameworkModel(Base):
     """Persists FrameworkDefinition (status + metadata)."""
@@ -34,7 +44,7 @@ class ComplianceFrameworkModel(Base):
     id: Mapped[str] = mapped_column(String(26), primary_key=True)
     key: Mapped[str] = mapped_column(String(80), nullable=False)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="draft")
-    metadata_: Mapped[dict[str, Any]] = mapped_column("metadata", JSONB, nullable=False)
+    metadata_: Mapped[dict[str, Any]] = mapped_column("metadata", _JSONB_PORTABLE, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
@@ -59,7 +69,7 @@ class ComplianceRequirementModel(Base):
     severity: Mapped[str] = mapped_column(String(20), nullable=False)
     guidance: Mapped[str] = mapped_column(Text, nullable=False, default="")
     policy_threshold: Mapped[int] = mapped_column(Integer, nullable=False, default=80)
-    tags: Mapped[list[str]] = mapped_column(ARRAY(String), nullable=False, default=list)
+    tags: Mapped[list[str]] = mapped_column(_ARRAY_PORTABLE, nullable=False, default=list)
     external_ref: Mapped[str] = mapped_column(Text, nullable=False, default="")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -106,7 +116,7 @@ class ComplianceProfileModel(Base):
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False, default="")
     framework_keys: Mapped[list[str]] = mapped_column(
-        ARRAY(String), nullable=False, default=list
+        _ARRAY_PORTABLE, nullable=False, default=list
     )
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="draft")
     created_by: Mapped[str] = mapped_column(String(26), nullable=False)
@@ -161,7 +171,7 @@ class ControlAssessmentModel(Base):
     framework_key: Mapped[str] = mapped_column(String(80), nullable=False)
     status: Mapped[str] = mapped_column(String(64), nullable=False, default="not_assessed")
     evidence_links: Mapped[list[dict[str, Any]]] = mapped_column(
-        JSONB, nullable=False, default=list
+        _JSONB_PORTABLE, nullable=False, default=list
     )
     notes: Mapped[str] = mapped_column(Text, nullable=False, default="")
     created_by: Mapped[str] = mapped_column(String(26), nullable=False)
@@ -203,7 +213,7 @@ class RecommendationBatchModel(Base):
     assessment_id: Mapped[str | None] = mapped_column(String(26), nullable=True)
     generation_fingerprint: Mapped[str] = mapped_column(String(128), nullable=False)
     recommendation_ids: Mapped[list[str]] = mapped_column(
-        ARRAY(String), nullable=False, default=list
+        _ARRAY_PORTABLE, nullable=False, default=list
     )
     created_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     updated_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
@@ -260,14 +270,14 @@ class EvidenceRecommendationModel(Base):
     source_kind: Mapped[str] = mapped_column(String(40), nullable=False)
     source_entity_id: Mapped[str] = mapped_column(String(64), nullable=False)
     candidates: Mapped[list[dict[str, Any]]] = mapped_column(
-        JSONB, nullable=False, default=list
+        _JSONB_PORTABLE, nullable=False, default=list
     )
     confidence: Mapped[str] = mapped_column(String(32), nullable=False)
     score: Mapped[float] = mapped_column(Float, nullable=False)
     rationale: Mapped[str] = mapped_column(Text, nullable=False, default="")
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="recommended")
     dedup_key: Mapped[str] = mapped_column(String(200), nullable=False)
-    decision: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    decision: Mapped[dict[str, Any] | None] = mapped_column(_JSONB_PORTABLE, nullable=True)
     linked_evidence_id: Mapped[str | None] = mapped_column(String(26), nullable=True)
     created_by: Mapped[str] = mapped_column(String(26), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

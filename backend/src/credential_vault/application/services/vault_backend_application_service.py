@@ -102,7 +102,7 @@ class VaultBackendApplicationService:
 
         backend_uuid = uuid7()
         tenant_id = cmd.tenant_id
-        principal = PrincipalId(cmd.principal_id)
+        principal = PrincipalId(cmd.principal_id.value.to_uuid())
         await self._require_admin(principal, CredentialId(backend_uuid), tenant_id)
 
         now = datetime.now(UTC)
@@ -129,7 +129,7 @@ class VaultBackendApplicationService:
 
         tenant_id = cmd.tenant_id
         backend_id = VaultBackendId(cmd.backend_id)
-        principal = PrincipalId(cmd.principal_id)
+        principal = PrincipalId(cmd.principal_id.value.to_uuid())
         await self._require_admin(principal, CredentialId(cmd.backend_id), tenant_id)
 
         now = datetime.now(UTC)
@@ -149,7 +149,7 @@ class VaultBackendApplicationService:
         tenant_id = qry.tenant_id
         backend_id = VaultBackendId(qry.backend_id)
         await self._require_admin(
-            PrincipalId(qry.principal_id),
+            PrincipalId(qry.principal_id.value.to_uuid()),
             CredentialId(qry.backend_id),
             tenant_id,
         )
@@ -164,7 +164,9 @@ class VaultBackendApplicationService:
 
         tenant_id = qry.tenant_id
         resource_id = CredentialId(uuid7())
-        await self._require_admin(PrincipalId(qry.principal_id), resource_id, tenant_id)
+        await self._require_admin(
+            PrincipalId(qry.principal_id.value.to_uuid()), resource_id, tenant_id
+        )
 
         async with self._uow_factory() as uow:
             backends = await uow.vault_backends.list_by_tenant(tenant_id)

@@ -5,11 +5,10 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
-from scenario.domain.value_objects.identifiers import TenantId
-
 if TYPE_CHECKING:
     from uuid import UUID
 
+    from scenario.domain.value_objects.identifiers import TenantId
     from scenario.domain.value_objects.scenario_vos import (
         ScenarioObjectiveBlueprint,
         ScenarioParameterSpec,
@@ -70,7 +69,7 @@ class SubscribeScenarioToTenantCommand:
 
     tenant_id: TenantId
     template_id: UUID
-    subscriber_tenant_id: UUID
+    subscriber_tenant_id: TenantId
 
 
 @dataclass(frozen=True, slots=True)

@@ -6,12 +6,15 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import Boolean, DateTime, Integer, String, Text
+from sqlalchemy import JSON, Boolean, DateTime, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from redforge.infrastructure.database.base import Base
+
+_JSONB_PORTABLE = JSON().with_variant(JSONB, "postgresql")
+
 
 _SCHEMA = "automated_action"
 
@@ -33,7 +36,9 @@ class AutomationExecutionModel(Base):
     current_step: Mapped[int] = mapped_column(Integer, nullable=False)
     total_steps: Mapped[int] = mapped_column(Integer, nullable=False)
     max_impact_level: Mapped[str] = mapped_column(String(20), nullable=False)
-    escalation_request: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    escalation_request: Mapped[dict[str, Any] | None] = mapped_column(
+        _JSONB_PORTABLE, nullable=True,
+    )
     failure_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

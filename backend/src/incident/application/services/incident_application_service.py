@@ -101,7 +101,7 @@ class IncidentApplicationService:
         self._events: list[Any] = event_sink if event_sink is not None else []
         self.audit: list[dict[str, Any]] = []
 
-    def _tenant(self, value: UUID) -> TenantId:
+    def _tenant(self, value: TenantId) -> TenantId:
         if isinstance(value, TenantId):
             return value
         return TenantId.from_string(str(value))
@@ -440,7 +440,9 @@ class IncidentApplicationService:
             raise ApplicationNotFoundError("incident")
         return self._to_dto(inc)
 
-    async def list_incidents(self, tenant_id: TenantId, roles: tuple[str, ...]) -> list[IncidentDTO]:
+    async def list_incidents(
+        self, tenant_id: TenantId, roles: tuple[str, ...]
+    ) -> list[IncidentDTO]:
         require_at_least(roles, IncidentRole.VIEWER)
         tenant = self._tenant(tenant_id)
         rows = await self._incidents.find_active(tenant)

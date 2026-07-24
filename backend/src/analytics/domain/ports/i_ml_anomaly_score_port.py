@@ -18,4 +18,6 @@ class MLAnomalyScoreResult:
 
 class IMLAnomalyScorePort(ABC):
     @abstractmethod
-    async def score(self, tenant_id: TenantId, *, features: list[float]) -> MLAnomalyScoreResult: ...
+    async def score(
+        self, tenant_id: TenantId, *, features: list[float]
+    ) -> MLAnomalyScoreResult: ...

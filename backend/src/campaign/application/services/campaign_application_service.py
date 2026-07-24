@@ -74,7 +74,7 @@ log = logging.getLogger(__name__)
 def _to_campaign_dto(campaign: Campaign) -> CampaignDTO:
     return CampaignDTO(
         campaign_id=campaign.campaign_id.value,
-        tenant_id=campaign.tenant_id.value,
+        tenant_id=campaign.tenant_id,
         name=campaign.name,
         classification=campaign.classification.value,
         kind=campaign.kind.value,
@@ -120,7 +120,7 @@ def _to_instance_dto(instance: CampaignInstance) -> CampaignInstanceDTO:
     return CampaignInstanceDTO(
         instance_id=instance.instance_id.value,
         campaign_id=instance.campaign_id.value,
-        tenant_id=instance.tenant_id.value,
+        tenant_id=instance.tenant_id,
         run_number=instance.run_number,
         state=instance.state.value,
         resolved_target_count=len(instance.resolved_targets),

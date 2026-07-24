@@ -7,6 +7,7 @@ from typing import Any
 from uuid import UUID
 
 from sqlalchemy import (
+    JSON,
     Boolean,
     DateTime,
     ForeignKey,
@@ -20,6 +21,9 @@ from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from redforge.infrastructure.database.base import Base
+
+_JSONB_PORTABLE = JSON().with_variant(JSONB, "postgresql")
+
 
 _SCHEMA = "campaign"
 
@@ -36,11 +40,11 @@ class CampaignModel(Base):
     state: Mapped[str] = mapped_column(String(32), nullable=False)
     engagement_id: Mapped[UUID | None] = mapped_column(PgUUID(as_uuid=True), nullable=True)
     engagement_tenant_id: Mapped[UUID | None] = mapped_column(PgUUID(as_uuid=True), nullable=True)
-    safety_policy_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
-    approval_policy_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
-    schedule_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    safety_policy_json: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
+    approval_policy_json: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
+    schedule_json: Mapped[dict[str, Any] | None] = mapped_column(_JSONB_PORTABLE, nullable=True)
     target_selection_rules_json: Mapped[list[Any]] = mapped_column(
-        JSONB, nullable=False, default=list
+        _JSONB_PORTABLE, nullable=False, default=list
     )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -103,7 +107,9 @@ class CampaignObjectiveModel(Base):
     )
     objective_type: Mapped[str] = mapped_column(String(64), nullable=False)
     description: Mapped[str] = mapped_column(String(1024), nullable=False)
-    evaluation_criteria_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    evaluation_criteria_json: Mapped[dict[str, Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False,
+    )
     state: Mapped[str] = mapped_column(String(32), nullable=False)
     sealed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
@@ -123,7 +129,9 @@ class CampaignInstanceModel(Base):
     tenant_id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), nullable=False)
     run_number: Mapped[int] = mapped_column(Integer, nullable=False)
     state: Mapped[str] = mapped_column(String(32), nullable=False)
-    resolved_targets_json: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
+    resolved_targets_json: Mapped[list[Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=list,
+    )
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     failure_reason: Mapped[str | None] = mapped_column(Text, nullable=True)

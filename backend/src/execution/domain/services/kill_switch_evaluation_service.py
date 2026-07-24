@@ -40,7 +40,7 @@ class KillSwitchEvaluationService:
         operation_id: OperationId | None = None,
     ) -> KillSwitchArmedState:
         platform = await self._safe_get(
-            tenant_id, KillSwitchScope.PLATFORM_WIDE, tenant_id.value
+            tenant_id, KillSwitchScope.PLATFORM_WIDE, tenant_id.value.to_uuid()
         )
         if platform == KillSwitchArmedState.TRIGGERED:
             return KillSwitchArmedState.TRIGGERED

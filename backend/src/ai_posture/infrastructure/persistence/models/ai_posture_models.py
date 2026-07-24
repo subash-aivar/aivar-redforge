@@ -6,10 +6,13 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import Boolean, DateTime, Float, Integer, String, Text, UniqueConstraint
+from sqlalchemy import JSON, Boolean, DateTime, Float, Integer, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+_JSONB_PORTABLE = JSON().with_variant(JSONB, "postgresql")
+
 
 
 class AIPostureBase(DeclarativeBase):
@@ -100,13 +103,21 @@ class AIThreatProfileModel(AIPostureBase):
         PGUUID(as_uuid=True), nullable=False, index=True
     )
     ai_system_kind: Mapped[str] = mapped_column(String(64), nullable=False)
-    prompt_injection_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
-    model_extraction_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
-    training_data_leakage_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
-    category_assessments_json: Mapped[list[Any]] = mapped_column(
-        JSONB, nullable=False, default=list
+    prompt_injection_json: Mapped[dict[str, Any] | None] = mapped_column(
+        _JSONB_PORTABLE, nullable=True,
     )
-    evidence_refs_json: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
+    model_extraction_json: Mapped[dict[str, Any] | None] = mapped_column(
+        _JSONB_PORTABLE, nullable=True,
+    )
+    training_data_leakage_json: Mapped[dict[str, Any] | None] = mapped_column(
+        _JSONB_PORTABLE, nullable=True,
+    )
+    category_assessments_json: Mapped[list[Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=list
+    )
+    evidence_refs_json: Mapped[list[Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=list,
+    )
     last_assessed_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
@@ -123,7 +134,7 @@ class AIRiskScoreSnapshotModel(AIPostureBase):
     tenant_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), nullable=False)
     ai_system_asset_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), nullable=False)
     composite_score: Mapped[float] = mapped_column(Float, nullable=False)
-    score_components_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    score_components_json: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
     computed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     staleness_bound_hours: Mapped[int] = mapped_column(Integer, nullable=False, default=24)
     score_input_version: Mapped[str] = mapped_column(String(64), nullable=False)
@@ -174,7 +185,7 @@ class AIPostureReadModelRow(AIPostureBase):
 
     tenant_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True)
     view_key: Mapped[str] = mapped_column(String(128), primary_key=True)
-    payload_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    payload_json: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
     last_event_id: Mapped[str] = mapped_column(String(128), nullable=False, default="")
     projection_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -187,7 +198,7 @@ class AISecurityGraphNodeModel(AIPostureBase):
     tenant_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True)
     node_type: Mapped[str] = mapped_column(String(64), primary_key=True)
     node_key: Mapped[str] = mapped_column(String(256), primary_key=True)
-    properties_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    properties_json: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
     last_event_id: Mapped[str] = mapped_column(String(128), nullable=False, default="")
 
 
@@ -199,5 +210,5 @@ class AISecurityGraphEdgeModel(AIPostureBase):
     edge_type: Mapped[str] = mapped_column(String(64), primary_key=True)
     from_key: Mapped[str] = mapped_column(String(256), primary_key=True)
     to_key: Mapped[str] = mapped_column(String(256), primary_key=True)
-    properties_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    properties_json: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
     last_event_id: Mapped[str] = mapped_column(String(128), nullable=False, default="")

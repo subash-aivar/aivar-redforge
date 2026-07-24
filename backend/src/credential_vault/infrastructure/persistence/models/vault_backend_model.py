@@ -4,12 +4,15 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import Boolean, DateTime, Integer, LargeBinary, String, UniqueConstraint
+from sqlalchemy import JSON, Boolean, DateTime, Integer, LargeBinary, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from redforge.infrastructure.database.base import Base
+
+_JSONB_PORTABLE = JSON().with_variant(JSONB, "postgresql")
+
 
 
 class VaultBackendModel(Base):
@@ -21,7 +24,9 @@ class VaultBackendModel(Base):
     backend_type: Mapped[str] = mapped_column(String(64), nullable=False)
     is_default: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     config_encrypted: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
-    config_key_envelope: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    config_key_envelope: Mapped[dict[str, Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=dict,
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     row_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)

@@ -18,14 +18,15 @@ import asyncio
 import logging
 from collections.abc import Awaitable, Callable
 from typing import TYPE_CHECKING
-from uuid import UUID
+
+from redforge.shared.identifiers import EntityId
 
 if TYPE_CHECKING:
     from redforge.application.platform_identity.query_service import PlatformQueryService
 
 logger = logging.getLogger(__name__)
 
-TenantTickFn = Callable[[UUID], Awaitable[object]]
+TenantTickFn = Callable[[EntityId], Awaitable[object]]
 GlobalTickFn = Callable[[], Awaitable[object]]
 
 
@@ -103,7 +104,7 @@ class TenantPeriodicRunner:
                 break
             for org in orgs:
                 try:
-                    await self._tick_fn(UUID(org.id))  # type: ignore[call-arg]
+                    await self._tick_fn(EntityId.from_string(org.id))  # type: ignore[call-arg]
                 except Exception:
                     logger.exception("%s: tick failed for tenant %s", self._name, org.id)
                     self._failures += 1

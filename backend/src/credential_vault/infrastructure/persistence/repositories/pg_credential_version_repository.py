@@ -194,7 +194,7 @@ class PgCredentialVersionRepository(ICredentialVersionRepository):
         tenant_id: TenantId,
     ) -> None:
         if supersede_version_id is not None:
-            expected = await self._fetch_row_version(supersede_version_id.value, tenant_id.value)
+            expected = await self._fetch_row_version(supersede_version_id.value, tenant_id)
             result = await self._session.execute(
                 update(CredentialVersionModel)
                 .where(
@@ -209,7 +209,7 @@ class PgCredentialVersionRepository(ICredentialVersionRepository):
                 )
             )
             if result.rowcount == 0:  # type: ignore[attr-defined]
-                actual = await self._fetch_row_version(supersede_version_id.value, tenant_id.value)
+                actual = await self._fetch_row_version(supersede_version_id.value, tenant_id)
                 raise OptimisticLockConflict(
                     str(supersede_version_id),
                     expected,
@@ -217,7 +217,7 @@ class PgCredentialVersionRepository(ICredentialVersionRepository):
                 )
             self._row_version_cache[supersede_version_id.value] = expected + 1
 
-        new_expected = await self._fetch_row_version(new_version.version_id.value, tenant_id.value)
+        new_expected = await self._fetch_row_version(new_version.version_id.value, tenant_id)
         result2 = await self._session.execute(
             update(CredentialVersionModel)
             .where(
@@ -232,7 +232,7 @@ class PgCredentialVersionRepository(ICredentialVersionRepository):
             )
         )
         if result2.rowcount == 0:  # type: ignore[attr-defined]
-            actual = await self._fetch_row_version(new_version.version_id.value, tenant_id.value)
+            actual = await self._fetch_row_version(new_version.version_id.value, tenant_id)
             raise OptimisticLockConflict(
                 str(new_version.version_id),
                 new_expected,
@@ -241,7 +241,7 @@ class PgCredentialVersionRepository(ICredentialVersionRepository):
         self._row_version_cache[new_version.version_id.value] = new_expected + 1
 
     async def update(self, version: CredentialVersion) -> None:
-        expected = await self._fetch_row_version(version.version_id.value, version.tenant_id.value)
+        expected = await self._fetch_row_version(version.version_id.value, version.tenant_id)
         rotation = version.rotation_context
         result = await self._session.execute(
             update(CredentialVersionModel)
@@ -270,7 +270,7 @@ class PgCredentialVersionRepository(ICredentialVersionRepository):
         )
         if result.rowcount == 0:  # type: ignore[attr-defined]
             actual = await self._fetch_row_version(
-                version.version_id.value, version.tenant_id.value
+                version.version_id.value, version.tenant_id
             )
             raise OptimisticLockConflict(
                 str(version.version_id),

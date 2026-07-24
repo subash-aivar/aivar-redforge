@@ -70,7 +70,7 @@ class IntelligenceApplicationService:
         self._boundary = AutonomyBoundaryService()
         self._governance = ModelGovernanceService()
 
-    def _tenant(self, value: UUID) -> TenantId:
+    def _tenant(self, value: TenantId) -> TenantId:
         if isinstance(value, TenantId):
             return value
         return TenantId.from_string(str(value))

@@ -135,7 +135,9 @@ class RetentionPolicyWorker:
     def __init__(self, store: EventProjectionStore) -> None:
         self._store = store
 
-    async def run(self, tenant_id: TenantId, *, event_retention_days: int = 730) -> dict[str, object]:
+    async def run(
+        self, tenant_id: TenantId, *, event_retention_days: int = 730
+    ) -> dict[str, object]:
         before = datetime.now(UTC) - timedelta(days=event_retention_days)
         total = 0
         for domain in DOMAIN_TABLES:

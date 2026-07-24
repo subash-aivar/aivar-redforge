@@ -87,7 +87,7 @@ class PgRotationPolicyRepository(IRotationPolicyRepository):
         return result.scalar_one_or_none() is not None
 
     async def save(self, policy: RotationPolicy) -> None:
-        if await self._name_conflict(policy.name, policy.tenant_id.value, policy.policy_id.value):
+        if await self._name_conflict(policy.name, policy.tenant_id, policy.policy_id.value):
             raise DuplicatePolicyName(policy.name, policy.tenant_id, "rotation")
 
         expected_version = policy.version
@@ -126,7 +126,7 @@ class PgRotationPolicyRepository(IRotationPolicyRepository):
         )
         new_version = result.scalar_one_or_none()
         if new_version is None:
-            actual = await self._current_row_version(policy.policy_id.value, policy.tenant_id.value)
+            actual = await self._current_row_version(policy.policy_id.value, policy.tenant_id)
             raise OptimisticLockConflict(str(policy.policy_id), expected_version, actual)
         policy._version = new_version
 

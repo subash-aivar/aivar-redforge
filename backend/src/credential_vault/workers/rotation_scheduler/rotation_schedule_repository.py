@@ -8,12 +8,12 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy import text
 
-from credential_vault.domain.value_objects.identifiers import TenantId
-
 if TYPE_CHECKING:
     from uuid import UUID
 
     from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
+    from credential_vault.domain.value_objects.identifiers import TenantId
 
 
 @dataclass(frozen=True, slots=True)

@@ -113,7 +113,7 @@ def _create_cmd(
         category=category,
         subtype=subtype,
         schema_id=schema_id,
-        owner_principal_id=owner_principal_id or uuid4(),
+        owner_principal_id=owner_principal_id or EntityId.generate(),
         vault_backend_id=vault_backend_id or uuid4(),
         plaintext_secret=plaintext_secret,
         description=description,
@@ -166,7 +166,7 @@ def _resolve_cmd(cred, *, break_glass: bool = False, justification: str | None =
     return ResolveCredentialCommand(
         tenant_id=cred.tenant_id,
         credential_id=cred.credential_id.value,
-        principal_id=cred.owner_principal.value,
+        principal_id=EntityId.from_uuid(cred.owner_principal.value),
         purpose="deployment",
         client_ip="10.0.0.1",
         request_id="req-1",
@@ -184,7 +184,7 @@ def _ids_from_cred(cred):
     return (
         cred.tenant_id,
         cred.credential_id.value,
-        cred.owner_principal.value,
+        EntityId.from_uuid(cred.owner_principal.value),
     )
 
 
@@ -724,7 +724,7 @@ async def test_rotate_credential_already_rotating(
             RotateCredentialCommand(
                 tenant_id=tid,
                 credential_id=cid.value,
-                principal_id=pid.value,
+                principal_id=EntityId.from_uuid(pid.value),
                 new_plaintext_secret=b"rotated-secret",
                 trigger="MANUAL",
             )
@@ -791,7 +791,7 @@ async def test_rotate_credential_validation_failure(
             RotateCredentialCommand(
                 tenant_id=EntityId.generate(),
                 credential_id=uuid4(),
-                principal_id=uuid4(),
+                principal_id=EntityId.generate(),
                 new_plaintext_secret=b"",
                 trigger="MANUAL",
             )
@@ -985,7 +985,7 @@ async def test_commit_rotation_access_denied(
             CommitRotationCommand(
                 tenant_id=EntityId.generate(),
                 credential_id=uuid4(),
-                principal_id=uuid4(),
+                principal_id=EntityId.generate(),
             )
         )
 
@@ -1054,7 +1054,7 @@ async def test_abort_rotation_access_denied(
             AbortRotationCommand(
                 tenant_id=EntityId.generate(),
                 credential_id=uuid4(),
-                principal_id=uuid4(),
+                principal_id=EntityId.generate(),
                 reason="nope",
             )
         )
@@ -1092,7 +1092,7 @@ async def test_abort_rotation_validation_failure(
             AbortRotationCommand(
                 tenant_id=EntityId.generate(),
                 credential_id=uuid4(),
-                principal_id=uuid4(),
+                principal_id=EntityId.generate(),
                 reason="",
             )
         )
@@ -1235,7 +1235,7 @@ async def test_recover_credential_access_denied(
             RecoverCredentialCommand(
                 tenant_id=EntityId.generate(),
                 credential_id=uuid4(),
-                principal_id=uuid4(),
+                principal_id=EntityId.generate(),
                 target_version_id=uuid4(),
                 justification="recovery",
             )
@@ -1277,7 +1277,7 @@ async def test_recover_credential_validation_failure(
             RecoverCredentialCommand(
                 tenant_id=EntityId.generate(),
                 credential_id=uuid4(),
-                principal_id=uuid4(),
+                principal_id=EntityId.generate(),
                 target_version_id=uuid4(),
                 justification="",
             )
@@ -1307,7 +1307,7 @@ async def test_hard_delete_success(
         HardDeleteCredentialCommand(
             tenant_id=tid,
             credential_id=cid.value,
-            principal_id=pid.value,
+            principal_id=EntityId.from_uuid(pid.value),
         )
     )
 
@@ -1360,7 +1360,7 @@ async def test_hard_delete_access_denied(
             HardDeleteCredentialCommand(
                 tenant_id=tid,
                 credential_id=cid.value,
-                principal_id=pid.value,
+                principal_id=EntityId.from_uuid(pid.value),
             )
         )
 
@@ -1387,7 +1387,7 @@ async def test_hard_delete_audit_fail_closed(
             HardDeleteCredentialCommand(
                 tenant_id=tid,
                 credential_id=cid.value,
-                principal_id=pid.value,
+                principal_id=EntityId.from_uuid(pid.value),
             )
         )
 
@@ -1434,7 +1434,7 @@ async def test_disable_credential_access_denied(
             DisableCredentialCommand(
                 tenant_id=EntityId.generate(),
                 credential_id=uuid4(),
-                principal_id=uuid4(),
+                principal_id=EntityId.generate(),
                 reason="nope",
             )
         )
@@ -1472,7 +1472,7 @@ async def test_disable_credential_validation_failure(
             DisableCredentialCommand(
                 tenant_id=EntityId.generate(),
                 credential_id=uuid4(),
-                principal_id=uuid4(),
+                principal_id=EntityId.generate(),
                 reason="",
             )
         )
@@ -1520,7 +1520,7 @@ async def test_enable_credential_success(
         EnableCredentialCommand(
             tenant_id=tid,
             credential_id=cid.value,
-            principal_id=pid.value,
+            principal_id=EntityId.from_uuid(pid.value),
         )
     )
 
@@ -1542,7 +1542,7 @@ async def test_enable_credential_access_denied(
             EnableCredentialCommand(
                 tenant_id=EntityId.generate(),
                 credential_id=uuid4(),
-                principal_id=uuid4(),
+                principal_id=EntityId.generate(),
             )
         )
 
@@ -1571,7 +1571,7 @@ async def test_enable_credential_audit_fail_closed(
             EnableCredentialCommand(
                 tenant_id=tid,
                 credential_id=cid.value,
-                principal_id=pid.value,
+                principal_id=EntityId.from_uuid(pid.value),
             )
         )
 
@@ -1587,7 +1587,7 @@ async def test_enable_credential_validation_failure(
             EnableCredentialCommand(
                 tenant_id=UUID(int=0),
                 credential_id=uuid4(),
-                principal_id=uuid4(),
+                principal_id=EntityId.generate(),
             )
         )
 
@@ -1668,7 +1668,7 @@ async def test_revoke_credential_validation_failure(
             RevokeCredentialCommand(
                 tenant_id=EntityId.generate(),
                 credential_id=uuid4(),
-                principal_id=uuid4(),
+                principal_id=EntityId.generate(),
                 reason="",
             )
         )
@@ -1749,7 +1749,7 @@ async def test_emergency_revoke_validation_failure(
             EmergencyRevokeCommand(
                 tenant_id=EntityId.generate(),
                 credential_id=uuid4(),
-                principal_id=uuid4(),
+                principal_id=EntityId.generate(),
                 justification="",
             )
         )
@@ -1808,7 +1808,7 @@ async def test_expire_credential_validation_failure(
             ExpireCredentialCommand(
                 tenant_id=UUID(int=0),
                 credential_id=uuid4(),
-                principal_id=uuid4(),
+                principal_id=EntityId.generate(),
             )
         )
 
@@ -1874,7 +1874,7 @@ async def test_rollback_version_access_denied(
             RollbackVersionCommand(
                 tenant_id=EntityId.generate(),
                 credential_id=uuid4(),
-                principal_id=uuid4(),
+                principal_id=EntityId.generate(),
                 target_version_id=uuid4(),
             )
         )
@@ -1926,7 +1926,7 @@ async def test_rollback_version_validation_failure(
             RollbackVersionCommand(
                 tenant_id=EntityId.generate(),
                 credential_id=uuid4(),
-                principal_id=uuid4(),
+                principal_id=EntityId.generate(),
                 target_version_id=UUID(int=0),
             )
         )
@@ -1972,7 +1972,7 @@ async def test_update_metadata_access_denied(
             UpdateCredentialMetadataCommand(
                 tenant_id=EntityId.generate(),
                 credential_id=uuid4(),
-                principal_id=uuid4(),
+                principal_id=EntityId.generate(),
                 description="x",
                 tags={},
             )
@@ -2012,7 +2012,7 @@ async def test_update_metadata_validation_failure(
             UpdateCredentialMetadataCommand(
                 tenant_id=EntityId.generate(),
                 credential_id=uuid4(),
-                principal_id=uuid4(),
+                principal_id=EntityId.generate(),
                 description="x" * 2049,
                 tags={},
             )
@@ -2061,7 +2061,7 @@ async def test_attach_rotation_policy_access_denied(
                 tenant_id=EntityId.generate(),
                 credential_id=uuid4(),
                 policy_id=uuid4(),
-                principal_id=uuid4(),
+                principal_id=EntityId.generate(),
             )
         )
 
@@ -2102,7 +2102,7 @@ async def test_attach_rotation_policy_validation_failure(
                 tenant_id=EntityId.generate(),
                 credential_id=uuid4(),
                 policy_id=UUID(int=0),
-                principal_id=uuid4(),
+                principal_id=EntityId.generate(),
             )
         )
 
@@ -2148,7 +2148,7 @@ async def test_detach_rotation_policy_access_denied(
             DetachRotationPolicyCommand(
                 tenant_id=EntityId.generate(),
                 credential_id=uuid4(),
-                principal_id=uuid4(),
+                principal_id=EntityId.generate(),
             )
         )
 
@@ -2188,7 +2188,7 @@ async def test_detach_rotation_policy_validation_failure(
             DetachRotationPolicyCommand(
                 tenant_id=UUID(int=0),
                 credential_id=uuid4(),
-                principal_id=uuid4(),
+                principal_id=EntityId.generate(),
             )
         )
 
@@ -2235,7 +2235,7 @@ async def test_attach_expiration_policy_access_denied(
                 tenant_id=EntityId.generate(),
                 credential_id=uuid4(),
                 policy_id=uuid4(),
-                principal_id=uuid4(),
+                principal_id=EntityId.generate(),
             )
         )
 
@@ -2276,7 +2276,7 @@ async def test_attach_expiration_policy_validation_failure(
                 tenant_id=EntityId.generate(),
                 credential_id=uuid4(),
                 policy_id=UUID(int=0),
-                principal_id=uuid4(),
+                principal_id=EntityId.generate(),
             )
         )
 
@@ -2322,7 +2322,7 @@ async def test_detach_expiration_policy_access_denied(
             DetachExpirationPolicyCommand(
                 tenant_id=EntityId.generate(),
                 credential_id=uuid4(),
-                principal_id=uuid4(),
+                principal_id=EntityId.generate(),
             )
         )
 
@@ -2362,7 +2362,7 @@ async def test_detach_expiration_policy_validation_failure(
             DetachExpirationPolicyCommand(
                 tenant_id=UUID(int=0),
                 credential_id=uuid4(),
-                principal_id=uuid4(),
+                principal_id=EntityId.generate(),
             )
         )
 
@@ -2388,7 +2388,7 @@ async def test_disable_credential_not_found(
             DisableCredentialCommand(
                 tenant_id=tid,
                 credential_id=cid.value,
-                principal_id=uuid4(),
+                principal_id=EntityId.generate(),
                 reason="gone",
             )
         )
@@ -2415,7 +2415,7 @@ async def test_disable_credential_invalid_state(
             DisableCredentialCommand(
                 tenant_id=tid,
                 credential_id=cid.value,
-                principal_id=pid.value,
+                principal_id=EntityId.from_uuid(pid.value),
                 reason="already revoked",
             )
         )

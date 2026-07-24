@@ -61,7 +61,7 @@ from redforge.infrastructure.audit.logger import InMemoryAuditLog
 from redforge.infrastructure.auth.password import Argon2PasswordHasher
 from redforge.infrastructure.auth.tokens import JWTTokenService
 from redforge.infrastructure.database.base import Base
-from redforge.infrastructure.database.models import (  # noqa: F401
+from redforge.infrastructure.database.models import (
     AIAssetModel,
     AITargetModel,
     MembershipModel,
@@ -241,7 +241,23 @@ def policy() -> _SequencedPolicyPort:
 async def app(policy: _SequencedPolicyPort):
     engine = create_async_engine("sqlite+aiosqlite://", echo=False)
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+        await conn.run_sync(
+            Base.metadata.create_all,
+            tables=[
+                AIAssetModel.__table__,
+                AITargetModel.__table__,
+                MembershipModel.__table__,
+                OrganizationModel.__table__,
+                SecurityConditionModel.__table__,
+                SecurityCorrelationConditionModel.__table__,
+                SecurityCorrelationEntityModel.__table__,
+                SecurityCorrelationModel.__table__,
+                UserModel.__table__,
+                ValidationExecutionEventModel.__table__,
+                ValidationExecutionModel.__table__,
+                ValidationExecutionStepModel.__table__,
+            ],
+        )
 
     factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
     events = InMemoryEventPublisher()

@@ -56,7 +56,7 @@ def _register_cmd(
 ) -> RegisterVaultBackendCommand:
     return RegisterVaultBackendCommand(
         tenant_id=tenant_id or uuid4(),
-        principal_id=principal_id or uuid4(),
+        principal_id=principal_id or EntityId.generate(),
         name=name,
         backend_type=backend_type,
         config=config if config is not None else {"path": "/secrets"},
@@ -173,7 +173,7 @@ async def test_delete_vault_backend_success(
     cmd = DeleteVaultBackendCommand(
         tenant_id=tenant_uuid,
         backend_id=backend.backend_id.value,
-        principal_id=uuid4(),
+        principal_id=EntityId.generate(),
     )
 
     await service.delete_vault_backend(cmd)
@@ -201,7 +201,7 @@ async def test_delete_vault_backend_access_denied(
     cmd = DeleteVaultBackendCommand(
         tenant_id=EntityId.generate(),
         backend_id=uuid4(),
-        principal_id=uuid4(),
+        principal_id=EntityId.generate(),
     )
 
     with pytest.raises(AccessDenied) as exc_info:
@@ -219,7 +219,7 @@ async def test_delete_vault_backend_validation_failure(
     cmd = DeleteVaultBackendCommand(
         tenant_id=UUID(int=0),
         backend_id=uuid4(),
-        principal_id=uuid4(),
+        principal_id=EntityId.generate(),
     )
 
     with pytest.raises(ApplicationValidationError) as exc_info:
@@ -241,7 +241,7 @@ async def test_delete_vault_backend_publish_failure_nonfatal(
     cmd = DeleteVaultBackendCommand(
         tenant_id=tenant_uuid,
         backend_id=backend.backend_id.value,
-        principal_id=uuid4(),
+        principal_id=EntityId.generate(),
     )
 
     await service.delete_vault_backend(cmd)
@@ -263,7 +263,7 @@ async def test_get_vault_backend_success(
     qry = GetVaultBackendQuery(
         tenant_id=tenant_uuid,
         backend_id=backend.backend_id.value,
-        principal_id=uuid4(),
+        principal_id=EntityId.generate(),
     )
 
     dto = await service.get_vault_backend(qry)
@@ -284,7 +284,7 @@ async def test_get_vault_backend_access_denied(
     qry = GetVaultBackendQuery(
         tenant_id=EntityId.generate(),
         backend_id=uuid4(),
-        principal_id=uuid4(),
+        principal_id=EntityId.generate(),
     )
 
     with pytest.raises(AccessDenied) as exc_info:
@@ -307,7 +307,7 @@ async def test_list_vault_backends_success(
         make_vault_backend(tenant_id=tenant_uuid, name="b"),
     ]
     mock_uow.vault_backends.list_by_tenant.return_value = backends
-    qry = ListVaultBackendsQuery(tenant_id=tenant_uuid, principal_id=uuid4())
+    qry = ListVaultBackendsQuery(tenant_id=tenant_uuid, principal_id=EntityId.generate())
 
     result = await service.list_vault_backends(qry)
 
@@ -324,7 +324,7 @@ async def test_list_vault_backends_access_denied(
     mock_permission_port: AsyncMock,
 ) -> None:
     mock_permission_port.has_permission.return_value = False
-    qry = ListVaultBackendsQuery(tenant_id=EntityId.generate(), principal_id=uuid4())
+    qry = ListVaultBackendsQuery(tenant_id=EntityId.generate(), principal_id=EntityId.generate())
 
     with pytest.raises(AccessDenied) as exc_info:
         await service.list_vault_backends(qry)

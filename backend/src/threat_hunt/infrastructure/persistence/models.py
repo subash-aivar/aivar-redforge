@@ -6,12 +6,15 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import DateTime, Float, String, Text
+from sqlalchemy import JSON, DateTime, Float, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from redforge.infrastructure.database.base import Base
+
+_JSONB_PORTABLE = JSON().with_variant(JSONB, "postgresql")
+
 
 _SCHEMA = "threat_hunt"
 
@@ -63,4 +66,4 @@ class ThreatHuntConfigurationModel(Base):
 
     tenant_id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), primary_key=True)
     min_signal_strength: Mapped[float] = mapped_column(Float, nullable=False, default=0.5)
-    enabled_signal_types: Mapped[list[Any]] = mapped_column(JSONB, nullable=False)
+    enabled_signal_types: Mapped[list[Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)

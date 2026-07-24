@@ -83,7 +83,7 @@ class PlaybookApplicationService:
         self._approval = PlaybookApprovalService()
         self._kill = KillSwitchService()
 
-    def _tenant(self, value: UUID) -> TenantId:
+    def _tenant(self, value: TenantId) -> TenantId:
         if isinstance(value, TenantId):
             return value
         return TenantId.from_string(str(value))

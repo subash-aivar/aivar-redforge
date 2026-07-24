@@ -4,10 +4,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+
+_JSONB_PORTABLE = JSON().with_variant(JSONB, "postgresql")
+
 
 if TYPE_CHECKING:
     from datetime import datetime
@@ -36,17 +39,19 @@ class TaskGraphExecutionModel(ExecutionBase):
 
     state: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
 
-    # Policy snapshot stored as JSONB
+    # Policy snapshot stored as _JSONB_PORTABLE
     policy_snapshot_json: Mapped[dict[str, Any]] = mapped_column(
-        JSONB, nullable=False, default=dict
+        _JSONB_PORTABLE, nullable=False, default=dict
     )
 
     # Pending approval gate
-    pending_approval_gate_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    pending_approval_gate_json: Mapped[dict[str, Any] | None] = mapped_column(
+        _JSONB_PORTABLE, nullable=True,
+    )
 
     # Objective states snapshot
     objective_states_json: Mapped[dict[str, Any]] = mapped_column(
-        JSONB, nullable=False, default=dict
+        _JSONB_PORTABLE, nullable=False, default=dict
     )
 
     row_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
@@ -100,14 +105,14 @@ class CampaignSafetyMonitorModel(ExecutionBase):
     monitor_state: Mapped[str] = mapped_column(String(32), nullable=False)
     auto_abort_triggered: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
-    # Active operation IDs stored as JSONB array
+    # Active operation IDs stored as _JSONB_PORTABLE array
     active_operation_ids_json: Mapped[list[str]] = mapped_column(
-        JSONB, nullable=False, default=list
+        _JSONB_PORTABLE, nullable=False, default=list
     )
 
     # Policy snapshot
     policy_snapshot_json: Mapped[dict[str, Any]] = mapped_column(
-        JSONB, nullable=False, default=dict
+        _JSONB_PORTABLE, nullable=False, default=dict
     )
 
     row_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)

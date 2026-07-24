@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from typing import Any
-from uuid import UUID
 
 from threat_hunt.application._auth import require_any
 from threat_hunt.application.commands.hunt_commands import (
@@ -29,7 +28,7 @@ class HuntApplicationService:
         self._gen = CandidateGenerationService()
         self._review = CandidateReviewService()
 
-    def _tenant(self, value: UUID) -> TenantId:
+    def _tenant(self, value: TenantId) -> TenantId:
         if isinstance(value, TenantId):
             return value
         return TenantId.from_string(str(value))

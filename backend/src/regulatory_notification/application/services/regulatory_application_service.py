@@ -206,7 +206,9 @@ class RegulatoryApplicationService:
         self.events.extend(n.pop_events())
         return {"status": n.status.value}
 
-    async def list_for_incident(self, tenant_id: TenantId, incident_id: str) -> list[dict[str, Any]]:
+    async def list_for_incident(
+        self, tenant_id: TenantId, incident_id: str
+    ) -> list[dict[str, Any]]:
         tenant = tenant_id
         rows = await self._notifications.find_by_incident(tenant, incident_id)
         return [

@@ -68,7 +68,7 @@ def _record_from_model(m: TaskExecutionRecordModel) -> TaskExecutionRecord:
     if m.operation_id is not None and m.operation_tenant_id is not None:
         operation_ref = OperationRef(
             operation_id=m.operation_id,
-            tenant_id=m.operation_tenant_id,
+            tenant_id=TenantId.from_uuid(m.operation_tenant_id),
         )
     return TaskExecutionRecord(
         record_id=TaskExecutionRecordId(m.id),
@@ -112,7 +112,7 @@ def _execution_from_row(
         campaign_instance_ref=CampaignInstanceRef(
             instance_id=row.campaign_instance_id,
             campaign_id=row.campaign_id,
-            tenant_id=row.tenant_id,
+            tenant_id=TenantId.from_uuid(row.tenant_id),
         ),
         graph_version_ref=TaskGraphVersionRef(
             graph_id=row.graph_id,
@@ -120,7 +120,7 @@ def _execution_from_row(
         ),
         engagement_ref=EngagementRef(
             engagement_id=row.engagement_id,
-            tenant_id=row.tenant_id,
+            tenant_id=TenantId.from_uuid(row.tenant_id),
         ),
         policy_snapshot=_policy_from_json(row.policy_snapshot_json),
         state=ExecutionState(row.state),
@@ -205,7 +205,11 @@ class PgTaskGraphExecutionRepository(ITaskGraphExecutionRepository):
     ) -> None:
         for rec in execution.task_records:
             op_id = rec.operation_ref.operation_id if rec.operation_ref else None
-            op_tid = rec.operation_ref.tenant_id if rec.operation_ref else None
+            op_tid = (
+                rec.operation_ref.tenant_id.value.to_uuid()
+                if rec.operation_ref
+                else None
+            )
 
             rec_stmt = select(TaskExecutionRecordModel).where(
                 TaskExecutionRecordModel.id == rec.record_id.value,

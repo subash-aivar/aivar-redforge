@@ -6,12 +6,25 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from redforge.infrastructure.database.base import Base
+
+_JSONB_PORTABLE = JSON().with_variant(JSONB, "postgresql")
+
 
 _SCHEMA = "operation"
 
@@ -55,12 +68,12 @@ class ExecutionStepModel(Base):
     impact_ceiling: Mapped[str | None] = mapped_column(String(32), nullable=True)
     modifies_persistent_state: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     description: Mapped[str] = mapped_column(Text, nullable=False, default="")
-    constraints_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
-    technique_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    constraints_json: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
+    technique_json: Mapped[dict[str, Any] | None] = mapped_column(_JSONB_PORTABLE, nullable=True)
     target_asset_id: Mapped[UUID | None] = mapped_column(PgUUID(as_uuid=True), nullable=True)
-    mitre_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
-    rate_limit_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
-    window_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    mitre_json: Mapped[dict[str, Any] | None] = mapped_column(_JSONB_PORTABLE, nullable=True)
+    rate_limit_json: Mapped[dict[str, Any] | None] = mapped_column(_JSONB_PORTABLE, nullable=True)
+    window_json: Mapped[dict[str, Any] | None] = mapped_column(_JSONB_PORTABLE, nullable=True)
     output_ref: Mapped[str | None] = mapped_column(String(512), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

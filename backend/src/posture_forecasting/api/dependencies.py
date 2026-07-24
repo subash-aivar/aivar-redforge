@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from uuid import UUID
-
 from fastapi import Depends, Header, Request
 
 from posture_forecasting.infrastructure.container import PostureForecastingContainer
@@ -23,7 +21,7 @@ def get_container(request: Request) -> PostureForecastingContainer:
     return c
 
 
-def tenant_id_header(tenant: TenantContext = Depends(get_tenant_context)) -> UUID:
+def tenant_id_header(tenant: TenantContext = Depends(get_tenant_context)) -> EntityId:
     """Verified tenant scope from the caller's signed access token.
 
     Previously read the client-supplied `X-Tenant-Id` header directly —

@@ -54,7 +54,7 @@ def _monitor_from_row(row: CampaignSafetyMonitorModel) -> CampaignSafetyMonitor:
         campaign_instance_ref=CampaignInstanceRef(
             instance_id=row.campaign_instance_id,
             campaign_id=row.campaign_id,
-            tenant_id=row.tenant_id,
+            tenant_id=TenantId.from_uuid(row.tenant_id),
         ),
         policy_snapshot=_policy_from_json(row.policy_snapshot_json),
         monitor_state=MonitorState(row.monitor_state),

@@ -156,7 +156,7 @@ def _from_row(row: CampaignEvaluationModel) -> CampaignEvaluation:
         campaign_instance_ref=CampaignInstanceRef(
             instance_id=row.campaign_instance_id,
             campaign_id=row.campaign_id,
-            tenant_id=row.tenant_id,
+            tenant_id=TenantId.from_uuid(row.tenant_id),
             run_number=row.run_number,
         ),
         state=EvaluationState(row.state),

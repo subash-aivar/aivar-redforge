@@ -6,12 +6,15 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import DateTime, LargeBinary, String, Text
+from sqlalchemy import JSON, DateTime, LargeBinary, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from redforge.infrastructure.database.base import Base
+
+_JSONB_PORTABLE = JSON().with_variant(JSONB, "postgresql")
+
 
 _SCHEMA = "lessons_learned"
 
@@ -31,7 +34,7 @@ class LessonsLearnedRecordModel(Base):
     campaign_retargeting_suggestion_ref: Mapped[str | None] = mapped_column(
         String(256), nullable=True
     )
-    confirmed_technique_ids: Mapped[list[Any]] = mapped_column(JSONB, nullable=False)
+    confirmed_technique_ids: Mapped[list[Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
@@ -71,7 +74,7 @@ class RecommendationModel(Base):
     ll_id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), nullable=False)
     tenant_id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), nullable=False)
     text: Mapped[str] = mapped_column(Text, nullable=False)
-    technique_ids: Mapped[list[Any]] = mapped_column(JSONB, nullable=False)
+    technique_ids: Mapped[list[Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
 
 
 class PostIncidentReportModel(Base):

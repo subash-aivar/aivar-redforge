@@ -127,7 +127,7 @@ def _to_domain(row: CampaignModel) -> Campaign:
     if row.engagement_id is not None and row.engagement_tenant_id is not None:
         engagement_ref = EngagementRef(
             engagement_id=row.engagement_id,
-            tenant_id=row.engagement_tenant_id,
+            tenant_id=TenantId.from_uuid(row.engagement_tenant_id),
         )
 
     approvals = [

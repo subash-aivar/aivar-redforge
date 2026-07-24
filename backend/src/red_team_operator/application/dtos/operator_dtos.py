@@ -35,7 +35,7 @@ class OperatorDTO:
     def from_aggregate(cls, op: RedTeamOperator) -> OperatorDTO:
         return cls(
             operator_id=op.operator_id.value,
-            tenant_id=op.tenant_id.value,
+            tenant_id=op.tenant_id,
             identity_ref=op.identity_ref,
             display_name=op.display_name,
             clearance_level=op.clearance_level.value,

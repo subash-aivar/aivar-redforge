@@ -6,12 +6,15 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import Boolean, DateTime, Integer, String, Text
+from sqlalchemy import JSON, Boolean, DateTime, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from redforge.infrastructure.database.base import Base
+
+_JSONB_PORTABLE = JSON().with_variant(JSONB, "postgresql")
+
 
 _SCHEMA = "reporting"
 
@@ -24,7 +27,7 @@ class ReportTemplateModel(Base):
     tenant_id: Mapped[UUID | None] = mapped_column(PgUUID(as_uuid=True), nullable=True)
     report_type: Mapped[str] = mapped_column(String(64), nullable=False)
     name: Mapped[str] = mapped_column(String(256), nullable=False)
-    sections_json: Mapped[list[Any]] = mapped_column(JSONB, nullable=False)
+    sections_json: Mapped[list[Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
     version: Mapped[int] = mapped_column(Integer, nullable=False)
     is_platform: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -38,8 +41,8 @@ class ScheduledReportModel(Base):
     tenant_id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), nullable=False)
     template_id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), nullable=False)
     schedule_cron: Mapped[str] = mapped_column(String(64), nullable=False)
-    parameters_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
-    recipients_json: Mapped[list[Any]] = mapped_column(JSONB, nullable=False)
+    parameters_json: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
+    recipients_json: Mapped[list[Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
     status: Mapped[str] = mapped_column(String(32), nullable=False)
     next_run_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     last_run_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -61,7 +64,7 @@ class ReportInstanceModel(Base):
     scheduled_report_id: Mapped[UUID | None] = mapped_column(PgUUID(as_uuid=True), nullable=True)
     report_type: Mapped[str] = mapped_column(String(64), nullable=False)
     status: Mapped[str] = mapped_column(String(32), nullable=False)
-    artifact_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    artifact_json: Mapped[dict[str, Any]] = mapped_column(_JSONB_PORTABLE, nullable=False)
     narrative: Mapped[str] = mapped_column(Text, nullable=False)
     generated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     generated_by: Mapped[str] = mapped_column(String(256), nullable=False)

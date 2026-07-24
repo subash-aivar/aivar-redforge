@@ -81,7 +81,7 @@ class AutomationApplicationService:
         self.metrics = ExecutionMetricsService()
         self._idempotency: set[str] = set()
 
-    def _tenant(self, value: UUID) -> TenantId:
+    def _tenant(self, value: TenantId) -> TenantId:
         if isinstance(value, TenantId):
             return value
         return TenantId.from_string(str(value))

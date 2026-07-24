@@ -3,15 +3,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 from uuid import UUID  # noqa: TC003 — runtime type for frozen dataclass fields
 
-from credential_vault.domain.value_objects.identifiers import TenantId
+if TYPE_CHECKING:
+    from credential_vault.domain.value_objects.identifiers import TenantId
 
 
 @dataclass(frozen=True, slots=True)
 class CreateRotationPolicyCommand:
     tenant_id: TenantId
-    principal_id: UUID
+    principal_id: TenantId
     name: str
     interval_days: int | None
     max_versions_kept: int
@@ -25,7 +27,7 @@ class CreateRotationPolicyCommand:
 class UpdateRotationPolicyCommand:
     tenant_id: TenantId
     policy_id: UUID
-    principal_id: UUID
+    principal_id: TenantId
     interval_days: int | None
     max_versions_kept: int
     notify_days_before: int
@@ -38,13 +40,13 @@ class UpdateRotationPolicyCommand:
 class DeleteRotationPolicyCommand:
     tenant_id: TenantId
     policy_id: UUID
-    principal_id: UUID
+    principal_id: TenantId
 
 
 @dataclass(frozen=True, slots=True)
 class CreateExpirationPolicyCommand:
     tenant_id: TenantId
-    principal_id: UUID
+    principal_id: TenantId
     name: str
     ttl_days: int
     warn_days_before: int
@@ -55,7 +57,7 @@ class CreateExpirationPolicyCommand:
 class UpdateExpirationPolicyCommand:
     tenant_id: TenantId
     policy_id: UUID
-    principal_id: UUID
+    principal_id: TenantId
     ttl_days: int
     warn_days_before: int
     hard_expire: bool
@@ -65,4 +67,4 @@ class UpdateExpirationPolicyCommand:
 class DeleteExpirationPolicyCommand:
     tenant_id: TenantId
     policy_id: UUID
-    principal_id: UUID
+    principal_id: TenantId

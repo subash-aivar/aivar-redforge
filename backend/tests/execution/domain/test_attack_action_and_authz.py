@@ -95,7 +95,7 @@ def _token(
 
 def test_attack_action_hash_and_seal() -> None:
     now = datetime.now(UTC)
-    tenant = TenantId(uuid7())
+    tenant = TenantId.from_uuid(uuid7())
     engagement = EngagementId(uuid7())
     target = TargetId(uuid7())
     technique = TechniqueRef("T1059", "execution", ImpactCeiling.PROBE)
@@ -111,7 +111,7 @@ def test_attack_action_hash_and_seal() -> None:
 
 def test_attack_action_tamper_detected() -> None:
     now = datetime.now(UTC)
-    tenant = TenantId(uuid7())
+    tenant = TenantId.from_uuid(uuid7())
     engagement = EngagementId(uuid7())
     target = TargetId(uuid7())
     technique = TechniqueRef("T1059", "execution", ImpactCeiling.PROBE)
@@ -123,7 +123,7 @@ def test_attack_action_tamper_detected() -> None:
 
 def test_low_trust_cannot_exploit() -> None:
     now = datetime.now(UTC)
-    tenant = TenantId(uuid7())
+    tenant = TenantId.from_uuid(uuid7())
     manifest = SignedCapabilityManifest(
         techniques=frozenset({"T1003"}),
         trust_level=WorkerTrustLevel.LOW_TRUST,

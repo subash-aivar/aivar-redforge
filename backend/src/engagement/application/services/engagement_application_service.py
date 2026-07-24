@@ -121,7 +121,7 @@ def engagement_to_dto(engagement: Engagement) -> EngagementDTO:
     roe = engagement.roe
     return EngagementDTO(
         engagement_id=engagement.engagement_id.value,
-        tenant_id=engagement.tenant_id.value,
+        tenant_id=engagement.tenant_id,
         name=engagement.name,
         classification=engagement.classification.value,
         owner_id=engagement.owner_id,
@@ -185,7 +185,7 @@ def engagement_to_dto(engagement: Engagement) -> EngagementDTO:
 def authorization_to_dto(auth: TargetAuthorization) -> TargetAuthorizationDTO:
     return TargetAuthorizationDTO(
         authorization_id=auth.authorization_id.value,
-        tenant_id=auth.tenant_id.value,
+        tenant_id=auth.tenant_id,
         engagement_id=auth.engagement_id.value,
         asset_id=auth.target_ref.asset_id,
         display_name=auth.target_ref.display_name,

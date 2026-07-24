@@ -366,7 +366,9 @@ class AnalyticsApplicationService:
             "records_ingested": ds.records_ingested,
         }
 
-    async def get_summary(self, tenant_id: TenantId, actor_roles: tuple[str, ...]) -> dict[str, Any]:
+    async def get_summary(
+        self, tenant_id: TenantId, actor_roles: tuple[str, ...]
+    ) -> dict[str, Any]:
         require_at_least(actor_roles, AnalyticsRole.VIEWER)
         tenant = tenant_id
         kpis = []
@@ -556,7 +558,7 @@ class AnalyticsApplicationService:
                 if hasattr(r["event_ts"], "isoformat")
                 else str(r["event_ts"]),
             }
-            for r in self._store.list_events(UUID(tid), domain_key)
+            for r in self._store.list_events(TenantId.from_string(tid), domain_key)
         ]
 
     async def list_queries(

@@ -6,12 +6,15 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import DateTime, Float, Integer, String
+from sqlalchemy import JSON, DateTime, Float, Integer, String
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from redforge.infrastructure.database.base import Base
+
+_JSONB_PORTABLE = JSON().with_variant(JSONB, "postgresql")
+
 
 
 class ExposureReductionPlanModel(Base):
@@ -32,5 +35,9 @@ class ExposureReductionPlanModel(Base):
     approximation_mode: Mapped[str] = mapped_column(String(64), nullable=False)
     simulation_seed: Mapped[int] = mapped_column(Integer, nullable=False)
     score_input_version: Mapped[int] = mapped_column(Integer, nullable=False)
-    plan_steps_json: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
-    metadata_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    plan_steps_json: Mapped[list[Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=list,
+    )
+    metadata_json: Mapped[dict[str, Any]] = mapped_column(
+        _JSONB_PORTABLE, nullable=False, default=dict,
+    )

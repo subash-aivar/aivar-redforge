@@ -48,9 +48,11 @@ class ProjectionRebuildService:
         self._agent = agent_port
         self._discovery = discovery_port
 
-    async def rebuild_tenant(self, tenant_id: TenantId, actor_roles: tuple[str, ...]) -> dict[str, Any]:
+    async def rebuild_tenant(
+        self, tenant_id: TenantId, actor_roles: tuple[str, ...]
+    ) -> dict[str, Any]:
         require_at_least(actor_roles, AIPostureRole.ADMIN)
-        tenant = TenantId(tenant_id)
+        tenant = tenant_id
         tid = str(tenant_id)
         await self._store.clear_tenant(tid)
         self._projections._seen.clear()

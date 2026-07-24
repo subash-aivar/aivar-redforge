@@ -69,7 +69,7 @@ class RecomputationDebouncerService:
 
     async def list_eligible(
         self, *, default_debounce_seconds: int = 300, limit: int = 1000
-    ) -> list[tuple[UUID, UUID]]:
+    ) -> list[tuple[TenantId, UUID]]:
         now = datetime.now(UTC)
         async with self._uow_factory() as uow:
             rows = await uow.pending.list_eligible(
@@ -93,7 +93,7 @@ class RecomputationDispatcherService:
         self._backpressure = backpressure_threshold
         self._paused = False
         self._queue_depth = 0
-        self._tenant_dispatched: dict[UUID, int] = {}
+        self._tenant_dispatched: dict[TenantId, int] = {}
 
     @property
     def paused(self) -> bool:
@@ -118,7 +118,7 @@ class RecomputationDispatcherService:
                 now, default_debounce_seconds=default_debounce_seconds, limit=limit
             )
             global_count = 0
-            tenant_counts: dict[UUID, int] = {}
+            tenant_counts: dict[TenantId, int] = {}
             for row in eligible:
                 if global_count >= self._global:
                     break

@@ -162,7 +162,7 @@ class PgVaultBackendRepository(IVaultBackendRepository):
         new_version = result.scalar_one_or_none()
         if new_version is None:
             actual = await self._current_row_version(
-                backend.backend_id.value, backend.tenant_id.value
+                backend.backend_id.value, backend.tenant_id
             )
             raise OptimisticLockConflict(str(backend.backend_id), expected_version, actual)
         backend._version = new_version
