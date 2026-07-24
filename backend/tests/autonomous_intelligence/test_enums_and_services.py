@@ -44,13 +44,13 @@ def test_outcome_types(value: OutcomeType) -> None:
 
 
 def test_policy_confidence_floor() -> None:
-    p = AutonomousOperationsPolicy.default(TenantId(uuid4()))
+    p = AutonomousOperationsPolicy.default(TenantId.generate())
     with pytest.raises(DomainInvariantViolation):
         p.set_min_confidence(SuggestionTargetType.DETECTION_RULE_TUNING, 0.1)
 
 
 def test_outcome_measurement_and_feedback() -> None:
-    tenant = TenantId(uuid4())
+    tenant = TenantId.generate()
     outcome = SuggestionOutcome.create_pending(
         uuid4(), tenant, SuggestionTargetType.DETECTION_RULE_TUNING, 30, 0.4
     )

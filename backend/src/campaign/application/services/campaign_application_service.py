@@ -37,7 +37,6 @@ from campaign.domain.value_objects.identifiers import (
     CampaignId,
     CampaignInstanceId,
     CampaignObjectiveId,
-    TenantId,
 )
 
 if TYPE_CHECKING:
@@ -196,7 +195,7 @@ class CampaignApplicationService:
         )
         now = datetime.now(UTC)
         campaign_id = CampaignId.generate()
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
 
         campaign = Campaign.create(
             campaign_id=campaign_id,
@@ -276,7 +275,7 @@ class CampaignApplicationService:
                 f"Unknown objective_type '{cmd.objective_type}'"
             ) from None
 
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         campaign_id = CampaignId(cmd.campaign_id)
         now = datetime.now(UTC)
 
@@ -308,7 +307,7 @@ class CampaignApplicationService:
         validate_str(cmd.operator, "operator", 64)
         validate_str(cmd.value, "value", 512)
 
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         campaign_id = CampaignId(cmd.campaign_id)
         now = datetime.now(UTC)
         rule = TargetSelectionRule(
@@ -331,7 +330,7 @@ class CampaignApplicationService:
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_uuid(cmd.campaign_id, "campaign_id")
 
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         campaign_id = CampaignId(cmd.campaign_id)
         now = datetime.now(UTC)
 
@@ -351,7 +350,7 @@ class CampaignApplicationService:
         validate_str(cmd.approver_id, "approver_id", 256)
         validate_str(cmd.signature, "signature", 1024)
 
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         campaign_id = CampaignId(cmd.campaign_id)
         now = datetime.now(UTC)
 
@@ -374,7 +373,7 @@ class CampaignApplicationService:
         if cmd.execution_window_hours < 1:
             raise ApplicationValidationError("'execution_window_hours' must be at least 1")
 
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         campaign_id = CampaignId(cmd.campaign_id)
         now = datetime.now(UTC)
 
@@ -403,7 +402,7 @@ class CampaignApplicationService:
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_uuid(cmd.campaign_id, "campaign_id")
 
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         campaign_id = CampaignId(cmd.campaign_id)
         now = datetime.now(UTC)
 
@@ -476,7 +475,7 @@ class CampaignApplicationService:
         validate_uuid(cmd.instance_id, "instance_id")
         validate_str(cmd.reason, "reason", 1024)
 
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         instance_id = CampaignInstanceId(cmd.instance_id)
         campaign_id = CampaignId(cmd.campaign_id)
         now = datetime.now(UTC)
@@ -501,7 +500,7 @@ class CampaignApplicationService:
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_uuid(cmd.campaign_id, "campaign_id")
 
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         campaign_id = CampaignId(cmd.campaign_id)
         now = datetime.now(UTC)
 
@@ -519,7 +518,7 @@ class CampaignApplicationService:
         validate_uuid(query.tenant_id, "tenant_id")
         validate_uuid(query.campaign_id, "campaign_id")
 
-        tenant_id = TenantId(query.tenant_id)
+        tenant_id = query.tenant_id
         campaign_id = CampaignId(query.campaign_id)
 
         async with self._uow_factory() as uow:
@@ -535,7 +534,7 @@ class CampaignApplicationService:
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_uuid(cmd.campaign_id, "campaign_id")
 
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         campaign_id = CampaignId(cmd.campaign_id)
         now = datetime.now(UTC)
         job_id = cmd.job_id
@@ -570,7 +569,7 @@ class CampaignApplicationService:
         validate_uuid(cmd.campaign_id, "campaign_id")
         validate_str(cmd.reason, "reason", 512)
 
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         campaign_id = CampaignId(cmd.campaign_id)
         now = datetime.now(UTC)
         job_id: str | None = None
@@ -604,7 +603,7 @@ class CampaignApplicationService:
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_uuid(cmd.campaign_id, "campaign_id")
 
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         campaign_id = CampaignId(cmd.campaign_id)
         now = datetime.now(UTC)
 
@@ -638,7 +637,7 @@ class CampaignApplicationService:
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_uuid(cmd.campaign_id, "campaign_id")
 
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         campaign_id = CampaignId(cmd.campaign_id)
         now = datetime.now(UTC)
         scheduler_svc = RecurrenceScheduler()
@@ -752,7 +751,7 @@ class CampaignApplicationService:
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_uuid(cmd.campaign_id, "campaign_id")
 
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         campaign_id = CampaignId(cmd.campaign_id)
         now = datetime.now(UTC)
         try:
@@ -782,7 +781,7 @@ class CampaignApplicationService:
         from campaign.domain.value_objects.enums import InstanceState
 
         validate_uuid(cmd.tenant_id, "tenant_id")
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
 
         if self._scheduler_port is None:
             return []

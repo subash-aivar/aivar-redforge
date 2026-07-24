@@ -8,12 +8,13 @@ from playbook.application.commands.playbook_commands import ActivateKillSwitch, 
 from playbook.application.exceptions import ApplicationForbiddenError
 from playbook.domain.exceptions.domain_exceptions import KillSwitchActive
 from playbook.infrastructure.container import PlaybookContainer
+from redforge.shared.identifiers import EntityId
 
 
 @pytest.mark.asyncio
 async def test_kill_switch_activate_reset() -> None:
     c = PlaybookContainer()
-    tenant = uuid4()
+    tenant = EntityId.generate()
     ciso = ("incident:ciso",)
     dto = await c.app.activate_kill_switch(ActivateKillSwitch(tenant, "ciso1", "emergency", ciso))
     assert dto.kill_switch_state == "TRIGGERED"

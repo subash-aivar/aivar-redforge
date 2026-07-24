@@ -9,8 +9,14 @@ from taskgraph.application.exceptions import ApplicationValidationError
 if TYPE_CHECKING:
     from uuid import UUID
 
+from ulid import ULID
 
-def validate_uuid(value: UUID, field: str) -> None:
+from redforge.shared.identifiers import EntityId
+
+
+def validate_uuid(value: UUID | EntityId, field: str) -> None:
+    if isinstance(value, (EntityId, ULID)):
+        return
     if value.int == 0:
         raise ApplicationValidationError(field, "must be a valid non-nil UUID")
 

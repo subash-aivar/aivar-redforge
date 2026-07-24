@@ -43,7 +43,7 @@ def now() -> datetime:
 
 @pytest.fixture
 def tenant() -> TenantId:
-    return TenantId(uuid4())
+    return TenantId.generate()
 
 
 def _prov(

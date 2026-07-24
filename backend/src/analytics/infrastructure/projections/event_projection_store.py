@@ -5,7 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
-from uuid import UUID
+
+from analytics.domain.value_objects.identifiers import TenantId
 
 DOMAIN_TABLES = (
     "vulnerability",
@@ -27,7 +28,7 @@ class EventProjectionStore:
     anomalies: dict[str, list[dict[str, Any]]] = field(default_factory=dict)
     checkpoints: dict[str, dict[str, str]] = field(default_factory=dict)
 
-    def _tenant_bucket(self, tenant_id: UUID) -> dict[str, list[dict[str, Any]]]:
+    def _tenant_bucket(self, tenant_id: TenantId) -> dict[str, list[dict[str, Any]]]:
         key = str(tenant_id)
         if key not in self.events:
             self.events[key] = {d: [] for d in DOMAIN_TABLES}
@@ -37,13 +38,13 @@ class EventProjectionStore:
             self.checkpoints[key] = {}
         return self.events[key]
 
-    def already_processed(self, tenant_id: UUID, event_id: str) -> bool:
+    def already_processed(self, tenant_id: TenantId, event_id: str) -> bool:
         self._tenant_bucket(tenant_id)
         return event_id in self.processed[str(tenant_id)]
 
     def ingest(
         self,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         *,
         domain: str,
         event_id: str,
@@ -73,7 +74,7 @@ class EventProjectionStore:
         return True
 
     def list_events(
-        self, tenant_id: UUID, domain: str, *, include_archived: bool = False
+        self, tenant_id: TenantId, domain: str, *, include_archived: bool = False
     ) -> list[dict[str, Any]]:
         bucket = self._tenant_bucket(tenant_id)
         rows = bucket.get(domain, [])
@@ -81,21 +82,21 @@ class EventProjectionStore:
             return list(rows)
         return [r for r in rows if not r.get("archived")]
 
-    def all_domain_events(self, tenant_id: UUID) -> dict[str, list[dict[str, Any]]]:
+    def all_domain_events(self, tenant_id: TenantId) -> dict[str, list[dict[str, Any]]]:
         return {d: self.list_events(tenant_id, d) for d in DOMAIN_TABLES}
 
-    def clear_domain(self, tenant_id: UUID, domain: str) -> int:
+    def clear_domain(self, tenant_id: TenantId, domain: str) -> int:
         bucket = self._tenant_bucket(tenant_id)
         n = len(bucket.get(domain, []))
         bucket[domain] = []
         return n
 
-    def append_kpi_snapshot(self, tenant_id: UUID, snapshot: dict[str, Any]) -> None:
+    def append_kpi_snapshot(self, tenant_id: TenantId, snapshot: dict[str, Any]) -> None:
         self._tenant_bucket(tenant_id)
         self.kpi_snapshots[str(tenant_id)].append(snapshot)
 
     def list_kpi_snapshots(
-        self, tenant_id: UUID, kpi_type: str | None = None
+        self, tenant_id: TenantId, kpi_type: str | None = None
     ) -> list[dict[str, Any]]:
         self._tenant_bucket(tenant_id)
         rows = self.kpi_snapshots[str(tenant_id)]
@@ -103,15 +104,15 @@ class EventProjectionStore:
             return [r for r in rows if r.get("kpi_type") == kpi_type]
         return list(rows)
 
-    def append_anomaly(self, tenant_id: UUID, anomaly: dict[str, Any]) -> None:
+    def append_anomaly(self, tenant_id: TenantId, anomaly: dict[str, Any]) -> None:
         self._tenant_bucket(tenant_id)
         self.anomalies[str(tenant_id)].append(anomaly)
 
-    def list_anomalies(self, tenant_id: UUID) -> list[dict[str, Any]]:
+    def list_anomalies(self, tenant_id: TenantId) -> list[dict[str, Any]]:
         self._tenant_bucket(tenant_id)
         return list(self.anomalies[str(tenant_id)])
 
-    def mark_archived_before(self, tenant_id: UUID, domain: str, before: datetime) -> int:
+    def mark_archived_before(self, tenant_id: TenantId, domain: str, before: datetime) -> int:
         count = 0
         for row in self._tenant_bucket(tenant_id).get(domain, []):
             ts = row.get("event_ts")

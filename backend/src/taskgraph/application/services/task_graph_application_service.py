@@ -7,6 +7,7 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 from uuid import UUID
 
+from redforge.shared.identifiers import EntityId
 from taskgraph.application._validation import validate_str, validate_uuid
 from taskgraph.application.dtos.task_graph_dtos import (
     ExecutionOrderDTO,
@@ -76,6 +77,16 @@ def _as_uuid(field: str, value: object) -> UUID:
     return parsed
 
 
+def _as_entity_id(field: str, value: object) -> EntityId:
+    """Coerce a tenant/platform id (ULID-backed EntityId per ADR-0005) from input."""
+    if isinstance(value, EntityId):
+        return value
+    try:
+        return EntityId.from_string(str(value))
+    except ValueError as exc:
+        raise ApplicationValidationError(field, f"invalid EntityId: {value}") from exc
+
+
 def _as_str(field: str, value: str, max_len: int = 512) -> str:
     validate_str(value, field, max_len)
     return value.strip()
@@ -140,8 +151,8 @@ class TaskGraphApplicationService:
         except Exception as exc:
             logger.warning("Event publication failed: %s", exc)
 
-    def _tenant(self, value: UUID) -> TenantId:
-        return TenantId(_as_uuid("tenant_id", value))
+    def _tenant(self, value: object) -> TenantId:
+        return _as_entity_id("tenant_id", value)
 
     async def _load_graph(
         self,

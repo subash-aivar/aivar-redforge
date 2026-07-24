@@ -96,7 +96,7 @@ class SecurityKPI:
         status: KPIStatus,
         at: datetime,
     ) -> None:
-        if self.tenant_id.value != tenant_id.value:
+        if self.tenant_id != tenant_id:
             raise TenantMismatch("tenant mismatch")
         self.latest_value = value
         self.latest_unit = unit

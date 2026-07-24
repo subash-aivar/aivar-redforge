@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from uuid import uuid4
 
 import pytest
 
@@ -40,7 +39,7 @@ from ai_supply_chain.infrastructure.providers.discovery_providers import (
 async def test_mbom_requires_base_model() -> None:
     vuln = StubVulnerabilityQueryAdapter()
     builder = ModelBillOfMaterialsBuilder(vuln)
-    tenant = TenantId(uuid4())
+    tenant = TenantId.generate()
     now = datetime.now(UTC)
     with pytest.raises(MBOMIncomplete):
         await builder.build(
@@ -66,8 +65,8 @@ async def test_discovery_partial_failure_isolated() -> None:
             {},
         )
     ]
-    hf.models[str(TenantId(uuid4()))] = []  # unused
-    tenant = TenantId(uuid4())
+    hf.models[str(TenantId.generate())] = []  # unused
+    tenant = TenantId.generate()
     inventory = RecordingInventoryMatchAdapter()
     shadow = RecordingShadowAlertRaiseAdapter()
     coord = AIDiscoveryScanCoordinator(

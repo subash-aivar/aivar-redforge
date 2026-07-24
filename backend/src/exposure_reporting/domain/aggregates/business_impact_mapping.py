@@ -132,7 +132,7 @@ class BusinessImpactMapping:
         financial_impact_estimate: float | None = None,
         regulatory_scope: list[str] | None = None,
     ) -> None:
-        if self.tenant_id.value != tenant_id.value:
+        if self.tenant_id != tenant_id:
             raise TenantMismatch("tenant mismatch on mapping update")
         self.criticality = criticality
         self.impact_domain = impact_domain

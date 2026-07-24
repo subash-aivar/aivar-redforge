@@ -5,9 +5,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from campaign.domain.exceptions.domain_exceptions import EngagementNotActive
+from campaign.domain.value_objects.identifiers import TenantId
 
 if TYPE_CHECKING:
-    from uuid import UUID
 
     from campaign.domain.aggregates.campaign import Campaign
     from campaign.domain.ports.i_engagement_query_port import IEngagementQueryPort
@@ -27,7 +27,7 @@ class CampaignAuthorizationService:
     async def authorize(
         self,
         campaign: Campaign,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         engagement_port: IEngagementQueryPort,
     ) -> None:
         if campaign.engagement_ref is None:

@@ -11,6 +11,7 @@ from campaign.infrastructure.acl.exposure_scope_m32_adapter import ExposureScope
 from exposure.application.commands.exposure_commands import IngestVulnerabilitySignalCommand
 from exposure.infrastructure.container import ExposureContainer
 from exposure.infrastructure.persistence.in_memory_unit_of_work import InMemoryUnitOfWork
+from redforge.shared.identifiers import EntityId
 
 RI = Path(__file__).resolve().parents[2] / "src" / "remediation_impact"
 
@@ -44,7 +45,7 @@ def test_no_exposure_domain_outside_acl() -> None:
 async def test_m30_scope_adapter_contract() -> None:
     uow = InMemoryUnitOfWork()
     container = ExposureContainer(uow_factory=lambda: uow)
-    tenant = uuid4()
+    tenant = EntityId.generate()
     asset = uuid4()
     await container.ingestion.ingest_vulnerability(
         IngestVulnerabilitySignalCommand(

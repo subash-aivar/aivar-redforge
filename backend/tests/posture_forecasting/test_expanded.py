@@ -24,6 +24,7 @@ from posture_forecasting.infrastructure.acl.m32_exposure_translator import (
 from posture_forecasting.infrastructure.container import PostureForecastingContainer
 from redforge.api.security import TenantContext, get_tenant_context
 from redforge.domain.identity.value_objects import MembershipRole, Permission
+from redforge.shared.identifiers import EntityId
 
 
 def _snap(tenant: TenantId, baseline: float = 80.0, velocity: float = 1.0) -> ForecastInputSnapshot:
@@ -39,14 +40,14 @@ def _snap(tenant: TenantId, baseline: float = 80.0, velocity: float = 1.0) -> Fo
 
 @pytest.mark.parametrize("baseline", [0, 10, 25, 40, 55, 70, 85, 100])
 def test_generate_baselines(baseline: float) -> None:
-    tenant = TenantId(uuid4())
+    tenant = TenantId.generate()
     f = ForecastGenerationService().generate(tenant, _snap(tenant, baseline=baseline))
     assert f.predicted_90d <= f.predicted_30d
 
 
 @pytest.mark.parametrize("velocity", [0.0, 0.25, 0.5, 1.0, 1.5, 2.0, 3.0, 5.0])
 def test_generate_velocities(velocity: float) -> None:
-    tenant = TenantId(uuid4())
+    tenant = TenantId.generate()
     f = ForecastGenerationService().generate(tenant, _snap(tenant, velocity=velocity))
     assert f.input_snapshot is not None
 
@@ -54,7 +55,7 @@ def test_generate_velocities(velocity: float) -> None:
 @pytest.mark.parametrize("horizon", [30, 60, 90])
 @pytest.mark.parametrize("actual", [10.0, 20.0, 30.0, 40.0, 50.0])
 def test_accuracy_matrix(horizon: int, actual: float) -> None:
-    tenant = TenantId(uuid4())
+    tenant = TenantId.generate()
     f = PostureForecast.create(tenant, _snap(tenant), 40, 30, 20, "m", 1)
     ForecastAccuracyService().record(f, horizon, actual)
     assert f.accuracy_records[-1].horizon_days == horizon
@@ -69,7 +70,7 @@ def test_acl_matrix(score: float) -> None:
 
 
 def test_config_default() -> None:
-    cfg = ForecastConfiguration.default(TenantId(uuid4()))
+    cfg = ForecastConfiguration.default(TenantId.generate())
     assert cfg.forecast_frequency_hours == 24
 
 
@@ -77,7 +78,7 @@ def test_config_default() -> None:
 @pytest.mark.parametrize("i", range(5))
 async def test_worker_ticks(i: int) -> None:
     c = PostureForecastingContainer()
-    result = await c.scheduler.tick_all(uuid4())
+    result = await c.scheduler.tick_all(EntityId.generate())
     assert result["forecast_runs"] >= 1
 
 
@@ -107,7 +108,7 @@ def client() -> TestClient:
 def test_api_generate(client: TestClient, baseline: float) -> None:
     r = client.post(
         "/posture-forecasting/forecasts",
-        headers={"X-Tenant-Id": str(uuid4()), "X-Roles": "system,ai:operator"},
+        headers={"X-Tenant-Id": str(EntityId.generate()), "X-Roles": "system,ai:operator"},
         json={"baseline_exposure_score": baseline},
     )
     assert r.status_code == 201

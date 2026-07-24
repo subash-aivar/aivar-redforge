@@ -160,7 +160,7 @@ def test_dispatch_task_transitions_to_running(
     task = task_ids[0]
     execution.mark_task_ready(tenant_id, task, datetime.now(UTC))
 
-    op_ref = OperationRef(operation_id=uuid4(), tenant_id=tenant_id.value)
+    op_ref = OperationRef(operation_id=uuid4(), tenant_id=tenant_id)
     execution.record_task_dispatched(tenant_id, task, op_ref, datetime.now(UTC))
 
     rec = next(r for r in execution.task_records if r.task_id == task)
@@ -194,7 +194,7 @@ def test_dispatch_is_idempotent(
     task = task_ids[0]
     execution.mark_task_ready(tenant_id, task, datetime.now(UTC))
 
-    op_ref = OperationRef(operation_id=uuid4(), tenant_id=tenant_id.value)
+    op_ref = OperationRef(operation_id=uuid4(), tenant_id=tenant_id)
     execution.record_task_dispatched(tenant_id, task, op_ref, datetime.now(UTC))
     # Second dispatch should be silently ignored (idempotent)
     execution.record_task_dispatched(tenant_id, task, op_ref, datetime.now(UTC))
@@ -230,7 +230,7 @@ def test_task_completion_marks_state(
     execution.mark_running(datetime.now(UTC))
     task = task_ids[0]
     execution.mark_task_ready(tenant_id, task, datetime.now(UTC))
-    op_ref = OperationRef(operation_id=uuid4(), tenant_id=tenant_id.value)
+    op_ref = OperationRef(operation_id=uuid4(), tenant_id=tenant_id)
     execution.record_task_dispatched(tenant_id, task, op_ref, datetime.now(UTC))
     execution.record_task_completion(tenant_id, task, TaskOutcome.SUCCESS, datetime.now(UTC))
 
@@ -263,7 +263,7 @@ def test_task_completion_is_idempotent(
     execution.mark_running(datetime.now(UTC))
     task = task_ids[0]
     execution.mark_task_ready(tenant_id, task, datetime.now(UTC))
-    op_ref = OperationRef(operation_id=uuid4(), tenant_id=tenant_id.value)
+    op_ref = OperationRef(operation_id=uuid4(), tenant_id=tenant_id)
     execution.record_task_dispatched(tenant_id, task, op_ref, datetime.now(UTC))
     execution.record_task_completion(tenant_id, task, TaskOutcome.SUCCESS, datetime.now(UTC))
     # Second call should not raise
@@ -302,7 +302,7 @@ def test_completion_with_successors_marks_ready_and_skipped(
 
     t0, t1, t2 = task_ids
     execution.mark_task_ready(tenant_id, t0, datetime.now(UTC))
-    op_ref = OperationRef(operation_id=uuid4(), tenant_id=tenant_id.value)
+    op_ref = OperationRef(operation_id=uuid4(), tenant_id=tenant_id)
     execution.record_task_dispatched(tenant_id, t0, op_ref, datetime.now(UTC))
     execution.record_task_completion(
         tenant_id,
@@ -351,7 +351,7 @@ def test_barrier_passes_when_all_group_tasks_done(
     # Dispatch and complete t1 and t2
     for task in [t1, t2]:
         execution.mark_task_ready(tenant_id, task, datetime.now(UTC))
-        op_ref = OperationRef(operation_id=uuid4(), tenant_id=tenant_id.value)
+        op_ref = OperationRef(operation_id=uuid4(), tenant_id=tenant_id)
         execution.record_task_dispatched(tenant_id, task, op_ref, datetime.now(UTC))
         execution.record_task_completion(tenant_id, task, TaskOutcome.SUCCESS, datetime.now(UTC))
 
@@ -389,7 +389,7 @@ def test_barrier_blocks_when_tasks_pending(
 
     # Only complete t1
     execution.mark_task_ready(tenant_id, t1, datetime.now(UTC))
-    op_ref = OperationRef(operation_id=uuid4(), tenant_id=tenant_id.value)
+    op_ref = OperationRef(operation_id=uuid4(), tenant_id=tenant_id)
     execution.record_task_dispatched(tenant_id, t1, op_ref, datetime.now(UTC))
     execution.record_task_completion(tenant_id, t1, TaskOutcome.SUCCESS, datetime.now(UTC))
 
@@ -460,7 +460,7 @@ def test_grant_approval_transitions_back_to_running(
     # Make the approval task running first
     task = task_ids[0]
     execution.mark_task_ready(tenant_id, task, datetime.now(UTC))
-    op_ref = OperationRef(operation_id=uuid4(), tenant_id=tenant_id.value)
+    op_ref = OperationRef(operation_id=uuid4(), tenant_id=tenant_id)
     execution.record_task_dispatched(tenant_id, task, op_ref, datetime.now(UTC))
 
     gate = PendingApprovalGate(
@@ -501,7 +501,7 @@ def test_deny_approval_transitions_to_paused(
 
     task = task_ids[0]
     execution.mark_task_ready(tenant_id, task, datetime.now(UTC))
-    op_ref = OperationRef(operation_id=uuid4(), tenant_id=tenant_id.value)
+    op_ref = OperationRef(operation_id=uuid4(), tenant_id=tenant_id)
     execution.record_task_dispatched(tenant_id, task, op_ref, datetime.now(UTC))
 
     gate = PendingApprovalGate(
@@ -543,7 +543,7 @@ def test_approval_timeout_default_abort_pauses(
 
     task = task_ids[0]
     execution.mark_task_ready(tenant_id, task, datetime.now(UTC))
-    op_ref = OperationRef(operation_id=uuid4(), tenant_id=tenant_id.value)
+    op_ref = OperationRef(operation_id=uuid4(), tenant_id=tenant_id)
     execution.record_task_dispatched(tenant_id, task, op_ref, datetime.now(UTC))
 
     gate = PendingApprovalGate(
@@ -584,7 +584,7 @@ def test_approval_timeout_default_proceed_continues(
 
     task = task_ids[0]
     execution.mark_task_ready(tenant_id, task, datetime.now(UTC))
-    op_ref = OperationRef(operation_id=uuid4(), tenant_id=tenant_id.value)
+    op_ref = OperationRef(operation_id=uuid4(), tenant_id=tenant_id)
     execution.record_task_dispatched(tenant_id, task, op_ref, datetime.now(UTC))
 
     gate = PendingApprovalGate(

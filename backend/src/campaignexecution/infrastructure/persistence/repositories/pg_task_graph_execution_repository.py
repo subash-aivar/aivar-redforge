@@ -108,7 +108,7 @@ def _execution_from_row(
 
     return TaskGraphExecution(
         execution_id=TaskGraphExecutionId(row.id),
-        tenant_id=TenantId(row.tenant_id),
+        tenant_id=TenantId.from_uuid(row.tenant_id),
         campaign_instance_ref=CampaignInstanceRef(
             instance_id=row.campaign_instance_id,
             campaign_id=row.campaign_id,

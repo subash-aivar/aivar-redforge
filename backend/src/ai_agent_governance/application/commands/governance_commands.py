@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from ai_agent_governance.domain.value_objects.identifiers import TenantId
+
 if TYPE_CHECKING:
     from datetime import datetime
     from uuid import UUID
@@ -10,7 +12,7 @@ if TYPE_CHECKING:
 
 @dataclass(frozen=True, slots=True)
 class DraftEnvelopeCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     asset_id: UUID
     max_data_sensitivity: str
     requires_human_approval_for: tuple[str, ...] = ()
@@ -19,7 +21,7 @@ class DraftEnvelopeCommand:
 
 @dataclass(frozen=True, slots=True)
 class AddAuthorizedActionCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     envelope_id: UUID
     category: str
     description: str = ""
@@ -28,7 +30,7 @@ class AddAuthorizedActionCommand:
 
 @dataclass(frozen=True, slots=True)
 class ApproveEnvelopeCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     envelope_id: UUID
     approver_id: str
     actor_roles: tuple[str, ...] = ()
@@ -36,7 +38,7 @@ class ApproveEnvelopeCommand:
 
 @dataclass(frozen=True, slots=True)
 class ReviseEnvelopeCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     envelope_id: UUID
     new_actions: tuple[tuple[str, str], ...] = ()
     remove_human_approval_for: tuple[str, ...] = ()
@@ -45,7 +47,7 @@ class ReviseEnvelopeCommand:
 
 @dataclass(frozen=True, slots=True)
 class SuspendEnvelopeCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     envelope_id: UUID
     reason: str
     actor_roles: tuple[str, ...] = ()
@@ -53,7 +55,7 @@ class SuspendEnvelopeCommand:
 
 @dataclass(frozen=True, slots=True)
 class RetireEnvelopeCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     envelope_id: UUID
     reason: str
     actor_roles: tuple[str, ...] = ()
@@ -61,7 +63,7 @@ class RetireEnvelopeCommand:
 
 @dataclass(frozen=True, slots=True)
 class ReportAgentActionCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     asset_id: UUID
     action_category: str
     resource: str
@@ -74,7 +76,7 @@ class ReportAgentActionCommand:
 
 @dataclass(frozen=True, slots=True)
 class ReviewDeviationCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     deviation_id: UUID
     decision: str  # confirm | benign | envelope_updated
     notes: str = ""

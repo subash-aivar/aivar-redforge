@@ -6,9 +6,9 @@ from typing import TYPE_CHECKING
 
 from ai_posture.application.commands.posture_commands import RunStalenessSweepCommand
 from ai_posture.domain.value_objects.enums import AIPostureRole
+from ai_posture.domain.value_objects.identifiers import TenantId
 
 if TYPE_CHECKING:
-    from uuid import UUID
 
     from ai_posture.application.services.risk_scoring_app_service import (
         RiskScoringApplicationService,
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 async def run_staleness_sweep_job(
     risk_service: RiskScoringApplicationService,
-    tenant_id: UUID,
+    tenant_id: TenantId,
     *,
     threat_threshold_days: int = 90,
 ) -> None:

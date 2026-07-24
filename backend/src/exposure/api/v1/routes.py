@@ -42,6 +42,7 @@ from exposure.application.exceptions import (
     ApplicationValidationError,
 )
 from exposure.domain.exceptions.domain_exceptions import ExposureDomainError
+from exposure.domain.value_objects.identifiers import TenantId
 from exposure.infrastructure.container import ExposureContainer
 
 router = APIRouter(prefix="/exposure", tags=["exposure"])
@@ -60,7 +61,7 @@ def _map_error(exc: Exception) -> HTTPException:
 @router.get("/records/{record_id}")
 async def get_record(
     record_id: UUID,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: ExposureContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -75,7 +76,7 @@ async def get_record(
 async def list_records_by_asset(
     asset_ref_id: UUID,
     status: str | None = Query(default=None),
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: ExposureContainer = Depends(get_container),
 ) -> list[dict[str, Any]]:
@@ -91,7 +92,7 @@ async def list_records_by_asset(
 @router.get("/assets/{asset_ref_id}/score")
 async def get_latest_score(
     asset_ref_id: UUID,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: ExposureContainer = Depends(get_container),
 ) -> dict[str, Any] | None:
@@ -104,7 +105,7 @@ async def get_latest_score(
 
 @router.get("/weights")
 async def get_weights(
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: ExposureContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -117,7 +118,7 @@ async def get_weights(
 @router.put("/weights")
 async def configure_weights(
     body: ConfigureWeightsRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: ExposureContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -140,7 +141,7 @@ async def configure_weights(
 async def suppress_record(
     record_id: UUID,
     body: SuppressExposureRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: ExposureContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -161,7 +162,7 @@ async def suppress_record(
 
 @router.get("/profile")
 async def get_profile(
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: ExposureContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -174,7 +175,7 @@ async def get_profile(
 @router.post("/internal/signals/vulnerability")
 async def ingest_vulnerability(
     body: IngestVulnerabilityRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: ExposureContainer = Depends(get_container),
 ) -> dict[str, Any] | None:
@@ -201,7 +202,7 @@ async def ingest_vulnerability(
 @router.post("/internal/signals/vulnerability/resolve")
 async def resolve_vulnerability(
     body: ResolveVulnerabilityRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: ExposureContainer = Depends(get_container),
 ) -> dict[str, Any] | None:
@@ -222,7 +223,7 @@ async def resolve_vulnerability(
 @router.post("/internal/signals/vulnerability/kev")
 async def kev_status_changed(
     body: KevStatusChangedRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: ExposureContainer = Depends(get_container),
 ) -> dict[str, Any] | None:
@@ -244,7 +245,7 @@ async def kev_status_changed(
 @router.post("/internal/signals/cloud-security")
 async def ingest_cloud_security(
     body: IngestCloudSecurityRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: ExposureContainer = Depends(get_container),
 ) -> dict[str, Any] | None:
@@ -268,7 +269,7 @@ async def ingest_cloud_security(
 @router.post("/internal/signals/cloud-security/remediate")
 async def remediate_cloud_security(
     body: RemediateCloudSecurityRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: ExposureContainer = Depends(get_container),
 ) -> dict[str, Any] | None:
@@ -289,7 +290,7 @@ async def remediate_cloud_security(
 @router.post("/internal/signals/detection-gap")
 async def ingest_detection_gap(
     body: IngestDetectionGapRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: ExposureContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -313,7 +314,7 @@ async def ingest_detection_gap(
 @router.post("/internal/signals/ai-system-risk")
 async def ingest_ai_system_risk(
     body: IngestAISystemRiskRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: ExposureContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -337,7 +338,7 @@ async def ingest_ai_system_risk(
 @router.post("/internal/signals/confirmed-exploitation")
 async def ingest_confirmed_exploitation(
     body: IngestConfirmedExploitationRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: ExposureContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -360,7 +361,7 @@ async def ingest_confirmed_exploitation(
 @router.post("/internal/events/threat-actor-targeting")
 async def threat_actor_targeting_updated(
     body: ThreatActorTargetingUpdatedRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: ExposureContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -383,7 +384,7 @@ async def threat_actor_targeting_updated(
 
 @router.post("/admin/threat-intel/poll")
 async def poll_threat_intel(
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: ExposureContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -399,7 +400,7 @@ async def poll_threat_intel(
 
 @router.post("/admin/threat-intel/bootstrap")
 async def bootstrap_threat_intel(
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: ExposureContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -415,7 +416,7 @@ async def bootstrap_threat_intel(
 
 @router.get("/threat-intel/targeting")
 async def get_threat_actor_targeting(
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: ExposureContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -428,7 +429,7 @@ async def get_threat_actor_targeting(
 @router.post("/scope/query")
 async def query_exposure_scope(
     body: QueryExposureScopeRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: ExposureContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -448,7 +449,7 @@ async def query_exposure_scope(
 
 @router.post("/admin/pending/flush")
 async def flush_pending(
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: ExposureContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -463,7 +464,7 @@ async def flush_pending(
 
 @router.post("/admin/pipeline/run")
 async def run_score_pipeline(
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: ExposureContainer = Depends(get_container),
 ) -> dict[str, Any]:

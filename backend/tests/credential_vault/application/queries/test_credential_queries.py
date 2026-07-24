@@ -24,10 +24,11 @@ from credential_vault.application.queries.policy_queries import (
     ListExpirationPoliciesQuery,
     ListRotationPoliciesQuery,
 )
+from redforge.shared.identifiers import EntityId
 
 
 def test_list_credentials_query_defaults() -> None:
-    qry = ListCredentialsQuery(tenant_id=uuid4(), principal_id=uuid4())
+    qry = ListCredentialsQuery(tenant_id=EntityId.generate(), principal_id=uuid4())
     assert qry.limit == 100
     assert qry.offset == 0
     assert qry.states is None
@@ -38,7 +39,7 @@ def test_list_credentials_query_defaults() -> None:
 
 def test_list_audit_entries_query_defaults() -> None:
     qry = ListAuditEntriesQuery(
-        tenant_id=uuid4(),
+        tenant_id=EntityId.generate(),
         credential_id=uuid4(),
         principal_id=uuid4(),
     )

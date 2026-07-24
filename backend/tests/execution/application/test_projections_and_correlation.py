@@ -49,6 +49,7 @@ from redforge.domain.security_graph.ontology import (
     NodeKind,
     validate_edge,
 )
+from redforge.shared.identifiers import EntityId
 
 
 def _tenant() -> TenantId:
@@ -365,7 +366,7 @@ async def test_journal_replay_creates_no_side_effects() -> None:
 
     svc = ReplayApplicationService(journal_loader=loader)
     report = await svc.replay(
-        ReplayAttackActionExecution(tenant_id=uuid4(), engagement_id=uuid4())
+        ReplayAttackActionExecution(tenant_id=EntityId.generate(), engagement_id=uuid4())
     )
     assert report.attack_actions_created is False
     assert report.evidence_touched is False

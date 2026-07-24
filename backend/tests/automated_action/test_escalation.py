@@ -11,12 +11,13 @@ from automated_action.application.commands.automation_commands import (
 from automated_action.application.ports.lookups import PlaybookLookupView, PlaybookStepView
 from automated_action.domain.exceptions.domain_exceptions import SeparationOfDutiesViolation
 from automated_action.infrastructure.container import AutomatedActionContainer
+from redforge.shared.identifiers import EntityId
 
 
 @pytest.mark.asyncio
 async def test_escalation_pause_resume_and_sod() -> None:
     c = AutomatedActionContainer()
-    tenant = uuid4()
+    tenant = EntityId.generate()
     pb_id = uuid4()
     c.playbook_lookup.put(
         PlaybookLookupView(

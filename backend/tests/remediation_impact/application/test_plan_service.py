@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from uuid import uuid4
-
 import pytest
 
+from redforge.shared.identifiers import EntityId
 from remediation_impact.application.commands.plan_commands import (
     CommitExposureReductionPlanCommand,
     GenerateExposureReductionPlanCommand,
@@ -30,7 +29,7 @@ def container() -> RemediationImpactContainer:
 
 @pytest.mark.asyncio
 async def test_generate_commit_list(container: RemediationImpactContainer) -> None:
-    tenant = uuid4()
+    tenant = EntityId.generate()
     dto = await container.plan_service.generate(
         GenerateExposureReductionPlanCommand(
             tenant_id=tenant,
@@ -63,7 +62,7 @@ async def test_viewer_cannot_generate(container: RemediationImpactContainer) -> 
     with pytest.raises(ApplicationForbiddenError):
         await container.plan_service.generate(
             GenerateExposureReductionPlanCommand(
-                tenant_id=uuid4(),
+                tenant_id=EntityId.generate(),
                 candidate_remediations=(RemediationCandidateInput("r1", ("a1",), (), 1.0),),
                 actor_roles=VIEWER,
             )
@@ -72,7 +71,7 @@ async def test_viewer_cannot_generate(container: RemediationImpactContainer) -> 
 
 @pytest.mark.asyncio
 async def test_simulation_reader_can_read(container: RemediationImpactContainer) -> None:
-    tenant = uuid4()
+    tenant = EntityId.generate()
     dto = await container.plan_service.generate(
         GenerateExposureReductionPlanCommand(
             tenant_id=tenant,

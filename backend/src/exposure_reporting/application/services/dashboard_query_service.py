@@ -18,7 +18,6 @@ from exposure_reporting.domain.value_objects.enums import ReportingRole
 from exposure_reporting.domain.value_objects.identifiers import TenantId
 
 if TYPE_CHECKING:
-    from uuid import UUID
 
     from exposure_reporting.application.ports.i_exposure_data_query_port import (
         IExposureDataQueryPort,
@@ -47,11 +46,11 @@ class DashboardQueryService:
         self._kpi = kpi_store
         self._trends = trend_store
 
-    async def get_dashboard(self, tenant_id: UUID, actor_roles: tuple[str, ...]) -> DashboardDTO:
+    async def get_dashboard(self, tenant_id: TenantId, actor_roles: tuple[str, ...]) -> DashboardDTO:
         require_at_least(actor_roles, ReportingRole.VIEWER)
         now = datetime.now(UTC)
         snap = await self._exposure.load_snapshot(tenant_id)
-        mappings = await self._mappings.list_by_tenant(TenantId(tenant_id))
+        mappings = await self._mappings.list_by_tenant(tenant_id)
         mapped_ids = {str(m.asset_ref_id) for m in mappings}
         asset_count = len(snap.asset_scores)
         tenant_score = sum(snap.asset_scores.values()) / asset_count if asset_count else 0.0
@@ -97,7 +96,7 @@ class DashboardQueryService:
             generated_at=now.isoformat(),
         )
 
-    async def get_trends(self, tenant_id: UUID, actor_roles: tuple[str, ...]) -> TrendDTO:
+    async def get_trends(self, tenant_id: TenantId, actor_roles: tuple[str, ...]) -> TrendDTO:
         require_at_least(actor_roles, ReportingRole.VIEWER)
         points = await self._trends.list_points(tenant_id)
         version = points[-1].score_input_version if points else "0"
@@ -114,7 +113,7 @@ class DashboardQueryService:
             score_input_version=version,
         )
 
-    async def get_kpis(self, tenant_id: UUID, actor_roles: tuple[str, ...]) -> dict[str, object]:
+    async def get_kpis(self, tenant_id: TenantId, actor_roles: tuple[str, ...]) -> dict[str, object]:
         require_at_least(actor_roles, ReportingRole.VIEWER)
         row = await self._kpi.get(tenant_id)
         if row is None:

@@ -98,7 +98,7 @@ class ExpirationPolicyApplicationService:
         )
 
         policy_uuid = uuid7()
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         principal = PrincipalId(cmd.principal_id)
         await self._require_manage_policy(principal, CredentialId(policy_uuid), tenant_id)
 
@@ -129,7 +129,7 @@ class ExpirationPolicyApplicationService:
             ttl_days=cmd.ttl_days, warn_days_before=cmd.warn_days_before
         )
 
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         policy_id = ExpirationPolicyId(cmd.policy_id)
         principal = PrincipalId(cmd.principal_id)
         await self._require_manage_policy(principal, CredentialId(cmd.policy_id), tenant_id)
@@ -156,7 +156,7 @@ class ExpirationPolicyApplicationService:
         validate_uuid(cmd.policy_id, "policy_id")
         validate_uuid(cmd.principal_id, "principal_id")
 
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         policy_id = ExpirationPolicyId(cmd.policy_id)
         principal = PrincipalId(cmd.principal_id)
         await self._require_manage_policy(principal, CredentialId(cmd.policy_id), tenant_id)
@@ -175,7 +175,7 @@ class ExpirationPolicyApplicationService:
         validate_uuid(qry.policy_id, "policy_id")
         validate_uuid(qry.principal_id, "principal_id")
 
-        tenant_id = TenantId(qry.tenant_id)
+        tenant_id = qry.tenant_id
         policy_id = ExpirationPolicyId(qry.policy_id)
         await self._require_manage_policy(
             PrincipalId(qry.principal_id),
@@ -193,7 +193,7 @@ class ExpirationPolicyApplicationService:
         validate_uuid(qry.tenant_id, "tenant_id")
         validate_uuid(qry.principal_id, "principal_id")
 
-        tenant_id = TenantId(qry.tenant_id)
+        tenant_id = qry.tenant_id
         resource_id = CredentialId(uuid7())
         await self._require_manage_policy(PrincipalId(qry.principal_id), resource_id, tenant_id)
 

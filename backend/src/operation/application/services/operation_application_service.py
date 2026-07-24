@@ -208,7 +208,7 @@ class OperationApplicationService:
         validate_uuid(cmd.engagement_id, "engagement_id")
         validate_str(cmd.name, "name", 256)
         classification = OperationClassification(cmd.classification)
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         now = _utcnow()
         operation = Operation.create(
             tenant_id=tenant_id,
@@ -227,7 +227,7 @@ class OperationApplicationService:
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_uuid(cmd.operation_id, "operation_id")
         validate_str(cmd.name, "name", 256)
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         now = _utcnow()
         technique_ref = None
         if cmd.technique_payload_id and cmd.technique_id:
@@ -293,7 +293,7 @@ class OperationApplicationService:
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_uuid(cmd.operation_id, "operation_id")
         validate_uuid(cmd.step_id, "step_id")
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         now = _utcnow()
         async with self._uow_factory() as uow:
             op = await uow.operations.find_by_id(OperationId(cmd.operation_id), tenant_id)
@@ -314,7 +314,7 @@ class OperationApplicationService:
         validate_uuid(cmd.operation_id, "operation_id")
         validate_uuid(cmd.from_step_id, "from_step_id")
         validate_uuid(cmd.to_step_id, "to_step_id")
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         now = _utcnow()
         async with self._uow_factory() as uow:
             op = await uow.operations.find_by_id(OperationId(cmd.operation_id), tenant_id)
@@ -334,7 +334,7 @@ class OperationApplicationService:
     async def set_objectives(self, cmd: SetOperationObjectives) -> OperationDTO:
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_uuid(cmd.operation_id, "operation_id")
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         now = _utcnow()
         async with self._uow_factory() as uow:
             op = await uow.operations.find_by_id(OperationId(cmd.operation_id), tenant_id)
@@ -353,7 +353,7 @@ class OperationApplicationService:
     async def validate_execution_plan(self, cmd: ValidateExecutionPlan) -> PlanValidationResultDTO:
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_uuid(cmd.operation_id, "operation_id")
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         async with self._uow_factory() as uow:
             op = await uow.operations.find_by_id(OperationId(cmd.operation_id), tenant_id)
             if op is None:
@@ -384,7 +384,7 @@ class OperationApplicationService:
         validate_uuid(cmd.operation_id, "operation_id")
         validate_uuid(cmd.operator_id, "operator_id")
         validate_str(cmd.signature, "signature", 4096)
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         now = _utcnow()
         async with self._uow_factory() as uow:
             op = await uow.operations.find_by_id(OperationId(cmd.operation_id), tenant_id)
@@ -436,7 +436,7 @@ class OperationApplicationService:
     async def submit_for_approval(self, cmd: SubmitOperationForApproval) -> OperationDTO:
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_uuid(cmd.operation_id, "operation_id")
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         now = _utcnow()
         async with self._uow_factory() as uow:
             op = await uow.operations.find_by_id(OperationId(cmd.operation_id), tenant_id)
@@ -454,7 +454,7 @@ class OperationApplicationService:
         validate_uuid(cmd.operator_id, "operator_id")
         validate_str(cmd.authority, "authority", 64)
         validate_str(cmd.signature, "signature", 4096)
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         now = _utcnow()
         async with self._uow_factory() as uow:
             op = await uow.operations.find_by_id(OperationId(cmd.operation_id), tenant_id)
@@ -475,7 +475,7 @@ class OperationApplicationService:
     async def queue_operation(self, cmd: QueueOperation) -> OperationDTO:
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_uuid(cmd.operation_id, "operation_id")
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         now = _utcnow()
         async with self._uow_factory() as uow:
             op = await uow.operations.find_by_id(OperationId(cmd.operation_id), tenant_id)
@@ -499,7 +499,7 @@ class OperationApplicationService:
     async def get_operation(self, query: GetOperation) -> OperationDTO:
         validate_uuid(query.tenant_id, "tenant_id")
         validate_uuid(query.operation_id, "operation_id")
-        tenant_id = TenantId(query.tenant_id)
+        tenant_id = query.tenant_id
         async with self._uow_factory() as uow:
             op = await uow.operations.find_by_id(OperationId(query.operation_id), tenant_id)
             if op is None:
@@ -509,7 +509,7 @@ class OperationApplicationService:
     async def list_by_engagement(self, query: ListOperationsByEngagement) -> list[OperationDTO]:
         validate_uuid(query.tenant_id, "tenant_id")
         validate_uuid(query.engagement_id, "engagement_id")
-        tenant_id = TenantId(query.tenant_id)
+        tenant_id = query.tenant_id
         async with self._uow_factory() as uow:
             ops = await uow.operations.find_by_engagement(
                 EngagementId(query.engagement_id),
@@ -522,7 +522,7 @@ class OperationApplicationService:
     async def get_plan_version(self, query: GetExecutionPlanVersion) -> ExecutionPlanVersionDTO:
         validate_uuid(query.tenant_id, "tenant_id")
         validate_uuid(query.plan_version_id, "plan_version_id")
-        tenant_id = TenantId(query.tenant_id)
+        tenant_id = query.tenant_id
         async with self._uow_factory() as uow:
             pv = await uow.plan_versions.find_by_id(
                 ExecutionPlanVersionId(query.plan_version_id), tenant_id
@@ -538,7 +538,7 @@ class OperationApplicationService:
     ) -> list[ExecutionPlanVersionDTO]:
         validate_uuid(query.tenant_id, "tenant_id")
         validate_uuid(query.operation_id, "operation_id")
-        tenant_id = TenantId(query.tenant_id)
+        tenant_id = query.tenant_id
         async with self._uow_factory() as uow:
             versions = await uow.plan_versions.find_by_operation(
                 OperationId(query.operation_id), tenant_id
@@ -548,13 +548,13 @@ class OperationApplicationService:
     async def mark_plan_executing(
         self,
         *,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         plan_version_id: UUID,
     ) -> ExecutionPlanVersionDTO:
         """Enforce single Executing plan per operation (used by later phases)."""
         validate_uuid(tenant_id, "tenant_id")
         validate_uuid(plan_version_id, "plan_version_id")
-        tid = TenantId(tenant_id)
+        tid = tenant_id
         now = _utcnow()
         async with self._uow_factory() as uow:
             pv = await uow.plan_versions.find_by_id(
@@ -578,13 +578,13 @@ class OperationApplicationService:
     async def invalidate_plans_referencing_payload(
         self,
         *,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         payload_id: UUID,
     ) -> int:
         """Supersede SIGNED/EXECUTING plan versions whose snapshot references payload_id."""
         validate_uuid(tenant_id, "tenant_id")
         validate_uuid(payload_id, "payload_id")
-        tid = TenantId(tenant_id)
+        tid = tenant_id
         payload_token = str(payload_id)
         now = _utcnow()
         superseded = 0

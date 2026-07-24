@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from typing import Any
-from uuid import UUID
 
 from threat_hunt.application.commands.hunt_commands import GenerateThreatHuntCandidate
+from threat_hunt.domain.value_objects.identifiers import TenantId
 
 
 class ThreatHuntCandidateWorker:
@@ -13,7 +13,7 @@ class ThreatHuntCandidateWorker:
 
     async def handle(
         self,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         signal_ids: tuple[str, ...],
         technique_ids: tuple[str, ...] = ("T1059",),
     ) -> Any:
@@ -34,6 +34,6 @@ class HuntScheduler:
     def __init__(self, worker: ThreatHuntCandidateWorker) -> None:
         self.worker = worker
 
-    async def tick(self, tenant_id: UUID) -> int:
+    async def tick(self, tenant_id: TenantId) -> int:
         await self.worker.handle(tenant_id, ("sig-auto",))
         return self.worker.processed

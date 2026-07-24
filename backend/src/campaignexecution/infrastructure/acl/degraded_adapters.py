@@ -76,14 +76,14 @@ class StubOperationCreationAdapter(IOperationCreationPort):
         self._tenant_override = tenant_id_override
 
     async def create_operation(self, request: TaskDispatchRequest) -> OperationRef:
-        from uuid import UUID
+        from redforge.shared.identifiers import EntityId
 
         key = (request["campaign_instance_id"], request["task_id"])
         if key not in self._cache:
             tid_str = self._tenant_override or request["tenant_id"]
             self._cache[key] = OperationRef(
                 operation_id=uuid7(),
-                tenant_id=UUID(tid_str),
+                tenant_id=EntityId.from_string(tid_str),
             )
             log.debug(
                 "StubOperationCreationAdapter: created operation %s",

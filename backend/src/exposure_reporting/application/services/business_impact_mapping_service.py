@@ -69,7 +69,7 @@ class BusinessImpactMappingService:
 
     async def create(self, cmd: CreateBusinessImpactMappingCommand) -> BusinessImpactMappingDTO:
         require_at_least(cmd.actor_roles, ReportingRole.ENGINEER)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         existing = await self._repo.find_by_asset(tenant, cmd.asset_ref_id)
         if existing is not None:
             raise ApplicationConflictError("mapping already exists for asset")
@@ -98,7 +98,7 @@ class BusinessImpactMappingService:
 
     async def update(self, cmd: UpdateBusinessImpactMappingCommand) -> BusinessImpactMappingDTO:
         require_at_least(cmd.actor_roles, ReportingRole.ENGINEER)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         mapping = await self._repo.find_by_asset(tenant, cmd.asset_ref_id)
         if mapping is None:
             raise ApplicationNotFoundError(str(cmd.asset_ref_id))
@@ -128,21 +128,21 @@ class BusinessImpactMappingService:
         return _to_dto(mapping)
 
     async def get_by_asset(
-        self, tenant_id: UUID, asset_ref_id: UUID, actor_roles: tuple[str, ...]
+        self, tenant_id: TenantId, asset_ref_id: UUID, actor_roles: tuple[str, ...]
     ) -> BusinessImpactMappingDTO:
         require_at_least(actor_roles, ReportingRole.VIEWER)
-        mapping = await self._repo.find_by_asset(TenantId(tenant_id), asset_ref_id)
+        mapping = await self._repo.find_by_asset(tenant_id, asset_ref_id)
         if mapping is None:
             raise ApplicationNotFoundError(str(asset_ref_id))
         return _to_dto(mapping)
 
     async def list_mappings(
-        self, tenant_id: UUID, actor_roles: tuple[str, ...]
+        self, tenant_id: TenantId, actor_roles: tuple[str, ...]
     ) -> list[BusinessImpactMappingDTO]:
         require_at_least(actor_roles, ReportingRole.VIEWER)
-        rows = await self._repo.list_by_tenant(TenantId(tenant_id))
+        rows = await self._repo.list_by_tenant(tenant_id)
         return [_to_dto(m) for m in rows]
 
-    async def criticality_for_asset(self, tenant_id: UUID, asset_ref_id: UUID) -> str | None:
-        mapping = await self._repo.find_by_asset(TenantId(tenant_id), asset_ref_id)
+    async def criticality_for_asset(self, tenant_id: TenantId, asset_ref_id: UUID) -> str | None:
+        mapping = await self._repo.find_by_asset(tenant_id, asset_ref_id)
         return mapping.criticality.value if mapping else None

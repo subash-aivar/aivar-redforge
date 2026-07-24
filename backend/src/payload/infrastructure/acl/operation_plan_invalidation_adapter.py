@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from uuid import UUID
 
 from payload.domain.ports.i_plan_invalidation_port import IPlanInvalidationPort
+from payload.domain.value_objects.identifiers import TenantId
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -22,7 +23,7 @@ class DegradedPlanInvalidationAdapter(IPlanInvalidationPort):
         self.calls: list[tuple[UUID, UUID]] = []
 
     async def invalidate_plans_for_payload(
-        self, tenant_id: UUID, payload_id: UUID
+        self, tenant_id: TenantId, payload_id: UUID
     ) -> int:
         self.calls.append((tenant_id, payload_id))
         return 0
@@ -38,7 +39,7 @@ class OperationPlanInvalidationAdapter(IPlanInvalidationPort):
         self._operation_service_factory = operation_service_factory
 
     async def invalidate_plans_for_payload(
-        self, tenant_id: UUID, payload_id: UUID
+        self, tenant_id: TenantId, payload_id: UUID
     ) -> int:
         svc = self._operation_service_factory()
         return await svc.invalidate_plans_referencing_payload(

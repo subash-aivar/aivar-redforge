@@ -4,11 +4,16 @@ from __future__ import annotations
 
 from uuid import UUID  # noqa: TC003 — used at runtime (value.int)
 
+from ulid import ULID
+
 from credential_vault.application.exceptions import ApplicationValidationError
+from redforge.shared.identifiers import EntityId
 
 
-def validate_uuid(value: UUID, field: str) -> None:
+def validate_uuid(value: UUID | EntityId, field: str) -> None:
     """Raise ApplicationValidationError if value is the nil UUID."""
+    if isinstance(value, (EntityId, ULID)):
+        return
     if value.int == 0:
         raise ApplicationValidationError(field, "must be a valid non-nil UUID")
 

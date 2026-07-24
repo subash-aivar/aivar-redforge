@@ -56,7 +56,7 @@ class GrantApprovalAuthorityRequest(BaseModel):
 
 class OperatorResponse(BaseModel):
     operator_id: UUID
-    tenant_id: UUID
+    tenant_id: str
     identity_ref: str
     display_name: str
     clearance_level: str
@@ -75,7 +75,7 @@ class OperatorResponse(BaseModel):
     def from_dto(cls, dto: OperatorDTO) -> OperatorResponse:
         return cls(
             operator_id=dto.operator_id,
-            tenant_id=dto.tenant_id,
+            tenant_id=str(dto.tenant_id),
             identity_ref=dto.identity_ref,
             display_name=dto.display_name,
             clearance_level=dto.clearance_level,

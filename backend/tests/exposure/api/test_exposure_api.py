@@ -15,6 +15,7 @@ from exposure.infrastructure.persistence.in_memory_unit_of_work import (
 )
 from redforge.api.security import TenantContext, get_tenant_context
 from redforge.domain.identity.value_objects import MembershipRole, Permission
+from redforge.shared.identifiers import EntityId
 
 
 def _override_tenant_context(
@@ -52,7 +53,7 @@ async def test_api_ingest_get_suppress_score(
     api_setup: tuple[FastAPI, ExposureContainer],
 ) -> None:
     app, _ = api_setup
-    tenant = str(uuid4())
+    tenant = str(EntityId.generate())
     asset = uuid4()
     headers = {"X-Tenant-Id": tenant, "X-Exposure-Roles": "exposure:analyst"}
     transport = ASGITransport(app=app)

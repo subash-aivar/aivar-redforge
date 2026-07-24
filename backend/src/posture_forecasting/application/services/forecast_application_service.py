@@ -28,7 +28,9 @@ class ForecastApplicationService:
         self._acc = ForecastAccuracyService()
 
     def _tenant(self, value: UUID) -> TenantId:
-        return TenantId(value)
+        if isinstance(value, TenantId):
+            return value
+        return TenantId.from_string(str(value))
 
     async def generate(self, cmd: GeneratePostureForecast) -> PostureForecastDTO:
         require_any(cmd.roles, "ai:operator", "system", "vuln:manager")
@@ -75,7 +77,7 @@ class ForecastApplicationService:
             forecast.generated_at.isoformat(),
         )
 
-    async def get_latest(self, tenant_id: UUID, roles: tuple[str, ...]) -> PostureForecastDTO:
+    async def get_latest(self, tenant_id: TenantId, roles: tuple[str, ...]) -> PostureForecastDTO:
         require_any(roles, "ai:operator", "vuln:manager", "playbook:analyst")
         forecast = await self._forecasts.find_latest(self._tenant(tenant_id))
         if forecast is None:

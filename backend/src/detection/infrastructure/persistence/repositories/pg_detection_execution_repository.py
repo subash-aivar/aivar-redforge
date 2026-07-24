@@ -76,7 +76,7 @@ class PgDetectionExecutionRepository(IDetectionExecutionRepository):
         ]
         return DetectionExecution(
             execution_id=DetectionExecutionId(model.id),
-            tenant_id=TenantId(model.tenant_id),
+            tenant_id=TenantId.from_uuid(model.tenant_id),
             rule_ref=DetectionRuleRef(
                 rule_id=model.rule_id, rule_version=model.rule_version
             ),

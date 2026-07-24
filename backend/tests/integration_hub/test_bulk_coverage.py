@@ -30,14 +30,15 @@ from integration_hub.domain.value_objects.enums import (
     ConnectorStatus,
     ConnectorType,
 )
-from integration_hub.domain.value_objects.identifiers import ConnectorId, TenantId
+from integration_hub.domain.value_objects.identifiers import ConnectorId
 from integration_hub.infrastructure.container import IntegrationHubContainer
+from redforge.shared.identifiers import EntityId
 
 
 @pytest.mark.parametrize("ctype", list(ConnectorType))
 def test_register_each_connector_type_sync(ctype: ConnectorType) -> None:
     reg = ConnectorRegistration.register(
-        TenantId(uuid4()), ctype, ctype.value, f"vault/{ctype.value}", "API_KEY"
+        EntityId.generate(), ctype, ctype.value, f"vault/{ctype.value}", "API_KEY"
     )
     assert reg.connector_type == ctype
     assert reg.credential_ref.vault_key.startswith("vault/")
@@ -63,7 +64,7 @@ async def test_register_via_app(ctype: ConnectorType) -> None:
 
 def test_disable_blocks_execution() -> None:
     reg = ConnectorRegistration.register(
-        TenantId(uuid4()), ConnectorType.COMM_TEAMS, "t", "v/t", "API_KEY"
+        EntityId.generate(), ConnectorType.COMM_TEAMS, "t", "v/t", "API_KEY"
     )
     reg.disable(reg.tenant_id, "a", "bye")
     with pytest.raises(ConnectorDisabledError):
@@ -72,7 +73,7 @@ def test_disable_blocks_execution() -> None:
 
 def test_open_circuit_blocks() -> None:
     reg = ConnectorRegistration.register(
-        TenantId(uuid4()), ConnectorType.CLOUD_GCP, "g", "v/g", "API_KEY"
+        EntityId.generate(), ConnectorType.CLOUD_GCP, "g", "v/g", "API_KEY"
     )
     reg.apply_circuit(CircuitState.OPEN, 5, datetime.now(UTC))
     with pytest.raises(CircuitOpenError):
@@ -96,7 +97,7 @@ def test_rate_limit_budget() -> None:
 
 def test_health_record_factory() -> None:
     rec = ConnectorHealthRecord.create(
-        TenantId(uuid4()),
+        EntityId.generate(),
         ConnectorId.generate(),
         ConnectorHealthStatus.HEALTHY,
         12,
@@ -109,7 +110,7 @@ def test_health_record_factory() -> None:
 @pytest.mark.asyncio
 async def test_disable_and_list_filter() -> None:
     c = IntegrationHubContainer()
-    tenant = uuid4()
+    tenant = EntityId.generate()
     roles = ("integration:admin",)
     dto = await c.app.register(
         RegisterConnector(tenant, "ITSM_SERVICENOW", "sn", "v/sn", "API_KEY", "a", roles)
@@ -124,7 +125,7 @@ async def test_disable_and_list_filter() -> None:
 @pytest.mark.asyncio
 async def test_health_check_success_path() -> None:
     c = IntegrationHubContainer()
-    tenant = uuid4()
+    tenant = EntityId.generate()
     roles = ("integration:admin",)
     dto = await c.app.register(
         RegisterConnector(tenant, "COMM_SLACK", "s", "v/s", "API_KEY", "a", roles)
@@ -138,7 +139,7 @@ async def test_health_check_success_path() -> None:
 def test_circuit_window_prunes_old_failures() -> None:
     svc = CircuitBreakerService()
     reg = ConnectorRegistration.register(
-        TenantId(uuid4()), ConnectorType.NETWORK_CISCO, "n", "v/n", "API_KEY"
+        EntityId.generate(), ConnectorType.NETWORK_CISCO, "n", "v/n", "API_KEY"
     )
     old = datetime.now(UTC) - timedelta(minutes=5)
     for i in range(5):
@@ -154,7 +155,7 @@ def test_circuit_window_prunes_old_failures() -> None:
 def test_rejects_password_config() -> None:
     with pytest.raises(DomainInvariantViolation):
         ConnectorRegistration.register(
-            TenantId(uuid4()),
+            EntityId.generate(),
             ConnectorType.IDENTITY_PING,
             "p",
             "v/p",

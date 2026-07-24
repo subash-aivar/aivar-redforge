@@ -29,7 +29,7 @@ class StubInventoryQueryAdapter(IInventoryQueryPort):
     def __init__(self) -> None:
         self._known: dict[tuple[str, str], AssetRef] = {}
 
-    def seed(self, asset_id: UUID, tenant_id: UUID, asset_type: str = "AIAsset") -> None:
+    def seed(self, asset_id: UUID, tenant_id: TenantId, asset_type: str = "AIAsset") -> None:
         self._known[(str(tenant_id), str(asset_id))] = AssetRef(asset_id, asset_type)
 
     async def resolve_asset_ref(self, asset_id: UUID, tenant_id: TenantId) -> AssetRef | None:

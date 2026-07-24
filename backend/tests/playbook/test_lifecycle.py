@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from uuid import UUID, uuid4
+from uuid import UUID
 
 import pytest
 
@@ -14,6 +14,7 @@ from playbook.application.commands.playbook_commands import (
 )
 from playbook.domain.exceptions.domain_exceptions import DryRunHashMismatch, DryRunRequired
 from playbook.infrastructure.container import PlaybookContainer
+from redforge.shared.identifiers import EntityId
 
 
 def _step(level: str = "LOW") -> dict[str, object]:
@@ -38,7 +39,7 @@ def _trigger() -> dict[str, object]:
 @pytest.mark.asyncio
 async def test_full_lifecycle() -> None:
     c = PlaybookContainer()
-    tenant = uuid4()
+    tenant = EntityId.generate()
     eng = ("playbook:engineer",)
     analyst = ("soc:analyst",)
     created = await c.app.create(CreatePlaybook(tenant, "PB1", "desc", "eng1", eng))
@@ -60,7 +61,7 @@ async def test_full_lifecycle() -> None:
 @pytest.mark.asyncio
 async def test_approve_requires_dry_run() -> None:
     c = PlaybookContainer()
-    tenant = uuid4()
+    tenant = EntityId.generate()
     eng = ("playbook:engineer",)
     created = await c.app.create(CreatePlaybook(tenant, "PB1", "d", "e", eng))
     pid = UUID(created.playbook_id)
@@ -75,7 +76,7 @@ async def test_approve_requires_dry_run() -> None:
 @pytest.mark.asyncio
 async def test_hash_mismatch_rejects_approval() -> None:
     c = PlaybookContainer()
-    tenant = uuid4()
+    tenant = EntityId.generate()
     eng = ("playbook:engineer",)
     created = await c.app.create(CreatePlaybook(tenant, "PB1", "d", "e", eng))
     pid = UUID(created.playbook_id)
@@ -104,7 +105,7 @@ async def test_hash_mismatch_rejects_approval() -> None:
 @pytest.mark.asyncio
 async def test_high_requires_dual_approvers() -> None:
     c = PlaybookContainer()
-    tenant = uuid4()
+    tenant = EntityId.generate()
     eng = ("playbook:engineer",)
     created = await c.app.create(CreatePlaybook(tenant, "PB1", "d", "e", eng))
     pid = UUID(created.playbook_id)

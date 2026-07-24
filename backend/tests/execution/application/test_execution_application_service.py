@@ -100,7 +100,7 @@ async def test_trigger_release_same_operator_rejected(
     op = uuid7()
     await svc.trigger_kill_switch(
         TriggerKillSwitch(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             scope=KillSwitchScope.ENGAGEMENT.value,
             scope_ref=engagement_id.value,
             authority_operator_id=op,
@@ -111,7 +111,7 @@ async def test_trigger_release_same_operator_rejected(
     with pytest.raises(ApplicationAuthorizationError):
         await svc.release_kill_switch(
             ReleaseKillSwitch(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 scope=KillSwitchScope.ENGAGEMENT.value,
                 scope_ref=engagement_id.value,
                 releasing_operator_id=op,
@@ -128,7 +128,7 @@ async def test_platform_two_party_release(scope_snapshot, tenant_id) -> None:
     legal = uuid7()
     await svc.trigger_kill_switch(
         TriggerKillSwitch(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             scope=KillSwitchScope.PLATFORM_WIDE.value,
             scope_ref=tenant_id.value,
             authority_operator_id=trigger_op,
@@ -139,7 +139,7 @@ async def test_platform_two_party_release(scope_snapshot, tenant_id) -> None:
     with pytest.raises(ApplicationAuthorizationError):
         await svc.release_kill_switch(
             ReleaseKillSwitch(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 scope=KillSwitchScope.PLATFORM_WIDE.value,
                 scope_ref=tenant_id.value,
                 releasing_operator_id=ciso,
@@ -148,7 +148,7 @@ async def test_platform_two_party_release(scope_snapshot, tenant_id) -> None:
         )
     dto = await svc.release_kill_switch(
         ReleaseKillSwitch(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             scope=KillSwitchScope.PLATFORM_WIDE.value,
             scope_ref=tenant_id.value,
             releasing_operator_id=ciso,
@@ -167,7 +167,7 @@ async def test_authorize_blocked_when_kill_switched(
     svc, _, _, _ = _build_service(scope_snapshot=scope_snapshot)
     await svc.trigger_kill_switch(
         TriggerKillSwitch(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             scope=KillSwitchScope.ENGAGEMENT.value,
             scope_ref=engagement_id.value,
             authority_operator_id=uuid7(),
@@ -178,7 +178,7 @@ async def test_authorize_blocked_when_kill_switched(
     with pytest.raises(ApplicationAuthorizationError) as exc:
         await svc.authorize_and_start_attack_action(
             AuthorizeAndStartAttackAction(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 engagement_id=engagement_id.value,
                 operation_id=uuid7(),
                 step_id=uuid7(),
@@ -218,7 +218,7 @@ async def test_scope_violation_journals_entry(
     with pytest.raises(ApplicationAuthorizationError):
         await svc.authorize_and_start_attack_action(
             AuthorizeAndStartAttackAction(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 engagement_id=engagement_id.value,
                 operation_id=uuid7(),
                 step_id=uuid7(),
@@ -261,7 +261,7 @@ async def test_rate_limit_throttle_journals(
     with pytest.raises(ApplicationAuthorizationError):
         await svc.authorize_and_start_attack_action(
             AuthorizeAndStartAttackAction(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 engagement_id=engagement_id.value,
                 operation_id=uuid7(),
                 step_id=uuid7(),
@@ -288,7 +288,7 @@ async def test_idempotent_authorize(
     svc, _, _, _ = _build_service(scope_snapshot=scope_snapshot)
     step_id = uuid7()
     cmd = AuthorizeAndStartAttackAction(
-        tenant_id=tenant_id.value,
+        tenant_id=tenant_id,
         engagement_id=engagement_id.value,
         operation_id=uuid7(),
         step_id=step_id,
@@ -318,11 +318,11 @@ async def test_query_journal_integrity_detects_break(
     )
 
     await svc.create_journal(
-        CreateJournal(tenant_id=tenant_id.value, engagement_id=engagement_id.value)
+        CreateJournal(tenant_id=tenant_id, engagement_id=engagement_id.value)
     )
     await svc.append_journal_entry(
         AppendJournalEntry(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             engagement_id=engagement_id.value,
             entry_type=JournalEntryType.ACTION_STARTED.value,
             content="a",
@@ -333,6 +333,6 @@ async def test_query_journal_integrity_detects_break(
     assert journal is not None
     journal.entries[0].content = "BROKEN"
     report = await svc.query_journal_integrity(
-        QueryJournalIntegrity(tenant_id=tenant_id.value, engagement_id=engagement_id.value)
+        QueryJournalIntegrity(tenant_id=tenant_id, engagement_id=engagement_id.value)
     )
     assert report.status == ChainIntegrityStatus.BROKEN.value

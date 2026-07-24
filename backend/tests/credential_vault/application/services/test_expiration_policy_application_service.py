@@ -31,8 +31,8 @@ from credential_vault.domain.exceptions.domain_exceptions import AccessDenied
 from credential_vault.domain.ports.i_permission_port import IPermissionPort
 from credential_vault.domain.value_objects.identifiers import (
     ExpirationPolicyId,
-    TenantId,
 )
+from redforge.shared.identifiers import EntityId
 
 
 @pytest.fixture
@@ -163,8 +163,8 @@ async def test_update_expiration_policy_success(
     mock_uow: AsyncMock,
     mock_event_publisher: AsyncMock,
 ) -> None:
-    tenant_uuid = uuid4()
-    policy = make_expiration_policy(tenant_id=TenantId(tenant_uuid), name="existing")
+    tenant_uuid = EntityId.generate()
+    policy = make_expiration_policy(tenant_id=tenant_uuid, name="existing")
     mock_uow.expiration_policies.get_by_id.return_value = policy
     cmd = UpdateExpirationPolicyCommand(
         tenant_id=tenant_uuid,
@@ -194,7 +194,7 @@ async def test_update_expiration_policy_access_denied(
 ) -> None:
     mock_permission_port.has_permission.return_value = False
     cmd = UpdateExpirationPolicyCommand(
-        tenant_id=uuid4(),
+        tenant_id=EntityId.generate(),
         policy_id=uuid4(),
         principal_id=uuid4(),
         ttl_days=90,
@@ -213,7 +213,7 @@ async def test_update_expiration_policy_validation_failure_warn_ge_ttl(
     mock_uow: AsyncMock,
 ) -> None:
     cmd = UpdateExpirationPolicyCommand(
-        tenant_id=uuid4(),
+        tenant_id=EntityId.generate(),
         policy_id=uuid4(),
         principal_id=uuid4(),
         ttl_days=7,
@@ -233,8 +233,8 @@ async def test_update_expiration_policy_publish_failure_nonfatal(
     mock_uow: AsyncMock,
     mock_event_publisher: AsyncMock,
 ) -> None:
-    tenant_uuid = uuid4()
-    policy = make_expiration_policy(tenant_id=TenantId(tenant_uuid))
+    tenant_uuid = EntityId.generate()
+    policy = make_expiration_policy(tenant_id=tenant_uuid)
     mock_uow.expiration_policies.get_by_id.return_value = policy
     mock_event_publisher.publish_batch.side_effect = RuntimeError("broker down")
     cmd = UpdateExpirationPolicyCommand(
@@ -260,8 +260,8 @@ async def test_delete_expiration_policy_success(
     mock_uow: AsyncMock,
     mock_event_publisher: AsyncMock,
 ) -> None:
-    tenant_uuid = uuid4()
-    policy = make_expiration_policy(tenant_id=TenantId(tenant_uuid))
+    tenant_uuid = EntityId.generate()
+    policy = make_expiration_policy(tenant_id=tenant_uuid)
     mock_uow.expiration_policies.get_by_id.return_value = policy
     cmd = DeleteExpirationPolicyCommand(
         tenant_id=tenant_uuid,
@@ -273,11 +273,11 @@ async def test_delete_expiration_policy_success(
 
     mock_uow.expiration_policies.get_by_id.assert_awaited_once_with(
         ExpirationPolicyId(policy.policy_id.value),
-        TenantId(tenant_uuid),
+        tenant_uuid,
     )
     mock_uow.expiration_policies.delete.assert_awaited_once_with(
         ExpirationPolicyId(policy.policy_id.value),
-        TenantId(tenant_uuid),
+        tenant_uuid,
     )
     mock_uow.commit.assert_awaited_once()
     events = mock_event_publisher.publish_batch.await_args.args[0]
@@ -292,7 +292,7 @@ async def test_delete_expiration_policy_access_denied(
 ) -> None:
     mock_permission_port.has_permission.return_value = False
     cmd = DeleteExpirationPolicyCommand(
-        tenant_id=uuid4(),
+        tenant_id=EntityId.generate(),
         policy_id=uuid4(),
         principal_id=uuid4(),
     )
@@ -326,8 +326,8 @@ async def test_delete_expiration_policy_publish_failure_nonfatal(
     mock_uow: AsyncMock,
     mock_event_publisher: AsyncMock,
 ) -> None:
-    tenant_uuid = uuid4()
-    policy = make_expiration_policy(tenant_id=TenantId(tenant_uuid))
+    tenant_uuid = EntityId.generate()
+    policy = make_expiration_policy(tenant_id=tenant_uuid)
     mock_uow.expiration_policies.get_by_id.return_value = policy
     mock_event_publisher.publish_batch.side_effect = RuntimeError("broker down")
     cmd = DeleteExpirationPolicyCommand(
@@ -349,8 +349,8 @@ async def test_get_expiration_policy_success(
     service: ExpirationPolicyApplicationService,
     mock_uow: AsyncMock,
 ) -> None:
-    tenant_uuid = uuid4()
-    policy = make_expiration_policy(tenant_id=TenantId(tenant_uuid), name="lookup")
+    tenant_uuid = EntityId.generate()
+    policy = make_expiration_policy(tenant_id=tenant_uuid, name="lookup")
     mock_uow.expiration_policies.get_by_id.return_value = policy
     qry = GetExpirationPolicyQuery(
         tenant_id=tenant_uuid,
@@ -373,7 +373,7 @@ async def test_get_expiration_policy_access_denied(
 ) -> None:
     mock_permission_port.has_permission.return_value = False
     qry = GetExpirationPolicyQuery(
-        tenant_id=uuid4(),
+        tenant_id=EntityId.generate(),
         policy_id=uuid4(),
         principal_id=uuid4(),
     )
@@ -391,10 +391,10 @@ async def test_list_expiration_policies_success(
     service: ExpirationPolicyApplicationService,
     mock_uow: AsyncMock,
 ) -> None:
-    tenant_uuid = uuid4()
+    tenant_uuid = EntityId.generate()
     policies = [
-        make_expiration_policy(tenant_id=TenantId(tenant_uuid), name="a"),
-        make_expiration_policy(tenant_id=TenantId(tenant_uuid), name="b"),
+        make_expiration_policy(tenant_id=tenant_uuid, name="a"),
+        make_expiration_policy(tenant_id=tenant_uuid, name="b"),
     ]
     mock_uow.expiration_policies.list_by_tenant.return_value = policies
     qry = ListExpirationPoliciesQuery(tenant_id=tenant_uuid, principal_id=uuid4())
@@ -403,7 +403,7 @@ async def test_list_expiration_policies_success(
 
     assert len(result) == 2
     assert {dto.name for dto in result} == {"a", "b"}
-    mock_uow.expiration_policies.list_by_tenant.assert_awaited_once_with(TenantId(tenant_uuid))
+    mock_uow.expiration_policies.list_by_tenant.assert_awaited_once_with(tenant_uuid)
     mock_uow.commit.assert_not_called()
 
 
@@ -413,7 +413,7 @@ async def test_list_expiration_policies_access_denied(
     mock_permission_port: AsyncMock,
 ) -> None:
     mock_permission_port.has_permission.return_value = False
-    qry = ListExpirationPoliciesQuery(tenant_id=uuid4(), principal_id=uuid4())
+    qry = ListExpirationPoliciesQuery(tenant_id=EntityId.generate(), principal_id=uuid4())
 
     with pytest.raises(AccessDenied):
         await service.list_expiration_policies(qry)

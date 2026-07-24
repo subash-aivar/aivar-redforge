@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from uuid import uuid4
 
 import pytest
 
@@ -22,7 +21,7 @@ from scenario.domain.value_objects.scenario_vos import (
 
 @pytest.fixture
 def tenant_id() -> TenantId:
-    return TenantId(uuid4())
+    return TenantId.generate()
 
 
 @pytest.fixture

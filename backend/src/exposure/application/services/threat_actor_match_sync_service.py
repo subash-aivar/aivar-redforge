@@ -38,7 +38,7 @@ class ThreatActorMatchSyncService:
     async def apply_targeting_event(
         self,
         *,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         event_id: str,
         threat_actor_ref: str,
         targeted_cve_ids: list[str],
@@ -49,7 +49,7 @@ class ThreatActorMatchSyncService:
     ) -> int:
         """Primary path: ThreatActorAssetClassTargetingUpdated."""
         del confidence
-        tenant = TenantId(tenant_id)
+        tenant = tenant_id
         now = datetime.now(UTC)
         async with self._uow_factory() as uow:
             if await uow.processed_signals.already_processed(tenant, event_id):
@@ -77,9 +77,9 @@ class ThreatActorMatchSyncService:
             await uow.commit()
             return attached
 
-    async def poll_and_refresh(self, tenant_id: UUID) -> dict[str, object]:
+    async def poll_and_refresh(self, tenant_id: TenantId) -> dict[str, object]:
         """Fallback path: daily poll via IThreatIntelligenceQueryPort."""
-        tenant = TenantId(tenant_id)
+        tenant = tenant_id
         now = datetime.now(UTC)
         async with self._uow_factory() as uow:
             cache = await self._cache_repo.load(tenant)
@@ -129,15 +129,15 @@ class ThreatActorMatchSyncService:
                 "match_count": len(result.matches),
             }
 
-    async def bootstrap_if_cold(self, tenant_id: UUID) -> dict[str, object]:
-        tenant = TenantId(tenant_id)
+    async def bootstrap_if_cold(self, tenant_id: TenantId) -> dict[str, object]:
+        tenant = tenant_id
         cache = await self._cache_repo.load(tenant)
         if cache.last_event_update_at is None and cache.last_poll_update_at is None:
             return await self.poll_and_refresh(tenant_id)
         return {"ok": True, "is_stale": cache.is_stale(), "attached": 0, "cold": False}
 
-    async def get_cache(self, tenant_id: UUID) -> dict[str, object]:
-        tenant = TenantId(tenant_id)
+    async def get_cache(self, tenant_id: TenantId) -> dict[str, object]:
+        tenant = tenant_id
         cache = await self._cache_repo.load(tenant)
         return cache.to_dict()
 

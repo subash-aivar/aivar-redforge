@@ -4,8 +4,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from exposure_reporting.domain.value_objects.identifiers import TenantId
+
 if TYPE_CHECKING:
-    from uuid import UUID
 
     from exposure_reporting.application.services.dashboard_query_service import (
         DashboardQueryService,
@@ -19,7 +20,7 @@ class ExposureScoreComputedSubscriber:
         self._dashboard = dashboard
 
     async def on_exposure_score_computed(
-        self, *, tenant_id: UUID, actor_roles: tuple[str, ...] = ("exposure:admin",)
+        self, *, tenant_id: TenantId, actor_roles: tuple[str, ...] = ("exposure:admin",)
     ) -> dict[str, object]:
         dash = await self._dashboard.get_dashboard(tenant_id, actor_roles)
         return {

@@ -6,6 +6,7 @@ from uuid import UUID
 
 from automated_action.application.commands.automation_commands import TriggerPlaybookExecution
 from automated_action.domain.value_objects.enums import ActionRecordStatus, ExecutionStatus
+from automated_action.domain.value_objects.identifiers import TenantId
 
 
 class PlaybookTriggerWorker:
@@ -15,7 +16,7 @@ class PlaybookTriggerWorker:
 
     async def handle(
         self,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         playbook_id: UUID,
         version_number: int,
         source_context: str,
@@ -44,7 +45,7 @@ class PlaybookExecutionWorker:
         self._app = app
         self.processed = 0
 
-    async def process(self, tenant_id: UUID, execution_id: UUID) -> Any:
+    async def process(self, tenant_id: TenantId, execution_id: UUID) -> Any:
         self.processed += 1
         return await self._app.run_pending_step_loop(tenant_id, execution_id)
 
@@ -54,18 +55,17 @@ class EscalationTimeoutWorker:
         self._executions = executions
         self.expired = 0
 
-    async def tick(self, tenant_id: UUID) -> int:
-        from automated_action.domain.value_objects.identifiers import TenantId
+    async def tick(self, tenant_id: TenantId) -> int:
 
         rows = await self._executions.find_by_status(
-            TenantId(tenant_id), ExecutionStatus.AWAITING_AUTHORIZATION, 100
+            tenant_id, ExecutionStatus.AWAITING_AUTHORIZATION, 100
         )
         now = datetime.now(UTC)
         count = 0
         for ex in rows:
             if ex.escalation_request and ex.escalation_request.expires_at < now:
                 ex.expire_escalation()
-                await self._executions.save(ex, TenantId(tenant_id))
+                await self._executions.save(ex, tenant_id)
                 count += 1
         self.expired += count
         return count
@@ -162,11 +162,10 @@ class ExecutionScheduler:
         self.execution_worker = execution_worker
         self._executions = executions
 
-    async def tick(self, tenant_id: UUID) -> int:
-        from automated_action.domain.value_objects.identifiers import TenantId
+    async def tick(self, tenant_id: TenantId) -> int:
 
         pending = await self._executions.find_by_status(
-            TenantId(tenant_id), ExecutionStatus.PENDING, 50
+            tenant_id, ExecutionStatus.PENDING, 50
         )
         for ex in pending:
             await self.execution_worker.process(tenant_id, ex.execution_id.value)
@@ -190,7 +189,7 @@ class AutomationScheduler:
         self.recovery_worker = recovery_worker
         self.metrics_worker = metrics_worker
 
-    async def tick_all(self, tenant_id: UUID) -> dict[str, int]:
+    async def tick_all(self, tenant_id: TenantId) -> dict[str, int]:
         pending = await self.execution_scheduler.tick(tenant_id)
         expired = await self.escalation_worker.tick(tenant_id)
         recovered = await self.outbox_worker.tick()

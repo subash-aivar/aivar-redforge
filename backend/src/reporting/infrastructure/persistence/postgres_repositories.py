@@ -73,7 +73,7 @@ def _row_to_template(row: ReportTemplateModel) -> ReportTemplate:
         sections=list(row.sections_json),
         version=row.version,
         created_at=row.created_at,
-        tenant_id=TenantId(row.tenant_id) if row.tenant_id else None,
+        tenant_id=TenantId.from_uuid(row.tenant_id) if row.tenant_id else None,
     )
 
 
@@ -152,7 +152,7 @@ def _row_to_schedule(row: ScheduledReportModel) -> ScheduledReport:
         raise ValueError(f"scheduled_reports row {row.id} has no next_run_at")
     return ScheduledReport(
         schedule_id=ScheduledReportId(row.id),
-        tenant_id=TenantId(row.tenant_id),
+        tenant_id=TenantId.from_uuid(row.tenant_id),
         template_id=ReportTemplateId(row.template_id),
         schedule_cron=row.schedule_cron,
         cadence_minutes=cadence_minutes,
@@ -249,7 +249,7 @@ def _row_to_instance(row: ReportInstanceModel) -> ReportInstance:
     completed_at_raw = artifact.get("completed_at")
     return ReportInstance(
         instance_id=ReportInstanceId(row.id),
-        tenant_id=TenantId(row.tenant_id),
+        tenant_id=TenantId.from_uuid(row.tenant_id),
         template_id=ReportTemplateId(row.template_id),
         report_type=ReportType(row.report_type),
         status=ReportStatus(row.status),

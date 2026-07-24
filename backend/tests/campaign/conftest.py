@@ -56,14 +56,14 @@ def now() -> datetime:
 
 @pytest.fixture
 def tenant_id() -> TenantId:
-    return TenantId(uuid4())
+    return TenantId.generate()
 
 
 @pytest.fixture
 def engagement_ref(tenant_id: TenantId) -> EngagementRef:
     return EngagementRef(
         engagement_id=uuid4(),
-        tenant_id=tenant_id.value,
+        tenant_id=tenant_id,
     )
 
 
@@ -98,7 +98,7 @@ def make_campaign(
     pop_events: bool = False,
 ) -> Campaign:
     if engagement_ref is None:
-        engagement_ref = EngagementRef(engagement_id=uuid4(), tenant_id=tenant_id.value)
+        engagement_ref = EngagementRef(engagement_id=uuid4(), tenant_id=tenant_id)
     campaign = Campaign.create(
         campaign_id=CampaignId.generate(),
         tenant_id=tenant_id,

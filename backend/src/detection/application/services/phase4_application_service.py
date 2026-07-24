@@ -64,7 +64,6 @@ from detection.domain.value_objects.identifiers import (
     DetectionEvidenceId,
     DetectionExceptionId,
     DetectionPackId,
-    TenantId,
 )
 from detection.domain.value_objects.pack import (
     ComplianceFrameworkRef,
@@ -170,7 +169,7 @@ class PackExceptionEvidenceApplicationService:
         validate_str(cmd.pack_key, "pack_key", max_len=128)
         validate_str(cmd.title, "title", max_len=512)
         validate_str(cmd.maintainer, "maintainer", max_len=256)
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         now = datetime.now(UTC)
         try:
             category = PackCategory(cmd.category)
@@ -214,7 +213,7 @@ class PackExceptionEvidenceApplicationService:
     ) -> DetectionPackDTO:
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_uuid(cmd.pack_id, "pack_id")
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         now = datetime.now(UTC)
         async with self._uow_factory() as uow:
             pack = await uow.detection_packs.find_by_id(
@@ -237,7 +236,7 @@ class PackExceptionEvidenceApplicationService:
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_uuid(cmd.pack_id, "pack_id")
         validate_str(cmd.subscriber_tenant_id, "subscriber_tenant_id", max_len=64)
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         now = datetime.now(UTC)
         async with self._uow_factory() as uow:
             pack = await uow.detection_packs.find_by_id(
@@ -264,7 +263,7 @@ class PackExceptionEvidenceApplicationService:
         validate_uuid(tenant_uuid, "tenant_id")
         limit = validate_limit(limit)
         offset = validate_offset(offset)
-        tenant_id = TenantId(tenant_uuid)
+        tenant_id = tenant_uuid
         async with self._uow_factory() as uow:
             items = await uow.detection_packs.list_by_tenant(
                 tenant_id, limit=limit, offset=offset
@@ -282,7 +281,7 @@ class PackExceptionEvidenceApplicationService:
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_str(cmd.justification, "justification", max_len=8192)
         validate_str(cmd.requester, "requester", max_len=256)
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         now = datetime.now(UTC)
         try:
             etype = ExceptionType(cmd.exception_type)
@@ -398,7 +397,7 @@ class PackExceptionEvidenceApplicationService:
     ) -> DetectionExceptionDTO:
         validate_uuid(tenant_uuid, "tenant_id")
         validate_uuid(exception_uuid, "exception_id")
-        tenant_id = TenantId(tenant_uuid)
+        tenant_id = tenant_uuid
         now = datetime.now(UTC)
         async with self._uow_factory() as uow:
             exc = await uow.detection_exceptions.find_by_id(
@@ -428,7 +427,7 @@ class PackExceptionEvidenceApplicationService:
         validate_uuid(tenant_uuid, "tenant_id")
         limit = validate_limit(limit)
         offset = validate_offset(offset)
-        tenant_id = TenantId(tenant_uuid)
+        tenant_id = tenant_uuid
         async with self._uow_factory() as uow:
             items = await uow.detection_exceptions.list_by_tenant(
                 tenant_id, limit=limit, offset=offset
@@ -445,7 +444,7 @@ class PackExceptionEvidenceApplicationService:
         validate_str(cmd.collected_by, "collected_by", max_len=256)
         if not cmd.payload:
             raise ApplicationValidationError("payload", "required")
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         now = datetime.now(UTC)
         try:
             etype = EvidenceType(cmd.evidence_type)
@@ -489,7 +488,7 @@ class PackExceptionEvidenceApplicationService:
     ) -> DetectionEvidenceDTO:
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_uuid(cmd.evidence_id, "evidence_id")
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         now = datetime.now(UTC)
         async with self._uow_factory() as uow:
             evidence = await uow.detection_evidence.find_by_id(
@@ -520,7 +519,7 @@ class PackExceptionEvidenceApplicationService:
         self, cmd: ComputeDetectionCoverage
     ) -> DetectionCoverageReportDTO:
         validate_uuid(cmd.tenant_id, "tenant_id")
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         now = datetime.now(UTC)
         technique_map: dict[str, list[str]] = {}
 

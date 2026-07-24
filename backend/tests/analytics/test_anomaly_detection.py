@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from uuid import uuid4
 
 from analytics.domain.aggregates.anomaly_detection_baseline import (
     AnomalyDetectionBaseline,
@@ -17,7 +16,7 @@ from analytics.domain.value_objects.identifiers import (
 def _baseline(
     method: DetectionMethod, values: list[float], *, bootstrapped: bool = True
 ) -> AnomalyDetectionBaseline:
-    tenant = TenantId(uuid4())
+    tenant = TenantId.generate()
     baseline = AnomalyDetectionBaseline.create(
         AnomalyDetectionBaselineId.generate(),
         tenant,

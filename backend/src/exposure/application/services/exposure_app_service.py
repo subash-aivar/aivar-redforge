@@ -55,7 +55,7 @@ class ExposureApplicationService:
 
     async def suppress(self, cmd: SuppressExposureRecordCommand) -> ExposureRecordDTO:
         require_at_least(cmd.actor_roles, ExposureRole.ANALYST)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         async with self._uow_factory() as uow:
             record = await uow.records.find_by_id(tenant, ExposureRecordId(cmd.record_id))
@@ -72,7 +72,7 @@ class ExposureApplicationService:
         self, cmd: ConfigureAmplifierWeightsCommand
     ) -> AmplifierWeightConfigurationDTO:
         require_at_least(cmd.actor_roles, ExposureRole.ADMIN)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         async with self._uow_factory() as uow:
             current = await uow.weights.find_current(tenant)
@@ -112,17 +112,17 @@ class ExposureApplicationService:
 
     async def flush_pending(self, cmd: FlushPendingRecomputationsCommand) -> list[str]:
         require_at_least(cmd.actor_roles, ExposureRole.ADMIN)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         async with self._uow_factory() as uow:
             flushed = await uow.pending.flush_tenant(tenant)
             await uow.commit()
             return [str(a) for a in flushed]
 
     async def get_record(
-        self, tenant_id: UUID, record_id: UUID, actor_roles: tuple[str, ...]
+        self, tenant_id: TenantId, record_id: UUID, actor_roles: tuple[str, ...]
     ) -> ExposureRecordDTO:
         require_at_least(actor_roles, ExposureRole.VIEWER)
-        tenant = TenantId(tenant_id)
+        tenant = tenant_id
         async with self._uow_factory() as uow:
             record = await uow.records.find_by_id(tenant, ExposureRecordId(record_id))
             if record is None:
@@ -131,14 +131,14 @@ class ExposureApplicationService:
 
     async def list_by_asset(
         self,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         asset_ref_id: UUID,
         actor_roles: tuple[str, ...],
         *,
         status_filter: str | None = None,
     ) -> list[ExposureRecordDTO]:
         require_at_least(actor_roles, ExposureRole.VIEWER)
-        tenant = TenantId(tenant_id)
+        tenant = tenant_id
         async with self._uow_factory() as uow:
             records = await uow.records.find_by_asset(tenant, AssetRef(asset_ref_id))
             if status_filter:
@@ -147,10 +147,10 @@ class ExposureApplicationService:
             return [to_record_dto(r) for r in records]
 
     async def get_latest_score(
-        self, tenant_id: UUID, asset_ref_id: UUID, actor_roles: tuple[str, ...]
+        self, tenant_id: TenantId, asset_ref_id: UUID, actor_roles: tuple[str, ...]
     ) -> ExposureScoreDTO | None:
         require_at_least(actor_roles, ExposureRole.VIEWER)
-        tenant = TenantId(tenant_id)
+        tenant = tenant_id
         async with self._uow_factory() as uow:
             snapshot = await uow.snapshots.find_latest_by_asset(tenant, asset_ref_id)
             if snapshot is None:
@@ -161,10 +161,10 @@ class ExposureApplicationService:
             return to_score_dto(snapshot, pending_update=pending_update)
 
     async def get_weights(
-        self, tenant_id: UUID, actor_roles: tuple[str, ...]
+        self, tenant_id: TenantId, actor_roles: tuple[str, ...]
     ) -> AmplifierWeightConfigurationDTO:
         require_at_least(actor_roles, ExposureRole.VIEWER)
-        tenant = TenantId(tenant_id)
+        tenant = tenant_id
         now = datetime.now(UTC)
         async with self._uow_factory() as uow:
             cfg = await uow.weights.find_current(tenant)
@@ -177,10 +177,10 @@ class ExposureApplicationService:
             return to_weights_dto(cfg)
 
     async def get_profile(
-        self, tenant_id: UUID, actor_roles: tuple[str, ...]
+        self, tenant_id: TenantId, actor_roles: tuple[str, ...]
     ) -> TenantExposureProfileDTO:
         require_at_least(actor_roles, ExposureRole.VIEWER)
-        tenant = TenantId(tenant_id)
+        tenant = tenant_id
         async with self._uow_factory() as uow:
             profile = await uow.profiles.load(tenant)
             return to_profile_dto(profile)

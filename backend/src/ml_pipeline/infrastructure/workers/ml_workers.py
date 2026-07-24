@@ -4,6 +4,7 @@ from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
 from ml_pipeline.application.commands.ml_commands import ScheduleMLModelTrainingCommand
+from ml_pipeline.domain.value_objects.identifiers import TenantId
 
 if TYPE_CHECKING:
     from uuid import UUID
@@ -22,7 +23,7 @@ class MLTrainingWorker:
         self,
         *,
         job_id: str,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         model_type: str,
         dataset_id: str | None = None,
         training_rows: tuple[dict[str, object], ...] = (),
@@ -51,7 +52,7 @@ class MLInferenceWorker:
     async def run(
         self,
         *,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         model_type: str,
         assets: list[dict[str, Any]],
     ) -> dict[str, Any]:
@@ -63,7 +64,7 @@ class DriftCheckWorker:
         self._app = app
 
     async def run_for_model(
-        self, tenant_id: UUID, model_id: UUID, actual: list[float]
+        self, tenant_id: TenantId, model_id: UUID, actual: list[float]
     ) -> dict[str, Any]:
         return await self._app.check_drift(tenant_id, model_id, actual)
 

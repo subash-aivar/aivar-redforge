@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from uuid import UUID, uuid4
+from uuid import UUID
 
 import pytest
 
@@ -18,12 +18,13 @@ from autonomous_intelligence.domain.exceptions.domain_exceptions import (
     InvalidSuggestionTransition,
 )
 from autonomous_intelligence.infrastructure.container import AutonomousIntelligenceContainer
+from redforge.shared.identifiers import EntityId
 
 
 @pytest.mark.asyncio
 async def test_suggestion_lifecycle_approve_apply() -> None:
     c = AutonomousIntelligenceContainer()
-    tenant = uuid4()
+    tenant = EntityId.generate()
     roles_sys = ("system",)
     created = await c.app.create_suggestion(
         CreateIntelligenceSuggestion(
@@ -58,7 +59,7 @@ async def test_confidence_gate() -> None:
     with pytest.raises(ConfidenceThresholdNotMet):
         await c.app.create_suggestion(
             CreateIntelligenceSuggestion(
-                uuid4(),
+                EntityId.generate(),
                 "detection",
                 None,
                 "detection_rule_tuning",
@@ -76,7 +77,7 @@ async def test_confidence_gate() -> None:
 @pytest.mark.asyncio
 async def test_reject_and_invalid_transition() -> None:
     c = AutonomousIntelligenceContainer()
-    tenant = uuid4()
+    tenant = EntityId.generate()
     created = await c.app.create_suggestion(
         CreateIntelligenceSuggestion(
             tenant,
@@ -101,7 +102,7 @@ async def test_reject_and_invalid_transition() -> None:
 @pytest.mark.asyncio
 async def test_model_deploy_threshold() -> None:
     c = AutonomousIntelligenceContainer()
-    tenant = uuid4()
+    tenant = EntityId.generate()
     roles = ("ai:ml_engineer",)
     await c.app.train_model(
         TrainOptimizationModel(tenant, "detection_rule_tuning", "m-det", 1, roles)

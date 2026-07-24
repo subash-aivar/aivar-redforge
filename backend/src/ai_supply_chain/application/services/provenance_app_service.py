@@ -82,7 +82,7 @@ class ProvenanceApplicationService:
 
     async def record(self, cmd: RecordModelProvenanceCommand) -> ModelProvenanceDTO:
         require_at_least(cmd.actor_roles, AIPostureRole.ENGINEER)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         try:
             origin = ModelOrigin(cmd.model_origin)
@@ -115,7 +115,7 @@ class ProvenanceApplicationService:
 
     async def verify(self, cmd: VerifyModelProvenanceCommand) -> ModelProvenanceDTO:
         require_at_least(cmd.actor_roles, AIPostureRole.ENGINEER)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         sig = None
         if cmd.signature_provider and cmd.signature_location and cmd.signing_key_fingerprint:
@@ -153,7 +153,7 @@ class ProvenanceApplicationService:
 
     async def manual_reset(self, cmd: ManualResetVerificationCommand) -> ModelProvenanceDTO:
         require_at_least(cmd.actor_roles, AIPostureRole.ENGINEER)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         async with self._uow_factory() as uow:
             prov = await uow.provenances.find_by_id(ModelProvenanceId(cmd.provenance_id), tenant)
@@ -166,7 +166,7 @@ class ProvenanceApplicationService:
 
     async def set_threshold(self, cmd: SetVerificationThresholdCommand) -> dict[str, int]:
         require_at_least(cmd.actor_roles, AIPostureRole.ADMIN)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         async with self._uow_factory() as uow:
             settings = await uow.settings.get(tenant)
             from ai_supply_chain.domain.policies.verification_tier_policy import (
@@ -179,17 +179,17 @@ class ProvenanceApplicationService:
             await uow.commit()
         return {"size_threshold_bytes": cmd.size_threshold_bytes}
 
-    async def get(self, tenant_id: UUID, provenance_id: UUID) -> ModelProvenanceDTO:
-        tenant = TenantId(tenant_id)
+    async def get(self, tenant_id: TenantId, provenance_id: UUID) -> ModelProvenanceDTO:
+        tenant = tenant_id
         async with self._uow_factory() as uow:
             prov = await uow.provenances.find_by_id(ModelProvenanceId(provenance_id), tenant)
             if prov is None:
                 raise ApplicationNotFoundError("ModelProvenance", str(provenance_id))
         return _to_dto(prov)
 
-    async def get_integrity_for_asset(self, tenant_id: UUID, asset_id: UUID) -> str | None:
+    async def get_integrity_for_asset(self, tenant_id: TenantId, asset_id: UUID) -> str | None:
         """Query used by ai_posture ACL for risk scoring."""
-        tenant = TenantId(tenant_id)
+        tenant = tenant_id
         async with self._uow_factory() as uow:
             prov = await uow.provenances.find_by_asset(AISystemAssetId(asset_id), tenant)
         return None if prov is None else prov.integrity_status.value

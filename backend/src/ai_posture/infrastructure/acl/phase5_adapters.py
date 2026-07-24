@@ -87,7 +87,7 @@ class StubProvenanceIntegrityAdapter(IProvenanceIntegrityQueryPort):
 
     def seed(
         self,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         asset_id: UUID,
         status: str,
         *,
@@ -121,12 +121,12 @@ class StubAgentDeviationStatsAdapter(IAgentDeviationStatsPort):
         self.deviations: dict[str, list[dict[str, str]]] = {}
         self.audits: dict[tuple[str, str], list[dict[str, str]]] = {}
 
-    def seed_envelope(self, tenant_id: UUID, asset_id: UUID) -> None:
+    def seed_envelope(self, tenant_id: TenantId, asset_id: UUID) -> None:
         self.envelopes.add((str(tenant_id), str(asset_id)))
 
     def seed_deviation(
         self,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         *,
         asset_id: UUID,
         deviation_id: str,
@@ -149,7 +149,7 @@ class StubAgentDeviationStatsAdapter(IAgentDeviationStatsPort):
         )
 
     def seed_approval_history(
-        self, tenant_id: UUID, envelope_id: UUID, history: list[dict[str, str]]
+        self, tenant_id: TenantId, envelope_id: UUID, history: list[dict[str, str]]
     ) -> None:
         self.audits[(str(tenant_id), str(envelope_id))] = list(history)
 
@@ -177,7 +177,7 @@ class StubDiscoveryScanFactsAdapter(IDiscoveryScanFactsPort):
 
     def seed(
         self,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         *,
         sources: list[str],
         partial: bool = False,

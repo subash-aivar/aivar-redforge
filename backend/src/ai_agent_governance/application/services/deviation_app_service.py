@@ -72,7 +72,7 @@ class DeviationApplicationService:
 
     async def report_action(self, cmd: ReportAgentActionCommand) -> ReportActionResultDTO:
         require_at_least(cmd.actor_roles, AIPostureRole.ENGINEER)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         async with self._uow_factory() as uow:
             first = await uow.deviations.record_idempotent_action(
@@ -113,7 +113,7 @@ class DeviationApplicationService:
 
     async def review(self, cmd: ReviewDeviationCommand) -> DeviationDTO:
         require_at_least(cmd.actor_roles, AIPostureRole.ANALYST)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         async with self._uow_factory() as uow:
             deviation = await uow.deviations.find_by_id(
@@ -140,10 +140,10 @@ class DeviationApplicationService:
         return _dev_dto(deviation)
 
     async def recent_deviation_count(
-        self, tenant_id: UUID, asset_id: UUID, *, limit: int = 100
+        self, tenant_id: TenantId, asset_id: UUID, *, limit: int = 100
     ) -> int:
         """Used by ai_posture ACL for agent risk component."""
-        tenant = TenantId(tenant_id)
+        tenant = tenant_id
         async with self._uow_factory() as uow:
             items = await uow.deviations.find_by_asset(AISystemAssetId(asset_id), tenant, limit)
         return len(items)

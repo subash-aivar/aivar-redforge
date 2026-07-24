@@ -89,7 +89,7 @@ class PayloadResponse(BaseModel):
     def from_dto(cls, dto: PayloadDTO) -> PayloadResponse:
         return cls(
             payload_id=dto.payload_id,
-            tenant_id=dto.tenant_id,
+            tenant_id=str(dto.tenant_id),
             payload_key=dto.payload_key,
             payload_type=dto.payload_type,
             impact_ceiling=dto.impact_ceiling,
@@ -135,7 +135,7 @@ class PluginResponse(BaseModel):
     def from_dto(cls, dto: PluginDTO) -> PluginResponse:
         return cls(
             plugin_id=dto.plugin_id,
-            tenant_id=dto.tenant_id,
+            tenant_id=str(dto.tenant_id),
             name=dto.name,
             plugin_type=dto.plugin_type,
             plugin_version=dto.plugin_version,

@@ -23,7 +23,7 @@ from campaignexecution.domain.value_objects.identifiers import (
 
 @pytest.fixture()
 def tenant_id() -> TenantId:
-    return TenantId(uuid4())
+    return TenantId.generate()
 
 
 @pytest.fixture()
@@ -46,7 +46,7 @@ def campaign_instance_ref(tenant_id: TenantId) -> CampaignInstanceRef:
     return CampaignInstanceRef(
         instance_id=uuid4(),
         campaign_id=uuid4(),
-        tenant_id=tenant_id.value,
+        tenant_id=tenant_id,
     )
 
 
@@ -57,7 +57,7 @@ def graph_version_ref() -> TaskGraphVersionRef:
 
 @pytest.fixture()
 def engagement_ref(tenant_id: TenantId) -> EngagementRef:
-    return EngagementRef(engagement_id=uuid4(), tenant_id=tenant_id.value)
+    return EngagementRef(engagement_id=uuid4(), tenant_id=tenant_id)
 
 
 @pytest.fixture()

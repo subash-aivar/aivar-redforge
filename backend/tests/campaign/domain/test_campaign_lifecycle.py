@@ -72,7 +72,7 @@ class TestCampaignCreation:
                     blast_radius_ceiling="Probe",
                 ),
                 approval_policy=ApprovalPolicy(required_approver_count=1),
-                engagement_ref=EngagementRef(engagement_id=uuid4(), tenant_id=tenant_id.value),
+                engagement_ref=EngagementRef(engagement_id=uuid4(), tenant_id=tenant_id),
                 now=now,
             )
 
@@ -345,7 +345,7 @@ class TestCampaignExecution:
 class TestTenantIsolation:
     def test_wrong_tenant_raises(self, tenant_id, now) -> None:
         campaign = make_campaign(tenant_id=tenant_id, now=now, pop_events=True)
-        other_tenant = TenantId(uuid4())
+        other_tenant = TenantId.generate()
         with pytest.raises(TenantMismatch):
             add_target_rule(campaign, other_tenant, now)
 
@@ -353,7 +353,7 @@ class TestTenantIsolation:
         campaign = make_campaign(tenant_id=tenant_id, now=now, pop_events=True)
         add_target_rule(campaign, tenant_id, now)
         campaign.submit_for_approval(tenant_id=tenant_id, now=advance(now, minutes=1))
-        other_tenant = TenantId(uuid4())
+        other_tenant = TenantId.generate()
         with pytest.raises(TenantMismatch):
             campaign.grant_approval(
                 tenant_id=other_tenant,

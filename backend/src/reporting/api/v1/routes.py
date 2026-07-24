@@ -29,6 +29,7 @@ from reporting.application.exceptions import (
     ApplicationValidationError,
 )
 from reporting.domain.exceptions.domain_exceptions import ReportingDomainError
+from reporting.domain.value_objects.identifiers import TenantId
 from reporting.infrastructure.container import ReportingContainer
 
 router = APIRouter(prefix="/reporting", tags=["reporting"])
@@ -55,7 +56,7 @@ def _map_error(exc: Exception) -> HTTPException:
 @router.post("/schedules")
 async def create_scheduled_report(
     body: CreateScheduledReportRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: ReportingContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -80,7 +81,7 @@ async def create_scheduled_report(
 @router.post("/reports")
 async def generate_report_on_demand(
     body: GenerateReportOnDemandRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: ReportingContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -102,7 +103,7 @@ async def generate_report_on_demand(
 @router.get("/reports/{instance_id}")
 async def get_report_instance(
     instance_id: UUID,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: ReportingContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -117,7 +118,7 @@ async def list_report_instances(
     template_id: UUID | None = Query(default=None),
     from_dt: datetime | None = Query(default=None, alias="from"),
     to_dt: datetime | None = Query(default=None, alias="to"),
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: ReportingContainer = Depends(get_container),
 ) -> list[dict[str, Any]]:
@@ -154,7 +155,7 @@ async def list_templates(
 async def export_report(
     instance_id: UUID,
     body: ExportReportRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: ReportingContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -171,7 +172,7 @@ async def export_report(
 @router.post("/bi-export")
 async def bi_export(
     body: BIExportRequestBody,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: ReportingContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -190,7 +191,7 @@ async def bi_export(
 
 @router.get("/delivery-audit")
 async def delivery_audit(
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: ReportingContainer = Depends(get_container),
 ) -> list[dict[str, Any]]:

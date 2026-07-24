@@ -4,8 +4,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from exposure_reporting.domain.value_objects.identifiers import TenantId
+
 if TYPE_CHECKING:
-    from uuid import UUID
 
     from exposure_reporting.application.commands.reporting_commands import (
         GenerateExposureReportCommand,
@@ -37,7 +38,7 @@ class ReportingBackgroundWorker:
         return await self._reports.generate(cmd)
 
     async def refresh_dashboard(
-        self, tenant_id: UUID, actor_roles: tuple[str, ...]
+        self, tenant_id: TenantId, actor_roles: tuple[str, ...]
     ) -> dict[str, object]:
         dash = await self._dashboard.get_dashboard(tenant_id, actor_roles)
         return {
@@ -47,6 +48,6 @@ class ReportingBackgroundWorker:
         }
 
     async def rebuild_projections(
-        self, tenant_id: UUID, actor_roles: tuple[str, ...]
+        self, tenant_id: TenantId, actor_roles: tuple[str, ...]
     ) -> dict[str, object]:
         return await self._projections.rebuild_read_models(tenant_id, actor_roles)

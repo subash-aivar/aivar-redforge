@@ -5,17 +5,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from uuid import UUID, uuid7
 
+from redforge.shared.identifiers import EntityId
 
-@dataclass(frozen=True, slots=True)
-class TenantId:
-    value: UUID
-
-    def __str__(self) -> str:
-        return str(self.value)
-
-    @classmethod
-    def generate(cls) -> TenantId:
-        return cls(uuid7())
+# TenantId is the shared platform EntityId (ULID-backed) per ADR-0005.
+# Phase 1 convergence: no local UUID-backed TenantId type.
+TenantId = EntityId
 
 
 @dataclass(frozen=True, slots=True)

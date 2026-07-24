@@ -93,7 +93,7 @@ class ExposureReportGenerationService:
             report_type = ReportType(cmd.report_type)
         except ValueError as exc:
             raise ApplicationValidationError(f"unknown report_type: {cmd.report_type}") from exc
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         snap = await self._exposure.load_snapshot(cmd.tenant_id)
         dominant = compute_dominant_amplifier(dict(snap.amplifier_weight_prevalence))
@@ -260,7 +260,7 @@ class ExposureReportGenerationService:
 
     async def deliver(self, cmd: DeliverExposureReportCommand) -> ExposureReportDTO:
         require_at_least(cmd.actor_roles, ReportingRole.ANALYST)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         report = await self._reports.get(tenant, ExposureReportId(cmd.report_id))
         if report is None:
             raise ApplicationNotFoundError(str(cmd.report_id))
@@ -273,17 +273,17 @@ class ExposureReportGenerationService:
         return _to_dto(report)
 
     async def get(
-        self, tenant_id: UUID, report_id: UUID, actor_roles: tuple[str, ...]
+        self, tenant_id: TenantId, report_id: UUID, actor_roles: tuple[str, ...]
     ) -> ExposureReportDTO:
         require_at_least(actor_roles, ReportingRole.VIEWER)
-        report = await self._reports.get(TenantId(tenant_id), ExposureReportId(report_id))
+        report = await self._reports.get(tenant_id, ExposureReportId(report_id))
         if report is None:
             raise ApplicationNotFoundError(str(report_id))
         return _to_dto(report)
 
     async def list_reports(
         self,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         actor_roles: tuple[str, ...],
         *,
         report_type: str | None = None,
@@ -292,7 +292,7 @@ class ExposureReportGenerationService:
     ) -> list[ExposureReportDTO]:
         require_at_least(actor_roles, ReportingRole.VIEWER)
         rows = await self._reports.list_by_tenant(
-            TenantId(tenant_id),
+            tenant_id,
             report_type=report_type,
             from_dt=from_dt,
             to_dt=to_dt,

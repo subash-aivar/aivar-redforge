@@ -20,6 +20,7 @@ from integration_hub.application.exceptions import (
     ApplicationValidationError,
 )
 from integration_hub.domain.exceptions.domain_exceptions import IntegrationHubDomainError
+from integration_hub.domain.value_objects.identifiers import TenantId
 from integration_hub.infrastructure.container import IntegrationHubContainer
 
 # Namespaced to avoid collision with pre-existing platform /connectors router.
@@ -70,7 +71,7 @@ class DisableBody(BaseModel):
 
 @catalog_router.get("")
 async def list_catalog(
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: IntegrationHubContainer = Depends(get_container),
 ) -> list[dict[str, Any]]:
@@ -120,6 +121,7 @@ async def list_catalog(
                 "callback_urls": p.docs.callback_urls,
                 "firewall_notes": p.docs.firewall_notes,
             },
+            "capabilities": sorted(p.capabilities),
         }
         for p in plugins
     ]
@@ -128,7 +130,7 @@ async def list_catalog(
 @router.get("")
 async def list_connectors(
     status_filter: str | None = None,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: IntegrationHubContainer = Depends(get_container),
 ) -> list[dict[str, Any]]:
@@ -142,7 +144,7 @@ async def list_connectors(
 @router.post("", status_code=201)
 async def register(
     body: RegisterBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: IntegrationHubContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -168,7 +170,7 @@ async def register(
 @router.post("/register-with-credential", status_code=201)
 async def register_with_credential(
     body: RegisterWithCredentialBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: IntegrationHubContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -197,7 +199,7 @@ async def register_with_credential(
 async def disable(
     connector_id: UUID,
     body: DisableBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: IntegrationHubContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -213,7 +215,7 @@ async def disable(
 @router.get("/{connector_id}/health")
 async def health_history(
     connector_id: UUID,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: IntegrationHubContainer = Depends(get_container),
 ) -> list[dict[str, Any]]:
@@ -226,7 +228,7 @@ async def health_history(
 @router.post("/{connector_id}/health-check")
 async def health_check(
     connector_id: UUID,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: IntegrationHubContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -240,7 +242,7 @@ async def health_check(
 @router.post("/{connector_id}/test-connection")
 async def test_connection(
     connector_id: UUID,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: IntegrationHubContainer = Depends(get_container),
 ) -> dict[str, Any]:

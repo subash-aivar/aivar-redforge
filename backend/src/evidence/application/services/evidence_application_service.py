@@ -48,7 +48,6 @@ from evidence.domain.value_objects.identifiers import (
     EvidenceChainId,
     ExecutionEvidenceId,
     OperationRef,
-    TenantId,
 )
 
 if TYPE_CHECKING:
@@ -179,7 +178,7 @@ class EvidenceApplicationService:
         except ValueError as exc:
             raise ApplicationValidationError("retention_class", str(exc)) from exc
 
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
 
         payload_hash = await self._blob_store.hash_payload(cmd.payload)
@@ -225,7 +224,7 @@ class EvidenceApplicationService:
         """Get blob → decrypt → rehash. Never return tampered content."""
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_uuid(cmd.evidence_id, "evidence_id")
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
 
         async with self._uow_factory() as uow:
@@ -296,7 +295,7 @@ class EvidenceApplicationService:
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_uuid(cmd.evidence_id, "evidence_id")
         validate_str(cmd.new_custodian, "new_custodian", 256)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         try:
             action = CustodyAction(cmd.custody_action)
@@ -320,7 +319,7 @@ class EvidenceApplicationService:
     ) -> ExecutionEvidenceDTO:
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_uuid(cmd.evidence_id, "evidence_id")
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
 
         async with self._uow_factory() as uow:
@@ -342,7 +341,7 @@ class EvidenceApplicationService:
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_uuid(cmd.operation_id, "operation_id")
         validate_uuid(cmd.engagement_id, "engagement_id")
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         op_ref = OperationRef(cmd.operation_id)
 
@@ -365,7 +364,7 @@ class EvidenceApplicationService:
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_uuid(cmd.chain_id, "chain_id")
         validate_uuid(cmd.evidence_id, "evidence_id")
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
 
         async with self._uow_factory() as uow:
@@ -391,7 +390,7 @@ class EvidenceApplicationService:
         validate_uuid(cmd.sealer_operator_id, "sealer_operator_id")
         validate_str(cmd.sealer_role, "sealer_role", 128)
         validate_str(cmd.signature, "signature", 4096)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
 
         if cmd.sealer_role != EVIDENCE_SEALER_ROLE:
@@ -423,7 +422,7 @@ class EvidenceApplicationService:
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_uuid(cmd.chain_id, "chain_id")
         validate_str(cmd.destination_ref, "destination_ref", 512)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
 
         async with self._uow_factory() as uow:
@@ -441,7 +440,7 @@ class EvidenceApplicationService:
     ) -> ChainIntegrityReportDTO:
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_uuid(cmd.chain_id, "chain_id")
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
 
         async with self._uow_factory() as uow:
@@ -463,7 +462,7 @@ class EvidenceApplicationService:
     async def get_evidence(self, query: GetEvidence) -> ExecutionEvidenceDTO:
         validate_uuid(query.tenant_id, "tenant_id")
         validate_uuid(query.evidence_id, "evidence_id")
-        tenant = TenantId(query.tenant_id)
+        tenant = query.tenant_id
         async with self._uow_factory() as uow:
             evidence = await uow.evidence.find_by_id(
                 ExecutionEvidenceId(query.evidence_id), tenant
@@ -479,7 +478,7 @@ class EvidenceApplicationService:
         validate_uuid(query.operation_id, "operation_id")
         limit = validate_limit(query.limit)
         offset = validate_offset(query.offset)
-        tenant = TenantId(query.tenant_id)
+        tenant = query.tenant_id
         async with self._uow_factory() as uow:
             items = await uow.evidence.find_by_operation(
                 OperationRef(query.operation_id),
@@ -492,7 +491,7 @@ class EvidenceApplicationService:
     async def get_evidence_chain(self, query: GetEvidenceChain) -> EvidenceChainDTO:
         validate_uuid(query.tenant_id, "tenant_id")
         validate_uuid(query.chain_id, "chain_id")
-        tenant = TenantId(query.tenant_id)
+        tenant = query.tenant_id
         async with self._uow_factory() as uow:
             chain = await uow.chains.find_by_id(EvidenceChainId(query.chain_id), tenant)
             if chain is None:
@@ -504,7 +503,7 @@ class EvidenceApplicationService:
     ) -> EvidenceChainDTO:
         validate_uuid(query.tenant_id, "tenant_id")
         validate_uuid(query.operation_id, "operation_id")
-        tenant = TenantId(query.tenant_id)
+        tenant = query.tenant_id
         async with self._uow_factory() as uow:
             chain = await uow.chains.find_by_operation(
                 OperationRef(query.operation_id), tenant

@@ -3,10 +3,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from uuid import UUID
 
+from autonomous_intelligence.domain.value_objects.identifiers import TenantId
+
 
 @dataclass(frozen=True, slots=True)
 class CreateIntelligenceSuggestion:
-    tenant_id: UUID
+    tenant_id: TenantId
     target_context: str
     target_id: UUID | None
     target_type: str
@@ -22,7 +24,7 @@ class CreateIntelligenceSuggestion:
 
 @dataclass(frozen=True, slots=True)
 class ApproveSuggestion:
-    tenant_id: UUID
+    tenant_id: TenantId
     suggestion_id: UUID
     approved_by: str
     roles: tuple[str, ...]
@@ -30,7 +32,7 @@ class ApproveSuggestion:
 
 @dataclass(frozen=True, slots=True)
 class RejectSuggestion:
-    tenant_id: UUID
+    tenant_id: TenantId
     suggestion_id: UUID
     rejected_by: str
     rejection_reason: str
@@ -39,7 +41,7 @@ class RejectSuggestion:
 
 @dataclass(frozen=True, slots=True)
 class MarkSuggestionApplied:
-    tenant_id: UUID
+    tenant_id: TenantId
     suggestion_id: UUID
     target_context_ref: str
     roles: tuple[str, ...]
@@ -47,7 +49,7 @@ class MarkSuggestionApplied:
 
 @dataclass(frozen=True, slots=True)
 class TrainOptimizationModel:
-    tenant_id: UUID
+    tenant_id: TenantId
     target_type: str
     model_id: str
     model_version: int
@@ -56,7 +58,7 @@ class TrainOptimizationModel:
 
 @dataclass(frozen=True, slots=True)
 class DeployOptimizationModel:
-    tenant_id: UUID
+    tenant_id: TenantId
     model_id: str
     conformity_assessment_ref: str
     accuracy_metrics: dict[str, float]

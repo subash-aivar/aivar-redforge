@@ -17,7 +17,6 @@ from credential_vault.domain.value_objects.audit_types import AuditOperation
 from credential_vault.domain.value_objects.identifiers import (
     CredentialId,
     PrincipalId,
-    TenantId,
 )
 
 if TYPE_CHECKING:
@@ -65,7 +64,7 @@ class AuditQueryService:
         parsed_operations = self._parse_operations(qry.operations)
 
         credential_id = CredentialId(qry.credential_id)
-        tenant_id = TenantId(qry.tenant_id)
+        tenant_id = qry.tenant_id
         principal = PrincipalId(qry.principal_id)
 
         allowed = await self._permission_port.has_permission(

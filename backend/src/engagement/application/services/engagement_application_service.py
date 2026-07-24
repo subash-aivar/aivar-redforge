@@ -43,6 +43,7 @@ from engagement.domain.value_objects.identifiers import (
     TargetAuthorizationId,
     TenantId,
 )
+from redforge.shared.identifiers import EntityId
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -94,6 +95,16 @@ def _as_uuid(field: str, value: object) -> UUID:
         raise ApplicationValidationError(field, f"invalid UUID: {value}") from exc
     validate_uuid(parsed, field)
     return parsed
+
+
+def _as_entity_id(field: str, value: object) -> EntityId:
+    """Coerce a tenant/platform id (ULID-backed EntityId per ADR-0005) from input."""
+    if isinstance(value, EntityId):
+        return value
+    try:
+        return EntityId.from_string(str(value))
+    except ValueError as exc:
+        raise ApplicationValidationError(field, f"invalid EntityId: {value}") from exc
 
 
 def _as_str(field: str, value: str, max_len: int = 512) -> str:
@@ -220,8 +231,8 @@ class EngagementApplicationService:
         except Exception as exc:
             logger.warning("Event publication failed: %s", exc)
 
-    def _tenant(self, value: UUID) -> TenantId:
-        return TenantId(_as_uuid("tenant_id", value))
+    def _tenant(self, value: object) -> TenantId:
+        return _as_entity_id("tenant_id", value)
 
     async def _resolve_targets(
         self,

@@ -47,12 +47,12 @@ def now() -> datetime:
 
 @pytest.fixture
 def tenant_id() -> TenantId:
-    return TenantId(uuid4())
+    return TenantId.generate()
 
 
 @pytest.fixture
 def other_tenant_id() -> TenantId:
-    return TenantId(uuid4())
+    return TenantId.generate()
 
 
 def advance(now: datetime, **kwargs: int) -> datetime:

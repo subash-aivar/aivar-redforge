@@ -35,7 +35,7 @@ def _to_domain(row: RedTeamOperatorModel) -> RedTeamOperator:
     engagement_ids = tuple(UUID(str(raw)) for raw in row.active_engagement_ids_json)
     return RedTeamOperator(
         operator_id=OperatorId(row.id),
-        tenant_id=TenantId(row.tenant_id),
+        tenant_id=TenantId.from_uuid(row.tenant_id),
         identity_ref=row.identity_ref,
         display_name=row.display_name,
         clearance_level=OperatorClearanceLevel(row.clearance_level),

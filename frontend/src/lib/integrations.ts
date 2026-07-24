@@ -42,6 +42,23 @@ export interface ConnectorPlugin {
   credential_fields: CredentialFieldSpec[];
   config_fields: ConfigFieldSpec[];
   docs: ConnectorDocs;
+  /** Derived server-side from which optional callbacks the plugin
+   * implements (see `ConnectorPlugin.capabilities` in
+   * `integration_hub/domain/plugin.py`) — e.g. `"health_check"`,
+   * `"discovery"`. Drives which actions the UI offers per connector; a
+   * future capability shows up automatically with no frontend redesign. */
+  capabilities: string[];
+}
+
+/** Which UI action each backend capability unlocks. Add a new capability
+ * here (and on the backend plugin) and the corresponding action gates
+ * itself automatically — never branch on a specific connector/vendor id. */
+export const CAPABILITY_ACTIONS: Record<string, string> = {
+  discovery: "Run Discovery",
+};
+
+export function hasCapability(plugin: Pick<ConnectorPlugin, "capabilities">, capability: string): boolean {
+  return plugin.capabilities.includes(capability);
 }
 
 export interface ConnectorRegistration {
@@ -121,6 +138,88 @@ export function disableConnector(connectorId: string): Promise<ConnectorRegistra
   return api.delete<ConnectorRegistration>(
     `/api/v1/integration-hub/connectors/${connectorId}`,
     { disabled_by: "admin", reason: "disabled via console" }
+  );
+}
+
+export interface AssetRelationship {
+  relationship_type: string;
+  target_external_id: string;
+  target_asset_id: string | null;
+}
+
+export interface DiscoveredAsset {
+  asset_id: string;
+  tenant_id: string;
+  connector_id: string;
+  external_id: string;
+  name: string;
+  category: string;
+  vendor: string;
+  region: string | null;
+  owner: string | null;
+  security_state: string;
+  compliance_state: string;
+  health_status: string | null;
+  risk_score: number;
+  tags: Record<string, string>;
+  metadata: Record<string, unknown>;
+  relationships: AssetRelationship[];
+  discovered_at: string;
+  last_synced_at: string;
+}
+
+export interface SyncRun {
+  sync_run_id: string;
+  connector_id: string;
+  mode: string;
+  status: string;
+  started_at: string;
+  completed_at: string | null;
+  items_discovered: number;
+  items_created: number;
+  items_updated: number;
+  items_deleted: number;
+  error: string | null;
+}
+
+export function listAssets(params?: {
+  category?: string;
+  vendor?: string;
+  tag?: string;
+}): Promise<DiscoveredAsset[]> {
+  const query = new URLSearchParams();
+  if (params?.category) query.set("category", params.category);
+  if (params?.vendor) query.set("vendor", params.vendor);
+  if (params?.tag) query.set("tag", params.tag);
+  const qs = query.toString();
+  return api.get<DiscoveredAsset[]>(
+    `/api/v1/integration-hub/assets${qs ? `?${qs}` : ""}`
+  );
+}
+
+export function getAsset(assetId: string): Promise<DiscoveredAsset> {
+  return api.get<DiscoveredAsset>(`/api/v1/integration-hub/assets/${assetId}`);
+}
+
+export function listAssetRelationships(assetId: string): Promise<AssetRelationship[]> {
+  return api.get<AssetRelationship[]>(
+    `/api/v1/integration-hub/assets/${assetId}/relationships`
+  );
+}
+
+export function runDiscovery(
+  connectorId: string,
+  mode: string = "MANUAL"
+): Promise<SyncRun> {
+  return api.post<SyncRun>(`/api/v1/integration-hub/connectors/${connectorId}/discovery/run`, {
+    mode,
+    triggered_by: "console",
+  });
+}
+
+export function listDiscoveryHistory(connectorId: string): Promise<SyncRun[]> {
+  return api.get<SyncRun[]>(
+    `/api/v1/integration-hub/connectors/${connectorId}/discovery/history`
   );
 }
 

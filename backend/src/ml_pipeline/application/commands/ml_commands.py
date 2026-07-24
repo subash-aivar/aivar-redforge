@@ -3,13 +3,15 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from ml_pipeline.domain.value_objects.identifiers import TenantId
+
 if TYPE_CHECKING:
     from uuid import UUID
 
 
 @dataclass(frozen=True, slots=True)
 class ScheduleMLModelTrainingCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     model_type: str
     dataset_id: str | None = None
     actor_roles: tuple[str, ...] = ()
@@ -18,7 +20,7 @@ class ScheduleMLModelTrainingCommand:
 
 @dataclass(frozen=True, slots=True)
 class PromoteMLModelCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     model_id: UUID
     deployed_by: str = "admin"
     actor_roles: tuple[str, ...] = ()
@@ -26,7 +28,7 @@ class PromoteMLModelCommand:
 
 @dataclass(frozen=True, slots=True)
 class DeprecateMLModelCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     model_id: UUID
     deprecated_by: str = "admin"
     actor_roles: tuple[str, ...] = ()

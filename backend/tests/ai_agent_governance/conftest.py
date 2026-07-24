@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from uuid import uuid4
-
 import pytest
 
 from ai_agent_governance.domain.value_objects.identifiers import TenantId
@@ -18,7 +16,7 @@ ADMIN = ("ai_posture:admin",)
 
 @pytest.fixture
 def tenant_id() -> TenantId:
-    return TenantId(uuid4())
+    return TenantId.generate()
 
 
 @pytest.fixture

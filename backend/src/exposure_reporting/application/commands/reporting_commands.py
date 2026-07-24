@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from exposure_reporting.domain.value_objects.identifiers import TenantId
+
 if TYPE_CHECKING:
     from datetime import datetime
     from uuid import UUID
@@ -12,7 +14,7 @@ if TYPE_CHECKING:
 
 @dataclass(frozen=True, slots=True)
 class GenerateExposureReportCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     report_type: str
     generated_by: str
     time_range_start: datetime | None = None
@@ -22,7 +24,7 @@ class GenerateExposureReportCommand:
 
 @dataclass(frozen=True, slots=True)
 class DeliverExposureReportCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     report_id: UUID
     delivery_channel: str = "api"
     actor_roles: tuple[str, ...] = ()
@@ -30,7 +32,7 @@ class DeliverExposureReportCommand:
 
 @dataclass(frozen=True, slots=True)
 class CreateBusinessImpactMappingCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     asset_ref_id: UUID
     criticality: str
     impact_domain: str
@@ -44,7 +46,7 @@ class CreateBusinessImpactMappingCommand:
 
 @dataclass(frozen=True, slots=True)
 class UpdateBusinessImpactMappingCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     asset_ref_id: UUID
     criticality: str
     impact_domain: str

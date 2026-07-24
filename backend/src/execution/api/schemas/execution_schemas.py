@@ -171,7 +171,7 @@ class ReplaySimulationRequest(BaseModel):
 
 class ProjectionReplayRequest(BaseModel):
     from_position: int = 0
-    tenant_id: UUID | None = None
+    tenant_id: str | None = None
 
 
 class CorrelateDetectionFindingRequest(BaseModel):

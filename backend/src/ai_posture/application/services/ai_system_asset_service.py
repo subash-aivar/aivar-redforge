@@ -81,7 +81,7 @@ class AISystemAssetApplicationService:
 
     async def register(self, cmd: RegisterAISystemAssetCommand) -> AISystemAssetDTO:
         require_at_least(cmd.actor_roles, AIPostureRole.ENGINEER)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         try:
             source = AIAssetDiscoverySource(cmd.discovery_source)
@@ -117,7 +117,7 @@ class AISystemAssetApplicationService:
 
     async def classify(self, cmd: ClassifyAISystemAssetCommand) -> AISystemAssetDTO:
         require_at_least(cmd.actor_roles, AIPostureRole.ENGINEER)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         try:
             kind = AISystemKind(cmd.ai_system_kind)
@@ -138,7 +138,7 @@ class AISystemAssetApplicationService:
 
     async def assign_owner(self, cmd: AssignAssetOwnerCommand) -> AISystemAssetDTO:
         require_at_least(cmd.actor_roles, AIPostureRole.ENGINEER)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         async with self._uow_factory() as uow:
             asset = await uow.assets.find_by_id(AISystemAssetId(cmd.asset_id), tenant)
@@ -161,7 +161,7 @@ class AISystemAssetApplicationService:
         self, cmd: ApproveAISystemAssetRegistrationCommand
     ) -> AISystemAssetDTO:
         require_at_least(cmd.actor_roles, AIPostureRole.APPROVER)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         async with self._uow_factory() as uow:
             asset = await uow.assets.find_by_id(AISystemAssetId(cmd.asset_id), tenant)
@@ -178,7 +178,7 @@ class AISystemAssetApplicationService:
 
     async def deprecate(self, cmd: DeprecateAISystemAssetCommand) -> AISystemAssetDTO:
         require_at_least(cmd.actor_roles, AIPostureRole.ENGINEER)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         async with self._uow_factory() as uow:
             asset = await uow.assets.find_by_id(AISystemAssetId(cmd.asset_id), tenant)
@@ -195,7 +195,7 @@ class AISystemAssetApplicationService:
 
     async def decommission(self, cmd: DecommissionAISystemAssetCommand) -> AISystemAssetDTO:
         require_at_least(cmd.actor_roles, AIPostureRole.ADMIN)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         async with self._uow_factory() as uow:
             asset = await uow.assets.find_by_id(AISystemAssetId(cmd.asset_id), tenant)
@@ -217,8 +217,8 @@ class AISystemAssetApplicationService:
             await self._publisher.publish_batch(events)
         return _to_dto(asset)
 
-    async def get(self, tenant_id: UUID, asset_id: UUID) -> AISystemAssetDTO:
-        tenant = TenantId(tenant_id)
+    async def get(self, tenant_id: TenantId, asset_id: UUID) -> AISystemAssetDTO:
+        tenant = tenant_id
         async with self._uow_factory() as uow:
             asset = await uow.assets.find_by_id(AISystemAssetId(asset_id), tenant)
             if asset is None:

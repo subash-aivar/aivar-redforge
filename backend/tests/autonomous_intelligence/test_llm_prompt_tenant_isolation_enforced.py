@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from uuid import uuid4
-
 import pytest
 
 from autonomous_intelligence.domain.exceptions.domain_exceptions import TenantIsolationViolation
@@ -11,8 +9,8 @@ from autonomous_intelligence.infrastructure.llm.in_memory_llm import InMemoryLLM
 
 
 def test_llm_prompt_tenant_isolation_enforced() -> None:
-    t1 = TenantId(uuid4())
-    t2 = TenantId(uuid4())
+    t1 = TenantId.generate()
+    t2 = TenantId.generate()
     with pytest.raises(TenantIsolationViolation):
         LLMPrompt(
             tenant_id=t1,
@@ -26,7 +24,7 @@ def test_llm_prompt_tenant_isolation_enforced() -> None:
 @pytest.mark.asyncio
 async def test_port_rejects_mismatched_tenant() -> None:
     adapter = InMemoryLLMInferenceAdapter()
-    t1 = TenantId(uuid4())
+    t1 = TenantId.generate()
     prompt = LLMPrompt(
         tenant_id=t1,
         system_instruction="sys",
@@ -35,4 +33,4 @@ async def test_port_rejects_mismatched_tenant() -> None:
         max_tokens=50,
     )
     with pytest.raises(TenantIsolationViolation):
-        await adapter.generate(prompt, TenantId(uuid4()))
+        await adapter.generate(prompt, TenantId.generate())

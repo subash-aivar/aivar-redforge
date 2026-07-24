@@ -23,7 +23,7 @@ async def test_ingest_debounce_compute_end_to_end(
     asset = uuid4()
     dto = await container.ingestion.ingest_vulnerability(
         IngestVulnerabilitySignalCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             event_id="e1",
             vulnerability_instance_id="vuln-a",
             asset_ref_id=asset,
@@ -38,14 +38,14 @@ async def test_ingest_debounce_compute_end_to_end(
 
     # thundering herd: many marks → one pending row
     for _ in range(100):
-        await container.debouncer.mark(tenant_id.value, asset)
+        await container.debouncer.mark(tenant_id, asset)
     assert await container._uow_factory().pending.count_for_tenant(tenant_id) == 1
 
     computed = await container.score_worker.run_pipeline_once(
         container.debouncer, container.dispatcher, debounce_seconds=0
     )
     assert computed == 1
-    score = await container.exposure_service.get_latest_score(tenant_id.value, asset, VIEWER)
+    score = await container.exposure_service.get_latest_score(tenant_id, asset, VIEWER)
     assert score is not None
     assert score.composite_score == 10.0  # 7 * (1+1) clamped
 
@@ -54,7 +54,7 @@ async def test_ingest_debounce_compute_end_to_end(
 async def test_idempotent_event_replay(container: ExposureContainer, tenant_id: TenantId) -> None:
     asset = uuid4()
     cmd = IngestVulnerabilitySignalCommand(
-        tenant_id=tenant_id.value,
+        tenant_id=tenant_id,
         event_id="dup-1",
         vulnerability_instance_id="vuln-b",
         asset_ref_id=asset,
@@ -73,7 +73,7 @@ async def test_resolve_and_suppress_auth(container: ExposureContainer, tenant_id
     asset = uuid4()
     dto = await container.ingestion.ingest_vulnerability(
         IngestVulnerabilitySignalCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             event_id="e2",
             vulnerability_instance_id="vuln-c",
             asset_ref_id=asset,
@@ -85,7 +85,7 @@ async def test_resolve_and_suppress_auth(container: ExposureContainer, tenant_id
     assert dto is not None
     suppressed = await container.exposure_service.suppress(
         SuppressExposureRecordCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             record_id=__import__("uuid").UUID(dto.record_id),
             justification="accepted risk",
             suppressed_by="analyst-1",
@@ -96,7 +96,7 @@ async def test_resolve_and_suppress_auth(container: ExposureContainer, tenant_id
 
     await container.ingestion.resolve_vulnerability(
         ResolveVulnerabilitySignalCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             event_id="e3",
             vulnerability_instance_id="vuln-d",
         )
@@ -110,7 +110,7 @@ async def test_weight_change_triggers_pending(
     asset = uuid4()
     await container.ingestion.ingest_vulnerability(
         IngestVulnerabilitySignalCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             event_id="e4",
             vulnerability_instance_id="vuln-e",
             asset_ref_id=asset,
@@ -121,7 +121,7 @@ async def test_weight_change_triggers_pending(
     )
     cfg = await container.exposure_service.configure_weights(
         ConfigureAmplifierWeightsCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             weights={"KevPresent": 0.5},
             change_rationale="tune kev",
             changed_by="admin",
@@ -137,7 +137,7 @@ async def test_kev_status_toggle(container: ExposureContainer, tenant_id: Tenant
     asset = uuid4()
     await container.ingestion.ingest_vulnerability(
         IngestVulnerabilitySignalCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             event_id="e5",
             vulnerability_instance_id="vuln-f",
             asset_ref_id=asset,
@@ -148,7 +148,7 @@ async def test_kev_status_toggle(container: ExposureContainer, tenant_id: Tenant
     )
     dto = await container.ingestion.kev_status_changed(
         VulnerabilityKevStatusChangedCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             event_id="e6",
             vulnerability_instance_id="vuln-f",
             is_kev=True,

@@ -5,13 +5,15 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
+from campaignexecution.domain.value_objects.identifiers import TenantId
+
 if TYPE_CHECKING:
     from uuid import UUID
 
 
 @dataclass(frozen=True, slots=True)
 class InitializeCampaignExecutionCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     campaign_instance_id: UUID
     campaign_id: UUID
     graph_id: UUID
@@ -34,7 +36,7 @@ class DispatchTaskSpec:
 
 @dataclass(frozen=True, slots=True)
 class DispatchNextTasksCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     execution_id: UUID
     task_id: UUID | None = None
     technique_id: str = ""
@@ -52,7 +54,7 @@ class SuccessorPredicateSpec:
 
 @dataclass(frozen=True, slots=True)
 class RecordTaskCompletionCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     execution_id: UUID
     task_id: UUID
     outcome: str
@@ -63,7 +65,7 @@ class RecordTaskCompletionCommand:
 
 @dataclass(frozen=True, slots=True)
 class ResolveConditionalBranchCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     execution_id: UUID
     completed_task_id: UUID
     outcome: str
@@ -72,7 +74,7 @@ class ResolveConditionalBranchCommand:
 
 @dataclass(frozen=True, slots=True)
 class RecordTaskFailureCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     execution_id: UUID
     task_id: UUID
     failure_reason: str
@@ -80,7 +82,7 @@ class RecordTaskFailureCommand:
 
 @dataclass(frozen=True, slots=True)
 class EvaluateBarrierCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     execution_id: UUID
     barrier_task_id: UUID
     task_group_task_ids: list[UUID]
@@ -88,7 +90,7 @@ class EvaluateBarrierCommand:
 
 @dataclass(frozen=True, slots=True)
 class ReachHumanApprovalGateCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     execution_id: UUID
     task_id: UUID
     gate_timeout_seconds: int
@@ -98,14 +100,14 @@ class ReachHumanApprovalGateCommand:
 
 @dataclass(frozen=True, slots=True)
 class GrantHumanApprovalCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     execution_id: UUID
     approver_id: str
 
 
 @dataclass(frozen=True, slots=True)
 class DenyHumanApprovalCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     execution_id: UUID
     approver_id: str
     reason: str
@@ -113,26 +115,26 @@ class DenyHumanApprovalCommand:
 
 @dataclass(frozen=True, slots=True)
 class HandleApprovalTimeoutCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     execution_id: UUID
 
 
 @dataclass(frozen=True, slots=True)
 class PauseCampaignExecutionCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     execution_id: UUID
     reason: str
 
 
 @dataclass(frozen=True, slots=True)
 class ResumeCampaignExecutionCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     execution_id: UUID
 
 
 @dataclass(frozen=True, slots=True)
 class HandleKillSwitchTriggeredCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     execution_id: UUID
 
 
@@ -146,7 +148,7 @@ class RollbackStepSpec:
 
 @dataclass(frozen=True, slots=True)
 class InitiateRollbackCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     execution_id: UUID
     trigger_reason: str
     rollback_eligible_task_ids: list[UUID] = field(default_factory=list)
@@ -155,25 +157,25 @@ class InitiateRollbackCommand:
 
 @dataclass(frozen=True, slots=True)
 class CompleteExecutionCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     execution_id: UUID
 
 
 @dataclass(frozen=True, slots=True)
 class AbortExecutionCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     execution_id: UUID
     abort_reason: str
 
 
 @dataclass(frozen=True, slots=True)
 class TriggerAutoAbortOnDetectionCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     campaign_instance_id: UUID
     detection_detail: str
 
 
 @dataclass(frozen=True, slots=True)
 class GetExecutionQuery:
-    tenant_id: UUID
+    tenant_id: TenantId
     execution_id: UUID

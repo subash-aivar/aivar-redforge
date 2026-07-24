@@ -8,6 +8,7 @@ from fastapi import Depends, Header
 
 from ai_posture.infrastructure.container import AIPostureContainer
 from redforge.api.security import TenantContext, get_tenant_context
+from redforge.shared.identifiers import EntityId
 
 _container: AIPostureContainer | None = None
 
@@ -33,7 +34,7 @@ async def get_tenant_id(tenant: TenantContext = Depends(get_tenant_context)) -> 
     verifies the bearer token and its `org` claim server-side, so
     organization_id can no longer be spoofed via a request header.
     """
-    return UUID(tenant.organization_id)
+    return EntityId.from_string(tenant.organization_id)
 
 
 async def get_actor_roles(

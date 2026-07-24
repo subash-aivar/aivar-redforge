@@ -42,7 +42,7 @@ class RegulatoryApplicationService:
         self.events: list[Any] = []
 
     async def configure_jurisdictions(
-        self, tenant_id: UUID, jurisdictions: set[str], roles: tuple[str, ...]
+        self, tenant_id: TenantId, jurisdictions: set[str], roles: tuple[str, ...]
     ) -> dict[str, Any]:
         if "incident:ciso" not in roles:
             from regulatory_notification.application.exceptions import ApplicationForbiddenError
@@ -53,7 +53,7 @@ class RegulatoryApplicationService:
 
     async def start_clocks(
         self,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         incident_id: str,
         regimes: list[str] | None,
         roles: tuple[str, ...],
@@ -65,7 +65,7 @@ class RegulatoryApplicationService:
             and "system" not in roles
         ):
             require_officer(roles)
-        tenant = TenantId(tenant_id)
+        tenant = tenant_id
         now = classified_at or datetime.now(UTC)
         if regimes:
             regime_list = [RegulatoryRegime(r) for r in regimes]
@@ -111,14 +111,14 @@ class RegulatoryApplicationService:
 
     async def create_draft(
         self,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         notification_id: UUID,
         content: str,
         actor: str,
         roles: tuple[str, ...],
     ) -> dict[str, Any]:
         require_officer(roles)
-        tenant = TenantId(tenant_id)
+        tenant = tenant_id
         n = await self._notifications.find_by_id(tenant, RegNotificationId(notification_id))
         if n is None:
             raise ApplicationNotFoundError("notification")
@@ -137,14 +137,14 @@ class RegulatoryApplicationService:
 
     async def revise_draft(
         self,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         notification_id: UUID,
         content: str,
         actor: str,
         roles: tuple[str, ...],
     ) -> dict[str, Any]:
         require_officer(roles)
-        tenant = TenantId(tenant_id)
+        tenant = tenant_id
         current = await self._drafts.find_current_draft(tenant, RegNotificationId(notification_id))
         if current is None:
             raise ApplicationNotFoundError("draft")
@@ -153,10 +153,10 @@ class RegulatoryApplicationService:
         return {"draft_id": str(revised.draft_id), "version": revised.version_number}
 
     async def finalize_draft(
-        self, tenant_id: UUID, notification_id: UUID, actor: str, roles: tuple[str, ...]
+        self, tenant_id: TenantId, notification_id: UUID, actor: str, roles: tuple[str, ...]
     ) -> dict[str, Any]:
         require_submit_role(roles)  # legal finalizes
-        tenant = TenantId(tenant_id)
+        tenant = tenant_id
         draft = await self._drafts.find_current_draft(tenant, RegNotificationId(notification_id))
         if draft is None:
             raise ApplicationNotFoundError("draft")
@@ -174,7 +174,7 @@ class RegulatoryApplicationService:
 
     async def submit(
         self,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         notification_id: UUID,
         actor: str,
         method: str,
@@ -183,7 +183,7 @@ class RegulatoryApplicationService:
     ) -> dict[str, Any]:
         require_submit_role(roles)
         self._submission.ensure_human_command("SubmitRegulatoryNotification")
-        tenant = TenantId(tenant_id)
+        tenant = tenant_id
         n = await self._notifications.find_by_id(tenant, RegNotificationId(notification_id))
         if n is None:
             raise ApplicationNotFoundError("notification")
@@ -194,10 +194,10 @@ class RegulatoryApplicationService:
         return {"status": n.status.value, "reference": reference}
 
     async def acknowledge(
-        self, tenant_id: UUID, notification_id: UUID, actor: str, roles: tuple[str, ...]
+        self, tenant_id: TenantId, notification_id: UUID, actor: str, roles: tuple[str, ...]
     ) -> dict[str, Any]:
         require_submit_role(roles)
-        tenant = TenantId(tenant_id)
+        tenant = tenant_id
         n = await self._notifications.find_by_id(tenant, RegNotificationId(notification_id))
         if n is None:
             raise ApplicationNotFoundError("notification")
@@ -206,8 +206,8 @@ class RegulatoryApplicationService:
         self.events.extend(n.pop_events())
         return {"status": n.status.value}
 
-    async def list_for_incident(self, tenant_id: UUID, incident_id: str) -> list[dict[str, Any]]:
-        tenant = TenantId(tenant_id)
+    async def list_for_incident(self, tenant_id: TenantId, incident_id: str) -> list[dict[str, Any]]:
+        tenant = tenant_id
         rows = await self._notifications.find_by_incident(tenant, incident_id)
         return [
             {
@@ -222,7 +222,7 @@ class RegulatoryApplicationService:
             for n in rows
         ]
 
-    async def deadline_dashboard(self, tenant_id: UUID) -> list[dict[str, Any]]:
+    async def deadline_dashboard(self, tenant_id: TenantId) -> list[dict[str, Any]]:
         now = datetime.now(UTC)
         active = await self._notifications.find_active_for_alerting(now)
         return [

@@ -5,9 +5,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Protocol
 
+from exposure_reporting.domain.value_objects.identifiers import TenantId
+
 if TYPE_CHECKING:
     from datetime import datetime
-    from uuid import UUID
 
 
 @dataclass(slots=True)
@@ -24,15 +25,15 @@ class ITrendProjectionStore(Protocol):
 
     async def append(
         self,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         *,
         tenant_exposure_score: float,
         asset_count: int,
         at: datetime,
         score_input_version: str,
     ) -> None: ...
-    async def list_points(self, tenant_id: UUID) -> list[TrendPoint]: ...
-    async def clear(self, tenant_id: UUID) -> None: ...
+    async def list_points(self, tenant_id: TenantId) -> list[TrendPoint]: ...
+    async def clear(self, tenant_id: TenantId) -> None: ...
 
 
 class TrendProjectionStore:
@@ -41,7 +42,7 @@ class TrendProjectionStore:
 
     async def append(
         self,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         *,
         tenant_exposure_score: float,
         asset_count: int,
@@ -57,8 +58,8 @@ class TrendProjectionStore:
             )
         )
 
-    async def list_points(self, tenant_id: UUID) -> list[TrendPoint]:
+    async def list_points(self, tenant_id: TenantId) -> list[TrendPoint]:
         return list(self._points.get(str(tenant_id), []))
 
-    async def clear(self, tenant_id: UUID) -> None:
+    async def clear(self, tenant_id: TenantId) -> None:
         self._points.pop(str(tenant_id), None)

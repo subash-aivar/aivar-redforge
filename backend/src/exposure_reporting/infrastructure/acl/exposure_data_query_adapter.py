@@ -12,9 +12,9 @@ from exposure_reporting.application.ports.i_exposure_data_query_port import (
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-    from uuid import UUID
 
     from exposure.application.ports.i_unit_of_work import IUnitOfWork
+    from exposure.domain.value_objects.identifiers import TenantId
     from exposure.infrastructure.repositories.threat_actor_match_cache_repository import (
         IThreatActorMatchCacheRepository,
     )
@@ -29,10 +29,10 @@ class ExposureDataQueryAdapter(IExposureDataQueryPort):
         self._uow_factory = uow_factory
         self._cache_repo = cache_repo
 
-    async def load_snapshot(self, tenant_id: UUID) -> ExposureDataSnapshot:
-        from exposure.domain.value_objects.identifiers import TenantId as ExpTenantId
-
-        tenant = ExpTenantId(tenant_id)
+    async def load_snapshot(self, tenant_id: TenantId) -> ExposureDataSnapshot:
+        # `exposure`'s TenantId is the identical EntityId alias, so no
+        # cross-context re-wrap is needed here.
+        tenant = tenant_id
         async with self._uow_factory() as uow:
             profile = await uow.profiles.load(tenant)
             cfg = await uow.weights.find_current(tenant)
@@ -90,7 +90,7 @@ class StaticExposureDataQueryAdapter(IExposureDataQueryPort):
         self._stale = threat_cache_stale
         self._history = snapshot_history
 
-    async def load_snapshot(self, tenant_id: UUID) -> ExposureDataSnapshot:
+    async def load_snapshot(self, tenant_id: TenantId) -> ExposureDataSnapshot:
         del tenant_id
         return ExposureDataSnapshot(
             asset_scores=dict(self._asset_scores),

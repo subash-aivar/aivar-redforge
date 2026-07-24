@@ -22,6 +22,7 @@ from ai_posture.infrastructure.persistence.in_memory_unit_of_work import (
 )
 from redforge.api.security import TenantContext, get_tenant_context
 from redforge.domain.identity.value_objects import MembershipRole, Permission
+from redforge.shared.identifiers import EntityId
 
 
 def _override_tenant_context(
@@ -65,9 +66,9 @@ async def test_register_and_get_asset(
     api_setup: tuple[FastAPI, StubInventoryQueryAdapter, AIPostureContainer],
 ) -> None:
     app, inventory, _ = api_setup
-    tenant = str(uuid4())
+    tenant = str(EntityId.generate())
     asset_ref = uuid4()
-    inventory.seed(asset_ref, __import__("uuid").UUID(tenant))
+    inventory.seed(asset_ref, tenant)
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         resp = await ac.post(
@@ -96,9 +97,9 @@ async def test_forbidden_without_engineer(
     api_setup: tuple[FastAPI, StubInventoryQueryAdapter, AIPostureContainer],
 ) -> None:
     app, inventory, _ = api_setup
-    tenant = str(uuid4())
+    tenant = str(EntityId.generate())
     asset_ref = uuid4()
-    inventory.seed(asset_ref, __import__("uuid").UUID(tenant))
+    inventory.seed(asset_ref, tenant)
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         resp = await ac.post(
@@ -117,7 +118,7 @@ async def test_shadow_alert_bulk_triage_api(
     api_setup: tuple[FastAPI, StubInventoryQueryAdapter, AIPostureContainer],
 ) -> None:
     app, _, _ = api_setup
-    tenant = str(uuid4())
+    tenant = str(EntityId.generate())
     headers = {
         "X-Tenant-Id": tenant,
         "X-AI-Posture-Roles": "ai_posture:engineer",
@@ -154,9 +155,9 @@ async def test_threat_profile_and_risk_score_api(
     api_setup: tuple[FastAPI, StubInventoryQueryAdapter, AIPostureContainer],
 ) -> None:
     app, inventory, _ = api_setup
-    tenant = str(uuid4())
+    tenant = str(EntityId.generate())
     asset_ref = uuid4()
-    inventory.seed(asset_ref, __import__("uuid").UUID(tenant))
+    inventory.seed(asset_ref, tenant)
     headers_eng = {
         "X-Tenant-Id": tenant,
         "X-AI-Posture-Roles": "ai_posture:engineer",

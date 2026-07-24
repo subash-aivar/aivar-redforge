@@ -61,7 +61,7 @@ def _report_to_row(report: ExposureReport) -> ExposureReportModel:
 def _row_to_report(row: ExposureReportModel) -> ExposureReport:
     return ExposureReport(
         report_id=ExposureReportId(row.id),
-        tenant_id=TenantId(row.tenant_id),
+        tenant_id=TenantId.from_uuid(row.tenant_id),
         report_type=ReportType(row.report_type),
         status=ReportStatus(row.status),
         template_id=row.template_id,
@@ -139,7 +139,7 @@ def _mapping_to_row(mapping: BusinessImpactMapping) -> BusinessImpactMappingMode
 def _row_to_mapping(row: BusinessImpactMappingModel) -> BusinessImpactMapping:
     return BusinessImpactMapping(
         mapping_id=BusinessImpactMappingId(row.id),
-        tenant_id=TenantId(row.tenant_id),
+        tenant_id=TenantId.from_uuid(row.tenant_id),
         asset_ref_id=row.asset_ref_id,
         criticality=BusinessCriticality(row.criticality),
         impact_domain=ImpactDomain(row.impact_domain),

@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from taskgraph.domain.value_objects.identifiers import TenantId
+
 if TYPE_CHECKING:
     from datetime import datetime
     from uuid import UUID
@@ -13,7 +15,7 @@ if TYPE_CHECKING:
 @dataclass(frozen=True, slots=True)
 class TaskGraphDTO:
     graph_id: UUID
-    tenant_id: UUID
+    tenant_id: TenantId
     name: str
     description: str
     state: str

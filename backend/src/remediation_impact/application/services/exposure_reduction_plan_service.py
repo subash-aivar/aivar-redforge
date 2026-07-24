@@ -91,7 +91,7 @@ class ExposureReductionPlanService:
 
     async def generate(self, cmd: GenerateExposureReductionPlanCommand) -> ExposureReductionPlanDTO:
         require_at_least(cmd.actor_roles, RemediationImpactRole.ANALYST)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         scores = cmd.current_exposure_scores
         version = cmd.score_input_version
@@ -128,7 +128,7 @@ class ExposureReductionPlanService:
 
     async def commit(self, cmd: CommitExposureReductionPlanCommand) -> ExposureReductionPlanDTO:
         require_at_least(cmd.actor_roles, RemediationImpactRole.ANALYST)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         plan = await self._repo.get(tenant, ExposureReductionPlanId(cmd.plan_id))
         if plan is None:
             raise ApplicationNotFoundError(str(cmd.plan_id))
@@ -141,20 +141,20 @@ class ExposureReductionPlanService:
         return _to_dto(plan)
 
     async def get(
-        self, tenant_id: UUID, plan_id: UUID, actor_roles: tuple[str, ...]
+        self, tenant_id: TenantId, plan_id: UUID, actor_roles: tuple[str, ...]
     ) -> ExposureReductionPlanDTO:
         require_simulation_read(actor_roles)
-        plan = await self._repo.get(TenantId(tenant_id), ExposureReductionPlanId(plan_id))
+        plan = await self._repo.get(tenant_id, ExposureReductionPlanId(plan_id))
         if plan is None:
             raise ApplicationNotFoundError(str(plan_id))
         return _to_dto(plan)
 
     async def list_plans(
         self,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         actor_roles: tuple[str, ...],
         status_filter: str | None = None,
     ) -> list[ExposureReductionPlanDTO]:
         require_simulation_read(actor_roles)
-        plans = await self._repo.list_by_tenant(TenantId(tenant_id), status_filter=status_filter)
+        plans = await self._repo.list_by_tenant(tenant_id, status_filter=status_filter)
         return [_to_dto(p) for p in plans]

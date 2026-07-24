@@ -106,7 +106,7 @@ class RiskScoringApplicationService:
 
     async def compute(self, cmd: ComputeRiskScoreCommand) -> AIRiskScoreSnapshotDTO:
         require_at_least(cmd.actor_roles, AIPostureRole.ENGINEER)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         async with self._uow_factory() as uow:
             asset = await uow.assets.find_by_id(AISystemAssetId(cmd.asset_id), tenant)
@@ -155,9 +155,9 @@ class RiskScoringApplicationService:
         METRICS.risk_scores_computed_total += 1
         return _to_dto(snap, now=now)
 
-    async def get_latest(self, tenant_id: UUID, asset_id: UUID) -> AIRiskScoreSnapshotDTO | None:
+    async def get_latest(self, tenant_id: TenantId, asset_id: UUID) -> AIRiskScoreSnapshotDTO | None:
         """Read path — returns cached snapshot only; never computes."""
-        tenant = TenantId(tenant_id)
+        tenant = tenant_id
         now = datetime.now(UTC)
         async with self._uow_factory() as uow:
             snap = await uow.snapshots.find_latest_by_asset(AISystemAssetId(asset_id), tenant)
@@ -167,7 +167,7 @@ class RiskScoringApplicationService:
 
     async def run_staleness_sweep(self, cmd: RunStalenessSweepCommand) -> StalenessSweepResultDTO:
         require_at_least(cmd.actor_roles, AIPostureRole.ENGINEER)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         flagged = 0
         recomputed = 0

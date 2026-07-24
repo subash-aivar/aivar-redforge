@@ -60,6 +60,7 @@ from credential_vault.domain.value_objects.identifiers import (
 )
 from credential_vault.domain.value_objects.payloads import EncryptedPayload, KeyEnvelope
 from credential_vault.domain.value_objects.states import CredentialState, VersionState
+from redforge.shared.identifiers import EntityId
 
 
 @pytest.fixture
@@ -69,7 +70,7 @@ def now() -> datetime:
 
 @pytest.fixture
 def tenant_uuid():
-    return uuid4()
+    return EntityId.generate()
 
 
 @pytest.fixture
@@ -246,7 +247,7 @@ def make_credential(
 ) -> Credential:
     """Build a real Credential aggregate in the requested state."""
     ts = now or datetime.now(UTC)
-    tid = tenant_id or TenantId(uuid4())
+    tid = tenant_id or TenantId.generate()
     cid = credential_id or CredentialId(uuid4())
     pid = principal_id or PrincipalId(uuid4())
     bid = vault_backend_id or VaultBackendId(uuid4())
@@ -338,7 +339,7 @@ def make_version(
     return CredentialVersion(
         version_id or VersionId(uuid4()),
         credential_id or CredentialId(uuid4()),
-        tenant_id or TenantId(uuid4()),
+        tenant_id or TenantId.generate(),
         version_number,
         payload,
         envelope,
@@ -358,7 +359,7 @@ def make_audit_log(
     return AuditLog.create(
         AuditLogId(uuid4()),
         credential_id or CredentialId(uuid4()),
-        tenant_id or TenantId(uuid4()),
+        tenant_id or TenantId.generate(),
         now or datetime.now(UTC),
     )
 
@@ -371,7 +372,7 @@ def make_rotation_policy(
 ) -> RotationPolicy:
     return RotationPolicy.create(
         RotationPolicyId(uuid4()),
-        tenant_id or TenantId(uuid4()),
+        tenant_id or TenantId.generate(),
         name,
         30,
         5,
@@ -389,7 +390,7 @@ def make_expiration_policy(
 ) -> ExpirationPolicy:
     return ExpirationPolicy.create(
         ExpirationPolicyId(uuid4()),
-        tenant_id or TenantId(uuid4()),
+        tenant_id or TenantId.generate(),
         name,
         90,
         14,
@@ -406,7 +407,7 @@ def make_vault_backend(
 ) -> VaultBackend:
     return VaultBackend.create(
         VaultBackendId(uuid4()),
-        tenant_id or TenantId(uuid4()),
+        tenant_id or TenantId.generate(),
         name,
         VaultBackendType.LOCAL_ENCRYPTED,
         {"path": "/secrets"},

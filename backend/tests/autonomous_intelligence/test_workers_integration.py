@@ -15,6 +15,7 @@ from autonomous_intelligence.domain.aggregates.suggestion_outcome import Suggest
 from autonomous_intelligence.domain.value_objects.enums import SuggestionTargetType
 from autonomous_intelligence.domain.value_objects.identifiers import TenantId
 from autonomous_intelligence.infrastructure.container import AutonomousIntelligenceContainer
+from redforge.shared.identifiers import EntityId
 
 
 @pytest.mark.asyncio
@@ -22,7 +23,7 @@ from autonomous_intelligence.infrastructure.container import AutonomousIntellige
 async def test_generation_worker(conf: float) -> None:
     c = AutonomousIntelligenceContainer()
     dto = await c.generation_worker.handle_signal(
-        uuid4(), "detection_rule_tuning", "detection", conf
+        EntityId.generate(), "detection_rule_tuning", "detection", conf
     )
     assert dto.status == "pending_review"
 
@@ -30,7 +31,7 @@ async def test_generation_worker(conf: float) -> None:
 @pytest.mark.asyncio
 async def test_expiry_worker() -> None:
     c = AutonomousIntelligenceContainer()
-    tenant = uuid4()
+    tenant = EntityId.generate()
     created = await c.app.create_suggestion(
         CreateIntelligenceSuggestion(
             tenant,
@@ -57,7 +58,7 @@ async def test_expiry_worker() -> None:
 @pytest.mark.asyncio
 async def test_application_worker() -> None:
     c = AutonomousIntelligenceContainer()
-    tenant = uuid4()
+    tenant = EntityId.generate()
     created = await c.app.create_suggestion(
         CreateIntelligenceSuggestion(
             tenant,
@@ -83,7 +84,7 @@ async def test_application_worker() -> None:
 @pytest.mark.parametrize("baseline", [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8])
 async def test_outcome_measurement_worker(baseline: float) -> None:
     c = AutonomousIntelligenceContainer()
-    tenant = uuid4()
+    tenant = EntityId.generate()
     await c.app.train_model(
         TrainOptimizationModel(tenant, "detection_rule_tuning", "m-o", 1, ("ai:ml_engineer",))
     )
@@ -93,7 +94,7 @@ async def test_outcome_measurement_worker(baseline: float) -> None:
         )
     )
     outcome = SuggestionOutcome.create_pending(
-        uuid4(), TenantId(tenant), SuggestionTargetType.DETECTION_RULE_TUNING, 30, baseline
+        uuid4(), tenant, SuggestionTargetType.DETECTION_RULE_TUNING, 30, baseline
     )
     await c.outcomes.append(outcome)
     n = await c.outcome_worker.tick(tenant)
@@ -103,7 +104,7 @@ async def test_outcome_measurement_worker(baseline: float) -> None:
 @pytest.mark.asyncio
 async def test_retrain_worker_trigger() -> None:
     c = AutonomousIntelligenceContainer()
-    tenant = uuid4()
+    tenant = EntityId.generate()
     await c.app.train_model(
         TrainOptimizationModel(tenant, "detection_rule_tuning", "m-r", 1, ("ai:ml_engineer",))
     )

@@ -31,7 +31,7 @@ from tests.detection.phase3_helpers import make_finding
 
 
 def make_tenant() -> TenantId:
-    return TenantId(uuid4())
+    return TenantId.generate()
 
 
 def make_pack(

@@ -7,6 +7,7 @@ from uuid import UUID, uuid4
 import pytest
 from tests.scenario.fakes.repos import FakeEventPublisher, FakeUnitOfWork
 
+from redforge.shared.identifiers import EntityId
 from scenario.application.commands.scenario_commands import (
     CreateScenarioTemplateCommand,
     InstantiateScenarioCommand,
@@ -18,7 +19,7 @@ from scenario.application.services.scenario_application_service import (
     ScenarioApplicationService,
 )
 from scenario.domain.value_objects.enums import ScenarioTemplateState
-from scenario.domain.value_objects.identifiers import ScenarioTemplateId, TenantId
+from scenario.domain.value_objects.identifiers import ScenarioTemplateId
 from scenario.domain.value_objects.scenario_vos import (
     ScenarioObjectiveBlueprint,
     ScenarioParameterSpec,
@@ -44,7 +45,7 @@ def _make_service(
     )
 
 
-async def _create_published(svc: ScenarioApplicationService, tenant: UUID) -> UUID:
+async def _create_published(svc: ScenarioApplicationService, tenant: EntityId) -> UUID:
     created = await svc.create(
         CreateScenarioTemplateCommand(
             tenant_id=tenant,
@@ -91,7 +92,7 @@ async def test_subscribe_creates_tenant_local_copy() -> None:
     publisher = FakeEventPublisher()
     graph = StubScenarioGraphWriteAdapter()
     svc = _make_service(uow, publisher, graph=graph)
-    owner = uuid4()
+    owner = EntityId.generate()
     subscriber = uuid4()
     template_id = await _create_published(svc, owner)
 
@@ -104,7 +105,7 @@ async def test_subscribe_creates_tenant_local_copy() -> None:
     )
     assert local.tenant_id == str(subscriber)
     assert local.state == ScenarioTemplateState.PUBLISHED.value
-    platform = await uow.templates.find_by_id(ScenarioTemplateId(template_id), TenantId(owner))
+    platform = await uow.templates.find_by_id(ScenarioTemplateId(template_id), owner)
     assert platform is not None
     assert platform.subscription_scope.contains(str(subscriber))
     assert any(type(e).__name__ == "ScenarioSubscriptionChanged" for e in publisher.events)
@@ -118,7 +119,7 @@ async def test_instantiate_validates_phase1_gates() -> None:
     draft = StubCampaignDraftPort()
     graph = StubScenarioGraphWriteAdapter()
     svc = _make_service(uow, publisher, draft=draft, graph=graph)
-    tenant = uuid4()
+    tenant = EntityId.generate()
     tid = await _create_published(svc, tenant)
     result = await svc.instantiate(
         InstantiateScenarioCommand(
@@ -146,7 +147,7 @@ async def test_instantiate_rejects_invalid_draft() -> None:
             return ["name is required"]
 
     svc = _make_service(uow, publisher, draft=BadDraftPort())
-    tenant = uuid4()
+    tenant = EntityId.generate()
     tid = await _create_published(svc, tenant)
     with pytest.raises(ApplicationValidationError):
         await svc.instantiate(InstantiateScenarioCommand(tenant_id=tenant, template_id=tid))

@@ -9,6 +9,8 @@ from uuid import UUID, uuid4
 
 from sqlalchemy import text
 
+from credential_vault.domain.value_objects.identifiers import TenantId
+
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -16,7 +18,7 @@ if TYPE_CHECKING:
 @dataclass(frozen=True, slots=True)
 class RewrapCandidate:
     version_id: UUID
-    tenant_id: UUID
+    tenant_id: TenantId
     old_master_key_id: str
 
 
@@ -52,7 +54,7 @@ class DekRewrapProgressRepository:
     async def mark_rewrapped(
         self,
         version_id: UUID,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         old_master_key_id: str,
         new_master_key_id: str,
     ) -> None:

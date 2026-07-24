@@ -19,11 +19,12 @@ from credential_vault.application.commands.policy_commands import (
     UpdateExpirationPolicyCommand,
     UpdateRotationPolicyCommand,
 )
+from redforge.shared.identifiers import EntityId
 
 
 def test_create_rotation_policy_command_frozen() -> None:
     cmd = CreateRotationPolicyCommand(
-        tenant_id=uuid4(),
+        tenant_id=EntityId.generate(),
         principal_id=uuid4(),
         name="p",
         interval_days=30,
@@ -38,7 +39,7 @@ def test_create_rotation_policy_command_frozen() -> None:
 
 def test_register_vault_backend_command_constructs() -> None:
     cmd = RegisterVaultBackendCommand(
-        tenant_id=uuid4(),
+        tenant_id=EntityId.generate(),
         principal_id=uuid4(),
         name="b",
         backend_type="LOCAL_ENCRYPTED",

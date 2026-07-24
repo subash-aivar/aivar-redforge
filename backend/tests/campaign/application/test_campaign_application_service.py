@@ -139,7 +139,7 @@ class TestCreateCampaign:
     async def test_create_persists_campaign(self, tenant_id, now) -> None:
         svc, uow, _ = make_service(tenant_id)
         cmd = CreateCampaignCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             name="Kill Chain Test",
             classification="FullKillChain",
             kind="OneShot",
@@ -155,7 +155,7 @@ class TestCreateCampaign:
     async def test_create_empty_name_raises(self, tenant_id, now) -> None:
         svc, _, _ = make_service(tenant_id)
         cmd = CreateCampaignCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             name="   ",
             classification="FullKillChain",
             kind="OneShot",
@@ -169,7 +169,7 @@ class TestCreateCampaign:
     async def test_create_publishes_events(self, tenant_id, now) -> None:
         svc, _, publisher = make_service(tenant_id)
         cmd = CreateCampaignCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             name="Detection Tuning",
             classification="DetectionTuning",
             kind="Recurring",
@@ -186,7 +186,7 @@ class TestAddObjective:
         svc, uow, _ = make_service(tenant_id)
         engagement_id = uuid4()
         create_cmd = CreateCampaignCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             name="Campaign A",
             classification="FullKillChain",
             kind="OneShot",
@@ -196,7 +196,7 @@ class TestAddObjective:
         dto = await svc.create_campaign(create_cmd)
 
         add_cmd = AddCampaignObjectiveCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             campaign_id=dto.campaign_id,
             objective_type="AccessAchieved",
             description="Access database tier",
@@ -216,7 +216,7 @@ class TestAddObjective:
     async def test_add_objective_missing_campaign_raises(self, tenant_id, now) -> None:
         svc, _, _ = make_service(tenant_id)
         add_cmd = AddCampaignObjectiveCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             campaign_id=uuid4(),
             objective_type="AccessAchieved",
             description="Does not matter",
@@ -234,7 +234,7 @@ class TestApprovalFlow:
         engagement_id = uuid4()
 
         create_cmd = CreateCampaignCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             name="Full Kill Chain",
             classification="FullKillChain",
             kind="OneShot",
@@ -247,7 +247,7 @@ class TestApprovalFlow:
         # Add target rule
         await svc.add_target_selection_rule(
             AddTargetSelectionRuleCommand(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 campaign_id=campaign_id,
                 attribute="environment",
                 operator="eq",
@@ -258,7 +258,7 @@ class TestApprovalFlow:
         # Submit for approval
         await svc.submit_for_approval(
             SubmitCampaignForApprovalCommand(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 campaign_id=campaign_id,
             )
         )
@@ -266,7 +266,7 @@ class TestApprovalFlow:
         # Approve
         await svc.approve_campaign(
             ApproveCampaignCommand(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 campaign_id=campaign_id,
                 approver_id="approver-1",
                 signature="sig-abc",
@@ -326,7 +326,7 @@ class TestStartCampaignInstance:
         # Create and fully approve campaign
         dto = await svc.create_campaign(
             CreateCampaignCommand(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 name="Kill Chain Campaign",
                 classification="FullKillChain",
                 kind="OneShot",
@@ -337,7 +337,7 @@ class TestStartCampaignInstance:
         campaign_id = dto.campaign_id
         await svc.add_target_selection_rule(
             AddTargetSelectionRuleCommand(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 campaign_id=campaign_id,
                 attribute="environment",
                 operator="eq",
@@ -345,11 +345,11 @@ class TestStartCampaignInstance:
             )
         )
         await svc.submit_for_approval(
-            SubmitCampaignForApprovalCommand(tenant_id=tenant_id.value, campaign_id=campaign_id)
+            SubmitCampaignForApprovalCommand(tenant_id=tenant_id, campaign_id=campaign_id)
         )
         await svc.approve_campaign(
             ApproveCampaignCommand(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 campaign_id=campaign_id,
                 approver_id="approver-1",
                 signature="sig-1",
@@ -359,7 +359,7 @@ class TestStartCampaignInstance:
         # Start instance
         instance_dto = await svc.start_campaign_instance(
             StartCampaignInstanceCommand(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 campaign_id=campaign_id,
             )
         )
@@ -374,7 +374,7 @@ class TestStartCampaignInstance:
         engagement_id = uuid4()
         dto = await svc.create_campaign(
             CreateCampaignCommand(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 name="Blocked Campaign",
                 classification="FullKillChain",
                 kind="OneShot",
@@ -385,7 +385,7 @@ class TestStartCampaignInstance:
         campaign_id = dto.campaign_id
         await svc.add_target_selection_rule(
             AddTargetSelectionRuleCommand(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 campaign_id=campaign_id,
                 attribute="environment",
                 operator="eq",
@@ -393,11 +393,11 @@ class TestStartCampaignInstance:
             )
         )
         await svc.submit_for_approval(
-            SubmitCampaignForApprovalCommand(tenant_id=tenant_id.value, campaign_id=campaign_id)
+            SubmitCampaignForApprovalCommand(tenant_id=tenant_id, campaign_id=campaign_id)
         )
         await svc.approve_campaign(
             ApproveCampaignCommand(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 campaign_id=campaign_id,
                 approver_id="approver-1",
                 signature="sig-1",
@@ -406,7 +406,7 @@ class TestStartCampaignInstance:
         with pytest.raises((ApplicationConflictError, Exception)):
             await svc.start_campaign_instance(
                 StartCampaignInstanceCommand(
-                    tenant_id=tenant_id.value,
+                    tenant_id=tenant_id,
                     campaign_id=campaign_id,
                 )
             )
@@ -421,7 +421,7 @@ class TestCrossTenantIsolation:
 
         dto = await svc.create_campaign(
             CreateCampaignCommand(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 name="Tenant A Campaign",
                 classification="FullKillChain",
                 kind="OneShot",
@@ -429,7 +429,7 @@ class TestCrossTenantIsolation:
                 engagement_id=uuid4(),
             )
         )
-        other_tenant = OtherTenantId(uuid4())
+        other_tenant = OtherTenantId.generate()
         result = await svc.get_campaign(
             GetCampaignQuery(
                 tenant_id=other_tenant.value,

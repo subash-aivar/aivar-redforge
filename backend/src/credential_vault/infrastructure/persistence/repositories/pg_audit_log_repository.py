@@ -34,7 +34,7 @@ def _entry_to_domain(row: AuditEntryModel) -> AuditEntry:
         entry_id=AuditEntryId(row.id),
         audit_log_id=AuditLogId(row.audit_log_id),
         credential_id=CredentialId(row.credential_id),
-        tenant_id=TenantId(row.tenant_id),
+        tenant_id=TenantId.from_uuid(row.tenant_id),
         operation=AuditOperation(row.operation),
         outcome=AuditOutcome(row.outcome),
         principal_id=PrincipalId(row.principal_id),
@@ -74,7 +74,7 @@ class PgAuditLogRepository(IAuditLogRepository):
         return AuditLog(
             audit_log_id=AuditLogId(row.id),
             credential_id=CredentialId(row.credential_id),
-            tenant_id=TenantId(row.tenant_id),
+            tenant_id=TenantId.from_uuid(row.tenant_id),
             entries=[],
             created_at=row.created_at,
             version=0,

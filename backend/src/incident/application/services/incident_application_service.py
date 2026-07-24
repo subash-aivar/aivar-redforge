@@ -102,7 +102,9 @@ class IncidentApplicationService:
         self.audit: list[dict[str, Any]] = []
 
     def _tenant(self, value: UUID) -> TenantId:
-        return TenantId(value)
+        if isinstance(value, TenantId):
+            return value
+        return TenantId.from_string(str(value))
 
     def _to_dto(self, inc: Incident) -> IncidentDTO:
         return IncidentDTO(
@@ -429,7 +431,7 @@ class IncidentApplicationService:
         )
 
     async def get_incident(
-        self, tenant_id: UUID, incident_id: UUID, roles: tuple[str, ...]
+        self, tenant_id: TenantId, incident_id: UUID, roles: tuple[str, ...]
     ) -> IncidentDTO:
         require_at_least(roles, IncidentRole.VIEWER)
         tenant = self._tenant(tenant_id)
@@ -438,14 +440,14 @@ class IncidentApplicationService:
             raise ApplicationNotFoundError("incident")
         return self._to_dto(inc)
 
-    async def list_incidents(self, tenant_id: UUID, roles: tuple[str, ...]) -> list[IncidentDTO]:
+    async def list_incidents(self, tenant_id: TenantId, roles: tuple[str, ...]) -> list[IncidentDTO]:
         require_at_least(roles, IncidentRole.VIEWER)
         tenant = self._tenant(tenant_id)
         rows = await self._incidents.find_active(tenant)
         return [self._to_dto(i) for i in rows]
 
     async def get_comm_log(
-        self, tenant_id: UUID, incident_id: UUID, roles: tuple[str, ...]
+        self, tenant_id: TenantId, incident_id: UUID, roles: tuple[str, ...]
     ) -> list[CommunicationLogEntryDTO]:
         require_at_least(roles, IncidentRole.VIEWER)
         tenant = self._tenant(tenant_id)
@@ -464,7 +466,7 @@ class IncidentApplicationService:
             for r in rows
         ]
 
-    async def dashboard(self, tenant_id: UUID, roles: tuple[str, ...]) -> dict[str, Any]:
+    async def dashboard(self, tenant_id: TenantId, roles: tuple[str, ...]) -> dict[str, Any]:
         require_at_least(roles, IncidentRole.VIEWER)
         tenant = self._tenant(tenant_id)
         active = await self._incidents.find_active(tenant)

@@ -97,7 +97,7 @@ class RegulatoryNotification:
         return n
 
     def mark_draft_in_progress(self, tenant_id: TenantId, draft_ref: str) -> None:
-        if self.tenant_id.value != tenant_id.value:
+        if self.tenant_id != tenant_id:
             raise TenantMismatch()
         if self.status not in {
             NotificationStatus.CLOCK_STARTED,
@@ -108,7 +108,7 @@ class RegulatoryNotification:
         self.draft_ref = draft_ref
 
     def mark_ready(self, tenant_id: TenantId) -> None:
-        if self.tenant_id.value != tenant_id.value:
+        if self.tenant_id != tenant_id:
             raise TenantMismatch()
         if self.status in {
             NotificationStatus.SUBMITTED,
@@ -132,7 +132,7 @@ class RegulatoryNotification:
         reference_number: str,
         at: datetime,
     ) -> None:
-        if self.tenant_id.value != tenant_id.value:
+        if self.tenant_id != tenant_id:
             raise TenantMismatch()
         if self.submission_record is not None:
             raise DomainInvariantViolation("SubmissionRecord immutable — already set")
@@ -170,7 +170,7 @@ class RegulatoryNotification:
         )
 
     def acknowledge(self, tenant_id: TenantId, acknowledged_by: str, at: datetime) -> None:
-        if self.tenant_id.value != tenant_id.value:
+        if self.tenant_id != tenant_id:
             raise TenantMismatch()
         if self.status != NotificationStatus.SUBMITTED:
             raise InvalidNotificationTransition()

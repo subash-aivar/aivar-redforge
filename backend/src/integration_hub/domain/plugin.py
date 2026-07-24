@@ -13,6 +13,7 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from enum import StrEnum
 
+from integration_hub.domain.value_objects.discovery import DiscoveryPage
 from integration_hub.domain.value_objects.enums import ConnectorHealthStatus
 
 
@@ -90,6 +91,12 @@ class ConnectorDocs:
 
 
 HealthCheckFn = Callable[[str, dict[str, str]], Awaitable[ConnectorHealthStatus]]
+DiscoverFn = Callable[[str, dict[str, str], str | None], Awaitable[DiscoveryPage]]
+"""discover(secret, config, cursor) -> DiscoveryPage. `cursor` is the
+continuation token from the previous page's `DiscoveryPage.next_cursor`
+(None for the first page of a run). Vendors without real pagination
+(OpenAI/Anthropic/Azure OpenAI model lists today) ignore `cursor` and
+always return a single page with `has_more=False`."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -108,3 +115,19 @@ class ConnectorPlugin:
     resolved plaintext from credential_vault for this connector instance's
     primary credential field; `config` is the registration's non-secret
     configuration dict."""
+    discover: DiscoverFn | None = None
+    """Optional: discover(secret, config, cursor) -> DiscoveryPage of raw
+    vendor payload dicts (e.g. one per model/deployment), consumed by the
+    connector's registered normalizer. None for connectors that support
+    health checking only — asset discovery is opt-in per connector."""
+
+    @property
+    def capabilities(self) -> frozenset[str]:
+        """Derived, not stored — always reflects which optional callbacks
+        are actually populated. `"health_check"` is present for every
+        registered plugin (a required field); `"discovery"` only for
+        connectors that implement `discover`."""
+        caps = {"health_check"}
+        if self.discover is not None:
+            caps.add("discovery")
+        return frozenset(caps)

@@ -163,7 +163,7 @@ class PgDeviationRepository(IAgentDeviationEventRepository):
         )
         return AgentDeviationEvent(
             deviation_id=AgentDeviationEventId(row.id),
-            tenant_id=TenantId(row.tenant_id),
+            tenant_id=TenantId.from_uuid(row.tenant_id),
             envelope_ref=AgentOperationalEnvelopeRef(
                 AgentOperationalEnvelopeId(row.envelope_id),
                 row.envelope_version,

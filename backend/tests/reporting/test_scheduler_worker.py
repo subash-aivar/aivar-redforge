@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
-from uuid import UUID, uuid4
+from uuid import UUID
 
 import pytest
 
+from redforge.shared.identifiers import EntityId
 from reporting.application.commands.reporting_commands import CreateScheduledReportCommand
 from reporting.domain.value_objects.enums import ReportType
 from reporting.domain.value_objects.identifiers import TenantId
@@ -17,7 +18,7 @@ from reporting.infrastructure.workers.report_scheduler_worker import ReportSched
 @pytest.mark.asyncio
 async def test_scheduler_invokes_due_schedules_only() -> None:
     container = ReportingContainer()
-    tenant = uuid4()
+    tenant = EntityId.generate()
     template_id = container.template_id_for(ReportType.EXECUTIVE_SECURITY_REPORT)
     assert template_id is not None
 
@@ -52,7 +53,7 @@ async def test_scheduler_invokes_due_schedules_only() -> None:
 @pytest.mark.asyncio
 async def test_scheduler_idempotent_no_double_fire() -> None:
     container = ReportingContainer()
-    tenant = uuid4()
+    tenant = EntityId.generate()
     template_id = container.template_id_for(ReportType.ANOMALY_SUMMARY_REPORT)
     assert template_id is not None
 

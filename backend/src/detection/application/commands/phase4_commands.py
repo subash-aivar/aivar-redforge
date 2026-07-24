@@ -5,10 +5,12 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from uuid import UUID
 
+from detection.domain.value_objects.identifiers import TenantId
+
 
 @dataclass(frozen=True, slots=True)
 class CreateDetectionPack:
-    tenant_id: UUID
+    tenant_id: TenantId
     pack_key: str
     title: str
     category: str
@@ -21,20 +23,20 @@ class CreateDetectionPack:
 
 @dataclass(frozen=True, slots=True)
 class PublishDetectionPack:
-    tenant_id: UUID
+    tenant_id: TenantId
     pack_id: UUID
 
 
 @dataclass(frozen=True, slots=True)
 class SubscribePackToTenant:
-    tenant_id: UUID
+    tenant_id: TenantId
     pack_id: UUID
     subscriber_tenant_id: str
 
 
 @dataclass(frozen=True, slots=True)
 class RequestDetectionException:
-    tenant_id: UUID
+    tenant_id: TenantId
     exception_type: str
     scope_kind: str
     justification: str
@@ -51,14 +53,14 @@ class RequestDetectionException:
 
 @dataclass(frozen=True, slots=True)
 class ApproveDetectionException:
-    tenant_id: UUID
+    tenant_id: TenantId
     exception_id: UUID
     approver: str
 
 
 @dataclass(frozen=True, slots=True)
 class RejectDetectionException:
-    tenant_id: UUID
+    tenant_id: TenantId
     exception_id: UUID
     rejector: str
     reason: str
@@ -66,13 +68,13 @@ class RejectDetectionException:
 
 @dataclass(frozen=True, slots=True)
 class ExpireDetectionException:
-    tenant_id: UUID
+    tenant_id: TenantId
     exception_id: UUID
 
 
 @dataclass(frozen=True, slots=True)
 class RenewDetectionException:
-    tenant_id: UUID
+    tenant_id: TenantId
     exception_id: UUID
     renewer: str
     new_valid_until: str
@@ -80,7 +82,7 @@ class RenewDetectionException:
 
 @dataclass(frozen=True, slots=True)
 class RevokeDetectionException:
-    tenant_id: UUID
+    tenant_id: TenantId
     exception_id: UUID
     revoker: str
     reason: str
@@ -88,7 +90,7 @@ class RevokeDetectionException:
 
 @dataclass(frozen=True, slots=True)
 class SubmitEvidence:
-    tenant_id: UUID
+    tenant_id: TenantId
     evidence_type: str
     payload: bytes
     collected_by: str
@@ -100,24 +102,24 @@ class SubmitEvidence:
 
 @dataclass(frozen=True, slots=True)
 class VerifyEvidenceIntegrity:
-    tenant_id: UUID
+    tenant_id: TenantId
     evidence_id: UUID
 
 
 @dataclass(frozen=True, slots=True)
 class CorrelateFinding:
-    tenant_id: UUID
+    tenant_id: TenantId
     finding_id: UUID
     refresh: bool = False
 
 
 @dataclass(frozen=True, slots=True)
 class RefreshCorrelation:
-    tenant_id: UUID
+    tenant_id: TenantId
     finding_id: UUID
 
 
 @dataclass(frozen=True, slots=True)
 class ComputeDetectionCoverage:
-    tenant_id: UUID
+    tenant_id: TenantId
     in_scope_techniques: list[str] = field(default_factory=list)

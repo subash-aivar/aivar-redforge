@@ -45,13 +45,13 @@ class LessonsApplicationService:
 
     async def create_for_incident(
         self,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         incident_id: str,
         roles: tuple[str, ...],
         technique_ids: list[str] | None = None,
     ) -> dict[str, Any]:
         require_at_least(roles, LessonsRole.CONTRIBUTOR)
-        tenant = TenantId(tenant_id)
+        tenant = tenant_id
         existing = await self._ll.find_by_incident(tenant, incident_id)
         if existing:
             return {"ll_id": str(existing.ll_id), "status": existing.status.value}
@@ -66,7 +66,7 @@ class LessonsApplicationService:
 
     async def add_lesson(
         self,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         ll_id: UUID,
         category: str,
         description: str,
@@ -74,7 +74,7 @@ class LessonsApplicationService:
         roles: tuple[str, ...],
     ) -> dict[str, Any]:
         require_at_least(roles, LessonsRole.CONTRIBUTOR)
-        tenant = TenantId(tenant_id)
+        tenant = tenant_id
         ll = await self._ll.find_by_id(tenant, LessonsLearnedId(ll_id))
         if ll is None:
             raise ApplicationNotFoundError("ll")
@@ -85,7 +85,7 @@ class LessonsApplicationService:
 
     async def add_action(
         self,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         ll_id: UUID,
         title: str,
         description: str,
@@ -94,7 +94,7 @@ class LessonsApplicationService:
         roles: tuple[str, ...],
     ) -> dict[str, Any]:
         require_at_least(roles, LessonsRole.CONTRIBUTOR)
-        tenant = TenantId(tenant_id)
+        tenant = tenant_id
         ll = await self._ll.find_by_id(tenant, LessonsLearnedId(ll_id))
         if ll is None:
             raise ApplicationNotFoundError("ll")
@@ -103,10 +103,10 @@ class LessonsApplicationService:
         return {"action_id": aid}
 
     async def review(
-        self, tenant_id: UUID, ll_id: UUID, actor: str, roles: tuple[str, ...]
+        self, tenant_id: TenantId, ll_id: UUID, actor: str, roles: tuple[str, ...]
     ) -> dict[str, Any]:
         require_at_least(roles, LessonsRole.APPROVER)
-        tenant = TenantId(tenant_id)
+        tenant = tenant_id
         ll = await self._ll.find_by_id(tenant, LessonsLearnedId(ll_id))
         if ll is None:
             raise ApplicationNotFoundError("ll")
@@ -115,10 +115,10 @@ class LessonsApplicationService:
         return {"status": ll.status.value}
 
     async def finalize(
-        self, tenant_id: UUID, ll_id: UUID, actor: str, roles: tuple[str, ...]
+        self, tenant_id: TenantId, ll_id: UUID, actor: str, roles: tuple[str, ...]
     ) -> dict[str, Any]:
         require_at_least(roles, LessonsRole.APPROVER)
-        tenant = TenantId(tenant_id)
+        tenant = tenant_id
         ll = await self._ll.find_by_id(tenant, LessonsLearnedId(ll_id))
         if ll is None:
             raise ApplicationNotFoundError("ll")
@@ -134,10 +134,10 @@ class LessonsApplicationService:
         }
 
     async def generate_report(
-        self, tenant_id: UUID, ll_id: UUID, fmt: str, roles: tuple[str, ...]
+        self, tenant_id: TenantId, ll_id: UUID, fmt: str, roles: tuple[str, ...]
     ) -> dict[str, Any]:
         require_at_least(roles, LessonsRole.APPROVER)
-        tenant = TenantId(tenant_id)
+        tenant = tenant_id
         ll = await self._ll.find_by_id(tenant, LessonsLearnedId(ll_id))
         if ll is None:
             raise ApplicationNotFoundError("ll")
@@ -171,10 +171,10 @@ class LessonsApplicationService:
         }
 
     async def export_report(
-        self, tenant_id: UUID, report_id: UUID, destination: str, roles: tuple[str, ...]
+        self, tenant_id: TenantId, report_id: UUID, destination: str, roles: tuple[str, ...]
     ) -> dict[str, Any]:
         require_at_least(roles, LessonsRole.APPROVER)
-        tenant = TenantId(tenant_id)
+        tenant = tenant_id
         report = await self._reports.find_by_id(tenant, PostIncidentReportId(report_id))
         if report is None:
             raise ApplicationNotFoundError("report")
@@ -187,8 +187,8 @@ class LessonsApplicationService:
             await self._delivery.deliver_email(str(tenant), str(report_id), destination)
         return {"status": report.status.value, "exported_to": destination}
 
-    async def get(self, tenant_id: UUID, incident_id: str) -> dict[str, Any]:
-        tenant = TenantId(tenant_id)
+    async def get(self, tenant_id: TenantId, incident_id: str) -> dict[str, Any]:
+        tenant = tenant_id
         ll = await self._ll.find_by_incident(tenant, incident_id)
         if ll is None:
             raise ApplicationNotFoundError("ll")

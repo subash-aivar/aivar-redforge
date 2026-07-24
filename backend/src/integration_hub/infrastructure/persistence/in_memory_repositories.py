@@ -7,23 +7,23 @@ from integration_hub.domain.repositories.i_connector_repositories import (
     IConnectorRegistrationRepository,
 )
 from integration_hub.domain.value_objects.enums import ConnectorStatus, ConnectorType
-from integration_hub.domain.value_objects.identifiers import ConnectorId, TenantId
+from integration_hub.domain.value_objects.identifiers import ConnectorId, EntityId
 
 
 class InMemoryConnectorRegistrationRepository(IConnectorRegistrationRepository):
     def __init__(self) -> None:
         self._items: dict[str, dict[str, ConnectorRegistration]] = {}
 
-    async def save(self, registration: ConnectorRegistration, tenant_id: TenantId) -> None:
+    async def save(self, registration: ConnectorRegistration, tenant_id: EntityId) -> None:
         self._items.setdefault(str(tenant_id), {})[str(registration.connector_id)] = registration
 
     async def get(
-        self, connector_id: ConnectorId, tenant_id: TenantId
+        self, connector_id: ConnectorId, tenant_id: EntityId
     ) -> ConnectorRegistration | None:
         return self._items.get(str(tenant_id), {}).get(str(connector_id))
 
     async def find_healthy_for_action_type(
-        self, tenant_id: TenantId, connector_type: ConnectorType
+        self, tenant_id: EntityId, connector_type: ConnectorType
     ) -> list[ConnectorRegistration]:
         return [
             r
@@ -32,7 +32,7 @@ class InMemoryConnectorRegistrationRepository(IConnectorRegistrationRepository):
             and r.status in {ConnectorStatus.HEALTHY, ConnectorStatus.REGISTERED}
         ]
 
-    async def find_all_for_tenant(self, tenant_id: TenantId) -> list[ConnectorRegistration]:
+    async def find_all_for_tenant(self, tenant_id: EntityId) -> list[ConnectorRegistration]:
         return list(self._items.get(str(tenant_id), {}).values())
 
 
@@ -40,11 +40,11 @@ class InMemoryConnectorHealthRecordRepository(IConnectorHealthRecordRepository):
     def __init__(self) -> None:
         self._items: dict[str, list[ConnectorHealthRecord]] = {}
 
-    async def append(self, record: ConnectorHealthRecord, tenant_id: TenantId) -> None:
+    async def append(self, record: ConnectorHealthRecord, tenant_id: EntityId) -> None:
         self._items.setdefault(str(tenant_id), []).append(record)
 
     async def find_latest_for_connector(
-        self, connector_id: ConnectorId, tenant_id: TenantId, limit: int
+        self, connector_id: ConnectorId, tenant_id: EntityId, limit: int
     ) -> list[ConnectorHealthRecord]:
         rows = [
             r

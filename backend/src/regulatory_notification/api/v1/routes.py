@@ -12,6 +12,7 @@ from regulatory_notification.application.exceptions import (
     ApplicationNotFoundError,
 )
 from regulatory_notification.domain.exceptions.domain_exceptions import RegulatoryDomainError
+from regulatory_notification.domain.value_objects.identifiers import TenantId
 from regulatory_notification.infrastructure.container import RegulatoryNotificationContainer
 
 router = APIRouter(prefix="/regulatory-notification", tags=["regulatory-notification"])
@@ -62,7 +63,7 @@ async def health(
 @router.post("/jurisdictions")
 async def configure(
     body: JurisBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: RegulatoryNotificationContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -77,7 +78,7 @@ async def configure(
 @router.post("/clocks")
 async def start_clocks(
     body: StartBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: RegulatoryNotificationContainer = Depends(get_container),
 ) -> list[dict[str, Any]]:
@@ -91,7 +92,7 @@ async def start_clocks(
 async def create_draft(
     notification_id: UUID,
     body: DraftBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: RegulatoryNotificationContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -107,7 +108,7 @@ async def create_draft(
 async def revise(
     notification_id: UUID,
     body: DraftBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: RegulatoryNotificationContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -123,7 +124,7 @@ async def revise(
 async def finalize(
     notification_id: UUID,
     body: DraftBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: RegulatoryNotificationContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -137,7 +138,7 @@ async def finalize(
 async def submit(
     notification_id: UUID,
     body: SubmitBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: RegulatoryNotificationContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -157,7 +158,7 @@ async def submit(
 @router.get("/incident/{incident_id}")
 async def list_incident(
     incident_id: str,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     container: RegulatoryNotificationContainer = Depends(get_container),
 ) -> list[dict[str, Any]]:
     return await container.app.list_for_incident(tenant_id, incident_id)
@@ -165,7 +166,7 @@ async def list_incident(
 
 @router.get("/deadlines/dashboard")
 async def deadlines(
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     container: RegulatoryNotificationContainer = Depends(get_container),
 ) -> list[dict[str, Any]]:
     return await container.app.deadline_dashboard(tenant_id)

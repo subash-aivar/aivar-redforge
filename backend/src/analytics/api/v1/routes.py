@@ -34,6 +34,7 @@ from analytics.application.exceptions import (
     ApplicationValidationError,
 )
 from analytics.domain.exceptions.domain_exceptions import AnalyticsDomainError
+from analytics.domain.value_objects.identifiers import TenantId
 from analytics.infrastructure.container import AnalyticsContainer
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
@@ -52,7 +53,7 @@ def _map(exc: Exception) -> HTTPException:
 @router.post("/datasets")
 async def register_dataset(
     body: RegisterDataSetRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AnalyticsContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -67,7 +68,7 @@ async def register_dataset(
 @router.get("/datasets/{dataset_id}")
 async def get_dataset(
     dataset_id: UUID,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AnalyticsContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -80,7 +81,7 @@ async def get_dataset(
 @router.post("/kpis")
 async def define_kpi(
     body: DefineKPIRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AnalyticsContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -95,7 +96,7 @@ async def define_kpi(
 @router.get("/kpis/{kpi_type}")
 async def get_kpi(
     kpi_type: str,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AnalyticsContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -108,7 +109,7 @@ async def get_kpi(
 @router.get("/kpis/{kpi_type}/history")
 async def kpi_history(
     kpi_type: str,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AnalyticsContainer = Depends(get_container),
 ) -> list[dict[str, Any]]:
@@ -121,7 +122,7 @@ async def kpi_history(
 @router.post("/admin/kpis/compute")
 async def compute_kpi(
     body: TriggerKPIRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AnalyticsContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -136,7 +137,7 @@ async def compute_kpi(
 @router.post("/baselines")
 async def create_baseline(
     body: CreateBaselineRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AnalyticsContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -153,7 +154,7 @@ async def create_baseline(
 @router.post("/anomalies/evaluate")
 async def evaluate_anomaly(
     body: EvaluateAnomalyRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AnalyticsContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -167,7 +168,7 @@ async def evaluate_anomaly(
 
 @router.get("/anomalies")
 async def list_anomalies(
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AnalyticsContainer = Depends(get_container),
 ) -> list[dict[str, Any]]:
@@ -179,7 +180,7 @@ async def list_anomalies(
 
 @router.get("/summary")
 async def summary(
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AnalyticsContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -192,7 +193,7 @@ async def summary(
 @router.post("/internal/events")
 async def ingest_event(
     body: IngestEventRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AnalyticsContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -212,7 +213,7 @@ async def ingest_event(
 @router.post("/admin/projections/rebuild")
 async def rebuild(
     body: RebuildRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AnalyticsContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -226,7 +227,7 @@ async def rebuild(
 
 @router.post("/admin/scheduler/tick")
 async def scheduler_tick(
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AnalyticsContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -243,7 +244,7 @@ async def scheduler_tick(
 @router.post("/queries")
 async def create_query(
     body: CreateQueryRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AnalyticsContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -267,7 +268,7 @@ async def create_query(
 async def execute_query(
     query_id: UUID,
     body: ExecuteQueryRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AnalyticsContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -283,7 +284,7 @@ async def execute_query(
 
 @router.get("/queries")
 async def list_queries(
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AnalyticsContainer = Depends(get_container),
 ) -> list[dict[str, Any]]:
@@ -296,7 +297,7 @@ async def list_queries(
 @router.get("/query-results/{execution_id}")
 async def get_result(
     execution_id: str,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AnalyticsContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -311,7 +312,7 @@ async def export_dataset(
     dataset_id: UUID,
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=100, ge=1, le=1000),
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AnalyticsContainer = Depends(get_container),
 ) -> dict[str, Any]:

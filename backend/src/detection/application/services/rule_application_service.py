@@ -39,7 +39,7 @@ from detection.domain.value_objects.enums import (
     RuleLogicType,
     RuleSeverity,
 )
-from detection.domain.value_objects.identifiers import DetectionRuleId, TenantId
+from detection.domain.value_objects.identifiers import DetectionRuleId
 from detection.domain.value_objects.keys import (
     AssetScopeFilter,
     AuthorRef,
@@ -234,7 +234,7 @@ class RuleApplicationService:
         severity = self._parse_enum(RuleSeverity, cmd.severity, "severity")
         confidence = self._parse_enum(RuleConfidence, cmd.confidence, "confidence")
         logic = self._parse_logic(cmd.logic)
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
 
         try:
             rule_key = RuleKey(cmd.rule_key)
@@ -305,7 +305,7 @@ class RuleApplicationService:
         validate_str(cmd.change_summary, "change_summary", 4096)
         validate_str(cmd.published_by, "published_by", 256)
 
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         rule_id = DetectionRuleId(cmd.rule_id)
         logic = self._parse_logic(cmd.logic) if cmd.logic is not None else None
         semver = None
@@ -352,7 +352,7 @@ class RuleApplicationService:
             except InvalidArgument as exc:
                 raise self._map_invalid(exc) from exc
 
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         rule_id = DetectionRuleId(cmd.rule_id)
         now = datetime.now(UTC)
 
@@ -392,7 +392,7 @@ class RuleApplicationService:
         validate_str(cmd.reason, "reason", 4096)
         target = self._parse_enum(RuleLifecycleState, cmd.target_state, "target_state")
 
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         rule_id = DetectionRuleId(cmd.rule_id)
         now = datetime.now(UTC)
 
@@ -424,7 +424,7 @@ class RuleApplicationService:
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_uuid(cmd.rule_id, "rule_id")
 
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         rule_id = DetectionRuleId(cmd.rule_id)
         now = datetime.now(UTC)
 
@@ -448,7 +448,7 @@ class RuleApplicationService:
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_uuid(cmd.rule_id, "rule_id")
 
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         rule_id = DetectionRuleId(cmd.rule_id)
 
         async with self._uow_factory() as uow:
@@ -478,7 +478,7 @@ class RuleApplicationService:
         throttle = self._parse_throttle(cmd.throttle)
         tags = self._parse_tags(cmd.tags) if cmd.tags is not None else None
 
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         rule_id = DetectionRuleId(cmd.rule_id)
         now = datetime.now(UTC)
 
@@ -529,7 +529,7 @@ class RuleApplicationService:
         validate_str(cmd.name, "name", 256)
         validate_str(cmd.actor, "actor", 256)
 
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         rule_id = DetectionRuleId(cmd.rule_id)
         now = datetime.now(UTC)
 
@@ -561,7 +561,7 @@ class RuleApplicationService:
         validate_uuid(qry.tenant_id, "tenant_id")
         validate_uuid(qry.rule_id, "rule_id")
 
-        tenant_id = TenantId(qry.tenant_id)
+        tenant_id = qry.tenant_id
         rule_id = DetectionRuleId(qry.rule_id)
 
         async with self._uow_factory() as uow:
@@ -574,7 +574,7 @@ class RuleApplicationService:
         validate_uuid(qry.tenant_id, "tenant_id")
         limit = validate_limit(qry.limit)
         offset = validate_offset(qry.offset)
-        tenant_id = TenantId(qry.tenant_id)
+        tenant_id = qry.tenant_id
 
         async with self._uow_factory() as uow:
             if qry.lifecycle_state is not None:

@@ -58,7 +58,7 @@ class DegradedPayloadQueryAdapter(IPayloadQueryPort):
 
     async def verify_for_dispatch(
         self,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         payload_id: UUID,
         expected_hash: str | None = None,
     ) -> PayloadDispatchCheck:

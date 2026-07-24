@@ -59,7 +59,7 @@ class MBOMApplicationService:
 
     async def build(self, cmd: BuildMBOMCommand) -> MBOMDTO:
         require_at_least(cmd.actor_roles, AIPostureRole.ENGINEER)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         raw: list[MBOMComponent] = []
         for item in cmd.components:
@@ -88,8 +88,8 @@ class MBOMApplicationService:
             await self._publisher.publish_batch(mbom.pop_events())
         return _to_dto(mbom)
 
-    async def get_by_provenance(self, tenant_id: UUID, provenance_id: UUID) -> MBOMDTO:
-        tenant = TenantId(tenant_id)
+    async def get_by_provenance(self, tenant_id: TenantId, provenance_id: UUID) -> MBOMDTO:
+        tenant = tenant_id
         async with self._uow_factory() as uow:
             mbom = await uow.mboms.find_by_provenance(ModelProvenanceId(provenance_id), tenant)
             if mbom is None:

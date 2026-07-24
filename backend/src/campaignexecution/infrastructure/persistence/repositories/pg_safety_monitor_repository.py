@@ -50,7 +50,7 @@ def _policy_to_json(p: PolicySnapshot) -> dict[str, Any]:
 def _monitor_from_row(row: CampaignSafetyMonitorModel) -> CampaignSafetyMonitor:
     return CampaignSafetyMonitor(
         monitor_id=SafetyMonitorId(row.id),
-        tenant_id=TenantId(row.tenant_id),
+        tenant_id=TenantId.from_uuid(row.tenant_id),
         campaign_instance_ref=CampaignInstanceRef(
             instance_id=row.campaign_instance_id,
             campaign_id=row.campaign_id,

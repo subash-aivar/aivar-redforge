@@ -93,7 +93,7 @@ class AnomalyDetectionBaseline:
         at: datetime,
         min_observations: int = 14,
     ) -> None:
-        if self.tenant_id.value != tenant_id.value:
+        if self.tenant_id != tenant_id:
             raise TenantMismatch("tenant mismatch")
         if len(values) < min_observations:
             self.bootstrapped = False

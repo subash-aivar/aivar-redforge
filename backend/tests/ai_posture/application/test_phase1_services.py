@@ -33,7 +33,7 @@ async def test_register_classify_approve_flow(
     inventory.seed(asset_ref, tenant_id.value)
     dto = await container.asset_service.register(
         RegisterAISystemAssetCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             asset_ref_id=asset_ref,
             discovery_source="ManualRegistration",
             actor_roles=ENGINEER,
@@ -43,7 +43,7 @@ async def test_register_classify_approve_flow(
     asset_id = UUID(dto.asset_id)
     dto = await container.asset_service.classify(
         ClassifyAISystemAssetCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             asset_id=asset_id,
             ai_system_kind="FoundationModelAPI",
             actor_roles=ENGINEER,
@@ -52,7 +52,7 @@ async def test_register_classify_approve_flow(
     assert dto.lifecycle_state == "UnderReview"
     dto = await container.asset_service.assign_owner(
         AssignAssetOwnerCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             asset_id=asset_id,
             owner_id="owner-1",
             actor_roles=ENGINEER,
@@ -60,7 +60,7 @@ async def test_register_classify_approve_flow(
     )
     dto = await container.asset_service.approve_registration(
         ApproveAISystemAssetRegistrationCommand(
-            tenant_id=tenant_id.value, asset_id=asset_id, actor_roles=APPROVER
+            tenant_id=tenant_id, asset_id=asset_id, actor_roles=APPROVER
         )
     )
     assert dto.lifecycle_state == "Registered"
@@ -75,7 +75,7 @@ async def test_register_idempotent_by_asset_ref(
     asset_ref = uuid4()
     inventory.seed(asset_ref, tenant_id.value)
     cmd = RegisterAISystemAssetCommand(
-        tenant_id=tenant_id.value,
+        tenant_id=tenant_id,
         asset_ref_id=asset_ref,
         discovery_source="ManualRegistration",
         actor_roles=ENGINEER,
@@ -96,7 +96,7 @@ async def test_reader_cannot_register(
     with pytest.raises(ApplicationForbiddenError):
         await container.asset_service.register(
             RegisterAISystemAssetCommand(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 asset_ref_id=asset_ref,
                 discovery_source="ManualRegistration",
                 actor_roles=READER,
@@ -109,7 +109,7 @@ async def test_bulk_triage_and_resolve(container: AIPostureContainer, tenant_id:
     for i in range(3):
         await container.alert_service.raise_alert(
             RaiseShadowAIAlertCommand(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 cloud_account="acct",
                 resource_identifier=f"r-{i}",
                 service_type="bedrock",
@@ -120,7 +120,7 @@ async def test_bulk_triage_and_resolve(container: AIPostureContainer, tenant_id:
         )
     triage = await container.alert_service.bulk_triage(
         BulkTriageShadowAIAlertsCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             triaged_by="analyst-1",
             service_type="bedrock",
             actor_roles=ANALYST,
@@ -129,7 +129,7 @@ async def test_bulk_triage_and_resolve(container: AIPostureContainer, tenant_id:
     assert triage.triaged_count == 3
     result = await container.alert_service.bulk_resolve(
         BulkResolveShadowAIAlertsCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             alert_ids=tuple(UUID(x) for x in triage.alert_ids),
             resolution_action="ExemptedByPolicy",
             confirm_as="ConfirmedFalsePositive",
@@ -145,11 +145,11 @@ async def test_discovery_only_mode_suppresses_alerts(
     container: AIPostureContainer, tenant_id: TenantId
 ) -> None:
     await container.alert_service.set_discovery_only_mode(
-        SetDiscoveryOnlyModeCommand(tenant_id=tenant_id.value, enabled=True, actor_roles=ADMIN)
+        SetDiscoveryOnlyModeCommand(tenant_id=tenant_id, enabled=True, actor_roles=ADMIN)
     )
     dto = await container.alert_service.raise_alert(
         RaiseShadowAIAlertCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             cloud_account="acct",
             resource_identifier="hidden",
             service_type="sagemaker",
@@ -165,7 +165,7 @@ async def test_discovery_only_mode_suppresses_alerts(
 async def test_triage_backlog_age(container: AIPostureContainer, tenant_id: TenantId) -> None:
     await container.alert_service.raise_alert(
         RaiseShadowAIAlertCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             cloud_account="acct",
             resource_identifier="r-age",
             service_type="bedrock",
@@ -174,7 +174,7 @@ async def test_triage_backlog_age(container: AIPostureContainer, tenant_id: Tena
             actor_roles=ENGINEER,
         )
     )
-    age = await container.alert_service.triage_backlog_age(tenant_id.value)
+    age = await container.alert_service.triage_backlog_age(tenant_id)
     assert age.open_total == 1
     assert age.buckets["0-1"] == 1
 
@@ -190,7 +190,7 @@ async def test_tenant_isolation_on_get(
     inventory.seed(asset_ref, tenant_id.value)
     dto = await container.asset_service.register(
         RegisterAISystemAssetCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             asset_ref_id=asset_ref,
             discovery_source="ManualRegistration",
             actor_roles=ENGINEER,
@@ -199,4 +199,4 @@ async def test_tenant_isolation_on_get(
     from ai_posture.application.exceptions import ApplicationNotFoundError
 
     with pytest.raises(ApplicationNotFoundError):
-        await container.asset_service.get(other_tenant_id.value, UUID(dto.asset_id))
+        await container.asset_service.get(other_tenant_id, UUID(dto.asset_id))

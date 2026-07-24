@@ -5,13 +5,15 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from operation.domain.value_objects.identifiers import TenantId
+
 if TYPE_CHECKING:
     from uuid import UUID
 
 
 @dataclass(frozen=True, slots=True)
 class CreateOperation:
-    tenant_id: UUID
+    tenant_id: TenantId
     engagement_id: UUID
     name: str
     classification: str
@@ -19,7 +21,7 @@ class CreateOperation:
 
 @dataclass(frozen=True, slots=True)
 class AddExecutionStep:
-    tenant_id: UUID
+    tenant_id: TenantId
     operation_id: UUID
     name: str
     step_type: str
@@ -43,14 +45,14 @@ class AddExecutionStep:
 
 @dataclass(frozen=True, slots=True)
 class RemoveExecutionStep:
-    tenant_id: UUID
+    tenant_id: TenantId
     operation_id: UUID
     step_id: UUID
 
 
 @dataclass(frozen=True, slots=True)
 class AddStepDependency:
-    tenant_id: UUID
+    tenant_id: TenantId
     operation_id: UUID
     from_step_id: UUID
     to_step_id: UUID
@@ -58,20 +60,20 @@ class AddStepDependency:
 
 @dataclass(frozen=True, slots=True)
 class SetOperationObjectives:
-    tenant_id: UUID
+    tenant_id: TenantId
     operation_id: UUID
     objectives: tuple[tuple[str, str, bool], ...]
 
 
 @dataclass(frozen=True, slots=True)
 class ValidateExecutionPlan:
-    tenant_id: UUID
+    tenant_id: TenantId
     operation_id: UUID
 
 
 @dataclass(frozen=True, slots=True)
 class SignExecutionPlan:
-    tenant_id: UUID
+    tenant_id: TenantId
     operation_id: UUID
     operator_id: UUID
     signature: str
@@ -79,13 +81,13 @@ class SignExecutionPlan:
 
 @dataclass(frozen=True, slots=True)
 class SubmitOperationForApproval:
-    tenant_id: UUID
+    tenant_id: TenantId
     operation_id: UUID
 
 
 @dataclass(frozen=True, slots=True)
 class ApproveOperation:
-    tenant_id: UUID
+    tenant_id: TenantId
     operation_id: UUID
     operator_id: UUID
     authority: str
@@ -94,5 +96,5 @@ class ApproveOperation:
 
 @dataclass(frozen=True, slots=True)
 class QueueOperation:
-    tenant_id: UUID
+    tenant_id: TenantId
     operation_id: UUID

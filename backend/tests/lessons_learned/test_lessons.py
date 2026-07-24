@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from uuid import uuid4
-
 import pytest
 
 from lessons_learned.domain.services.report_generation_service import (
@@ -9,12 +7,13 @@ from lessons_learned.domain.services.report_generation_service import (
 )
 from lessons_learned.domain.value_objects.enums import ReportFormat
 from lessons_learned.infrastructure.container import LessonsLearnedContainer
+from redforge.shared.identifiers import EntityId
 
 
 @pytest.mark.asyncio
 async def test_finalize_publishes_campaign_suggestion() -> None:
     c = LessonsLearnedContainer()
-    tenant = uuid4()
+    tenant = EntityId.generate()
     created = await c.app.create_for_incident(
         tenant, "inc-1", ("lessons_learned:contributor",), ["T1059"]
     )
@@ -31,7 +30,7 @@ async def test_finalize_publishes_campaign_suggestion() -> None:
 @pytest.mark.asyncio
 async def test_no_campaign_without_techniques() -> None:
     c = LessonsLearnedContainer()
-    tenant = uuid4()
+    tenant = EntityId.generate()
     created = await c.app.create_for_incident(tenant, "inc-2", ("lessons_learned:contributor",), [])
     ll_id = __import__("uuid").UUID(created["ll_id"])
     result = await c.app.finalize(tenant, ll_id, "approver", ("lessons_learned:approver",))
@@ -55,7 +54,7 @@ def test_four_formats() -> None:
 @pytest.mark.asyncio
 async def test_report_export_delivery() -> None:
     c = LessonsLearnedContainer()
-    tenant = uuid4()
+    tenant = EntityId.generate()
     created = await c.app.create_for_incident(
         tenant, "inc-3", ("lessons_learned:approver",), ["T1003"]
     )

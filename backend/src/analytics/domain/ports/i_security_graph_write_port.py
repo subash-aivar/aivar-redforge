@@ -3,17 +3,15 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from uuid import UUID
+from analytics.domain.value_objects.identifiers import TenantId
 
 
 class ISecurityGraphWritePort(ABC):
     @abstractmethod
     async def upsert_anomaly_node(
         self,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         *,
         signal_type: str,
         severity: str,

@@ -6,6 +6,7 @@ from fastapi import Depends, Header
 
 from analytics.infrastructure.container import AnalyticsContainer
 from redforge.api.security import TenantContext, get_tenant_context
+from redforge.shared.identifiers import EntityId
 
 _container: AnalyticsContainer | None = None
 
@@ -38,7 +39,7 @@ async def get_tenant_id(tenant: TenantContext = Depends(get_tenant_context)) -> 
     claim server-side (see redforge/api/security.py), so organization_id
     can no longer be spoofed via a request header.
     """
-    return UUID(tenant.organization_id)
+    return EntityId.from_string(tenant.organization_id)
 
 
 async def get_actor_roles(

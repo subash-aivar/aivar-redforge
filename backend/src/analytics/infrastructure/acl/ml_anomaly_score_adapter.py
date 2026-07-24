@@ -13,9 +13,11 @@ from analytics.domain.ports.i_ml_anomaly_score_port import (
 if TYPE_CHECKING:
     from uuid import UUID
 
+    from analytics.domain.value_objects.identifiers import TenantId
+
 
 class StubMLAnomalyScoreAdapter(IMLAnomalyScorePort):
-    async def score(self, tenant_id: UUID, *, features: list[float]) -> MLAnomalyScoreResult:
+    async def score(self, tenant_id: TenantId, *, features: list[float]) -> MLAnomalyScoreResult:
         del tenant_id, features
         return MLAnomalyScoreResult(
             available=False, anomaly_score=0.0, is_anomaly=False, reason="AWAITING_MODEL"
@@ -31,7 +33,7 @@ class CallableMLAnomalyScoreAdapter(IMLAnomalyScorePort):
     ) -> None:
         self._fn = fn
 
-    async def score(self, tenant_id: UUID, *, features: list[float]) -> MLAnomalyScoreResult:
+    async def score(self, tenant_id: TenantId, *, features: list[float]) -> MLAnomalyScoreResult:
         return await self._fn(tenant_id, features)
 
 
@@ -42,7 +44,7 @@ class ThresholdMLAnomalyScoreAdapter(IMLAnomalyScorePort):
         self.threshold = threshold
         self.available = True
 
-    async def score(self, tenant_id: UUID, *, features: list[float]) -> MLAnomalyScoreResult:
+    async def score(self, tenant_id: TenantId, *, features: list[float]) -> MLAnomalyScoreResult:
         del tenant_id
         if not self.available:
             return MLAnomalyScoreResult(False, 0.0, False, reason="AWAITING_MODEL")

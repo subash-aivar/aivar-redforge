@@ -92,7 +92,7 @@ class OperatorApplicationService:
         if cmd.operator_id is not None:
             validate_uuid(cmd.operator_id, "operator_id")
 
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         clearance = self._parse_clearance(cmd.clearance_level)
         scopes: list[ApprovalScope] = []
         for raw in cmd.approval_scopes:
@@ -133,7 +133,7 @@ class OperatorApplicationService:
         validate_str(cmd.reason, "reason", 1024)
         validate_str(cmd.authority, "authority", 256)
 
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         operator_id = OperatorId(cmd.operator_id)
         now = datetime.now(UTC)
 
@@ -161,7 +161,7 @@ class OperatorApplicationService:
         validate_str(cmd.reason, "reason", 1024)
         validate_str(cmd.authority, "authority", 256)
 
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         operator_id = OperatorId(cmd.operator_id)
         now = datetime.now(UTC)
 
@@ -190,7 +190,7 @@ class OperatorApplicationService:
         validate_uuid(cmd.operator_id, "operator_id")
         validate_str(cmd.authority, "authority", 256)
 
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         operator_id = OperatorId(cmd.operator_id)
         new_level = self._parse_clearance(cmd.new_level)
         now = datetime.now(UTC)
@@ -225,7 +225,7 @@ class OperatorApplicationService:
         validate_uuid(cmd.operator_id, "operator_id")
         validate_uuid(cmd.engagement_id, "engagement_id")
 
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         operator_id = OperatorId(cmd.operator_id)
         now = datetime.now(UTC)
 
@@ -257,7 +257,7 @@ class OperatorApplicationService:
         validate_uuid(cmd.operator_id, "operator_id")
         validate_uuid(cmd.engagement_id, "engagement_id")
 
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         operator_id = OperatorId(cmd.operator_id)
         now = datetime.now(UTC)
 
@@ -288,7 +288,7 @@ class OperatorApplicationService:
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_uuid(cmd.operator_id, "operator_id")
 
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         operator_id = OperatorId(cmd.operator_id)
         scope = self._parse_scope(cmd.scope)
         now = datetime.now(UTC)
@@ -320,7 +320,7 @@ class OperatorApplicationService:
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_uuid(cmd.operator_id, "operator_id")
 
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         operator_id = OperatorId(cmd.operator_id)
         scope = self._parse_scope(cmd.scope)
         now = datetime.now(UTC)

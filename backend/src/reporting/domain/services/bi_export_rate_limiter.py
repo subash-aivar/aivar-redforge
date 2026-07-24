@@ -4,11 +4,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
-from typing import TYPE_CHECKING
 from uuid import uuid4
 
-if TYPE_CHECKING:
-    from uuid import UUID
+from reporting.domain.value_objects.identifiers import TenantId
 
 DEFAULT_LIMIT = 10
 DEFAULT_WINDOW_SECONDS = 60
@@ -29,13 +27,13 @@ class BIExportRateLimiter:
     _windows: dict[str, list[datetime]] = field(default_factory=dict)
     audit_log: list[dict[str, object]] = field(default_factory=list)
 
-    def _window_key(self, tenant_id: UUID, at: datetime) -> str:
+    def _window_key(self, tenant_id: TenantId, at: datetime) -> str:
         bucket = int(at.timestamp()) // self.window_seconds
         return f"{tenant_id}:{bucket}"
 
     def check(
         self,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         *,
         actor: str,
         export_format: str,

@@ -96,7 +96,7 @@ def _from_row(row: ScenarioTemplateModel) -> ScenarioTemplate:
     )
     return ScenarioTemplate(
         template_id=ScenarioTemplateId(row.id),
-        tenant_id=TenantId(row.tenant_id),
+        tenant_id=TenantId.from_uuid(row.tenant_id),
         scenario_key=ScenarioKey(row.scenario_key),
         version_label=ScenarioTemplateVersion(row.version),
         name=row.name,

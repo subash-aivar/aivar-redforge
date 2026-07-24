@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from uuid import uuid4
 
 import pytest
 
@@ -19,7 +18,7 @@ from posture_forecasting.infrastructure.acl.m32_exposure_translator import (
 
 @pytest.mark.parametrize("velocity", [0.0, 0.5, 1.0, 2.0, 5.0])
 def test_forecast_decreases_with_velocity(velocity: float) -> None:
-    tenant = TenantId(uuid4())
+    tenant = TenantId.generate()
     snap = ForecastInputSnapshot(
         baseline_exposure_score=100.0,
         remediation_velocity_per_day=velocity,
@@ -34,7 +33,7 @@ def test_forecast_decreases_with_velocity(velocity: float) -> None:
 
 @pytest.mark.parametrize("horizon", [30, 60, 90])
 def test_accuracy_record(horizon: int) -> None:
-    tenant = TenantId(uuid4())
+    tenant = TenantId.generate()
     snap = ForecastInputSnapshot(
         baseline_exposure_score=50.0,
         remediation_velocity_per_day=1.0,

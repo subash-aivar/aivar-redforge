@@ -19,3 +19,8 @@ class CircuitOpenError(IntegrationHubDomainError):
 
 class ConnectorDisabledError(IntegrationHubDomainError):
     pass
+
+
+class ConcurrencyConflictError(IntegrationHubDomainError):
+    """Raised when an optimistic-lock version check fails on update —
+    another writer (e.g. a concurrent sync run) modified the row first."""

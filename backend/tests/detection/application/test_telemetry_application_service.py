@@ -217,7 +217,7 @@ async def test_register_and_get_source(tenant_id: TenantId) -> None:
     svc, _, _sources, publisher = _svc()
     dto = await svc.register_telemetry_source(
         RegisterTelemetrySource(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             name="primary-push",
             source_type=SourceType.CUSTOM_PUSH.value,
             trust_level="Secondary",
@@ -235,7 +235,7 @@ async def test_register_and_get_source(tenant_id: TenantId) -> None:
     assert dto.name == "primary-push"
     assert len(publisher.batches) == 1
     got = await svc.get_telemetry_source(
-        GetTelemetrySource(tenant_id=tenant_id.value, source_id=UUID(dto.id))
+        GetTelemetrySource(tenant_id=tenant_id, source_id=UUID(dto.id))
     )
     assert got.id == dto.id
 
@@ -247,7 +247,7 @@ async def test_deactivate_source(tenant_id: TenantId, now: datetime) -> None:
     await sources.save(source)
     dto = await svc.deactivate_telemetry_source(
         DeactivateTelemetrySource(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             source_id=source.source_id.value,
             reason="retired",
         )
@@ -262,7 +262,7 @@ async def test_update_health(tenant_id: TenantId, now: datetime) -> None:
     await sources.save(source)
     dto = await svc.update_telemetry_source_health(
         UpdateTelemetrySourceHealth(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             source_id=source.source_id.value,
             status=SourceHealthStatus.HEALTHY.value,
             success=True,
@@ -277,7 +277,7 @@ async def test_list_sources(tenant_id: TenantId, now: datetime) -> None:
     await sources.save(make_source(tenant_id=tenant_id, now=now, name="a", pop_events=True))
     await sources.save(make_source(tenant_id=tenant_id, now=now, name="b", pop_events=True))
     page = await svc.list_telemetry_sources(
-        ListTelemetrySources(tenant_id=tenant_id.value)
+        ListTelemetrySources(tenant_id=tenant_id)
     )
     assert len(page.items) == 2
 
@@ -291,7 +291,7 @@ async def test_validate_rule_against_schema(tenant_id: TenantId, now: datetime) 
     await sources.save(source)
     result = await svc.validate_rule_against_schema(
         ValidateRuleAgainstSchema(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             rule_id=rule.rule_id.value,
             source_id=source.source_id.value,
         )
@@ -313,7 +313,7 @@ async def test_validate_rule_missing_field(tenant_id: TenantId, now: datetime) -
     await sources.save(source)
     result = await svc.validate_rule_against_schema(
         ValidateRuleAgainstSchema(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             rule_id=rule.rule_id.value,
             source_id=source.source_id.value,
         )
@@ -331,7 +331,7 @@ async def test_simulate_with_synthetic_events(tenant_id: TenantId, now: datetime
     await sources.save(source)
     result = await svc.simulate_rule(
         SimulateRule(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             rule_id=rule.rule_id.value,
             source_id=source.source_id.value,
             window_start=(now - timedelta(hours=1)).isoformat(),
@@ -357,7 +357,7 @@ async def test_simulate_never_creates_findings(tenant_id: TenantId, now: datetim
     for _ in range(5):
         result = await svc.simulate_rule(
             SimulateRule(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 rule_id=rule.rule_id.value,
                 source_id=source.source_id.value,
                 window_start=(now - timedelta(hours=1)).isoformat(),
@@ -374,7 +374,7 @@ async def test_validate_source_without_provider(tenant_id: TenantId, now: dateti
     source = make_source(tenant_id=tenant_id, now=now, pop_events=True)
     await sources.save(source)
     result = await svc.validate_telemetry_source(
-        tenant_id=tenant_id.value,
+        tenant_id=tenant_id,
         source_id=source.source_id.value,
     )
     assert result.provider_registered is False
@@ -388,7 +388,7 @@ async def test_validate_source_with_provider(tenant_id: TenantId, now: datetime)
     source = make_source(tenant_id=tenant_id, now=now, pop_events=True)
     await sources.save(source)
     result = await svc.validate_telemetry_source(
-        tenant_id=tenant_id.value,
+        tenant_id=tenant_id,
         source_id=source.source_id.value,
     )
     assert result.provider_registered is True
@@ -401,7 +401,7 @@ async def test_get_missing_source(tenant_id: TenantId) -> None:
     svc, _, _, _ = _svc()
     with pytest.raises(ApplicationNotFoundError):
         await svc.get_telemetry_source(
-            GetTelemetrySource(tenant_id=tenant_id.value, source_id=uuid4())
+            GetTelemetrySource(tenant_id=tenant_id, source_id=uuid4())
         )
 
 
@@ -420,7 +420,7 @@ async def test_simulate_schema_gate(tenant_id: TenantId, now: datetime) -> None:
     with pytest.raises(ApplicationValidationError):
         await svc.simulate_rule(
             SimulateRule(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 rule_id=rule.rule_id.value,
                 source_id=source.source_id.value,
                 window_start=(now - timedelta(hours=1)).isoformat(),

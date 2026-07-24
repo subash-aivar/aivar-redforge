@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from ml_pipeline.domain.ports.i_security_graph_write_port import ISecurityGraphWritePort
+from ml_pipeline.domain.value_objects.identifiers import TenantId
 
 if TYPE_CHECKING:
     from uuid import UUID
@@ -18,7 +19,7 @@ class SecurityGraphWriteAdapter(ISecurityGraphWritePort):
 
     async def upsert_predictive_risk_node(
         self,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         *,
         model_id: UUID,
         asset_ref_id: UUID,

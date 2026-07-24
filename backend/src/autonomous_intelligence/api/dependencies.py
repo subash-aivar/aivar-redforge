@@ -6,6 +6,7 @@ from fastapi import Depends, Header, Request
 
 from autonomous_intelligence.infrastructure.container import AutonomousIntelligenceContainer
 from redforge.api.security import TenantContext, get_tenant_context
+from redforge.shared.identifiers import EntityId
 
 
 def get_container(request: Request) -> AutonomousIntelligenceContainer:
@@ -31,7 +32,7 @@ def tenant_id_header(tenant: TenantContext = Depends(get_tenant_context)) -> UUI
     get_tenant_context verifies the bearer token and its `org` claim
     server-side, so organization_id can no longer be spoofed.
     """
-    return UUID(tenant.organization_id)
+    return EntityId.from_string(tenant.organization_id)
 
 
 def roles_header(x_roles: str = Header("", alias="X-Roles")) -> tuple[str, ...]:

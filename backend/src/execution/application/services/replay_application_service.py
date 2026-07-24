@@ -7,6 +7,8 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
+from execution.domain.value_objects.identifiers import TenantId
+
 if TYPE_CHECKING:
     from collections.abc import Callable
 
@@ -21,7 +23,7 @@ def _utc_now() -> datetime:
 
 @dataclass(frozen=True, slots=True)
 class ReplayAttackActionExecution:
-    tenant_id: UUID
+    tenant_id: TenantId
     journal_id: UUID | None = None
     engagement_id: UUID | None = None
 
@@ -154,10 +156,9 @@ class ReplayApplicationService:
         from execution.domain.value_objects.identifiers import (
             EngagementId,
             ExecutionJournalId,
-            TenantId,
         )
 
-        tenant = TenantId(command.tenant_id)
+        tenant = command.tenant_id
         async with self._uow_factory() as uow:
             if command.journal_id is not None:
                 return await uow.journals.find_by_id(

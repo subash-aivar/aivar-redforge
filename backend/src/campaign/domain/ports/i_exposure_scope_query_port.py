@@ -9,15 +9,13 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from uuid import UUID
+from campaign.domain.value_objects.identifiers import TenantId
 
 
 @dataclass(frozen=True, slots=True)
 class ExposureScopeRequest:
-    tenant_id: UUID
+    tenant_id: TenantId
     max_assets: int = 100
     min_exposure_score: float | None = None
     amplifier_filter: tuple[str, ...] = ()

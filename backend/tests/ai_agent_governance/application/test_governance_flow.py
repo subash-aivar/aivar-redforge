@@ -29,7 +29,7 @@ async def test_full_envelope_deviation_flow(
     asset_id = uuid4()
     env = await container.envelope_service.draft(
         DraftEnvelopeCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             asset_id=asset_id,
             max_data_sensitivity="Internal",
             requires_human_approval_for=("FinancialTransaction",),
@@ -39,7 +39,7 @@ async def test_full_envelope_deviation_flow(
     envelope_id = UUID(env.envelope_id)
     await container.envelope_service.add_action(
         AddAuthorizedActionCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             envelope_id=envelope_id,
             category="DataRead",
             actor_roles=ENGINEER,
@@ -47,7 +47,7 @@ async def test_full_envelope_deviation_flow(
     )
     await container.envelope_service.approve(
         ApproveEnvelopeCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             envelope_id=envelope_id,
             approver_id="approver-1",
             actor_roles=APPROVER,
@@ -56,7 +56,7 @@ async def test_full_envelope_deviation_flow(
     occurred_at = datetime.now(UTC)
     ok = await container.deviation_service.report_action(
         ReportAgentActionCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             asset_id=asset_id,
             action_category="DataRead",
             resource="crm",
@@ -70,7 +70,7 @@ async def test_full_envelope_deviation_flow(
     assert ok.status == "compliant"
     bad = await container.deviation_service.report_action(
         ReportAgentActionCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             asset_id=asset_id,
             action_category="CodeExecution",
             resource="shell",
@@ -86,7 +86,7 @@ async def test_full_envelope_deviation_flow(
     # idempotent
     dup = await container.deviation_service.report_action(
         ReportAgentActionCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             asset_id=asset_id,
             action_category="CodeExecution",
             resource="shell",
@@ -100,7 +100,7 @@ async def test_full_envelope_deviation_flow(
     assert dup.status == "duplicate"
     reviewed = await container.deviation_service.review(
         ReviewDeviationCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             deviation_id=UUID(bad.deviation.deviation_id),
             decision="benign",
             notes="known maintenance",
@@ -118,7 +118,7 @@ async def test_version_pinning_across_revision(
     t0 = datetime(2026, 7, 21, 10, 0, 0, tzinfo=UTC)
     env = await container.envelope_service.draft(
         DraftEnvelopeCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             asset_id=asset_id,
             max_data_sensitivity="Internal",
             actor_roles=ENGINEER,
@@ -127,7 +127,7 @@ async def test_version_pinning_across_revision(
     eid = UUID(env.envelope_id)
     await container.envelope_service.add_action(
         AddAuthorizedActionCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             envelope_id=eid,
             category="DataRead",
             actor_roles=ENGINEER,
@@ -135,7 +135,7 @@ async def test_version_pinning_across_revision(
     )
     await container.envelope_service.approve(
         ApproveEnvelopeCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             envelope_id=eid,
             approver_id="a",
             actor_roles=APPROVER,
@@ -157,7 +157,7 @@ async def test_version_pinning_across_revision(
     t1 = t0 + timedelta(hours=3)
     await container.envelope_service.revise(
         ReviseEnvelopeCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             envelope_id=eid,
             new_actions=(("DataRead", "r"), ("CodeExecution", "x")),
             actor_roles=ENGINEER,
@@ -194,7 +194,7 @@ async def test_remove_human_approval_admin_only(
     asset_id = uuid4()
     env = await container.envelope_service.draft(
         DraftEnvelopeCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             asset_id=asset_id,
             max_data_sensitivity="Internal",
             requires_human_approval_for=("FinancialTransaction",),
@@ -204,7 +204,7 @@ async def test_remove_human_approval_admin_only(
     eid = UUID(env.envelope_id)
     await container.envelope_service.add_action(
         AddAuthorizedActionCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             envelope_id=eid,
             category="FinancialTransaction",
             actor_roles=ENGINEER,
@@ -212,7 +212,7 @@ async def test_remove_human_approval_admin_only(
     )
     await container.envelope_service.approve(
         ApproveEnvelopeCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             envelope_id=eid,
             approver_id="a",
             actor_roles=APPROVER,
@@ -221,7 +221,7 @@ async def test_remove_human_approval_admin_only(
     with pytest.raises(ApplicationValidationError):
         await container.envelope_service.revise(
             ReviseEnvelopeCommand(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 envelope_id=eid,
                 remove_human_approval_for=("FinancialTransaction",),
                 actor_roles=ENGINEER,
@@ -229,7 +229,7 @@ async def test_remove_human_approval_admin_only(
         )
     ok = await container.envelope_service.revise(
         ReviseEnvelopeCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             envelope_id=eid,
             remove_human_approval_for=("FinancialTransaction",),
             actor_roles=ADMIN,

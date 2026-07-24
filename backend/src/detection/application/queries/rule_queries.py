@@ -5,16 +5,18 @@ from __future__ import annotations
 from dataclasses import dataclass
 from uuid import UUID
 
+from detection.domain.value_objects.identifiers import TenantId
+
 
 @dataclass(frozen=True, slots=True)
 class GetRule:
-    tenant_id: UUID
+    tenant_id: TenantId
     rule_id: UUID
 
 
 @dataclass(frozen=True, slots=True)
 class ListRules:
-    tenant_id: UUID
+    tenant_id: TenantId
     limit: int = 100
     offset: int = 0
     lifecycle_state: str | None = None

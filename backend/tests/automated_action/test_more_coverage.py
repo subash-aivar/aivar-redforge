@@ -30,6 +30,7 @@ from automated_action.infrastructure.container import AutomatedActionContainer
 from automated_action.infrastructure.projectors.analytics_projector import (
     AutomationAnalyticsProjector,
 )
+from redforge.shared.identifiers import EntityId
 
 
 @pytest.mark.parametrize(
@@ -53,7 +54,7 @@ def test_budget_matrix(running: int, actions: int, ok: bool) -> None:
 
 def test_outbox_service_create() -> None:
     rec = AutomationOutboxService().create_pending(
-        TenantId(uuid4()),
+        TenantId.generate(),
         AutomationExecutionId.generate(),
         1,
         "act",
@@ -92,7 +93,7 @@ def test_analytics_projector() -> None:
 def test_mark_rolled_back() -> None:
     ex = AutomationExecution(
         AutomationExecutionId.generate(),
-        TenantId(uuid4()),
+        TenantId.generate(),
         PlaybookRef("p", 1, "h"),
         TriggerRef("MANUAL", "manual", "e"),
         ExecutionStatus.COMPLETED,
@@ -109,7 +110,7 @@ def test_mark_rolled_back() -> None:
 @pytest.mark.asyncio
 async def test_get_execution() -> None:
     c = AutomatedActionContainer()
-    tenant = uuid4()
+    tenant = EntityId.generate()
     pb = uuid4()
     c.playbook_lookup.put(
         PlaybookLookupView(
@@ -133,7 +134,7 @@ async def test_get_execution() -> None:
 @pytest.mark.asyncio
 async def test_metrics_endpoint_counters() -> None:
     c = AutomatedActionContainer()
-    tenant = uuid4()
+    tenant = EntityId.generate()
     pb = uuid4()
     c.playbook_lookup.put(
         PlaybookLookupView(
@@ -166,7 +167,7 @@ async def test_retry_and_recovery_workers() -> None:
 @pytest.mark.asyncio
 async def test_trigger_worker() -> None:
     c = AutomatedActionContainer()
-    tenant = uuid4()
+    tenant = EntityId.generate()
     pb = uuid4()
     c.playbook_lookup.put(
         PlaybookLookupView(

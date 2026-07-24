@@ -43,7 +43,6 @@ from payload.domain.value_objects.identifiers import (
     OperatorId,
     PayloadId,
     PluginId,
-    TenantId,
 )
 from payload.domain.value_objects.payload_vos import (
     ApprovedForEngagementClasses,
@@ -98,7 +97,7 @@ class PayloadApplicationService:
     async def register_payload(self, cmd: RegisterPayload) -> PayloadDTO:
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_str(cmd.payload_key, "payload_key", 256)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         try:
             key = PayloadKey(cmd.payload_key)
@@ -132,7 +131,7 @@ class PayloadApplicationService:
         validate_str(cmd.version, "version", 64)
         validate_str(cmd.payload_hash, "payload_hash", 64)
         validate_str(cmd.storage_ref, "storage_ref", 512)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         try:
             version = PayloadVersionRef(cmd.version)
@@ -168,7 +167,7 @@ class PayloadApplicationService:
         validate_uuid(cmd.payload_id, "payload_id")
         validate_uuid(cmd.approved_by, "approved_by")
         validate_str(cmd.signature, "signature", 4096)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
 
         async with self._uow_factory() as uow:
@@ -197,7 +196,7 @@ class PayloadApplicationService:
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_uuid(cmd.payload_id, "payload_id")
         validate_str(cmd.reason, "reason", 2048)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
 
         async with self._uow_factory() as uow:
@@ -218,7 +217,7 @@ class PayloadApplicationService:
         validate_uuid(cmd.payload_id, "payload_id")
         validate_uuid(cmd.revoked_by, "revoked_by")
         validate_str(cmd.reason, "reason", 2048)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
 
         async with self._uow_factory() as uow:
@@ -250,7 +249,7 @@ class PayloadApplicationService:
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_uuid(cmd.payload_id, "payload_id")
         validate_str(cmd.computed_hash, "computed_hash", 64)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         try:
             computed = PayloadHash(cmd.computed_hash)
@@ -288,7 +287,7 @@ class PayloadApplicationService:
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_str(cmd.name, "name", 256)
         validate_str(cmd.plugin_hash, "plugin_hash", 64)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         try:
             ptype = PluginType(cmd.plugin_type)
@@ -319,7 +318,7 @@ class PayloadApplicationService:
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_uuid(cmd.plugin_id, "plugin_id")
         validate_uuid(cmd.approved_by, "approved_by")
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
 
         async with self._uow_factory() as uow:
@@ -344,7 +343,7 @@ class PayloadApplicationService:
         validate_uuid(cmd.plugin_id, "plugin_id")
         validate_uuid(cmd.revoked_by, "revoked_by")
         validate_str(cmd.reason, "reason", 2048)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
 
         async with self._uow_factory() as uow:
@@ -368,7 +367,7 @@ class PayloadApplicationService:
     async def get_payload(self, query: GetPayload) -> PayloadDTO:
         validate_uuid(query.tenant_id, "tenant_id")
         validate_uuid(query.payload_id, "payload_id")
-        tenant = TenantId(query.tenant_id)
+        tenant = query.tenant_id
         async with self._uow_factory() as uow:
             payload = await uow.payloads.find_by_id(
                 PayloadId(query.payload_id), tenant
@@ -381,7 +380,7 @@ class PayloadApplicationService:
         validate_uuid(query.tenant_id, "tenant_id")
         limit = validate_limit(query.limit)
         offset = validate_offset(query.offset)
-        tenant = TenantId(query.tenant_id)
+        tenant = query.tenant_id
         async with self._uow_factory() as uow:
             items = await uow.payloads.list_by_tenant(
                 tenant, limit=limit, offset=offset
@@ -391,7 +390,7 @@ class PayloadApplicationService:
     async def get_plugin(self, query: GetPlugin) -> PluginDTO:
         validate_uuid(query.tenant_id, "tenant_id")
         validate_uuid(query.plugin_id, "plugin_id")
-        tenant = TenantId(query.tenant_id)
+        tenant = query.tenant_id
         async with self._uow_factory() as uow:
             plugin = await uow.plugins.find_by_id(PluginId(query.plugin_id), tenant)
             if plugin is None:
@@ -404,7 +403,7 @@ class PayloadApplicationService:
         validate_uuid(query.tenant_id, "tenant_id")
         limit = validate_limit(query.limit)
         offset = validate_offset(query.offset)
-        tenant = TenantId(query.tenant_id)
+        tenant = query.tenant_id
         async with self._uow_factory() as uow:
             items = await uow.plugins.list_by_tenant(
                 tenant, limit=limit, offset=offset

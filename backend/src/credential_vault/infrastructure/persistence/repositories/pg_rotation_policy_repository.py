@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 def _to_domain(row: RotationPolicyModel) -> RotationPolicy:
     return RotationPolicy(
         policy_id=RotationPolicyId(row.id),
-        tenant_id=TenantId(row.tenant_id),
+        tenant_id=TenantId.from_uuid(row.tenant_id),
         name=row.name,
         interval_days=row.interval_days,
         max_versions_kept=row.max_versions_kept,
@@ -67,7 +67,7 @@ class PgRotationPolicyRepository(IRotationPolicyRepository):
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
-    async def _current_row_version(self, policy_id: UUID, tenant_id: UUID) -> int:
+    async def _current_row_version(self, policy_id: UUID, tenant_id: TenantId) -> int:
         stmt = select(RotationPolicyModel.row_version).where(
             RotationPolicyModel.id == policy_id,
             RotationPolicyModel.tenant_id == tenant_id,
@@ -76,7 +76,7 @@ class PgRotationPolicyRepository(IRotationPolicyRepository):
         row_version = result.scalar_one_or_none()
         return row_version if row_version is not None else -1
 
-    async def _name_conflict(self, name: str, tenant_id: UUID, exclude_id: UUID | None) -> bool:
+    async def _name_conflict(self, name: str, tenant_id: TenantId, exclude_id: UUID | None) -> bool:
         stmt = select(RotationPolicyModel.id).where(
             RotationPolicyModel.name == name,
             RotationPolicyModel.tenant_id == tenant_id,

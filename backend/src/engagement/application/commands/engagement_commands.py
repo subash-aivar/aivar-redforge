@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
+from engagement.domain.value_objects.identifiers import TenantId
+
 if TYPE_CHECKING:
     from datetime import datetime
     from uuid import UUID
@@ -12,7 +14,7 @@ if TYPE_CHECKING:
 
 @dataclass(frozen=True, slots=True)
 class CreateEngagementCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     name: str
     classification: str
     owner_id: str
@@ -22,14 +24,14 @@ class CreateEngagementCommand:
 
 @dataclass(frozen=True, slots=True)
 class SubmitEngagementForApprovalCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     engagement_id: UUID
     actor: str = "system"
 
 
 @dataclass(frozen=True, slots=True)
 class GrantEngagementApprovalCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     engagement_id: UUID
     approver_id: str
     signature: str | None = None
@@ -38,14 +40,14 @@ class GrantEngagementApprovalCommand:
 
 @dataclass(frozen=True, slots=True)
 class ActivateEngagementCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     engagement_id: UUID
     actor: str = "system"
 
 
 @dataclass(frozen=True, slots=True)
 class SuspendEngagementCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     engagement_id: UUID
     reason: str
     authority: str
@@ -54,7 +56,7 @@ class SuspendEngagementCommand:
 
 @dataclass(frozen=True, slots=True)
 class ResumeEngagementCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     engagement_id: UUID
     authority: str
     actor: str = "system"
@@ -62,7 +64,7 @@ class ResumeEngagementCommand:
 
 @dataclass(frozen=True, slots=True)
 class CloseEngagementCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     engagement_id: UUID
     reason: str | None = None
     actor: str = "system"
@@ -70,14 +72,14 @@ class CloseEngagementCommand:
 
 @dataclass(frozen=True, slots=True)
 class ArchiveEngagementCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     engagement_id: UUID
     actor: str = "system"
 
 
 @dataclass(frozen=True, slots=True)
 class DefineTargetScopeCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     engagement_id: UUID
     asset_ids: list[UUID]
     actor: str = "system"
@@ -85,7 +87,7 @@ class DefineTargetScopeCommand:
 
 @dataclass(frozen=True, slots=True)
 class SetRulesOfEngagementCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     engagement_id: UUID
     allowed_techniques: list[str]
     forbidden_targets: list[str] = field(default_factory=list)
@@ -96,7 +98,7 @@ class SetRulesOfEngagementCommand:
 
 @dataclass(frozen=True, slots=True)
 class SignRulesOfEngagementCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     engagement_id: UUID
     owner_id: str
     signature: str | None = None
@@ -105,7 +107,7 @@ class SignRulesOfEngagementCommand:
 
 @dataclass(frozen=True, slots=True)
 class SetEngagementWindowCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     engagement_id: UUID
     authorized_start: datetime
     authorized_end: datetime
@@ -115,7 +117,7 @@ class SetEngagementWindowCommand:
 
 @dataclass(frozen=True, slots=True)
 class AddParticipantCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     engagement_id: UUID
     operator_id: str
     role: str
@@ -124,7 +126,7 @@ class AddParticipantCommand:
 
 @dataclass(frozen=True, slots=True)
 class RemoveParticipantCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     engagement_id: UUID
     operator_id: str
     actor: str = "system"
@@ -132,7 +134,7 @@ class RemoveParticipantCommand:
 
 @dataclass(frozen=True, slots=True)
 class RequestScopeExpansionCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     engagement_id: UUID
     asset_ids: list[UUID]
     actor: str = "system"
@@ -140,14 +142,14 @@ class RequestScopeExpansionCommand:
 
 @dataclass(frozen=True, slots=True)
 class ApproveScopeExpansionCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     engagement_id: UUID
     actor: str = "system"
 
 
 @dataclass(frozen=True, slots=True)
 class GrantTargetAuthorizationCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     engagement_id: UUID
     asset_id: UUID
     technique_ids: list[str]
@@ -162,7 +164,7 @@ class GrantTargetAuthorizationCommand:
 
 @dataclass(frozen=True, slots=True)
 class RevokeTargetAuthorizationCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     authorization_id: UUID
     reason: str
     revoked_by: str
@@ -171,7 +173,7 @@ class RevokeTargetAuthorizationCommand:
 
 @dataclass(frozen=True, slots=True)
 class SuspendTargetAuthorizationCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     authorization_id: UUID
     reason: str
     actor: str = "system"

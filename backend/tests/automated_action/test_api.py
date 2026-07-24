@@ -11,6 +11,7 @@ from automated_action.application.ports.lookups import PlaybookLookupView, Playb
 from automated_action.infrastructure.container import AutomatedActionContainer
 from redforge.api.security import TenantContext, get_tenant_context
 from redforge.domain.identity.value_objects import MembershipRole, Permission
+from redforge.shared.identifiers import EntityId
 
 
 def _override_tenant_context(
@@ -47,7 +48,7 @@ async def test_trigger_api() -> None:
         )
     )
     app.state.automated_action_container = c
-    headers = {"X-Tenant-Id": str(uuid4()), "X-Roles": "automation:operator"}
+    headers = {"X-Tenant-Id": str(EntityId.generate()), "X-Roles": "automation:operator"}
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         r = await client.post(

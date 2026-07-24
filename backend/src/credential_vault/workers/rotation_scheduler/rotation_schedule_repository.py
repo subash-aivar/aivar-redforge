@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy import text
 
+from credential_vault.domain.value_objects.identifiers import TenantId
+
 if TYPE_CHECKING:
     from uuid import UUID
 
@@ -17,7 +19,7 @@ if TYPE_CHECKING:
 @dataclass(frozen=True, slots=True)
 class RotationScheduleItem:
     credential_id: UUID
-    tenant_id: UUID
+    tenant_id: TenantId
 
 
 class RotationScheduleRepository:
@@ -84,7 +86,7 @@ class RotationScheduleRepository:
             await session.commit()
             return [RotationScheduleItem(credential_id=row[0], tenant_id=row[1]) for row in rows]
 
-    async def release_claim(self, credential_id: UUID, tenant_id: UUID) -> None:
+    async def release_claim(self, credential_id: UUID, tenant_id: TenantId) -> None:
         async with self._session_factory() as session:
             await session.execute(
                 text(
@@ -101,7 +103,7 @@ class RotationScheduleRepository:
     async def mark_rotated(
         self,
         credential_id: UUID,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         next_due_at: datetime,
     ) -> None:
         async with self._session_factory() as session:

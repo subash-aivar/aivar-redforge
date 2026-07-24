@@ -5,13 +5,15 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
+from red_team_operator.domain.value_objects.identifiers import TenantId
+
 if TYPE_CHECKING:
     from uuid import UUID
 
 
 @dataclass(frozen=True, slots=True)
 class ActivateOperatorCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     identity_ref: str
     clearance_level: str
     display_name: str | None = None
@@ -22,7 +24,7 @@ class ActivateOperatorCommand:
 
 @dataclass(frozen=True, slots=True)
 class SuspendOperatorCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     operator_id: UUID
     reason: str
     authority: str
@@ -30,7 +32,7 @@ class SuspendOperatorCommand:
 
 @dataclass(frozen=True, slots=True)
 class RevokeOperatorCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     operator_id: UUID
     reason: str
     authority: str
@@ -38,7 +40,7 @@ class RevokeOperatorCommand:
 
 @dataclass(frozen=True, slots=True)
 class ChangeOperatorClearanceCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     operator_id: UUID
     new_level: str
     authority: str
@@ -46,27 +48,27 @@ class ChangeOperatorClearanceCommand:
 
 @dataclass(frozen=True, slots=True)
 class AddOperatorToEngagementCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     operator_id: UUID
     engagement_id: UUID
 
 
 @dataclass(frozen=True, slots=True)
 class RemoveOperatorFromEngagementCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     operator_id: UUID
     engagement_id: UUID
 
 
 @dataclass(frozen=True, slots=True)
 class GrantApprovalAuthorityCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     operator_id: UUID
     scope: str
 
 
 @dataclass(frozen=True, slots=True)
 class RevokeApprovalAuthorityCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     operator_id: UUID
     scope: str

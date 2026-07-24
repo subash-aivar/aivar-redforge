@@ -28,6 +28,7 @@ from credential_vault.domain.value_objects.identifiers import (
     PrincipalId,
     TenantId,
 )
+from redforge.shared.identifiers import EntityId
 
 
 @pytest.fixture
@@ -86,9 +87,9 @@ async def test_list_audit_entries_success(
     credential_repo: AsyncMock,
     mock_permission_port: AsyncMock,
 ) -> None:
-    tenant_uuid = uuid4()
+    tenant_uuid = EntityId.generate()
     credential_uuid = uuid4()
-    tenant_id = TenantId(tenant_uuid)
+    tenant_id = tenant_uuid
     credential_id = CredentialId(credential_uuid)
     audit_log = make_audit_log(credential_id=credential_id, tenant_id=tenant_id)
     entries = [
@@ -147,7 +148,7 @@ async def test_list_audit_entries_access_denied(
 ) -> None:
     mock_permission_port.has_permission.return_value = False
     qry = ListAuditEntriesQuery(
-        tenant_id=uuid4(),
+        tenant_id=EntityId.generate(),
         credential_id=uuid4(),
         principal_id=uuid4(),
     )
@@ -166,7 +167,7 @@ async def test_list_audit_entries_invalid_operation_string(
     audit_log_repo: AsyncMock,
 ) -> None:
     qry = ListAuditEntriesQuery(
-        tenant_id=uuid4(),
+        tenant_id=EntityId.generate(),
         credential_id=uuid4(),
         principal_id=uuid4(),
         operations=["NOT_AN_OPERATION"],
@@ -186,9 +187,9 @@ async def test_list_audit_entries_never_calls_append_entry(
     service: AuditQueryService,
     audit_log_repo: AsyncMock,
 ) -> None:
-    tenant_uuid = uuid4()
+    tenant_uuid = EntityId.generate()
     credential_uuid = uuid4()
-    tenant_id = TenantId(tenant_uuid)
+    tenant_id = tenant_uuid
     credential_id = CredentialId(credential_uuid)
     audit_log = make_audit_log(credential_id=credential_id, tenant_id=tenant_id)
     audit_log_repo.get_by_credential.return_value = audit_log
@@ -210,9 +211,9 @@ async def test_list_audit_entries_uses_get_by_credential_then_list_entries(
     service: AuditQueryService,
     audit_log_repo: AsyncMock,
 ) -> None:
-    tenant_uuid = uuid4()
+    tenant_uuid = EntityId.generate()
     credential_uuid = uuid4()
-    tenant_id = TenantId(tenant_uuid)
+    tenant_id = tenant_uuid
     credential_id = CredentialId(credential_uuid)
     audit_log = make_audit_log(credential_id=credential_id, tenant_id=tenant_id)
     audit_log_repo.get_by_credential.return_value = audit_log
@@ -234,7 +235,7 @@ async def test_list_audit_entries_invalid_limit(
     audit_log_repo: AsyncMock,
 ) -> None:
     qry = ListAuditEntriesQuery(
-        tenant_id=uuid4(),
+        tenant_id=EntityId.generate(),
         credential_id=uuid4(),
         principal_id=uuid4(),
         limit=0,

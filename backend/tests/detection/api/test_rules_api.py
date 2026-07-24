@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 from httpx import AsyncClient
@@ -162,11 +162,9 @@ async def test_demote_active_to_staged_200(async_client: AsyncClient, app) -> No
         json={"change_summary": "v1", "semver": "1.0.0"},
     )
     # Force Active for demotion path
-    from uuid import UUID
-
-    org_id = UUID(created.json()["tenant_id"])
+    org_id = TenantId.from_string(created.json()["tenant_id"])
     repo = app.state.rule_repo
-    agg = await repo.find_by_id(DetectionRuleId(UUID(rid)), TenantId(org_id))
+    agg = await repo.find_by_id(DetectionRuleId(UUID(rid)), org_id)
     assert agg is not None
     agg.lifecycle_state = RuleLifecycleState.ACTIVE
     await repo.save(agg)

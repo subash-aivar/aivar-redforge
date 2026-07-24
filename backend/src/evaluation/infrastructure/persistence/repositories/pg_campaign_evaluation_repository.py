@@ -152,7 +152,7 @@ def _from_row(row: CampaignEvaluationModel) -> CampaignEvaluation:
 
     return CampaignEvaluation(
         evaluation_id=CampaignEvaluationId(row.id),
-        tenant_id=TenantId(row.tenant_id),
+        tenant_id=TenantId.from_uuid(row.tenant_id),
         campaign_instance_ref=CampaignInstanceRef(
             instance_id=row.campaign_instance_id,
             campaign_id=row.campaign_id,

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
-from uuid import uuid4
 
 import pytest
 
@@ -48,7 +47,7 @@ def test_budget() -> None:
 
 def test_recovery_stale() -> None:
     rec = AutomatedActionRecord.create_pending(
-        TenantId(uuid4()),
+        TenantId.generate(),
         AutomationExecutionId.generate(),
         1,
         "a",

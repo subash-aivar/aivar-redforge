@@ -134,11 +134,10 @@ def test_schema_update_emits_event(tenant_id: TenantId, now: object) -> None:
 
 def test_tenant_mismatch_on_mutate(tenant_id: TenantId, now: object) -> None:
     from datetime import datetime
-    from uuid import uuid4
 
     assert isinstance(now, datetime)
     source = make_source(tenant_id=tenant_id, now=now, pop_events=True)
-    other = TenantId(uuid4())
+    other = TenantId.generate()
     with pytest.raises(TenantMismatch):
         source.deactivate(tenant_id=other, reason="x", now=now)
 

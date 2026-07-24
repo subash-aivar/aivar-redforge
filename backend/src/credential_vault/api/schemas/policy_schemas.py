@@ -35,7 +35,7 @@ class RotationPolicyResponse(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True, frozen=True)
 
     policy_id: UUID
-    tenant_id: UUID
+    tenant_id: str
     name: str
     interval_days: int | None
     max_versions_kept: int
@@ -51,7 +51,7 @@ class RotationPolicyResponse(BaseModel):
     def from_dto(cls, dto: object) -> RotationPolicyResponse:
         data = dto.to_dict()  # type: ignore[attr-defined]
         data["policy_id"] = UUID(str(data["policy_id"]))
-        data["tenant_id"] = UUID(str(data["tenant_id"]))
+        data["tenant_id"] = str(data["tenant_id"])
         data["created_at"] = datetime.fromisoformat(str(data["created_at"]))
         data["updated_at"] = datetime.fromisoformat(str(data["updated_at"]))
         return cls(**data)
@@ -78,7 +78,7 @@ class ExpirationPolicyResponse(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True, frozen=True)
 
     policy_id: UUID
-    tenant_id: UUID
+    tenant_id: str
     name: str
     ttl_days: int
     warn_days_before: int
@@ -91,7 +91,7 @@ class ExpirationPolicyResponse(BaseModel):
     def from_dto(cls, dto: object) -> ExpirationPolicyResponse:
         data = dto.to_dict()  # type: ignore[attr-defined]
         data["policy_id"] = UUID(str(data["policy_id"]))
-        data["tenant_id"] = UUID(str(data["tenant_id"]))
+        data["tenant_id"] = str(data["tenant_id"])
         data["created_at"] = datetime.fromisoformat(str(data["created_at"]))
         data["updated_at"] = datetime.fromisoformat(str(data["updated_at"]))
         return cls(**data)

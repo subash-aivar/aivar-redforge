@@ -5,6 +5,7 @@ from uuid import uuid4
 
 import pytest
 
+from redforge.shared.identifiers import EntityId
 from regulatory_notification.application.exceptions import ApplicationForbiddenError
 from regulatory_notification.domain.exceptions.domain_exceptions import DomainInvariantViolation
 from regulatory_notification.domain.services.deadline_computation_service import (
@@ -33,7 +34,7 @@ def test_nis2_two_regimes() -> None:
 @pytest.mark.asyncio
 async def test_human_submit_and_immutability() -> None:
     c = RegulatoryNotificationContainer()
-    tenant = uuid4()
+    tenant = EntityId.generate()
     created = await c.app.start_clocks(tenant, str(uuid4()), ["GDPR_ART33"], ("incident:ciso",))
     nid = __import__("uuid").UUID(created[0]["notification_id"])
     await c.app.create_draft(tenant, nid, "draft", "officer", ("regulatory:officer",))
@@ -42,9 +43,7 @@ async def test_human_submit_and_immutability() -> None:
         tenant, nid, "legal", "GDPR_portal_submission", "REF-1", ("regulatory:legal",)
     )
     n = await c.notifications.find_by_id(
-        __import__(
-            "regulatory_notification.domain.value_objects.identifiers", fromlist=["TenantId"]
-        ).TenantId(tenant),
+        tenant,
         __import__(
             "regulatory_notification.domain.value_objects.identifiers",
             fromlist=["RegNotificationId"],
@@ -53,9 +52,7 @@ async def test_human_submit_and_immutability() -> None:
     assert n is not None and n.submission_record is not None
     with pytest.raises(DomainInvariantViolation):
         n.submit(
-            __import__(
-                "regulatory_notification.domain.value_objects.identifiers", fromlist=["TenantId"]
-            ).TenantId(tenant),
+            tenant,
             "x",
             "m",
             "r2",
@@ -66,7 +63,7 @@ async def test_human_submit_and_immutability() -> None:
 @pytest.mark.asyncio
 async def test_analyst_cannot_submit() -> None:
     c = RegulatoryNotificationContainer()
-    tenant = uuid4()
+    tenant = EntityId.generate()
     created = await c.app.start_clocks(tenant, str(uuid4()), ["GDPR_ART33"], ("incident:ciso",))
     nid = __import__("uuid").UUID(created[0]["notification_id"])
     with pytest.raises(ApplicationForbiddenError):
@@ -76,7 +73,7 @@ async def test_analyst_cannot_submit() -> None:
 @pytest.mark.asyncio
 async def test_reconstitute_worker() -> None:
     c = RegulatoryNotificationContainer()
-    tenant = uuid4()
+    tenant = EntityId.generate()
     await c.app.start_clocks(tenant, str(uuid4()), ["GDPR_ART33"], ("incident:ciso",))
     result = await c.deadline_worker.reconstitute_and_tick()
     assert result["reconstituted"] is True

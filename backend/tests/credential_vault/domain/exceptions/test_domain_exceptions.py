@@ -19,7 +19,7 @@ from credential_vault.domain.value_objects.identifiers import (
 
 NOW = datetime.now(UTC)
 CREDENTIAL_ID = CredentialId(uuid4())
-TENANT_ID = TenantId(uuid4())
+TENANT_ID = TenantId.generate()
 VERSION_ID = VersionId(uuid4())
 PRINCIPAL_ID = PrincipalId(uuid4())
 BACKEND_ID = VaultBackendId(uuid4())
@@ -62,7 +62,7 @@ EXCEPTION_CASES = [
     ),
     (
         "TenantMismatch",
-        lambda: exc.TenantMismatch(TENANT_ID, TenantId(uuid4())),
+        lambda: exc.TenantMismatch(TENANT_ID, TenantId.generate()),
     ),
     ("CredentialIsRevoked", lambda: exc.CredentialIsRevoked(CREDENTIAL_ID)),
     (

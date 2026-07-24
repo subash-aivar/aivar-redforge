@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import AsyncIterator
 from types import TracebackType
 from typing import Self
-from uuid import UUID, uuid4
+from uuid import UUID
 
 import pytest
 import pytest_asyncio
@@ -29,6 +29,7 @@ from detection.domain.value_objects.keys import RuleKey
 from redforge.api.dependencies import get_organization_service
 from redforge.api.security import TenantContext, get_tenant_context
 from redforge.domain.identity.value_objects import MembershipRole, Permission
+from redforge.shared.identifiers import EntityId
 
 
 class _FakeRuleRepo(IDetectionRuleRepository):
@@ -131,8 +132,8 @@ class _OrgStub:
 
 def _build_app(
     *,
-    organization_id: UUID,
-    user_id: UUID,
+    organization_id: EntityId,
+    user_id: EntityId,
     rule_repo: _FakeRuleRepo,
     app_service: RuleApplicationService,
 ) -> FastAPI:
@@ -167,17 +168,17 @@ def _make_service(repo: _FakeRuleRepo) -> RuleApplicationService:
 
 
 @pytest.fixture
-def organization_id() -> UUID:
-    return uuid4()
+def organization_id() -> EntityId:
+    return EntityId.generate()
 
 
 @pytest.fixture
-def user_id() -> UUID:
-    return uuid4()
+def user_id() -> EntityId:
+    return EntityId.generate()
 
 
 @pytest_asyncio.fixture
-async def app(organization_id: UUID, user_id: UUID) -> AsyncIterator[FastAPI]:
+async def app(organization_id: EntityId, user_id: EntityId) -> AsyncIterator[FastAPI]:
     rule_repo = _FakeRuleRepo()
     app_service = _make_service(rule_repo)
     application = _build_app(
@@ -199,8 +200,8 @@ async def async_client(app: FastAPI) -> AsyncIterator[AsyncClient]:
 
 @pytest_asyncio.fixture
 async def other_tenant_client(app: FastAPI) -> AsyncIterator[AsyncClient]:
-    other_org = uuid4()
-    other_user = uuid4()
+    other_org = EntityId.generate()
+    other_user = EntityId.generate()
     rule_repo: _FakeRuleRepo = app.state.rule_repo
     app_service = _make_service(rule_repo)
     other_app = _build_app(

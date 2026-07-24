@@ -8,6 +8,7 @@ from httpx import ASGITransport, AsyncClient
 
 from redforge.api.security import TenantContext, get_tenant_context
 from redforge.domain.identity.value_objects import MembershipRole, Permission
+from redforge.shared.identifiers import EntityId
 from remediation_impact.api import dependencies as deps
 from remediation_impact.api.v1 import router
 from remediation_impact.infrastructure.acl.exposure_score_query_adapter import (
@@ -42,7 +43,7 @@ def app() -> FastAPI:
 
 @pytest.mark.asyncio
 async def test_plan_api_flow(app: FastAPI) -> None:
-    tenant = str(uuid4())
+    tenant = str(EntityId.generate())
     headers = {"X-Tenant-Id": tenant, "X-Exposure-Roles": "exposure:analyst"}
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         gen = await client.post(

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Annotated
-from uuid import UUID
 
 from fastapi import Depends, Request
 
@@ -25,6 +24,7 @@ from detection.application.services.telemetry_application_service import (
     TelemetryApplicationService,
 )
 from redforge.api.security import TenantContext, get_tenant_context
+from redforge.shared.identifiers import EntityId
 
 if TYPE_CHECKING:
     from detection.infrastructure.container import DetectionContainer
@@ -35,12 +35,12 @@ async def get_detection_container(request: Request) -> DetectionContainer:
     return container
 
 
-def get_tenant_uuid(tenant: TenantContext = Depends(get_tenant_context)) -> UUID:
-    return UUID(tenant.organization_id)
+def get_tenant_uuid(tenant: TenantContext = Depends(get_tenant_context)) -> EntityId:
+    return EntityId.from_string(tenant.organization_id)
 
 
-def get_principal_uuid(tenant: TenantContext = Depends(get_tenant_context)) -> UUID:
-    return UUID(tenant.user_id)
+def get_principal_uuid(tenant: TenantContext = Depends(get_tenant_context)) -> EntityId:
+    return EntityId.from_string(tenant.user_id)
 
 
 async def get_rule_service(
@@ -102,5 +102,5 @@ ProjectionServiceDep = Annotated[
 PlatformOrchestrationDep = Annotated[
     PlatformOrchestrationService, Depends(get_platform_orchestration)
 ]
-TenantIdDep = Annotated[UUID, Depends(get_tenant_uuid)]
-PrincipalIdDep = Annotated[UUID, Depends(get_principal_uuid)]
+TenantIdDep = Annotated[EntityId, Depends(get_tenant_uuid)]
+PrincipalIdDep = Annotated[EntityId, Depends(get_principal_uuid)]

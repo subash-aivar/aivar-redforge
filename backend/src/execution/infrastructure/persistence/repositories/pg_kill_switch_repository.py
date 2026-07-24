@@ -177,7 +177,7 @@ class PgKillSwitchRepository(IKillSwitchRepository):
             )
         return KillSwitchState(
             kill_switch_id=KillSwitchId(model.id),
-            tenant_id=TenantId(model.tenant_id),
+            tenant_id=TenantId.from_uuid(model.tenant_id),
             scope=KillSwitchScope(model.scope),
             scope_ref=model.scope_ref,
             armed_state=KillSwitchArmedState(model.armed_state),

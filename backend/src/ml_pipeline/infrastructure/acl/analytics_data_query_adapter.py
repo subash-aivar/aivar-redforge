@@ -28,13 +28,13 @@ class InMemoryAnalyticsDataQueryAdapter(IAnalyticsDataQueryPort):
         self._inference_rows: dict[str, list[InferenceFeatureRow]] = {}
         self._force_insufficient: set[str] = set()
 
-    def seed_training(self, tenant_id: UUID, dataset: TrainingDataset | None) -> None:
+    def seed_training(self, tenant_id: TenantId, dataset: TrainingDataset | None) -> None:
         self._training_overrides[str(tenant_id)] = dataset
 
-    def force_insufficient(self, tenant_id: UUID) -> None:
+    def force_insufficient(self, tenant_id: TenantId) -> None:
         self._force_insufficient.add(str(tenant_id))
 
-    def seed_inference(self, tenant_id: UUID, rows: list[InferenceFeatureRow]) -> None:
+    def seed_inference(self, tenant_id: TenantId, rows: list[InferenceFeatureRow]) -> None:
         self._inference_rows[str(tenant_id)] = rows
 
     async def load_training_dataset(

@@ -6,10 +6,12 @@ from dataclasses import dataclass, field
 from typing import Any
 from uuid import UUID
 
+from detection.domain.value_objects.identifiers import TenantId
+
 
 @dataclass(frozen=True, slots=True)
 class AuthorDetectionRule:
-    tenant_id: UUID
+    tenant_id: TenantId
     rule_key: str
     title: str
     description: str
@@ -28,7 +30,7 @@ class AuthorDetectionRule:
 
 @dataclass(frozen=True, slots=True)
 class PublishRuleVersion:
-    tenant_id: UUID
+    tenant_id: TenantId
     rule_id: UUID
     change_summary: str
     published_by: str
@@ -38,7 +40,7 @@ class PublishRuleVersion:
 
 @dataclass(frozen=True, slots=True)
 class PromoteRule:
-    tenant_id: UUID
+    tenant_id: TenantId
     rule_id: UUID
     target_state: str
     actor: str
@@ -47,7 +49,7 @@ class PromoteRule:
 
 @dataclass(frozen=True, slots=True)
 class DemoteRule:
-    tenant_id: UUID
+    tenant_id: TenantId
     rule_id: UUID
     target_state: str
     actor: str
@@ -56,19 +58,19 @@ class DemoteRule:
 
 @dataclass(frozen=True, slots=True)
 class RunRuleTestSuite:
-    tenant_id: UUID
+    tenant_id: TenantId
     rule_id: UUID
 
 
 @dataclass(frozen=True, slots=True)
 class ValidateRule:
-    tenant_id: UUID
+    tenant_id: TenantId
     rule_id: UUID
 
 
 @dataclass(frozen=True, slots=True)
 class UpdateRule:
-    tenant_id: UUID
+    tenant_id: TenantId
     rule_id: UUID
     title: str | None = None
     description: str | None = None
@@ -82,7 +84,7 @@ class UpdateRule:
 
 @dataclass(frozen=True, slots=True)
 class UpsertTestCase:
-    tenant_id: UUID
+    tenant_id: TenantId
     rule_id: UUID
     name: str
     input_payload: dict[str, Any]

@@ -71,7 +71,9 @@ class IntelligenceApplicationService:
         self._governance = ModelGovernanceService()
 
     def _tenant(self, value: UUID) -> TenantId:
-        return TenantId(value)
+        if isinstance(value, TenantId):
+            return value
+        return TenantId.from_string(str(value))
 
     def _to_dto(self, s: Any) -> SuggestionDTO:
         return SuggestionDTO(
@@ -205,7 +207,7 @@ class IntelligenceApplicationService:
 
     async def get_queue(
         self,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         roles: tuple[str, ...],
         target_type: str | None = None,
         limit: int = 50,
@@ -240,7 +242,7 @@ class IntelligenceApplicationService:
         ]
 
     async def get_acceptance_rate(
-        self, tenant_id: UUID, roles: tuple[str, ...]
+        self, tenant_id: TenantId, roles: tuple[str, ...]
     ) -> list[AcceptanceRateReadModel]:
         require_any(roles, "ai:operator", "incident:ciso", "playbook:analyst")
         tenant = self._tenant(tenant_id)
@@ -253,7 +255,7 @@ class IntelligenceApplicationService:
         return out
 
     async def get_model_accuracy(
-        self, tenant_id: UUID, roles: tuple[str, ...]
+        self, tenant_id: TenantId, roles: tuple[str, ...]
     ) -> list[ModelAccuracyReadModel]:
         require_any(roles, "ai:ml_engineer", "ai:operator", "incident:ciso")
         tenant = self._tenant(tenant_id)
@@ -278,7 +280,7 @@ class IntelligenceApplicationService:
             )
         return results
 
-    async def get_policy(self, tenant_id: UUID, roles: tuple[str, ...]) -> PolicyReadModel:
+    async def get_policy(self, tenant_id: TenantId, roles: tuple[str, ...]) -> PolicyReadModel:
         require_any(roles, "ai:operator", "incident:ciso", "playbook:analyst")
         policy = await self._policies.get_or_create_default(self._tenant(tenant_id))
         return PolicyReadModel(
@@ -290,7 +292,7 @@ class IntelligenceApplicationService:
         )
 
     async def get_suggestion(
-        self, tenant_id: UUID, suggestion_id: UUID, roles: tuple[str, ...]
+        self, tenant_id: TenantId, suggestion_id: UUID, roles: tuple[str, ...]
     ) -> SuggestionDTO:
         require_any(roles, "ai:operator", "playbook:analyst", "soc:detection_engineer")
         s = await self._suggestions.find_by_id(suggestion_id, self._tenant(tenant_id))

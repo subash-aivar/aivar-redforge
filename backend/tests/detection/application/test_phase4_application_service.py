@@ -31,6 +31,7 @@ from detection.domain.events.base import BaseDomainEvent
 from detection.infrastructure.blob.in_memory_evidence_blob_store import (
     InMemoryEvidenceBlobStore,
 )
+from redforge.shared.identifiers import EntityId
 from tests.detection.application.test_execution_finding_application_service import (
     _FakeFindings,
     _FakeRules,
@@ -155,7 +156,7 @@ def _svc():
 @pytest.mark.asyncio
 async def test_create_publish_subscribe_pack() -> None:
     svc, _packs, *_ = _svc()
-    tid = uuid4()
+    tid = EntityId.generate()
     dto = await svc.create_detection_pack(
         CreateDetectionPack(
             tenant_id=tid,
@@ -184,7 +185,7 @@ async def test_create_publish_subscribe_pack() -> None:
 @pytest.mark.asyncio
 async def test_exception_lifecycle_app() -> None:
     svc, *_ = _svc()
-    tid = uuid4()
+    tid = EntityId.generate()
     until = (datetime.now(UTC) + timedelta(days=1)).isoformat()
     rid = str(uuid4())
     dto = await svc.request_detection_exception(
@@ -224,7 +225,7 @@ async def test_exception_lifecycle_app() -> None:
 @pytest.mark.asyncio
 async def test_reject_exception() -> None:
     svc, *_ = _svc()
-    tid = uuid4()
+    tid = EntityId.generate()
     until = (datetime.now(UTC) + timedelta(days=1)).isoformat()
     rid = str(uuid4())
     dto = await svc.request_detection_exception(
@@ -253,7 +254,7 @@ async def test_reject_exception() -> None:
 @pytest.mark.asyncio
 async def test_compliance_ack_required() -> None:
     svc, *_ = _svc()
-    tid = uuid4()
+    tid = EntityId.generate()
     until = (datetime.now(UTC) + timedelta(days=1)).isoformat()
     rid = str(uuid4())
     with pytest.raises(ApplicationValidationError):
@@ -276,7 +277,7 @@ async def test_compliance_ack_required() -> None:
 @pytest.mark.asyncio
 async def test_submit_and_verify_evidence() -> None:
     svc, *_ = _svc()
-    tid = uuid4()
+    tid = EntityId.generate()
     dto = await svc.submit_evidence(
         SubmitEvidence(
             tenant_id=tid,
@@ -298,7 +299,7 @@ async def test_submit_and_verify_evidence() -> None:
 @pytest.mark.asyncio
 async def test_compute_coverage() -> None:
     svc, *_ = _svc()
-    tid = uuid4()
+    tid = EntityId.generate()
     report = await svc.compute_detection_coverage(
         ComputeDetectionCoverage(tenant_id=tid, in_scope_techniques=["T1059", "T1003"])
     )
@@ -312,7 +313,7 @@ async def test_create_pack_variants(i: int) -> None:
     svc, *_ = _svc()
     dto = await svc.create_detection_pack(
         CreateDetectionPack(
-            tenant_id=uuid4(),
+            tenant_id=EntityId.generate(),
             pack_key=f"ns.variant{i}",
             title=f"T{i}",
             category="CustomPack",

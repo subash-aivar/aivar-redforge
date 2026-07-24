@@ -34,6 +34,7 @@ from ai_agent_governance.application.exceptions import (
     ApplicationNotFoundError,
     ApplicationValidationError,
 )
+from ai_agent_governance.domain.value_objects.identifiers import TenantId
 from ai_agent_governance.infrastructure.container import AgentGovernanceContainer
 
 router = APIRouter(prefix="/ai-agent-governance", tags=["ai-agent-governance"])
@@ -52,7 +53,7 @@ def _map_error(exc: Exception) -> HTTPException:
 @router.post("/envelopes")
 async def draft_envelope(
     body: DraftEnvelopeRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AgentGovernanceContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -75,7 +76,7 @@ async def draft_envelope(
 async def add_action(
     envelope_id: UUID,
     body: AddActionRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AgentGovernanceContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -98,7 +99,7 @@ async def add_action(
 async def approve_envelope(
     envelope_id: UUID,
     body: ApproveEnvelopeRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AgentGovernanceContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -120,7 +121,7 @@ async def approve_envelope(
 async def revise_envelope(
     envelope_id: UUID,
     body: ReviseEnvelopeRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AgentGovernanceContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -144,7 +145,7 @@ async def revise_envelope(
 async def suspend_envelope(
     envelope_id: UUID,
     body: SuspendEnvelopeRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AgentGovernanceContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -165,7 +166,7 @@ async def suspend_envelope(
 @router.post("/actions/report")
 async def report_action(
     body: ReportActionRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AgentGovernanceContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -193,7 +194,7 @@ async def report_action(
 async def review_deviation(
     deviation_id: UUID,
     body: ReviewDeviationRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AgentGovernanceContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -216,7 +217,7 @@ async def review_deviation(
 @router.get("/envelopes/{envelope_id}/advisories")
 async def get_advisories(
     envelope_id: UUID,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AgentGovernanceContainer = Depends(get_container),
 ) -> list[dict[str, Any]]:

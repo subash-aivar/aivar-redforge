@@ -18,7 +18,6 @@ from ai_agent_governance.domain.value_objects.enums import AIPostureRole
 from ai_agent_governance.domain.value_objects.identifiers import (
     AgentOperationalEnvelopeId,
     AISystemAssetId,
-    TenantId,
 )
 
 if TYPE_CHECKING:
@@ -72,7 +71,7 @@ class GovernanceQueryHandler:
 
     async def get_envelope(self, query: GetEnvelopeQuery) -> EnvelopeDTO:
         require_at_least(query.actor_roles, AIPostureRole.READER)
-        tenant = TenantId(query.tenant_id)
+        tenant = query.tenant_id
         async with self._uow_factory() as uow:
             env = await uow.envelopes.find_by_id(
                 AgentOperationalEnvelopeId(query.envelope_id), tenant
@@ -83,7 +82,7 @@ class GovernanceQueryHandler:
 
     async def get_advisories(self, query: GetEnvelopeAdvisoriesQuery) -> list[AdvisoryDTO]:
         require_at_least(query.actor_roles, AIPostureRole.ANALYST)
-        tenant = TenantId(query.tenant_id)
+        tenant = query.tenant_id
         async with self._uow_factory() as uow:
             env = await uow.envelopes.find_by_id(
                 AgentOperationalEnvelopeId(query.envelope_id), tenant
@@ -103,13 +102,13 @@ class GovernanceQueryHandler:
 
     async def list_unreviewed(self, query: ListUnreviewedDeviationsQuery) -> list[DeviationDTO]:
         require_at_least(query.actor_roles, AIPostureRole.ANALYST)
-        tenant = TenantId(query.tenant_id)
+        tenant = query.tenant_id
         async with self._uow_factory() as uow:
             items = await uow.deviations.find_unreviewed_by_tenant(tenant)
         return [_deviation_dto(d) for d in items]
 
     async def count_recent_deviations(self, query: CountRecentDeviationsForAssetQuery) -> int:
-        tenant = TenantId(query.tenant_id)
+        tenant = query.tenant_id
         async with self._uow_factory() as uow:
             items = await uow.deviations.find_by_asset(
                 AISystemAssetId(query.asset_id), tenant, query.limit

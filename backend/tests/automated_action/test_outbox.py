@@ -8,12 +8,13 @@ from automated_action.application.commands.automation_commands import TriggerPla
 from automated_action.application.ports.lookups import PlaybookLookupView, PlaybookStepView
 from automated_action.domain.value_objects.enums import ActionRecordStatus
 from automated_action.infrastructure.container import AutomatedActionContainer
+from redforge.shared.identifiers import EntityId
 
 
 @pytest.mark.asyncio
 async def test_outbox_pending_before_complete() -> None:
     c = AutomatedActionContainer()
-    tenant = uuid4()
+    tenant = EntityId.generate()
     pb_id = uuid4()
     c.playbook_lookup.put(
         PlaybookLookupView(

@@ -16,12 +16,13 @@ from automated_action.domain.services.execution_policy_service import (
     PolicySnapshot,
 )
 from automated_action.infrastructure.container import AutomatedActionContainer
+from redforge.shared.identifiers import EntityId
 
 
 @pytest.mark.asyncio
 async def test_full_pipeline() -> None:
     c = AutomatedActionContainer()
-    tenant = uuid4()
+    tenant = EntityId.generate()
     pb = uuid4()
     c.playbook_lookup.put(
         PlaybookLookupView(
@@ -56,7 +57,7 @@ def test_policy_kill_switch() -> None:
 @pytest.mark.asyncio
 async def test_kill_switch_halts_execution() -> None:
     c = AutomatedActionContainer()
-    tenant = uuid4()
+    tenant = EntityId.generate()
     pb = uuid4()
     c.playbook_lookup.put(
         PlaybookLookupView(

@@ -72,7 +72,7 @@ async def _onboard(
     inventory.seed(asset_ref, tenant_id.value)
     dto = await container.asset_service.register(
         RegisterAISystemAssetCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             asset_ref_id=asset_ref,
             discovery_source="ManualRegistration",
             actor_roles=ENGINEER,
@@ -81,7 +81,7 @@ async def _onboard(
     asset_id = UUID(dto.asset_id)
     await container.asset_service.classify(
         ClassifyAISystemAssetCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             asset_id=asset_id,
             ai_system_kind=kind,
             actor_roles=ENGINEER,
@@ -89,7 +89,7 @@ async def _onboard(
     )
     await container.asset_service.assign_owner(
         AssignAssetOwnerCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             asset_id=asset_id,
             owner_id="owner-1",
             actor_roles=ENGINEER,
@@ -97,7 +97,7 @@ async def _onboard(
     )
     await container.asset_service.approve_registration(
         ApproveAISystemAssetRegistrationCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             asset_id=asset_id,
             actor_roles=APPROVER,
         )
@@ -114,12 +114,12 @@ async def test_evaluate_eu_and_nist_frameworks(
     asset_id = await _onboard(phase5_container, inventory, tenant_id)
     await phase5_container.threat_service.create_profile(
         CreateThreatProfileCommand(
-            tenant_id=tenant_id.value, asset_id=asset_id, actor_roles=ENGINEER
+            tenant_id=tenant_id, asset_id=asset_id, actor_roles=ENGINEER
         )
     )
     eu = await phase5_container.compliance_service.evaluate(
         EvaluateComplianceMappingCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             asset_id=asset_id,
             framework_id="EU_AI_Act",
             actor_roles=ENGINEER,
@@ -127,7 +127,7 @@ async def test_evaluate_eu_and_nist_frameworks(
     )
     nist = await phase5_container.compliance_service.evaluate(
         EvaluateComplianceMappingCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             asset_id=asset_id,
             framework_id="NIST_AI_RMF",
             actor_roles=ENGINEER,
@@ -149,12 +149,12 @@ async def test_attestation_end_to_end(
     asset_id = await _onboard(phase5_container, inventory, tenant_id)
     await phase5_container.threat_service.create_profile(
         CreateThreatProfileCommand(
-            tenant_id=tenant_id.value, asset_id=asset_id, actor_roles=ENGINEER
+            tenant_id=tenant_id, asset_id=asset_id, actor_roles=ENGINEER
         )
     )
     mappings = await phase5_container.compliance_service.evaluate(
         EvaluateComplianceMappingCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             asset_id=asset_id,
             framework_id="EU_AI_Act",
             actor_roles=ENGINEER,
@@ -163,7 +163,7 @@ async def test_attestation_end_to_end(
     pending = next(m for m in mappings if m.requires_human_attestation)
     attested = await phase5_container.compliance_service.record_attestation(
         RecordComplianceAttestationCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             mapping_id=UUID(pending.mapping_id),
             attestor_id="ciso-1",
             satisfied=True,
@@ -187,15 +187,15 @@ async def test_ciso_flow_inventory_and_reports(
     asset_id = await _onboard(phase5_container, inventory, tenant_id)
     await phase5_container.threat_service.create_profile(
         CreateThreatProfileCommand(
-            tenant_id=tenant_id.value, asset_id=asset_id, actor_roles=ENGINEER
+            tenant_id=tenant_id, asset_id=asset_id, actor_roles=ENGINEER
         )
     )
     await phase5_container.risk_service.compute(
-        ComputeRiskScoreCommand(tenant_id=tenant_id.value, asset_id=asset_id, actor_roles=ENGINEER)
+        ComputeRiskScoreCommand(tenant_id=tenant_id, asset_id=asset_id, actor_roles=ENGINEER)
     )
     await phase5_container.compliance_service.evaluate(
         EvaluateComplianceMappingCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             asset_id=asset_id,
             framework_id="EU_AI_Act",
             actor_roles=ENGINEER,
@@ -218,27 +218,27 @@ async def test_ciso_flow_inventory_and_reports(
     assert rebuilt["store"]["inventory"] >= 1
 
     inventory_view = await phase5_container.report_queries.inventory(
-        GetInventoryDashboardQuery(tenant_id=tenant_id.value, actor_roles=READER)
+        GetInventoryDashboardQuery(tenant_id=tenant_id, actor_roles=READER)
     )
     assert inventory_view["coverage_scope"]
     assert "CloudProviderScan" in inventory_view["configured_discovery_sources"]
 
     risk = await phase5_container.report_queries.risk_register(
-        GetRiskRegisterQuery(tenant_id=tenant_id.value, actor_roles=READER)
+        GetRiskRegisterQuery(tenant_id=tenant_id, actor_roles=READER)
     )
     assert risk["entries"]
     assert "score_input_version" in risk["entries"][0]
     assert "is_stale" in risk["entries"][0]
 
     shadow = await phase5_container.report_queries.shadow_discovery(
-        GetShadowAIDiscoveryReportQuery(tenant_id=tenant_id.value, actor_roles=READER)
+        GetShadowAIDiscoveryReportQuery(tenant_id=tenant_id, actor_roles=READER)
     )
     assert "scope_of_report" in shadow
     assert shadow["partial_scans"]
 
     compliance = await phase5_container.report_queries.compliance_posture(
         GetCompliancePostureQuery(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             framework_id="EU_AI_Act",
             actor_roles=READER,
         )
@@ -246,7 +246,7 @@ async def test_ciso_flow_inventory_and_reports(
     assert compliance["controls"]
 
     supply = await phase5_container.report_queries.supply_chain(
-        GetSupplyChainIntegrityQuery(tenant_id=tenant_id.value, actor_roles=READER)
+        GetSupplyChainIntegrityQuery(tenant_id=tenant_id, actor_roles=READER)
     )
     assert supply["models"][0]["tier_label"] == "Provider-Attested"
 
@@ -261,6 +261,6 @@ async def test_risk_score_uses_provenance_component(
     asset_id = await _onboard(phase5_container, inventory, tenant_id)
     provenance.seed(tenant_id.value, asset_id, "Mismatched")
     snap = await phase5_container.risk_service.compute(
-        ComputeRiskScoreCommand(tenant_id=tenant_id.value, asset_id=asset_id, actor_roles=ENGINEER)
+        ComputeRiskScoreCommand(tenant_id=tenant_id, asset_id=asset_id, actor_roles=ENGINEER)
     )
     assert snap.components["provenance_integrity_component"] == 90.0

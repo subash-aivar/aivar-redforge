@@ -72,7 +72,7 @@ class ThreatAssessmentApplicationService:
 
     async def create_profile(self, cmd: CreateThreatProfileCommand) -> AIThreatProfileDTO:
         require_at_least(cmd.actor_roles, AIPostureRole.ENGINEER)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         async with self._uow_factory() as uow:
             asset = await uow.assets.find_by_id(AISystemAssetId(cmd.asset_id), tenant)
@@ -101,7 +101,7 @@ class ThreatAssessmentApplicationService:
 
     async def assess(self, cmd: AssessThreatProfileCommand) -> AIThreatProfileDTO:
         require_at_least(cmd.actor_roles, AIPostureRole.ENGINEER)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         async with self._uow_factory() as uow:
             profile = await uow.profiles.find_by_asset(AISystemAssetId(cmd.asset_id), tenant)

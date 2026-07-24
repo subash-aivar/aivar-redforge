@@ -18,7 +18,6 @@ from ai_posture.domain.value_objects.identifiers import TenantId
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-    from uuid import UUID
 
     from ai_posture.application.ports.i_unit_of_work import IUnitOfWork
     from ai_posture.application.projections.projection_service import M31ProjectionService
@@ -49,7 +48,7 @@ class ProjectionRebuildService:
         self._agent = agent_port
         self._discovery = discovery_port
 
-    async def rebuild_tenant(self, tenant_id: UUID, actor_roles: tuple[str, ...]) -> dict[str, Any]:
+    async def rebuild_tenant(self, tenant_id: TenantId, actor_roles: tuple[str, ...]) -> dict[str, Any]:
         require_at_least(actor_roles, AIPostureRole.ADMIN)
         tenant = TenantId(tenant_id)
         tid = str(tenant_id)
@@ -145,7 +144,7 @@ class ProjectionRebuildService:
             "markers": await self._projections.rebuild_markers(),
         }
 
-    async def refresh_cache(self, tenant_id: UUID) -> dict[str, Any]:
+    async def refresh_cache(self, tenant_id: TenantId) -> dict[str, Any]:
         """Lightweight cache refresh — reloads store status for observability."""
         return {
             "tenant_id": str(tenant_id),

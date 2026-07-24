@@ -22,6 +22,7 @@ from autonomous_intelligence.application.exceptions import (
 from autonomous_intelligence.domain.exceptions.domain_exceptions import (
     AutonomousIntelligenceDomainError,
 )
+from autonomous_intelligence.domain.value_objects.identifiers import TenantId
 from autonomous_intelligence.infrastructure.container import AutonomousIntelligenceContainer
 
 router = APIRouter(prefix="/autonomous-intelligence", tags=["autonomous-intelligence"])
@@ -81,7 +82,7 @@ async def health(
 async def list_queue(
     target_type: str | None = None,
     limit: int = 50,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: AutonomousIntelligenceContainer = Depends(get_container),
 ) -> list[dict[str, Any]]:
@@ -95,7 +96,7 @@ async def list_queue(
 @router.post("/suggestions", status_code=201)
 async def create_suggestion(
     body: CreateSuggestionBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: AutonomousIntelligenceContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -123,7 +124,7 @@ async def create_suggestion(
 @router.get("/suggestions/{suggestion_id}")
 async def get_suggestion(
     suggestion_id: UUID,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: AutonomousIntelligenceContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -137,7 +138,7 @@ async def get_suggestion(
 async def approve(
     suggestion_id: UUID,
     body: ReviewBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: AutonomousIntelligenceContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -157,7 +158,7 @@ async def approve(
 async def reject(
     suggestion_id: UUID,
     body: ReviewBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: AutonomousIntelligenceContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -172,7 +173,7 @@ async def reject(
 
 @router.get("/policy")
 async def get_policy(
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: AutonomousIntelligenceContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -184,7 +185,7 @@ async def get_policy(
 
 @router.get("/acceptance-rate")
 async def acceptance_rate(
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: AutonomousIntelligenceContainer = Depends(get_container),
 ) -> list[dict[str, Any]]:
@@ -196,7 +197,7 @@ async def acceptance_rate(
 
 @router.get("/models/accuracy")
 async def model_accuracy(
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: AutonomousIntelligenceContainer = Depends(get_container),
 ) -> list[dict[str, Any]]:
@@ -209,7 +210,7 @@ async def model_accuracy(
 @router.post("/models/train", status_code=201)
 async def train(
     body: TrainBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: AutonomousIntelligenceContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -228,7 +229,7 @@ async def train(
 async def deploy(
     model_id: str,
     body: DeployBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: AutonomousIntelligenceContainer = Depends(get_container),
 ) -> dict[str, Any]:

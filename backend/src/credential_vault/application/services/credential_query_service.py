@@ -100,7 +100,7 @@ class CredentialQueryService:
         validate_uuid(qry.principal_id, "principal_id")
 
         credential_id = CredentialId(qry.credential_id)
-        tenant_id = TenantId(qry.tenant_id)
+        tenant_id = qry.tenant_id
         principal = PrincipalId(qry.principal_id)
 
         await self._require_read(principal, credential_id, tenant_id)
@@ -117,7 +117,7 @@ class CredentialQueryService:
         parsed_states = self._parse_credential_states(qry.states)
 
         credentials = await self._credential_repo.list_by_tenant(
-            TenantId(qry.tenant_id),
+            qry.tenant_id,
             parsed_states,
             validated_limit,
             qry.offset,
@@ -131,7 +131,7 @@ class CredentialQueryService:
         validate_uuid(qry.principal_id, "principal_id")
 
         credential_id = CredentialId(qry.credential_id)
-        tenant_id = TenantId(qry.tenant_id)
+        tenant_id = qry.tenant_id
         principal = PrincipalId(qry.principal_id)
 
         await self._require_read(principal, credential_id, tenant_id)
@@ -144,7 +144,7 @@ class CredentialQueryService:
         validate_uuid(qry.principal_id, "principal_id")
 
         credential_id = CredentialId(qry.credential_id)
-        tenant_id = TenantId(qry.tenant_id)
+        tenant_id = qry.tenant_id
         principal = PrincipalId(qry.principal_id)
         parsed_states = self._parse_version_states(qry.states)
 

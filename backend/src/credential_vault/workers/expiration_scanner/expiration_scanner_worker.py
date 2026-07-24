@@ -13,7 +13,7 @@ import structlog
 
 from credential_vault.application.commands.credential_commands import ExpireCredentialCommand
 from credential_vault.domain.events.credential_events import CredentialExpirationWarning
-from credential_vault.domain.value_objects.identifiers import CredentialId, TenantId
+from credential_vault.domain.value_objects.identifiers import CredentialId
 from credential_vault.domain.value_objects.states import CredentialState
 from credential_vault.infrastructure import metrics
 
@@ -140,7 +140,7 @@ class ExpirationScannerWorker:
             version_repo = PgCredentialVersionRepository(session)
             policy_repo = PgExpirationPolicyRepository(session)
 
-            tenant_id = TenantId(item.tenant_id)
+            tenant_id = item.tenant_id
             credential_id = CredentialId(item.credential_id)
             credential = await cred_repo.get_by_id(credential_id, tenant_id)
             active = await version_repo.get_active_version(credential_id, tenant_id)

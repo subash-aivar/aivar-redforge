@@ -50,6 +50,7 @@ from automated_action.domain.value_objects.identifiers import (
 from automated_action.domain.value_objects.refs import PlaybookRef, TriggerRef
 from automated_action.infrastructure.container import AutomatedActionContainer
 from automated_action.infrastructure.projectors.kg_projector import AutomationKGProjector
+from redforge.shared.identifiers import EntityId
 
 
 def _exec(
@@ -59,7 +60,7 @@ def _exec(
 ) -> AutomationExecution:
     return AutomationExecution(
         AutomationExecutionId.generate(),
-        TenantId(uuid4()),
+        TenantId.generate(),
         PlaybookRef(str(uuid4()), 1, "hash"),
         TriggerRef("MANUAL", "manual", "e1"),
         status,
@@ -176,7 +177,7 @@ def test_outbox_hash_stable() -> None:
 
 def test_record_complete_fail() -> None:
     rec = AutomatedActionRecord.create_pending(
-        TenantId(uuid4()),
+        TenantId.generate(),
         AutomationExecutionId.generate(),
         1,
         "act",
@@ -187,7 +188,7 @@ def test_record_complete_fail() -> None:
     rec.complete(ActionOutcome.SUCCESS, "ext", 5, rollback_available=True)
     assert rec.status == ActionRecordStatus.COMPLETED
     rec2 = AutomatedActionRecord.create_pending(
-        TenantId(uuid4()),
+        TenantId.generate(),
         AutomationExecutionId.generate(),
         1,
         "act",
@@ -201,7 +202,7 @@ def test_record_complete_fail() -> None:
 
 def test_rollback_record_lifecycle() -> None:
     rb = RollbackRecord.create(
-        TenantId(uuid4()),
+        TenantId.generate(),
         AutomatedActionRecordId.generate(),
         AutomationExecutionId.generate(),
         "op",
@@ -209,7 +210,7 @@ def test_rollback_record_lifecycle() -> None:
     rb.mark_completed()
     assert rb.rollback_status == RollbackStatus.COMPLETED
     rb2 = RollbackRecord.create(
-        TenantId(uuid4()),
+        TenantId.generate(),
         AutomatedActionRecordId.generate(),
         AutomationExecutionId.generate(),
         "op",
@@ -238,7 +239,7 @@ def test_evidence_and_metrics_replay() -> None:
 
 def test_rollback_eligibility_window() -> None:
     rec = AutomatedActionRecord.create_pending(
-        TenantId(uuid4()),
+        TenantId.generate(),
         AutomationExecutionId.generate(),
         1,
         "a",
@@ -282,7 +283,7 @@ def test_kg_projector_events() -> None:
 @pytest.mark.asyncio
 async def test_cancel_execution() -> None:
     c = AutomatedActionContainer()
-    tenant = uuid4()
+    tenant = EntityId.generate()
     pb = uuid4()
     c.playbook_lookup.put(
         PlaybookLookupView(
@@ -308,7 +309,7 @@ async def test_cancel_execution() -> None:
 @pytest.mark.asyncio
 async def test_list_and_pending_escalations() -> None:
     c = AutomatedActionContainer()
-    tenant = uuid4()
+    tenant = EntityId.generate()
     rows = await c.app.list_executions(tenant, ("playbook:analyst",))
     assert rows == []
     pending = await c.app.pending_escalations(tenant, ("soc:commander",))
@@ -318,7 +319,7 @@ async def test_list_and_pending_escalations() -> None:
 @pytest.mark.asyncio
 async def test_failed_connector_step() -> None:
     c = AutomatedActionContainer()
-    tenant = uuid4()
+    tenant = EntityId.generate()
     pb = uuid4()
     c.playbook_lookup.put(
         PlaybookLookupView(
@@ -351,7 +352,7 @@ async def test_policy_lookup_defaults() -> None:
 @pytest.mark.asyncio
 async def test_outbox_recovery_worker() -> None:
     c = AutomatedActionContainer()
-    tenant = TenantId(uuid4())
+    tenant = TenantId.generate()
     rec = AutomatedActionRecord.create_pending(
         tenant,
         AutomationExecutionId.generate(),

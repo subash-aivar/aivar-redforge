@@ -32,6 +32,7 @@ from incident.domain.exceptions.domain_exceptions import (
     DomainInvariantViolation,
     IncidentDomainError,
 )
+from incident.domain.value_objects.identifiers import TenantId
 from incident.infrastructure.container import IncidentContainer
 
 router = APIRouter(prefix="/incident", tags=["incident"])
@@ -60,7 +61,7 @@ async def health(container: IncidentContainer = Depends(get_container)) -> dict[
 
 @router.get("/dashboard/active")
 async def dashboard(
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: IncidentContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -151,7 +152,7 @@ class CommBody(BaseModel):
 @router.post("")
 async def declare(
     body: DeclareBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: IncidentContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -178,7 +179,7 @@ async def declare(
 async def classify(
     incident_id: UUID,
     body: ClassifyBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: IncidentContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -197,7 +198,7 @@ async def classify(
 async def reclassify(
     incident_id: UUID,
     body: ReclassifyBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: IncidentContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -216,7 +217,7 @@ async def reclassify(
 async def containment(
     incident_id: UUID,
     body: ContainmentBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: IncidentContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -235,7 +236,7 @@ async def containment(
 async def complete_containment(
     action_id: UUID,
     body: CompleteContainmentBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: IncidentContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -252,7 +253,7 @@ async def complete_containment(
 async def fail_containment(
     action_id: UUID,
     body: FailContainmentBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: IncidentContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -269,7 +270,7 @@ async def fail_containment(
 async def submit_eradication(
     incident_id: UUID,
     body: EradicationBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: IncidentContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -287,7 +288,7 @@ async def submit_eradication(
 async def verify_eradication(
     incident_id: UUID,
     body: VerifyBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: IncidentContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -303,7 +304,7 @@ async def verify_eradication(
 async def close_incident(
     incident_id: UUID,
     body: CloseBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: IncidentContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -328,7 +329,7 @@ async def close_incident(
 async def add_milestone(
     incident_id: UUID,
     body: MilestoneBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: IncidentContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -356,7 +357,7 @@ async def complete_milestone(
     incident_id: UUID,
     milestone_id: UUID,
     body: CompleteMilestoneBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: IncidentContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -380,7 +381,7 @@ async def complete_milestone(
 async def log_comm(
     incident_id: UUID,
     body: CommBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: IncidentContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -404,7 +405,7 @@ async def log_comm(
 @router.get("/{incident_id}")
 async def get_incident(
     incident_id: UUID,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: IncidentContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -416,7 +417,7 @@ async def get_incident(
 
 @router.get("")
 async def list_incidents(
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: IncidentContainer = Depends(get_container),
 ) -> list[dict[str, Any]]:
@@ -429,7 +430,7 @@ async def list_incidents(
 @router.get("/{incident_id}/communications")
 async def get_comms(
     incident_id: UUID,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: IncidentContainer = Depends(get_container),
 ) -> list[dict[str, Any]]:

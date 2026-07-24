@@ -58,7 +58,7 @@ def _to_domain(
 ) -> VaultBackend:
     return VaultBackend(
         backend_id=VaultBackendId(row.id),
-        tenant_id=TenantId(row.tenant_id),
+        tenant_id=TenantId.from_uuid(row.tenant_id),
         name=row.name,
         backend_type=VaultBackendType(row.backend_type),
         config=config,
@@ -106,7 +106,7 @@ class PgVaultBackendRepository(IVaultBackendRepository):
         blob = payload.iv + payload.ciphertext + payload.tag
         return blob, _envelope_to_json(envelope)
 
-    async def _current_row_version(self, backend_id: UUID, tenant_id: UUID) -> int:
+    async def _current_row_version(self, backend_id: UUID, tenant_id: TenantId) -> int:
         stmt = select(VaultBackendModel.row_version).where(
             VaultBackendModel.id == backend_id,
             VaultBackendModel.tenant_id == tenant_id,

@@ -134,7 +134,7 @@ class ReportInstance:
         artifact_ref: str,
         at: datetime,
     ) -> None:
-        if self.tenant_id.value != tenant_id.value:
+        if self.tenant_id != tenant_id:
             raise TenantMismatch("tenant mismatch on complete")
         if self.status not in {ReportStatus.PENDING, ReportStatus.GENERATING}:
             raise InvalidReportTransition(f"cannot complete from {self.status.value}")
@@ -154,7 +154,7 @@ class ReportInstance:
         )
 
     def fail(self, tenant_id: TenantId, *, error_reason: str, at: datetime) -> None:
-        if self.tenant_id.value != tenant_id.value:
+        if self.tenant_id != tenant_id:
             raise TenantMismatch("tenant mismatch on fail")
         if self.status == ReportStatus.COMPLETE:
             raise InvalidReportTransition("cannot fail a complete report")

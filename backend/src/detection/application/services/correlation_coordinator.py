@@ -62,7 +62,7 @@ class CorrelationCoordinator:
         validate_uuid(tenant_uuid, "tenant_id")
         validate_uuid(finding_id, "finding_id")
 
-        tenant_id = TenantId(tenant_uuid)
+        tenant_id = tenant_uuid
         finding_id_vo = DetectionFindingId(finding_id)
         await self._publisher.started(
             tenant_id=tenant_id, finding_id=str(finding_id_vo)

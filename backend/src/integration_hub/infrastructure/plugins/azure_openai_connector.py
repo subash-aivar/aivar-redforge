@@ -24,6 +24,7 @@ from integration_hub.domain.plugin import (
     ConnectorPlugin,
     CredentialFieldSpec,
 )
+from integration_hub.domain.value_objects.discovery import DiscoveryPage
 from integration_hub.domain.value_objects.enums import ConnectorHealthStatus
 
 _API_VERSION = "2024-10-21"
@@ -49,6 +50,30 @@ async def _health_check(secret: str, config: dict[str, str]) -> ConnectorHealthS
         return ConnectorHealthStatus.DEGRADED
     except httpx.HTTPError:
         return ConnectorHealthStatus.UNHEALTHY
+
+
+async def _discover(
+    secret: str, config: dict[str, str], cursor: str | None = None
+) -> DiscoveryPage:
+    """List models/deployments via the same GET {endpoint}/openai/models
+    endpoint the health check already proves reachable. Azure OpenAI's
+    models endpoint is not paginated by the vendor, so this always
+    returns a single, complete page (`has_more=False`) — `cursor` is
+    accepted for contract compatibility but unused."""
+    endpoint = config.get("endpoint", "").rstrip("/")
+    if not endpoint:
+        return DiscoveryPage(items=[], next_cursor=None, has_more=False)
+    api_version = config.get("api_version", _API_VERSION)
+    headers = {"api-key": secret}
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.get(
+            f"{endpoint}/openai/models",
+            params={"api-version": api_version},
+            headers=headers,
+        )
+    resp.raise_for_status()
+    body = resp.json()
+    return DiscoveryPage(items=list(body.get("data", [])), next_cursor=None, has_more=False)
 
 
 PLUGIN = ConnectorPlugin(
@@ -132,4 +157,5 @@ PLUGIN = ConnectorPlugin(
         ),
     ),
     health_check=_health_check,
+    discover=_discover,
 )

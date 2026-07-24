@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
-from uuid import UUID
+
+from execution.domain.value_objects.identifiers import TenantId
 
 if TYPE_CHECKING:
     from execution.application.projections.projection_coordinator import (
@@ -51,7 +52,7 @@ class ProjectionApplicationService:
         return await self._coordinator.handle_batch(events)
 
     async def replay(
-        self, *, tenant_id: UUID | None = None, from_position: int = 0
+        self, *, tenant_id: TenantId | None = None, from_position: int = 0
     ) -> dict[str, Any]:
         org = str(tenant_id) if tenant_id is not None else None
         result = await self._coordinator.replay(
@@ -59,32 +60,32 @@ class ProjectionApplicationService:
         )
         return result.to_dict()
 
-    async def reconcile(self, tenant_id: UUID) -> dict[str, Any]:
+    async def reconcile(self, tenant_id: TenantId) -> dict[str, Any]:
         return await self._coordinator.reconcile(str(tenant_id))
 
-    async def recover(self, tenant_id: UUID) -> dict[str, Any]:
+    async def recover(self, tenant_id: TenantId) -> dict[str, Any]:
         return await self._coordinator.recover(str(tenant_id))
 
     async def get_detection_coverage(
-        self, tenant_id: UUID, view_key: str = "default"
+        self, tenant_id: TenantId, view_key: str = "default"
     ) -> dict[str, Any] | None:
         view = await self._store.load_detection_coverage(str(tenant_id), view_key)
         return view.to_dict() if view else None
 
     async def get_engagement_summary(
-        self, tenant_id: UUID, engagement_id: str
+        self, tenant_id: TenantId, engagement_id: str
     ) -> dict[str, Any] | None:
         view = await self._store.load_engagement_summary(str(tenant_id), engagement_id)
         return view.to_dict() if view else None
 
     async def get_operation_timeline(
-        self, tenant_id: UUID, operation_id: str
+        self, tenant_id: TenantId, operation_id: str
     ) -> dict[str, Any] | None:
         view = await self._store.load_operation_timeline(str(tenant_id), operation_id)
         return view.to_dict() if view else None
 
     async def get_action_by_technique(
-        self, tenant_id: UUID
+        self, tenant_id: TenantId
     ) -> dict[str, Any] | None:
         view = await self._store.load_action_by_technique(str(tenant_id))
         return view.to_dict() if view else None

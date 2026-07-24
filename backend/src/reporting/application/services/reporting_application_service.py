@@ -121,7 +121,7 @@ class ReportingApplicationService:
         self, cmd: CreateScheduledReportCommand
     ) -> ScheduledReportDTO:
         require_at_least(cmd.actor_roles, AnalyticsRole.ANALYST)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         template_id = ReportTemplateId(cmd.template_id)
         template = await self._templates.find_by_id(template_id)
         if template is None:
@@ -147,7 +147,7 @@ class ReportingApplicationService:
 
     async def generate_on_demand(self, cmd: GenerateReportOnDemandCommand) -> ReportInstanceDTO:
         require_at_least(cmd.actor_roles, AnalyticsRole.ANALYST)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         template = await self._templates.find_by_id(ReportTemplateId(cmd.template_id))
         if template is None:
             raise ApplicationNotFoundError(str(cmd.template_id))
@@ -187,11 +187,11 @@ class ReportingApplicationService:
         return _instance_dto(instance)
 
     async def get_instance(
-        self, tenant_id: UUID, instance_id: UUID, actor_roles: tuple[str, ...]
+        self, tenant_id: TenantId, instance_id: UUID, actor_roles: tuple[str, ...]
     ) -> ReportInstanceDTO:
         require_at_least(actor_roles, AnalyticsRole.VIEWER)
         instance = await self._instances.find_by_id(
-            TenantId(tenant_id), ReportInstanceId(instance_id)
+            tenant_id, ReportInstanceId(instance_id)
         )
         if instance is None:
             raise ApplicationNotFoundError(str(instance_id))
@@ -199,7 +199,7 @@ class ReportingApplicationService:
 
     async def list_instances(
         self,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         actor_roles: tuple[str, ...],
         *,
         template_id: UUID | None = None,
@@ -207,7 +207,7 @@ class ReportingApplicationService:
         to_dt: datetime | None = None,
     ) -> list[ReportInstanceDTO]:
         require_at_least(actor_roles, AnalyticsRole.VIEWER)
-        tid = TenantId(tenant_id)
+        tid = tenant_id
         rows = await self._instances.list_by_tenant(
             tid,
             template_id=ReportTemplateId(template_id) if template_id else None,
@@ -272,7 +272,7 @@ class ReportingApplicationService:
 
     async def export_instance(
         self,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         instance_id: UUID,
         fmt: str,
         actor_roles: tuple[str, ...],
@@ -296,7 +296,7 @@ class ReportingApplicationService:
                 retry_after_seconds=decision.retry_after_seconds,
             )
         instance = await self._instances.find_by_id(
-            TenantId(tenant_id), ReportInstanceId(instance_id)
+            tenant_id, ReportInstanceId(instance_id)
         )
         if instance is None:
             raise ApplicationNotFoundError(str(instance_id))
@@ -316,7 +316,7 @@ class ReportingApplicationService:
 
     async def bi_export_page(
         self,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         dataset_ref: str,
         actor_roles: tuple[str, ...],
         *,

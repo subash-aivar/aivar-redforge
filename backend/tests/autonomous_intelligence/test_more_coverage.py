@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from uuid import uuid4
 
 import pytest
 
@@ -24,6 +23,7 @@ from autonomous_intelligence.infrastructure.acl.m28_performance_translator impor
     M28PerformanceTranslator,
 )
 from autonomous_intelligence.infrastructure.container import AutonomousIntelligenceContainer
+from redforge.shared.identifiers import EntityId
 
 
 @pytest.mark.parametrize("tt", list(SuggestionTargetType))
@@ -39,7 +39,7 @@ async def test_create_all_target_types(tt: SuggestionTargetType) -> None:
     }[tt]
     dto = await c.app.create_suggestion(
         CreateIntelligenceSuggestion(
-            uuid4(),
+            EntityId.generate(),
             tt.value.split("_")[0],
             None,
             tt.value,
@@ -58,7 +58,7 @@ async def test_create_all_target_types(tt: SuggestionTargetType) -> None:
 @pytest.mark.asyncio
 async def test_kill_switch_blocks_generation() -> None:
     c = AutonomousIntelligenceContainer()
-    tenant = uuid4()
+    tenant = EntityId.generate()
     policy = await c.policies.get_or_create_default(TenantId(tenant))
     policy.activate_kill_switch()
     await c.policies.save(policy, TenantId(tenant))
@@ -81,7 +81,7 @@ async def test_kill_switch_blocks_generation() -> None:
 
 
 def test_withdraw() -> None:
-    tenant = TenantId(uuid4())
+    tenant = TenantId.generate()
     s = IntelligenceSuggestion.create(
         tenant,
         SuggestionTargetRef(
@@ -111,5 +111,5 @@ def test_acl_translators() -> None:
 
 
 def test_policy_default() -> None:
-    p = AutonomousOperationsPolicy.default(TenantId(uuid4()))
+    p = AutonomousOperationsPolicy.default(TenantId.generate())
     assert p.allows(SuggestionTargetType.PLAYBOOK_SYNTHESIS)

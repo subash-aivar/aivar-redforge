@@ -185,7 +185,7 @@ class PgScanRepository:
 
         return AIDiscoveryScanRun(
             scan_run_id=AIDiscoveryScanRunId(row.id),
-            tenant_id=TenantId(row.tenant_id),
+            tenant_id=TenantId.from_uuid(row.tenant_id),
             sources=[DiscoverySourceType(s) for s in (row.sources_json or [])],
             state=DiscoveryScanRunState(row.state),
             started_at=row.started_at,

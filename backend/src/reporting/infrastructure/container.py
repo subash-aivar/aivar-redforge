@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
-from uuid import uuid4
 
 from reporting.application.services.reporting_application_service import (
     ReportingApplicationService,
@@ -195,7 +194,7 @@ class ReportingContainer:
 
     async def ensure_templates(self) -> None:
         now = datetime.now(UTC)
-        placeholder = TenantId(uuid4())
+        placeholder = TenantId.generate()
         for report_type, name, sections in _PLATFORM_TEMPLATES:
             existing = await self.template_repo.find_by_type_for_tenant(placeholder, report_type)
             if existing is not None:

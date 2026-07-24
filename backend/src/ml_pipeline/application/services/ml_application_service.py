@@ -62,7 +62,7 @@ class MLApplicationService:
             model_type = MLModelType(cmd.model_type)
         except ValueError as exc:
             raise ApplicationNotFoundError(str(exc)) from exc
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         algorithm = self._training.algorithm_for(model_type)
         now = datetime.now(UTC)
         model = MLModel.schedule_training(
@@ -126,7 +126,7 @@ class MLApplicationService:
 
     async def promote(self, cmd: PromoteMLModelCommand) -> dict[str, Any]:
         require_at_least(cmd.actor_roles, AnalyticsRole.ADMIN)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         model = await self._models.find_by_id(tenant, MLModelId(cmd.model_id))
         if model is None:
             raise ApplicationNotFoundError("model not found")
@@ -137,7 +137,7 @@ class MLApplicationService:
 
     async def deprecate(self, cmd: DeprecateMLModelCommand) -> dict[str, Any]:
         require_at_least(cmd.actor_roles, AnalyticsRole.ADMIN)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         model = await self._models.find_by_id(tenant, MLModelId(cmd.model_id))
         if model is None:
             raise ApplicationNotFoundError("model not found")
@@ -147,10 +147,10 @@ class MLApplicationService:
         return {"model_id": str(model.model_id), "status": model.status.value}
 
     async def get_model(
-        self, tenant_id: UUID, model_id: UUID, roles: tuple[str, ...]
+        self, tenant_id: TenantId, model_id: UUID, roles: tuple[str, ...]
     ) -> dict[str, Any]:
         require_at_least(roles, AnalyticsRole.VIEWER)
-        model = await self._models.find_by_id(TenantId(tenant_id), MLModelId(model_id))
+        model = await self._models.find_by_id(tenant_id, MLModelId(model_id))
         if model is None:
             raise ApplicationNotFoundError("model not found")
         return {
@@ -165,7 +165,7 @@ class MLApplicationService:
 
     async def list_models(
         self,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         roles: tuple[str, ...],
         *,
         model_type: str | None = None,
@@ -174,7 +174,7 @@ class MLApplicationService:
         require_at_least(roles, AnalyticsRole.VIEWER)
         mt = MLModelType(model_type) if model_type else None
         st = MLModelStatus(status) if status else None
-        rows = await self._models.list_for_tenant(TenantId(tenant_id), model_type=mt, status=st)
+        rows = await self._models.list_for_tenant(tenant_id, model_type=mt, status=st)
         return [
             {
                 "model_id": str(m.model_id),
@@ -186,7 +186,7 @@ class MLApplicationService:
 
     async def get_signals(
         self,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         roles: tuple[str, ...],
         *,
         asset_ref_id: UUID | None = None,
@@ -194,7 +194,7 @@ class MLApplicationService:
     ) -> dict[str, Any]:
         require_at_least(roles, AnalyticsRole.VIEWER)
         now = datetime.now(UTC)
-        tenant = TenantId(tenant_id)
+        tenant = tenant_id
         if asset_ref_id is not None:
             rows = await self._signals.find_by_asset(tenant, asset_ref_id, now=now)
         elif signal_type is not None:
@@ -225,23 +225,23 @@ class MLApplicationService:
         }
 
     async def governance_history(
-        self, tenant_id: UUID, model_id: UUID, roles: tuple[str, ...]
+        self, tenant_id: TenantId, model_id: UUID, roles: tuple[str, ...]
     ) -> list[dict[str, object]]:
         require_at_least(roles, AnalyticsRole.VIEWER)
-        model = await self._models.find_by_id(TenantId(tenant_id), MLModelId(model_id))
+        model = await self._models.find_by_id(tenant_id, MLModelId(model_id))
         if model is None:
             raise ApplicationNotFoundError("model not found")
         return self._governance.history(model)
 
     async def run_inference(
         self,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         model_type: str,
         assets: list[dict[str, Any]],
         roles: tuple[str, ...],
     ) -> dict[str, Any]:
         require_at_least(roles, AnalyticsRole.ANALYST)
-        tenant = TenantId(tenant_id)
+        tenant = tenant_id
         model = await self._models.find_deployed_by_type(tenant, MLModelType(model_type))
         if model is None or model.artifact_hash is None:
             return {
@@ -287,9 +287,9 @@ class MLApplicationService:
         }
 
     async def check_drift(
-        self, tenant_id: UUID, model_id: UUID, actual: list[float]
+        self, tenant_id: TenantId, model_id: UUID, actual: list[float]
     ) -> dict[str, Any]:
-        tenant = TenantId(tenant_id)
+        tenant = tenant_id
         model = await self._models.find_by_id(tenant, MLModelId(model_id))
         if model is None:
             raise ApplicationNotFoundError("model not found")

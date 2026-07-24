@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime, timedelta
-from uuid import UUID, uuid4
+from uuid import UUID
 
 import pytest
 import pytest_asyncio
@@ -31,6 +31,7 @@ from detection.domain.value_objects.identifiers import TenantId
 from redforge.api.dependencies import get_organization_service
 from redforge.api.security import TenantContext, get_tenant_context
 from redforge.domain.identity.value_objects import MembershipRole, Permission
+from redforge.shared.identifiers import EntityId
 from tests.detection.application.test_execution_finding_application_service import (
     _FakeExecutions,
     _FakeFindings,
@@ -72,8 +73,8 @@ def _rule_payload(key: str) -> dict[str, object]:
 
 @pytest_asyncio.fixture
 async def phase3_client() -> AsyncIterator[AsyncClient]:
-    org_id = uuid4()
-    user_id = uuid4()
+    org_id = EntityId.generate()
+    user_id = EntityId.generate()
     rules = _FakeRules()
     executions = _FakeExecutions()
     findings = _FakeFindings()
@@ -189,7 +190,7 @@ async def test_finding_lifecycle_apis(phase3_client: AsyncClient, app: FastAPI |
     # direct service constructed inside fixture and attached to client.
 
     # Recreate: use make_rule + service locally then hit lifecycle on a new app.
-    tenant = TenantId(uuid4())
+    tenant = TenantId.generate()
     rules = _FakeRules()
     executions = _FakeExecutions()
     findings = _FakeFindings()
@@ -203,7 +204,7 @@ async def test_finding_lifecycle_apis(phase3_client: AsyncClient, app: FastAPI |
     svc = ExecutionFindingApplicationService(uow_factory, publisher)
     sched = await svc.schedule_rule_execution(
         ScheduleRuleExecution(
-            tenant_id=tenant.value,
+            tenant_id=tenant,
             rule_id=rule.rule_id.value,
             source_id="s",
             window_start=(now - timedelta(hours=1)).isoformat(),
@@ -212,7 +213,7 @@ async def test_finding_lifecycle_apis(phase3_client: AsyncClient, app: FastAPI |
     )
     produced = await svc.produce_finding(
         ProduceFinding(
-            tenant_id=tenant.value,
+            tenant_id=tenant,
             rule_id=rule.rule_id.value,
             execution_id=UUID(sched.id),
             asset_id="asset-api",
@@ -228,7 +229,7 @@ async def test_finding_lifecycle_apis(phase3_client: AsyncClient, app: FastAPI |
 
     def override_tenant() -> TenantContext:
         return TenantContext(
-            user_id=str(uuid4()),
+            user_id=str(EntityId.generate()),
             email="p3b@example.com",
             organization_id=str(tenant.value),
             role=MembershipRole.OWNER,
@@ -269,7 +270,7 @@ async def test_finding_lifecycle_apis(phase3_client: AsyncClient, app: FastAPI |
         # New finding for FP / suppress / escalate
         produced2 = await svc.produce_finding(
             ProduceFinding(
-                tenant_id=tenant.value,
+                tenant_id=tenant,
                 rule_id=rule.rule_id.value,
                 execution_id=UUID(sched.id),
                 asset_id="asset-api-2",
@@ -287,7 +288,7 @@ async def test_finding_lifecycle_apis(phase3_client: AsyncClient, app: FastAPI |
 
         produced3 = await svc.produce_finding(
             ProduceFinding(
-                tenant_id=tenant.value,
+                tenant_id=tenant,
                 rule_id=rule.rule_id.value,
                 execution_id=UUID(sched.id),
                 asset_id="asset-api-3",
@@ -304,7 +305,7 @@ async def test_finding_lifecycle_apis(phase3_client: AsyncClient, app: FastAPI |
 
         produced4 = await svc.produce_finding(
             ProduceFinding(
-                tenant_id=tenant.value,
+                tenant_id=tenant,
                 rule_id=rule.rule_id.value,
                 execution_id=UUID(sched.id),
                 asset_id="asset-api-4",

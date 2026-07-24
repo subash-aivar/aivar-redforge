@@ -235,7 +235,7 @@ class CredentialApplicationService:
             raise ApplicationValidationError("description", "max 2048 chars")
 
         credential_id = CredentialId(uuid7())
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         owner = PrincipalId(cmd.owner_principal_id)
 
         allowed = await self._permission_port.has_permission(
@@ -336,7 +336,7 @@ class CredentialApplicationService:
         )
 
         credential_id = CredentialId(cmd.credential_id)
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
 
         async with self._uow_factory() as uow:
             credential = await uow.credentials.get_by_id(credential_id, tenant_id)
@@ -405,7 +405,7 @@ class CredentialApplicationService:
             raise ApplicationPortError("encryption", exc) from exc
 
         credential_id = CredentialId(cmd.credential_id)
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         principal = PrincipalId(cmd.principal_id)
         now = datetime.now(UTC)
 
@@ -470,7 +470,7 @@ class CredentialApplicationService:
         validate_uuid(cmd.principal_id, "principal_id")
 
         credential_id = CredentialId(cmd.credential_id)
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         principal = PrincipalId(cmd.principal_id)
 
         allowed = await self._permission_port.has_permission(
@@ -539,7 +539,7 @@ class CredentialApplicationService:
         validate_str(cmd.reason, "reason", 1024)
 
         credential_id = CredentialId(cmd.credential_id)
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         principal = PrincipalId(cmd.principal_id)
 
         allowed = await self._permission_port.has_permission(
@@ -593,7 +593,7 @@ class CredentialApplicationService:
         validate_str(cmd.reason, "reason", 1024)
 
         credential_id = CredentialId(cmd.credential_id)
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         principal = PrincipalId(cmd.principal_id)
 
         allowed = await self._permission_port.has_permission(
@@ -631,7 +631,7 @@ class CredentialApplicationService:
         validate_uuid(cmd.principal_id, "principal_id")
 
         credential_id = CredentialId(cmd.credential_id)
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         principal = PrincipalId(cmd.principal_id)
 
         allowed = await self._permission_port.has_permission(
@@ -670,7 +670,7 @@ class CredentialApplicationService:
         validate_str(cmd.reason, "reason", 1024)
 
         credential_id = CredentialId(cmd.credential_id)
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         principal = PrincipalId(cmd.principal_id)
         now = datetime.now(UTC)
 
@@ -704,7 +704,7 @@ class CredentialApplicationService:
         validate_str(cmd.justification, "justification", 2048)
 
         credential_id = CredentialId(cmd.credential_id)
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         principal = PrincipalId(cmd.principal_id)
         now = datetime.now(UTC)
 
@@ -744,7 +744,7 @@ class CredentialApplicationService:
         validate_uuid(cmd.principal_id, "principal_id")
 
         credential_id = CredentialId(cmd.credential_id)
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         principal = PrincipalId(cmd.principal_id)
         now = datetime.now(UTC)
 
@@ -775,7 +775,7 @@ class CredentialApplicationService:
         validate_str(cmd.justification, "justification", 2048)
 
         credential_id = CredentialId(cmd.credential_id)
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         principal = PrincipalId(cmd.principal_id)
         target_version_id = VersionId(cmd.target_version_id)
 
@@ -831,7 +831,7 @@ class CredentialApplicationService:
         validate_uuid(cmd.principal_id, "principal_id")
 
         credential_id = CredentialId(cmd.credential_id)
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         principal = PrincipalId(cmd.principal_id)
         now = datetime.now(UTC)
 
@@ -864,7 +864,7 @@ class CredentialApplicationService:
         validate_uuid(cmd.target_version_id, "target_version_id")
 
         credential_id = CredentialId(cmd.credential_id)
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         principal = PrincipalId(cmd.principal_id)
         target_version_id = VersionId(cmd.target_version_id)
 
@@ -929,7 +929,7 @@ class CredentialApplicationService:
                 raise ApplicationValidationError("tags", "tag value max 1000 chars")
 
         credential_id = CredentialId(cmd.credential_id)
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         principal = PrincipalId(cmd.principal_id)
 
         allowed = await self._permission_port.has_permission(
@@ -974,7 +974,7 @@ class CredentialApplicationService:
         validate_uuid(cmd.principal_id, "principal_id")
 
         credential_id = CredentialId(cmd.credential_id)
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         principal = PrincipalId(cmd.principal_id)
         policy_id = RotationPolicyId(cmd.policy_id)
 
@@ -1014,7 +1014,7 @@ class CredentialApplicationService:
         validate_uuid(cmd.principal_id, "principal_id")
 
         credential_id = CredentialId(cmd.credential_id)
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         principal = PrincipalId(cmd.principal_id)
 
         allowed = await self._permission_port.has_permission(
@@ -1054,7 +1054,7 @@ class CredentialApplicationService:
         validate_uuid(cmd.principal_id, "principal_id")
 
         credential_id = CredentialId(cmd.credential_id)
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         principal = PrincipalId(cmd.principal_id)
         policy_id = ExpirationPolicyId(cmd.policy_id)
 
@@ -1094,7 +1094,7 @@ class CredentialApplicationService:
         validate_uuid(cmd.principal_id, "principal_id")
 
         credential_id = CredentialId(cmd.credential_id)
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         principal = PrincipalId(cmd.principal_id)
 
         allowed = await self._permission_port.has_permission(

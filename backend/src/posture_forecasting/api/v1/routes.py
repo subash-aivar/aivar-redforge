@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import asdict
 from typing import Any
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -14,6 +13,7 @@ from posture_forecasting.application.exceptions import (
     ApplicationNotFoundError,
 )
 from posture_forecasting.domain.exceptions.domain_exceptions import PostureForecastingDomainError
+from posture_forecasting.domain.value_objects.identifiers import TenantId
 from posture_forecasting.infrastructure.container import PostureForecastingContainer
 
 router = APIRouter(prefix="/posture-forecasting", tags=["posture-forecasting"])
@@ -44,7 +44,7 @@ async def health() -> dict[str, str]:
 @router.post("/forecasts", status_code=201)
 async def generate(
     body: GenerateBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: PostureForecastingContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -66,7 +66,7 @@ async def generate(
 
 @router.get("/forecasts/latest")
 async def latest(
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: PostureForecastingContainer = Depends(get_container),
 ) -> dict[str, Any]:

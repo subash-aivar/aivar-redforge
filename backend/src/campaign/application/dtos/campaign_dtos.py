@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
+from campaign.domain.value_objects.identifiers import TenantId
+
 if TYPE_CHECKING:
     from datetime import datetime
     from uuid import UUID
@@ -13,7 +15,7 @@ if TYPE_CHECKING:
 @dataclass(frozen=True, slots=True)
 class CampaignDTO:
     campaign_id: UUID
-    tenant_id: UUID
+    tenant_id: TenantId
     name: str
     classification: str
     kind: str
@@ -31,7 +33,7 @@ class CampaignDTO:
 class CampaignInstanceDTO:
     instance_id: UUID
     campaign_id: UUID
-    tenant_id: UUID
+    tenant_id: TenantId
     run_number: int
     state: str
     resolved_target_count: int
@@ -41,5 +43,5 @@ class CampaignInstanceDTO:
 
 @dataclass(frozen=True, slots=True)
 class GetCampaignQuery:
-    tenant_id: UUID
+    tenant_id: TenantId
     campaign_id: UUID

@@ -134,7 +134,7 @@ class ExecutionApplicationService:
         validate_uuid(cmd.authority_operator_id, "authority_operator_id")
         validate_str(cmd.reason, "reason", 2048)
         scope = self._parse_scope(cmd.scope)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
 
         async with self._uow_factory() as uow:
@@ -164,7 +164,7 @@ class ExecutionApplicationService:
         validate_uuid(cmd.scope_ref, "scope_ref")
         validate_uuid(cmd.releasing_operator_id, "releasing_operator_id")
         scope = self._parse_scope(cmd.scope)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         countersign = None
         if cmd.countersigning_operator_id is not None:
@@ -204,7 +204,7 @@ class ExecutionApplicationService:
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_uuid(cmd.scope_ref, "scope_ref")
         scope = self._parse_scope(cmd.scope)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
 
         async with self._uow_factory() as uow:
@@ -227,7 +227,7 @@ class ExecutionApplicationService:
     async def get_kill_switch(self, query: GetKillSwitch) -> KillSwitchDTO:
         validate_uuid(query.tenant_id, "tenant_id")
         scope = self._parse_scope(query.scope)
-        tenant = TenantId(query.tenant_id)
+        tenant = query.tenant_id
         async with self._uow_factory() as uow:
             ks = await uow.kill_switches.find_by_scope(tenant, scope, query.scope_ref)
             if ks is None:
@@ -241,7 +241,7 @@ class ExecutionApplicationService:
     async def create_journal(self, cmd: CreateJournal) -> JournalDTO:
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_uuid(cmd.engagement_id, "engagement_id")
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         engagement = EngagementId(cmd.engagement_id)
         now = datetime.now(UTC)
 
@@ -274,7 +274,7 @@ class ExecutionApplicationService:
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_uuid(cmd.engagement_id, "engagement_id")
         validate_str(cmd.content, "content", 8192)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         engagement = EngagementId(cmd.engagement_id)
         entry_type = JournalEntryType(cmd.entry_type)
         now = datetime.now(UTC)
@@ -311,7 +311,7 @@ class ExecutionApplicationService:
 
     async def get_journal(self, query: GetJournal) -> JournalDTO:
         validate_uuid(query.tenant_id, "tenant_id")
-        tenant = TenantId(query.tenant_id)
+        tenant = query.tenant_id
         engagement = EngagementId(query.engagement_id)
         async with self._uow_factory() as uow:
             journal = await uow.journals.find_by_engagement(engagement, tenant)
@@ -323,7 +323,7 @@ class ExecutionApplicationService:
         self, query: QueryJournalIntegrity
     ) -> ChainIntegrityReportDTO:
         validate_uuid(query.tenant_id, "tenant_id")
-        tenant = TenantId(query.tenant_id)
+        tenant = query.tenant_id
         engagement = EngagementId(query.engagement_id)
         now = datetime.now(UTC)
         async with self._uow_factory() as uow:
@@ -354,7 +354,7 @@ class ExecutionApplicationService:
         validate_uuid(cmd.step_id, "step_id")
         validate_uuid(cmd.target_id, "target_id")
         validate_str(cmd.technique_id, "technique_id", 256)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         engagement = EngagementId(cmd.engagement_id)
         operation = OperationId(cmd.operation_id)
         step = ExecutionStepId(cmd.step_id)
@@ -511,7 +511,7 @@ class ExecutionApplicationService:
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_uuid(cmd.action_id, "action_id")
         validate_str(cmd.abort_reason, "abort_reason", 2048)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
 
         async with self._uow_factory() as uow:
@@ -544,7 +544,7 @@ class ExecutionApplicationService:
 
     async def complete_attack_action(self, cmd: CompleteAttackAction) -> AttackActionDTO:
         validate_uuid(cmd.tenant_id, "tenant_id")
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         output_ref = None
         if cmd.output_hash and cmd.output_storage_ref:
@@ -578,7 +578,7 @@ class ExecutionApplicationService:
     async def fail_attack_action(self, cmd: FailAttackAction) -> AttackActionDTO:
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_str(cmd.failure_reason, "failure_reason", 2048)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
 
         async with self._uow_factory() as uow:
@@ -610,7 +610,7 @@ class ExecutionApplicationService:
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_str(cmd.output_hash, "output_hash", 64)
         validate_str(cmd.output_storage_ref, "output_storage_ref", 512)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
 
         async with self._uow_factory() as uow:
@@ -628,7 +628,7 @@ class ExecutionApplicationService:
             return self._attack_action_dto(action)
 
     async def get_attack_action(self, query: GetAttackAction) -> AttackActionDTO:
-        tenant = TenantId(query.tenant_id)
+        tenant = query.tenant_id
         async with self._uow_factory() as uow:
             action = await uow.attack_actions.find_by_id(
                 AttackActionId(query.action_id), tenant
@@ -647,7 +647,7 @@ class ExecutionApplicationService:
     ) -> list[AttackActionDTO]:
         limit = validate_limit(query.limit)
         offset = validate_offset(query.offset)
-        tenant = TenantId(query.tenant_id)
+        tenant = query.tenant_id
         async with self._uow_factory() as uow:
             actions = await uow.attack_actions.find_by_operation(
                 OperationId(query.operation_id), tenant, limit=limit, offset=offset
@@ -665,7 +665,7 @@ class ExecutionApplicationService:
         validate_str(cmd.network_zone, "network_zone", 128)
         if not cmd.techniques:
             raise ApplicationValidationError("techniques", "must not be empty")
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         manifest = SignedCapabilityManifest(
             techniques=frozenset(cmd.techniques),
@@ -686,7 +686,7 @@ class ExecutionApplicationService:
     async def decommission_execution_worker(
         self, cmd: DecommissionExecutionWorker
     ) -> ExecutionWorkerDTO:
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         async with self._uow_factory() as uow:
             worker = await uow.workers.find_by_id(
@@ -703,7 +703,7 @@ class ExecutionApplicationService:
     async def record_worker_heartbeat(
         self, cmd: RecordWorkerHeartbeat
     ) -> ExecutionWorkerDTO:
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         async with self._uow_factory() as uow:
             worker = await uow.workers.find_by_id(
@@ -720,7 +720,7 @@ class ExecutionApplicationService:
             return self._worker_dto(worker)
 
     async def get_execution_worker(self, query: GetExecutionWorker) -> ExecutionWorkerDTO:
-        tenant = TenantId(query.tenant_id)
+        tenant = query.tenant_id
         async with self._uow_factory() as uow:
             worker = await uow.workers.find_by_id(
                 ExecutionWorkerId(query.worker_id), tenant
@@ -734,7 +734,7 @@ class ExecutionApplicationService:
     ) -> list[ExecutionWorkerDTO]:
         limit = validate_limit(query.limit)
         offset = validate_offset(query.offset)
-        tenant = TenantId(query.tenant_id)
+        tenant = query.tenant_id
         async with self._uow_factory() as uow:
             workers = await uow.workers.list_available(tenant, limit=limit, offset=offset)
             return [self._worker_dto(w) for w in workers]

@@ -28,7 +28,7 @@ from redforge.domain.security_graph.ontology import (
 
 
 def _tenant() -> TenantId:
-    return TenantId(uuid4())
+    return TenantId.generate()
 
 
 def _coord(graph=None):

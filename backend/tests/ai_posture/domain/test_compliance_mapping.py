@@ -29,7 +29,7 @@ from ai_posture.domain.value_objects.identifiers import AISystemAssetId, TenantI
 
 @pytest.fixture
 def tenant() -> TenantId:
-    return TenantId(uuid4())
+    return TenantId.generate()
 
 
 @pytest.fixture

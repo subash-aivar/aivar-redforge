@@ -23,7 +23,7 @@ from exposure.domain.value_objects.identifiers import (
 
 
 def test_score_product_form_and_clamp() -> None:
-    tenant = TenantId(uuid4())
+    tenant = TenantId.generate()
     now = datetime(2026, 7, 21, tzinfo=UTC)
     cfg = AmplifierWeightConfiguration.create_default(
         AmplifierWeightConfigurationId.generate(), tenant, now

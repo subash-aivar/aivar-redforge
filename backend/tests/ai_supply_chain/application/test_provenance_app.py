@@ -24,7 +24,7 @@ async def test_record_verify_mbom_flow(
     digest = hashlib.sha256(content).hexdigest()
     dto = await container.provenance_service.record(
         RecordModelProvenanceCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             asset_id=uuid4(),
             model_origin="OpenSourceRegistry",
             artifact_size_bytes=len(content),
@@ -33,7 +33,7 @@ async def test_record_verify_mbom_flow(
     )
     verified = await container.provenance_service.verify(
         VerifyModelProvenanceCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             provenance_id=__import__("uuid").UUID(dto.provenance_id),
             retrieval_uri="mem://m1",
             provider_reported_checksum=digest,
@@ -43,7 +43,7 @@ async def test_record_verify_mbom_flow(
     assert verified.integrity_status == "Verified"
     mbom = await container.mbom_service.build(
         BuildMBOMCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             provenance_id=__import__("uuid").UUID(dto.provenance_id),
             components=(
                 {

@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from remediation_impact.domain.value_objects.identifiers import TenantId
+
 if TYPE_CHECKING:
     from uuid import UUID
 
@@ -19,7 +21,7 @@ class RemediationCandidateInput:
 
 @dataclass(frozen=True, slots=True)
 class GenerateExposureReductionPlanCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     candidate_remediations: tuple[RemediationCandidateInput, ...]
     plan_budget: int = 10
     top_k: int = 200
@@ -31,7 +33,7 @@ class GenerateExposureReductionPlanCommand:
 
 @dataclass(frozen=True, slots=True)
 class CommitExposureReductionPlanCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     plan_id: UUID
     committed_by: str
     actor_roles: tuple[str, ...] = ()

@@ -11,6 +11,7 @@ from lessons_learned.application.exceptions import (
     ApplicationForbiddenError,
     ApplicationNotFoundError,
 )
+from lessons_learned.domain.value_objects.identifiers import TenantId
 from lessons_learned.infrastructure.container import LessonsLearnedContainer
 
 router = APIRouter(prefix="/lessons-learned", tags=["lessons-learned"])
@@ -62,7 +63,7 @@ async def health() -> dict[str, Any]:
 @router.post("")
 async def create(
     body: CreateBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: LessonsLearnedContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -78,7 +79,7 @@ async def create(
 async def add_lesson(
     ll_id: UUID,
     body: LessonBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: LessonsLearnedContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -94,7 +95,7 @@ async def add_lesson(
 async def add_action(
     ll_id: UUID,
     body: ActionBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: LessonsLearnedContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -110,7 +111,7 @@ async def add_action(
 async def review(
     ll_id: UUID,
     body: ActorBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: LessonsLearnedContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -124,7 +125,7 @@ async def review(
 async def finalize(
     ll_id: UUID,
     body: ActorBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: LessonsLearnedContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -138,7 +139,7 @@ async def finalize(
 async def report(
     ll_id: UUID,
     body: ReportBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: LessonsLearnedContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -152,7 +153,7 @@ async def report(
 async def export(
     report_id: UUID,
     body: ExportBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: LessonsLearnedContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -165,7 +166,7 @@ async def export(
 @router.get("/incident/{incident_id}")
 async def get(
     incident_id: str,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     container: LessonsLearnedContainer = Depends(get_container),
 ) -> dict[str, Any]:
     try:

@@ -41,7 +41,7 @@ def _from_row(row: CampaignMetricsSnapshotModel) -> CampaignMetricsSnapshot:
     )
     return CampaignMetricsSnapshot(
         snapshot_id=CampaignMetricsSnapshotId(row.id),
-        tenant_id=TenantId(row.tenant_id),
+        tenant_id=TenantId.from_uuid(row.tenant_id),
         campaign_id=str(row.campaign_id),
         run_number=row.run_number,
         snapshot_timestamp=row.snapshot_timestamp,

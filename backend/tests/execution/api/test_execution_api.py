@@ -9,7 +9,7 @@ import pytest
 from httpx import AsyncClient
 
 from execution.domain.value_objects.enums import KillSwitchArmedState, KillSwitchScope
-from execution.domain.value_objects.identifiers import EngagementId, TenantId
+from execution.domain.value_objects.identifiers import EngagementId
 
 
 @pytest.mark.asyncio
@@ -71,7 +71,7 @@ async def test_journal_integrity_endpoint(
 ) -> None:
     svc, _, _ = execution_app_service
     await svc.ensure_journal_for_engagement(
-        TenantId(api_tenant_id),
+        api_tenant_id,
         EngagementId(api_engagement_id),
         datetime.now(UTC),
     )

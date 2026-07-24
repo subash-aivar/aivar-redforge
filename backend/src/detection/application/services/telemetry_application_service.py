@@ -48,7 +48,6 @@ from detection.domain.value_objects.enums import (
 from detection.domain.value_objects.identifiers import (
     DetectionRuleId,
     TelemetrySourceId,
-    TenantId,
 )
 from detection.domain.value_objects.rule_logic import NormalizedFieldRef
 from detection.domain.value_objects.telemetry import (
@@ -169,7 +168,7 @@ class TelemetryApplicationService:
         self, cmd: RegisterTelemetrySource
     ) -> TelemetrySourceDTO:
         validate_uuid(cmd.tenant_id, "tenant_id")
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         validate_str(cmd.name, "name", max_len=256)
         name = cmd.name.strip()
         try:
@@ -244,7 +243,7 @@ class TelemetryApplicationService:
         self, cmd: DeactivateTelemetrySource
     ) -> TelemetrySourceDTO:
         validate_uuid(cmd.tenant_id, "tenant_id")
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         validate_uuid(cmd.source_id, "source_id")
         source_id = TelemetrySourceId(cmd.source_id)
         validate_str(cmd.reason, "reason", max_len=1024)
@@ -269,7 +268,7 @@ class TelemetryApplicationService:
         self, cmd: UpdateTelemetrySourceHealth
     ) -> TelemetrySourceDTO:
         validate_uuid(cmd.tenant_id, "tenant_id")
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         validate_uuid(cmd.source_id, "source_id")
         source_id = TelemetrySourceId(cmd.source_id)
         try:
@@ -300,7 +299,7 @@ class TelemetryApplicationService:
         self, cmd: UpdateTelemetrySource
     ) -> TelemetrySourceDTO:
         validate_uuid(cmd.tenant_id, "tenant_id")
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         validate_uuid(cmd.source_id, "source_id")
         source_id = TelemetrySourceId(cmd.source_id)
         now = datetime.now(UTC)
@@ -391,7 +390,7 @@ class TelemetryApplicationService:
         self, query: GetTelemetrySource
     ) -> TelemetrySourceDTO:
         validate_uuid(query.tenant_id, "tenant_id")
-        tenant_id = TenantId(query.tenant_id)
+        tenant_id = query.tenant_id
         validate_uuid(query.source_id, "source_id")
         source_id = TelemetrySourceId(query.source_id)
         async with self._uow_factory() as uow:
@@ -404,7 +403,7 @@ class TelemetryApplicationService:
         self, query: ListTelemetrySources
     ) -> TelemetrySourcePageDTO:
         validate_uuid(query.tenant_id, "tenant_id")
-        tenant_id = TenantId(query.tenant_id)
+        tenant_id = query.tenant_id
         limit = validate_limit(query.limit)
         offset = validate_offset(query.offset)
         async with self._uow_factory() as uow:
@@ -435,7 +434,7 @@ class TelemetryApplicationService:
         source_id: Any,
     ) -> ValidateSourceResultDTO:
         validate_uuid(tenant_id, "tenant_id")
-        tid = TenantId(tenant_id)
+        tid = tenant_id
         validate_uuid(source_id, "source_id")
         sid = TelemetrySourceId(source_id)
         async with self._uow_factory() as uow:
@@ -480,7 +479,7 @@ class TelemetryApplicationService:
         self, cmd: ValidateRuleAgainstSchema
     ) -> SchemaValidationResultDTO:
         validate_uuid(cmd.tenant_id, "tenant_id")
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         validate_uuid(cmd.rule_id, "rule_id")
         rule_id = DetectionRuleId(cmd.rule_id)
         validate_uuid(cmd.source_id, "source_id")
@@ -522,7 +521,7 @@ class TelemetryApplicationService:
 
     async def simulate_rule(self, cmd: SimulateRule) -> SimulationResultDTO:
         validate_uuid(cmd.tenant_id, "tenant_id")
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         validate_uuid(cmd.rule_id, "rule_id")
         rule_id = DetectionRuleId(cmd.rule_id)
         validate_uuid(cmd.source_id, "source_id")

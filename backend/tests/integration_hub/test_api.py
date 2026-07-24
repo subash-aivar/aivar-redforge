@@ -6,10 +6,12 @@ import pytest
 from fastapi import FastAPI, Header
 from httpx import ASGITransport, AsyncClient
 
+from integration_hub.api.v1.discovery_routes import assets_router, discovery_router
 from integration_hub.api.v1.routes import router
 from integration_hub.infrastructure.container import IntegrationHubContainer
 from redforge.api.security import TenantContext, get_tenant_context
 from redforge.domain.identity.value_objects import MembershipRole, Permission
+from redforge.shared.identifiers import EntityId
 
 
 def _override_tenant_context(
@@ -34,7 +36,7 @@ async def test_register_list() -> None:
     app.include_router(router)
     app.dependency_overrides[get_tenant_context] = _override_tenant_context
     app.state.integration_hub_container = IntegrationHubContainer()
-    headers = {"X-Tenant-Id": str(uuid4()), "X-Roles": "integration:admin"}
+    headers = {"X-Tenant-Id": str(EntityId.generate()), "X-Roles": "integration:admin"}
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         r = await client.post(
@@ -50,3 +52,40 @@ async def test_register_list() -> None:
         assert r.status_code == 201
         lst = await client.get("/integration-hub/connectors", headers=headers)
         assert len(lst.json()) == 1
+
+
+@pytest.mark.asyncio
+async def test_discovery_run_and_list_assets_requires_discoverable_connector() -> None:
+    app = FastAPI()
+    app.include_router(router)
+    app.include_router(discovery_router)
+    app.include_router(assets_router)
+    app.dependency_overrides[get_tenant_context] = _override_tenant_context
+    app.state.integration_hub_container = IntegrationHubContainer()
+    headers = {"X-Tenant-Id": str(EntityId.generate()), "X-Roles": "integration:admin"}
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        r = await client.post(
+            "/integration-hub/connectors",
+            json={
+                "connector_type": "ITSM_JIRA",
+                "display_name": "jira",
+                "credential_vault_key": str(uuid4()),
+                "credential_type": "API_KEY",
+            },
+            headers=headers,
+        )
+        assert r.status_code == 201
+        connector_id = r.json()["connector_id"]
+
+        # ITSM_JIRA is not catalog-registered/discoverable in this phase.
+        run = await client.post(
+            f"/integration-hub/connectors/{connector_id}/discovery/run",
+            json={"mode": "MANUAL"},
+            headers=headers,
+        )
+        assert run.status_code == 400
+
+        assets = await client.get("/integration-hub/assets", headers=headers)
+        assert assets.status_code == 200
+        assert assets.json() == []

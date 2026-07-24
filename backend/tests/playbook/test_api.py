@@ -10,6 +10,7 @@ from playbook.api.v1.routes import router
 from playbook.infrastructure.container import PlaybookContainer
 from redforge.api.security import TenantContext, get_tenant_context
 from redforge.domain.identity.value_objects import MembershipRole, Permission
+from redforge.shared.identifiers import EntityId
 
 
 def _override_tenant_context(
@@ -39,7 +40,7 @@ def app() -> FastAPI:
 
 @pytest.mark.asyncio
 async def test_create_and_list(app: FastAPI) -> None:
-    tenant = str(uuid4())
+    tenant = str(EntityId.generate())
     headers = {
         "X-Tenant-Id": tenant,
         "X-Roles": "playbook:engineer,playbook:analyst",

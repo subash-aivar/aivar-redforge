@@ -7,14 +7,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+if TYPE_CHECKING:
+    from reporting.domain.value_objects.identifiers import TenantId
+
 from reporting.domain.ports.i_bi_export_port import (
     BIExportPage,
     BIExportRequest,
     IBIExportPort,
 )
-
-if TYPE_CHECKING:
-    from uuid import UUID
 
 
 class InMemoryBIExportAdapter(IBIExportPort):
@@ -23,7 +23,7 @@ class InMemoryBIExportAdapter(IBIExportPort):
     def __init__(self) -> None:
         self._rows: dict[str, list[dict[str, Any]]] = {}
 
-    def seed(self, tenant_id: UUID, dataset_ref: str, rows: list[dict[str, Any]]) -> None:
+    def seed(self, tenant_id: TenantId, dataset_ref: str, rows: list[dict[str, Any]]) -> None:
         self._rows[f"{tenant_id}:{dataset_ref}"] = list(rows)
 
     async def export_page(self, request: BIExportRequest) -> BIExportPage:

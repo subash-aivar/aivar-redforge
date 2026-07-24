@@ -38,13 +38,14 @@ from execution.domain.services.worker_capability_verification_service import (
     WorkerCapabilityVerificationService,
 )
 from execution.domain.value_objects.execution_vos import ScopeSnapshot
-from execution.domain.value_objects.identifiers import EngagementId, TenantId
+from execution.domain.value_objects.identifiers import EngagementId
 from execution.infrastructure.redis.in_memory_kill_switch_store import InMemoryKillSwitchStore
 from execution.infrastructure.redis.in_memory_rate_limit_store import InMemoryRateLimitStore
 from execution.infrastructure.technique.in_memory_dispatcher import InMemoryTechniqueDispatcher
 from redforge.api.dependencies import get_organization_service
 from redforge.api.security import TenantContext, get_tenant_context
 from redforge.domain.identity.value_objects import MembershipRole, Permission
+from redforge.shared.identifiers import EntityId
 
 
 class _OrgStub:
@@ -56,8 +57,8 @@ class _OrgStub:
 
 
 @pytest.fixture
-def api_tenant_id() -> UUID:
-    return uuid7()
+def api_tenant_id() -> EntityId:
+    return EntityId.generate()
 
 
 @pytest.fixture
@@ -82,7 +83,7 @@ def api_scope_snapshot(
     now = datetime.now(UTC)
     return ScopeSnapshot(
         engagement_id=EngagementId(api_engagement_id),
-        tenant_id=TenantId(api_tenant_id),
+        tenant_id=api_tenant_id,
         authorized_target_ids=frozenset({api_target_id}),
         scope_hash="b" * 64,
         engagement_version=1,

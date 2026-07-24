@@ -6,12 +6,13 @@ from uuid import uuid4
 import pytest
 
 from analytics.infrastructure.container import AnalyticsContainer
+from redforge.shared.identifiers import EntityId
 
 
 @pytest.mark.asyncio
 async def test_projection_worker_and_scheduler_tick() -> None:
     c = AnalyticsContainer()
-    tid = uuid4()
+    tid = EntityId.generate()
     ingested = await c.projection_worker.handle(
         tenant_id=tid,
         domain="Vulnerability",
@@ -30,7 +31,7 @@ async def test_projection_worker_and_scheduler_tick() -> None:
 @pytest.mark.asyncio
 async def test_rebuild_worker() -> None:
     c = AnalyticsContainer()
-    tid = uuid4()
+    tid = EntityId.generate()
     from analytics.application.commands.analytics_commands import (
         RegisterAnalyticsDataSetCommand,
     )

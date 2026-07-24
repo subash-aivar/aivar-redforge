@@ -19,6 +19,7 @@ from automated_action.application.exceptions import (
     ApplicationNotFoundError,
 )
 from automated_action.domain.exceptions.domain_exceptions import AutomationDomainError
+from automated_action.domain.value_objects.identifiers import TenantId
 from automated_action.infrastructure.container import AutomatedActionContainer
 
 router = APIRouter(tags=["automated-action"])
@@ -65,7 +66,7 @@ async def list_executions(
     playbook_id_filter: str | None = None,
     page: int = 1,
     page_size: int = 50,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: AutomatedActionContainer = Depends(get_container),
 ) -> list[dict[str, Any]]:
@@ -86,7 +87,7 @@ async def list_executions(
 @router.post("/executions", status_code=201)
 async def trigger(
     body: TriggerBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: AutomatedActionContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -111,7 +112,7 @@ async def trigger(
 @router.get("/executions/{execution_id}")
 async def get_execution(
     execution_id: UUID,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: AutomatedActionContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -124,7 +125,7 @@ async def get_execution(
 @router.get("/executions/{execution_id}/action-records")
 async def action_records(
     execution_id: UUID,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: AutomatedActionContainer = Depends(get_container),
 ) -> list[dict[str, Any]]:
@@ -139,7 +140,7 @@ async def action_records(
 async def authorize_step(
     execution_id: UUID,
     body: AuthorizeBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: AutomatedActionContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -164,7 +165,7 @@ async def authorize_step(
 async def rollback(
     execution_id: UUID,
     body: RollbackBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: AutomatedActionContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -180,7 +181,7 @@ async def rollback(
 async def cancel(
     execution_id: UUID,
     body: CancelBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: AutomatedActionContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -195,7 +196,7 @@ async def cancel(
 
 @router.get("/executions/pending/escalations")
 async def pending_escalations(
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: AutomatedActionContainer = Depends(get_container),
 ) -> list[dict[str, Any]]:

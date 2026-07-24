@@ -19,6 +19,7 @@ from integration_hub.application.exceptions import (
     ApplicationNotFoundError,
     ApplicationValidationError,
 )
+from integration_hub.application.ports.credential_vault import ICredentialVaultPort
 from integration_hub.domain.aggregates.connector_health_record import ConnectorHealthRecord
 from integration_hub.domain.aggregates.connector_registration import ConnectorRegistration
 from integration_hub.domain.events.connector_events import (
@@ -36,7 +37,7 @@ from integration_hub.domain.value_objects.enums import (
     ConnectorStatus,
     ConnectorType,
 )
-from integration_hub.domain.value_objects.identifiers import ConnectorId, TenantId
+from integration_hub.domain.value_objects.identifiers import ConnectorId, EntityId, TenantId
 from integration_hub.infrastructure.plugin_catalog import ConnectorPluginCatalog
 
 
@@ -48,7 +49,7 @@ class IntegrationHubApplicationService:
         connectors: dict[str, Any],
         event_sink: list[Any] | None = None,
         catalog: ConnectorPluginCatalog | None = None,
-        credential_service: Any | None = None,
+        credential_service: ICredentialVaultPort | None = None,
     ) -> None:
         self._regs = registrations
         self._health = health_records
@@ -60,8 +61,18 @@ class IntegrationHubApplicationService:
         self._catalog = catalog
         self._credential_service = credential_service
 
-    def _tenant(self, value: UUID) -> TenantId:
-        return TenantId(value)
+    def _tenant(self, value: TenantId | UUID) -> EntityId:
+        """Normalize either an already-canonical `TenantId` (=`EntityId`) or
+        a raw `uuid.UUID` into one consistent `EntityId` — see the
+        identical fix/rationale in
+        `AssetDiscoveryApplicationService._tenant`. Previously
+        `EntityId(value)` either double-wrapped an already-good `EntityId`
+        (breaking `==`/hashing) or built a `ULID`-typed slot holding a
+        plain `UUID`, incompatible with a canonically-built `EntityId` for
+        the same value."""
+        if isinstance(value, EntityId):
+            return value
+        return EntityId.from_uuid(value)
 
     def _dto(self, reg: ConnectorRegistration) -> ConnectorRegistrationDTO:
         return ConnectorRegistrationDTO(
@@ -115,25 +126,18 @@ class IntegrationHubApplicationService:
         if plugin is None:
             raise ApplicationValidationError(f"unknown connector_id: {cmd.connector_id}")
 
-        from credential_vault.application.commands.credential_commands import (
-            CreateCredentialCommand,
-        )
-
         tenant = self._tenant(cmd.tenant_id)
         primary_field = plugin.credential_fields[0]
-        cred_dto = await self._credential_service.create_credential(
-            CreateCredentialCommand(
-                tenant_id=cmd.tenant_id,
-                name=f"integration.{plugin.connector_id}.{cmd.display_name}",
-                category=primary_field.vault_category,
-                subtype=primary_field.vault_subtype,
-                schema_id=None,
-                owner_principal_id=cmd.owner_principal_id,
-                vault_backend_id=cmd.vault_backend_id,
-                plaintext_secret=cmd.plaintext_secret.encode("utf-8"),
-                description=f"Integration Hub connector: {plugin.display_name}",
-                tags={"connector_type": plugin.connector_id, "integration_hub": "true"},
-            )
+        credential_id = await self._credential_service.create(
+            tenant_id=cmd.tenant_id,
+            name=f"integration.{plugin.connector_id}.{cmd.display_name}",
+            category=primary_field.vault_category,
+            subtype=primary_field.vault_subtype,
+            owner_principal_id=cmd.owner_principal_id,
+            vault_backend_id=cmd.vault_backend_id,
+            plaintext_secret=cmd.plaintext_secret.encode("utf-8"),
+            description=f"Integration Hub connector: {plugin.display_name}",
+            tags={"connector_type": plugin.connector_id, "integration_hub": "true"},
         )
 
         # Immediate connectivity test with the plaintext secret we already
@@ -146,7 +150,7 @@ class IntegrationHubApplicationService:
             tenant,
             plugin.connector_id,
             cmd.display_name,
-            cred_dto.credential_id,
+            credential_id,
             primary_field.vault_category,
             base_url=None,
             configuration=cmd.configuration,
@@ -183,19 +187,13 @@ class IntegrationHubApplicationService:
         plugin = self._catalog.get(str(reg.connector_type)) if self._catalog else None
         if plugin is not None and self._credential_service is not None:
             try:
-                from credential_vault.application.commands.credential_commands import (
-                    ResolveCredentialCommand,
+                resolved = await self._credential_service.resolve(
+                    tenant_id=cmd.tenant_id,
+                    credential_id=UUID(reg.credential_ref.vault_key),
+                    principal_id=cmd.tenant_id,  # system-triggered health check
+                    purpose="integration_hub.health_check",
                 )
-
-                resolved = await self._credential_service.resolve_credential(
-                    ResolveCredentialCommand(
-                        tenant_id=cmd.tenant_id,
-                        credential_id=UUID(reg.credential_ref.vault_key),
-                        principal_id=cmd.tenant_id,  # system-triggered health check
-                        purpose="integration_hub.health_check",
-                    )
-                )
-                secret = resolved.plaintext_secret.decode("utf-8")
+                secret = resolved.secret_value
                 config = {k: str(v) for k, v in (reg.configuration or {}).items()}
                 status = await plugin.health_check(secret, config)
                 latency = 10
@@ -271,7 +269,7 @@ class IntegrationHubApplicationService:
         )
 
     async def list_connectors(
-        self, tenant_id: UUID, roles: tuple[str, ...], status_filter: str | None = None
+        self, tenant_id: TenantId, roles: tuple[str, ...], status_filter: str | None = None
     ) -> list[ConnectorRegistrationDTO]:
         require_admin(roles)
         rows = await self._regs.find_all_for_tenant(self._tenant(tenant_id))
@@ -280,7 +278,7 @@ class IntegrationHubApplicationService:
         return [self._dto(r) for r in rows]
 
     async def get_connector(
-        self, tenant_id: UUID, connector_id: UUID, roles: tuple[str, ...]
+        self, tenant_id: TenantId, connector_id: UUID, roles: tuple[str, ...]
     ) -> ConnectorRegistrationDTO:
         if "integration:admin" not in roles and "playbook:analyst" not in roles:
             require_admin(roles)
@@ -290,7 +288,7 @@ class IntegrationHubApplicationService:
         return self._dto(reg)
 
     async def health_history(
-        self, tenant_id: UUID, connector_id: UUID, roles: tuple[str, ...], limit: int = 20
+        self, tenant_id: TenantId, connector_id: UUID, roles: tuple[str, ...], limit: int = 20
     ) -> list[dict[str, object]]:
         if "integration:admin" not in roles and "playbook:analyst" not in roles:
             require_admin(roles)

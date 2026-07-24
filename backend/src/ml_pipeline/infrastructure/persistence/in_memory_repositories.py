@@ -10,6 +10,7 @@ from ml_pipeline.domain.repositories.i_ml_repositories import (
     IPredictiveRiskSignalRepository,
 )
 from ml_pipeline.domain.value_objects.enums import MLModelStatus
+from ml_pipeline.domain.value_objects.identifiers import TenantId
 
 if TYPE_CHECKING:
     from datetime import datetime
@@ -99,7 +100,7 @@ class InMemoryMLModelArtifactStore(IMLModelArtifactStore):
     def __init__(self) -> None:
         self._store: dict[str, dict[str, tuple[bytes, str]]] = {}
 
-    async def store_artifact(self, tenant_id: UUID, model_id: UUID, artifact_bytes: bytes) -> str:
+    async def store_artifact(self, tenant_id: TenantId, model_id: UUID, artifact_bytes: bytes) -> str:
         digest = hashlib.sha256(artifact_bytes).hexdigest()
         self._store.setdefault(str(tenant_id), {})[str(model_id)] = (
             bytes(artifact_bytes),
@@ -107,7 +108,7 @@ class InMemoryMLModelArtifactStore(IMLModelArtifactStore):
         )
         return digest
 
-    async def load_artifact(self, tenant_id: UUID, model_id: UUID) -> tuple[bytes, str]:
+    async def load_artifact(self, tenant_id: TenantId, model_id: UUID) -> tuple[bytes, str]:
         row = self._store.get(str(tenant_id), {}).get(str(model_id))
         if row is None:
             raise ArtifactNotFoundError("artifact not found for tenant/model")
@@ -121,7 +122,7 @@ class InMemoryMLModelArtifactStore(IMLModelArtifactStore):
             raise ArtifactIntegrityError("SHA-256 mismatch on load")
         return blob, stored_hash
 
-    def corrupt_for_test(self, tenant_id: UUID, model_id: UUID) -> None:
+    def corrupt_for_test(self, tenant_id: TenantId, model_id: UUID) -> None:
         """Bit-flip stored bytes without updating hash (integrity test helper)."""
         blob, digest = self._store[str(tenant_id)][str(model_id)]
         mutated = bytearray(blob)

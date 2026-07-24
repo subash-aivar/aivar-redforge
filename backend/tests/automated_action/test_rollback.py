@@ -10,12 +10,13 @@ from automated_action.application.commands.automation_commands import (
 )
 from automated_action.application.ports.lookups import PlaybookLookupView, PlaybookStepView
 from automated_action.infrastructure.container import AutomatedActionContainer
+from redforge.shared.identifiers import EntityId
 
 
 @pytest.mark.asyncio
 async def test_rollback() -> None:
     c = AutomatedActionContainer()
-    tenant = uuid4()
+    tenant = EntityId.generate()
     pb = uuid4()
     c.playbook_lookup.put(
         PlaybookLookupView(

@@ -97,7 +97,7 @@ def _row_to_suggestion(row: IntelligenceSuggestionModel) -> IntelligenceSuggesti
     )
     return IntelligenceSuggestion(
         suggestion_id=SuggestionId(row.id),
-        tenant_id=TenantId(row.tenant_id),
+        tenant_id=TenantId.from_uuid(row.tenant_id),
         target_ref=target_ref,
         evidence=evidence,
         status=SuggestionStatus(row.status),
@@ -199,7 +199,7 @@ def _model_to_row(m: OptimizationModel) -> OptimizationModelModel:
 def _row_to_model(row: OptimizationModelModel) -> OptimizationModel:
     return OptimizationModel(
         model_id=ModelId(row.id),
-        tenant_id=TenantId(row.tenant_id),
+        tenant_id=TenantId.from_uuid(row.tenant_id),
         target_type=SuggestionTargetType(row.target_type),
         model_version=row.model_version,
         status=ModelStatus(row.status),
@@ -326,7 +326,7 @@ def _row_to_outcome(row: SuggestionOutcomeModel) -> SuggestionOutcome:
     return SuggestionOutcome(
         outcome_id=row.id,
         suggestion_id=row.suggestion_id,
-        tenant_id=TenantId(row.tenant_id),
+        tenant_id=TenantId.from_uuid(row.tenant_id),
         target_type=SuggestionTargetType(row.target_type),
         outcome_type=OutcomeType(row.outcome_type),
         measurement_window_days=row.measurement_window_days,
@@ -382,7 +382,7 @@ def _policy_to_row(policy: AutonomousOperationsPolicy) -> AutonomousOperationsPo
 
 def _row_to_policy(row: AutonomousOperationsPolicyModel) -> AutonomousOperationsPolicy:
     return AutonomousOperationsPolicy(
-        tenant_id=TenantId(row.tenant_id),
+        tenant_id=TenantId.from_uuid(row.tenant_id),
         kill_switch_active=row.kill_switch_active,
         min_confidence_by_type={
             SuggestionTargetType(k): float(v) for k, v in (row.min_confidence_by_type or {}).items()

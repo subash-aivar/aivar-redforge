@@ -16,7 +16,7 @@ async def test_10k_marks_collapse_to_one_pending_and_one_compute(
     asset = uuid4()
     await container.ingestion.ingest_vulnerability(
         IngestVulnerabilitySignalCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             event_id="herd-0",
             vulnerability_instance_id="vuln-herd",
             asset_ref_id=asset,
@@ -26,7 +26,7 @@ async def test_10k_marks_collapse_to_one_pending_and_one_compute(
         )
     )
     for _ in range(10_000):
-        await container.debouncer.mark(tenant_id.value, asset)
+        await container.debouncer.mark(tenant_id, asset)
     assert await container._uow_factory().pending.count_for_tenant(tenant_id) == 1
     computed = await container.score_worker.run_pipeline_once(
         container.debouncer, container.dispatcher, debounce_seconds=0

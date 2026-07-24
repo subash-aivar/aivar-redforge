@@ -19,13 +19,14 @@ from exposure.infrastructure.persistence.in_memory_unit_of_work import InMemoryU
 from exposure.infrastructure.projections.threat_actor_match_cache import (
     ThreatActorMatchCache,
 )
+from redforge.shared.identifiers import EntityId
 
 ANALYST = ("exposure:analyst",)
 
 
 @pytest.fixture
 def tenant() -> TenantId:
-    return TenantId(uuid4())
+    return TenantId.generate()
 
 
 @pytest.fixture
@@ -36,7 +37,7 @@ def container() -> ExposureContainer:
 
 
 def test_cache_staleness_48h() -> None:
-    cache = ThreatActorMatchCache(tenant_id=uuid4())
+    cache = ThreatActorMatchCache(tenant_id=EntityId.generate())
     assert cache.is_stale()
     now = datetime.now(UTC)
     cache.apply_targeting(
@@ -58,7 +59,7 @@ async def test_event_path_attaches_threat_amplifier(
     asset = uuid4()
     await container.ingestion.ingest_vulnerability(
         IngestVulnerabilitySignalCommand(
-            tenant_id=tenant.value,
+            tenant_id=tenant,
             event_id="vuln-1",
             vulnerability_instance_id="vi-1",
             asset_ref_id=asset,
@@ -71,7 +72,7 @@ async def test_event_path_attaches_threat_amplifier(
         )
     )
     attached = await container.threat_subscriber.on_threat_actor_asset_class_targeting_updated(
-        tenant_id=tenant.value,
+        tenant_id=tenant,
         event_id="m21-evt-1",
         threat_actor_ref="apt-42",
         targeted_cve_ids=["CVE-2024-1"],
@@ -79,7 +80,7 @@ async def test_event_path_attaches_threat_amplifier(
         targeting_confidence="High",
     )
     assert attached == 1
-    cache = await container.threat_query.get_threat_actor_targeting(tenant.value, ANALYST)
+    cache = await container.threat_query.get_threat_actor_targeting(tenant, ANALYST)
     assert "CVE-2024-1" in cache["entries"]
     assert cache["is_stale"] is False
 
@@ -89,7 +90,7 @@ async def test_poll_path_and_unavailability(tenant: TenantId, container: Exposur
     asset = uuid4()
     await container.ingestion.ingest_vulnerability(
         IngestVulnerabilitySignalCommand(
-            tenant_id=tenant.value,
+            tenant_id=tenant,
             event_id="vuln-2",
             vulnerability_instance_id="vi-2",
             asset_ref_id=asset,
@@ -112,12 +113,12 @@ async def test_poll_path_and_unavailability(tenant: TenantId, container: Exposur
             confidence=ConfidenceLevel.HIGH,
         )
     )
-    ok = await container.threat_poll_scheduler.run_for_tenant(tenant.value)
+    ok = await container.threat_poll_scheduler.run_for_tenant(tenant)
     assert ok["ok"] is True
     assert int(ok["attached"]) >= 1
 
     container.threat_port.mark_unavailable()
-    fail = await container.threat_sync.poll_and_refresh(tenant.value)
+    fail = await container.threat_sync.poll_and_refresh(tenant)
     assert fail["ok"] is False
     # Existing amplifiers retained — cache still has entries
     cache = await container.cache_repo.load(tenant)
@@ -134,5 +135,5 @@ async def test_cold_bootstrap(tenant: TenantId, container: ExposureContainer) ->
             matched_asset_classes=(),
         )
     )
-    result = await container.threat_sync.bootstrap_if_cold(tenant.value)
+    result = await container.threat_sync.bootstrap_if_cold(tenant)
     assert result["ok"] is True

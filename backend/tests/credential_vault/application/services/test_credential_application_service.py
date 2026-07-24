@@ -86,6 +86,7 @@ from credential_vault.domain.value_objects.identifiers import (
     VersionId,
 )
 from credential_vault.domain.value_objects.states import CredentialState, VersionState
+from redforge.shared.identifiers import EntityId
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -136,7 +137,7 @@ def _setup_active_resolve(
     credential_id=None,
     version_id=None,
 ):
-    tid = tenant_id or TenantId(uuid4())
+    tid = tenant_id or TenantId.generate()
     pid = principal_id or PrincipalId(uuid4())
     cid = credential_id or CredentialId(uuid4())
     vid = version_id or VersionId(uuid4())
@@ -163,7 +164,7 @@ def _setup_active_resolve(
 
 def _resolve_cmd(cred, *, break_glass: bool = False, justification: str | None = None):
     return ResolveCredentialCommand(
-        tenant_id=cred.tenant_id.value,
+        tenant_id=cred.tenant_id,
         credential_id=cred.credential_id.value,
         principal_id=cred.owner_principal.value,
         purpose="deployment",
@@ -181,7 +182,7 @@ def _published_events(mock_event_publisher) -> list:
 
 def _ids_from_cred(cred):
     return (
-        cred.tenant_id.value,
+        cred.tenant_id,
         cred.credential_id.value,
         cred.owner_principal.value,
     )
@@ -701,7 +702,7 @@ async def test_rotate_credential_already_rotating(
     credential_service: CredentialApplicationService,
     mock_uow,
 ) -> None:
-    tid = TenantId(uuid4())
+    tid = TenantId.generate()
     pid = PrincipalId(uuid4())
     cid = CredentialId(uuid4())
     vid = VersionId(uuid4())
@@ -721,7 +722,7 @@ async def test_rotate_credential_already_rotating(
     with pytest.raises(ConcurrentRotationConflict):
         await credential_service.rotate_credential(
             RotateCredentialCommand(
-                tenant_id=tid.value,
+                tenant_id=tid,
                 credential_id=cid.value,
                 principal_id=pid.value,
                 new_plaintext_secret=b"rotated-secret",
@@ -788,7 +789,7 @@ async def test_rotate_credential_validation_failure(
     with pytest.raises(ApplicationValidationError) as exc_info:
         await credential_service.rotate_credential(
             RotateCredentialCommand(
-                tenant_id=uuid4(),
+                tenant_id=EntityId.generate(),
                 credential_id=uuid4(),
                 principal_id=uuid4(),
                 new_plaintext_secret=b"",
@@ -831,7 +832,7 @@ async def test_rotate_credential_publish_failure_nonfatal(
 
 
 def _setup_rotating_for_commit(mock_uow):
-    tid = TenantId(uuid4())
+    tid = TenantId.generate()
     pid = PrincipalId(uuid4())
     cid = CredentialId(uuid4())
     active_vid = VersionId(uuid4())
@@ -982,7 +983,7 @@ async def test_commit_rotation_access_denied(
     with pytest.raises(AccessDenied):
         await credential_service.commit_rotation(
             CommitRotationCommand(
-                tenant_id=uuid4(),
+                tenant_id=EntityId.generate(),
                 credential_id=uuid4(),
                 principal_id=uuid4(),
             )
@@ -1051,7 +1052,7 @@ async def test_abort_rotation_access_denied(
     with pytest.raises(AccessDenied):
         await credential_service.abort_rotation(
             AbortRotationCommand(
-                tenant_id=uuid4(),
+                tenant_id=EntityId.generate(),
                 credential_id=uuid4(),
                 principal_id=uuid4(),
                 reason="nope",
@@ -1089,7 +1090,7 @@ async def test_abort_rotation_validation_failure(
     with pytest.raises(ApplicationValidationError):
         await credential_service.abort_rotation(
             AbortRotationCommand(
-                tenant_id=uuid4(),
+                tenant_id=EntityId.generate(),
                 credential_id=uuid4(),
                 principal_id=uuid4(),
                 reason="",
@@ -1105,7 +1106,7 @@ async def test_abort_rotation_validation_failure(
 
 
 def _setup_recover(mock_uow):
-    tid = TenantId(uuid4())
+    tid = TenantId.generate()
     pid = PrincipalId(uuid4())
     cid = CredentialId(uuid4())
     cred = make_credential(
@@ -1232,7 +1233,7 @@ async def test_recover_credential_access_denied(
     with pytest.raises(AccessDenied):
         await credential_service.recover_credential(
             RecoverCredentialCommand(
-                tenant_id=uuid4(),
+                tenant_id=EntityId.generate(),
                 credential_id=uuid4(),
                 principal_id=uuid4(),
                 target_version_id=uuid4(),
@@ -1274,7 +1275,7 @@ async def test_recover_credential_validation_failure(
     with pytest.raises(ApplicationValidationError):
         await credential_service.recover_credential(
             RecoverCredentialCommand(
-                tenant_id=uuid4(),
+                tenant_id=EntityId.generate(),
                 credential_id=uuid4(),
                 principal_id=uuid4(),
                 target_version_id=uuid4(),
@@ -1290,7 +1291,7 @@ async def test_hard_delete_success(
     mock_uow,
     mock_event_publisher,
 ) -> None:
-    tid = TenantId(uuid4())
+    tid = TenantId.generate()
     pid = PrincipalId(uuid4())
     cid = CredentialId(uuid4())
     cred = make_credential(
@@ -1304,7 +1305,7 @@ async def test_hard_delete_success(
 
     result = await credential_service.hard_delete_credential(
         HardDeleteCredentialCommand(
-            tenant_id=tid.value,
+            tenant_id=tid,
             credential_id=cid.value,
             principal_id=pid.value,
         )
@@ -1341,7 +1342,7 @@ async def test_hard_delete_access_denied(
     mock_uow,
     mock_permission_port,
 ) -> None:
-    tid = TenantId(uuid4())
+    tid = TenantId.generate()
     pid = PrincipalId(uuid4())
     cid = CredentialId(uuid4())
     cred = make_credential(
@@ -1357,7 +1358,7 @@ async def test_hard_delete_access_denied(
     with pytest.raises(AccessDenied):
         await credential_service.hard_delete_credential(
             HardDeleteCredentialCommand(
-                tenant_id=tid.value,
+                tenant_id=tid,
                 credential_id=cid.value,
                 principal_id=pid.value,
             )
@@ -1368,7 +1369,7 @@ async def test_hard_delete_audit_fail_closed(
     credential_service: CredentialApplicationService,
     mock_uow,
 ) -> None:
-    tid = TenantId(uuid4())
+    tid = TenantId.generate()
     pid = PrincipalId(uuid4())
     cid = CredentialId(uuid4())
     cred = make_credential(
@@ -1384,7 +1385,7 @@ async def test_hard_delete_audit_fail_closed(
     with pytest.raises(ApplicationAuditFailure):
         await credential_service.hard_delete_credential(
             HardDeleteCredentialCommand(
-                tenant_id=tid.value,
+                tenant_id=tid,
                 credential_id=cid.value,
                 principal_id=pid.value,
             )
@@ -1431,7 +1432,7 @@ async def test_disable_credential_access_denied(
     with pytest.raises(AccessDenied):
         await credential_service.disable_credential(
             DisableCredentialCommand(
-                tenant_id=uuid4(),
+                tenant_id=EntityId.generate(),
                 credential_id=uuid4(),
                 principal_id=uuid4(),
                 reason="nope",
@@ -1469,7 +1470,7 @@ async def test_disable_credential_validation_failure(
     with pytest.raises(ApplicationValidationError):
         await credential_service.disable_credential(
             DisableCredentialCommand(
-                tenant_id=uuid4(),
+                tenant_id=EntityId.generate(),
                 credential_id=uuid4(),
                 principal_id=uuid4(),
                 reason="",
@@ -1503,7 +1504,7 @@ async def test_enable_credential_success(
     mock_uow,
     mock_event_publisher,
 ) -> None:
-    tid = TenantId(uuid4())
+    tid = TenantId.generate()
     pid = PrincipalId(uuid4())
     cid = CredentialId(uuid4())
     cred = make_credential(
@@ -1517,7 +1518,7 @@ async def test_enable_credential_success(
 
     dto = await credential_service.enable_credential(
         EnableCredentialCommand(
-            tenant_id=tid.value,
+            tenant_id=tid,
             credential_id=cid.value,
             principal_id=pid.value,
         )
@@ -1539,7 +1540,7 @@ async def test_enable_credential_access_denied(
     with pytest.raises(AccessDenied):
         await credential_service.enable_credential(
             EnableCredentialCommand(
-                tenant_id=uuid4(),
+                tenant_id=EntityId.generate(),
                 credential_id=uuid4(),
                 principal_id=uuid4(),
             )
@@ -1552,7 +1553,7 @@ async def test_enable_credential_audit_fail_closed(
     credential_service: CredentialApplicationService,
     mock_uow,
 ) -> None:
-    tid = TenantId(uuid4())
+    tid = TenantId.generate()
     pid = PrincipalId(uuid4())
     cid = CredentialId(uuid4())
     cred = make_credential(
@@ -1568,7 +1569,7 @@ async def test_enable_credential_audit_fail_closed(
     with pytest.raises(ApplicationAuditFailure):
         await credential_service.enable_credential(
             EnableCredentialCommand(
-                tenant_id=tid.value,
+                tenant_id=tid,
                 credential_id=cid.value,
                 principal_id=pid.value,
             )
@@ -1665,7 +1666,7 @@ async def test_revoke_credential_validation_failure(
     with pytest.raises(ApplicationValidationError):
         await credential_service.revoke_credential(
             RevokeCredentialCommand(
-                tenant_id=uuid4(),
+                tenant_id=EntityId.generate(),
                 credential_id=uuid4(),
                 principal_id=uuid4(),
                 reason="",
@@ -1746,7 +1747,7 @@ async def test_emergency_revoke_validation_failure(
     with pytest.raises(ApplicationValidationError):
         await credential_service.emergency_revoke(
             EmergencyRevokeCommand(
-                tenant_id=uuid4(),
+                tenant_id=EntityId.generate(),
                 credential_id=uuid4(),
                 principal_id=uuid4(),
                 justification="",
@@ -1871,7 +1872,7 @@ async def test_rollback_version_access_denied(
     with pytest.raises(AccessDenied):
         await credential_service.rollback_version(
             RollbackVersionCommand(
-                tenant_id=uuid4(),
+                tenant_id=EntityId.generate(),
                 credential_id=uuid4(),
                 principal_id=uuid4(),
                 target_version_id=uuid4(),
@@ -1923,7 +1924,7 @@ async def test_rollback_version_validation_failure(
     with pytest.raises(ApplicationValidationError) as exc_info:
         await credential_service.rollback_version(
             RollbackVersionCommand(
-                tenant_id=uuid4(),
+                tenant_id=EntityId.generate(),
                 credential_id=uuid4(),
                 principal_id=uuid4(),
                 target_version_id=UUID(int=0),
@@ -1969,7 +1970,7 @@ async def test_update_metadata_access_denied(
     with pytest.raises(AccessDenied):
         await credential_service.update_metadata(
             UpdateCredentialMetadataCommand(
-                tenant_id=uuid4(),
+                tenant_id=EntityId.generate(),
                 credential_id=uuid4(),
                 principal_id=uuid4(),
                 description="x",
@@ -2009,7 +2010,7 @@ async def test_update_metadata_validation_failure(
     with pytest.raises(ApplicationValidationError) as exc_info:
         await credential_service.update_metadata(
             UpdateCredentialMetadataCommand(
-                tenant_id=uuid4(),
+                tenant_id=EntityId.generate(),
                 credential_id=uuid4(),
                 principal_id=uuid4(),
                 description="x" * 2049,
@@ -2057,7 +2058,7 @@ async def test_attach_rotation_policy_access_denied(
     with pytest.raises(AccessDenied):
         await credential_service.attach_rotation_policy(
             AttachRotationPolicyCommand(
-                tenant_id=uuid4(),
+                tenant_id=EntityId.generate(),
                 credential_id=uuid4(),
                 policy_id=uuid4(),
                 principal_id=uuid4(),
@@ -2098,7 +2099,7 @@ async def test_attach_rotation_policy_validation_failure(
     with pytest.raises(ApplicationValidationError) as exc_info:
         await credential_service.attach_rotation_policy(
             AttachRotationPolicyCommand(
-                tenant_id=uuid4(),
+                tenant_id=EntityId.generate(),
                 credential_id=uuid4(),
                 policy_id=UUID(int=0),
                 principal_id=uuid4(),
@@ -2145,7 +2146,7 @@ async def test_detach_rotation_policy_access_denied(
     with pytest.raises(AccessDenied):
         await credential_service.detach_rotation_policy(
             DetachRotationPolicyCommand(
-                tenant_id=uuid4(),
+                tenant_id=EntityId.generate(),
                 credential_id=uuid4(),
                 principal_id=uuid4(),
             )
@@ -2231,7 +2232,7 @@ async def test_attach_expiration_policy_access_denied(
     with pytest.raises(AccessDenied):
         await credential_service.attach_expiration_policy(
             AttachExpirationPolicyCommand(
-                tenant_id=uuid4(),
+                tenant_id=EntityId.generate(),
                 credential_id=uuid4(),
                 policy_id=uuid4(),
                 principal_id=uuid4(),
@@ -2272,7 +2273,7 @@ async def test_attach_expiration_policy_validation_failure(
     with pytest.raises(ApplicationValidationError) as exc_info:
         await credential_service.attach_expiration_policy(
             AttachExpirationPolicyCommand(
-                tenant_id=uuid4(),
+                tenant_id=EntityId.generate(),
                 credential_id=uuid4(),
                 policy_id=UUID(int=0),
                 principal_id=uuid4(),
@@ -2319,7 +2320,7 @@ async def test_detach_expiration_policy_access_denied(
     with pytest.raises(AccessDenied):
         await credential_service.detach_expiration_policy(
             DetachExpirationPolicyCommand(
-                tenant_id=uuid4(),
+                tenant_id=EntityId.generate(),
                 credential_id=uuid4(),
                 principal_id=uuid4(),
             )
@@ -2379,13 +2380,13 @@ async def test_disable_credential_not_found(
     mock_uow,
 ) -> None:
     cid = CredentialId(uuid4())
-    tid = TenantId(uuid4())
+    tid = TenantId.generate()
     mock_uow.credentials.get_by_id.side_effect = CredentialNotFound(cid, tid)
 
     with pytest.raises(CredentialNotFound):
         await credential_service.disable_credential(
             DisableCredentialCommand(
-                tenant_id=tid.value,
+                tenant_id=tid,
                 credential_id=cid.value,
                 principal_id=uuid4(),
                 reason="gone",
@@ -2397,7 +2398,7 @@ async def test_disable_credential_invalid_state(
     credential_service: CredentialApplicationService,
     mock_uow,
 ) -> None:
-    tid = TenantId(uuid4())
+    tid = TenantId.generate()
     pid = PrincipalId(uuid4())
     cid = CredentialId(uuid4())
     cred = make_credential(
@@ -2412,7 +2413,7 @@ async def test_disable_credential_invalid_state(
     with pytest.raises(InvalidStateTransition):
         await credential_service.disable_credential(
             DisableCredentialCommand(
-                tenant_id=tid.value,
+                tenant_id=tid,
                 credential_id=cid.value,
                 principal_id=pid.value,
                 reason="already revoked",

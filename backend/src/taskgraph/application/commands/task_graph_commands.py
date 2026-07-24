@@ -5,13 +5,15 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from taskgraph.domain.value_objects.identifiers import TenantId
+
 if TYPE_CHECKING:
     from uuid import UUID
 
 
 @dataclass(frozen=True, slots=True)
 class CreateTaskGraphCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     name: str
     description: str
     engagement_window_seconds: int
@@ -19,7 +21,7 @@ class CreateTaskGraphCommand:
 
 @dataclass(frozen=True, slots=True)
 class AddTaskCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     graph_id: UUID
     task_type: str
     name: str
@@ -42,7 +44,7 @@ class AddTaskCommand:
 
 @dataclass(frozen=True, slots=True)
 class AddDependencyCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     graph_id: UUID
     predecessor_task_id: UUID
     successor_task_id: UUID
@@ -52,13 +54,13 @@ class AddDependencyCommand:
 
 @dataclass(frozen=True, slots=True)
 class ValidateTaskGraphCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     graph_id: UUID
 
 
 @dataclass(frozen=True, slots=True)
 class SignTaskGraphCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     graph_id: UUID
     signed_by: str
     signature: str
@@ -66,24 +68,24 @@ class SignTaskGraphCommand:
 
 @dataclass(frozen=True, slots=True)
 class ActivateTaskGraphCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     graph_id: UUID
 
 
 @dataclass(frozen=True, slots=True)
 class DeprecateTaskGraphCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     graph_id: UUID
 
 
 @dataclass(frozen=True, slots=True)
 class GetTaskGraphQuery:
-    tenant_id: UUID
+    tenant_id: TenantId
     graph_id: UUID
 
 
 @dataclass(frozen=True, slots=True)
 class GetExecutionOrderQuery:
-    tenant_id: UUID
+    tenant_id: TenantId
     graph_id: UUID
     start_task_id: UUID | None = None

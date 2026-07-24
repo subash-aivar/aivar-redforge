@@ -272,7 +272,7 @@ async def test_recover_after_restart_excludes_starting_campaigns(
     from campaign.infrastructure.acl.degraded_adapters import StubSchedulerPort
 
     port = StubSchedulerPort()
-    tenant = TenantId(uuid4())
+    tenant = TenantId.generate()
     c1 = CampaignId(uuid4())
     c2 = CampaignId(uuid4())
     policy = RecurrencePolicy(
@@ -303,7 +303,7 @@ async def test_register_one_shot(scheduler: RecurrenceScheduler) -> None:
     port = StubSchedulerPort()
     campaign = MagicMock()
     campaign.campaign_id = CampaignId(uuid4())
-    campaign.tenant_id = TenantId(uuid4())
+    campaign.tenant_id = TenantId.generate()
     fire_at = datetime(2026, 8, 1, 12, 0, tzinfo=UTC)
     job_id = await scheduler.register_one_shot(campaign, fire_at, port)
     assert job_id.startswith("stub-oneshot-")

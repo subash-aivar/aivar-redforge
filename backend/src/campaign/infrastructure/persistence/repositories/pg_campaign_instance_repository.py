@@ -38,7 +38,7 @@ def _to_domain(row: CampaignInstanceModel) -> CampaignInstance:
     return CampaignInstance(
         instance_id=CampaignInstanceId(row.id),
         campaign_id=CampaignId(row.campaign_id),
-        tenant_id=TenantId(row.tenant_id),
+        tenant_id=TenantId.from_uuid(row.tenant_id),
         run_number=row.run_number,
         state=InstanceState(row.state),
         resolved_targets=resolved_targets,

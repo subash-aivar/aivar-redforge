@@ -102,7 +102,7 @@ class PgMBOMRepository(IModelBillOfMaterialsRepository):
         ]
         return ModelBillOfMaterials(
             ModelBillOfMaterialsId(row.id),
-            TenantId(row.tenant_id),
+            TenantId.from_uuid(row.tenant_id),
             ModelProvenanceId(row.provenance_id),
             components,
             row.completed,

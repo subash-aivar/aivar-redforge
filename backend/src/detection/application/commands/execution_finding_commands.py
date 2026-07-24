@@ -6,10 +6,12 @@ from dataclasses import dataclass
 from typing import Any
 from uuid import UUID
 
+from detection.domain.value_objects.identifiers import TenantId
+
 
 @dataclass(frozen=True, slots=True)
 class ScheduleRuleExecution:
-    tenant_id: UUID
+    tenant_id: TenantId
     rule_id: UUID
     source_id: str
     window_start: str
@@ -21,7 +23,7 @@ class ScheduleRuleExecution:
 
 @dataclass(frozen=True, slots=True)
 class RecordExecutionResult:
-    tenant_id: UUID
+    tenant_id: TenantId
     execution_id: UUID
     telemetry_records_evaluated: int = 0
     findings_produced: int = 0
@@ -36,7 +38,7 @@ class RecordExecutionResult:
 
 @dataclass(frozen=True, slots=True)
 class ProduceFinding:
-    tenant_id: UUID
+    tenant_id: TenantId
     rule_id: UUID
     execution_id: UUID
     asset_id: str
@@ -55,7 +57,7 @@ class ProduceFinding:
 
 @dataclass(frozen=True, slots=True)
 class TriageFinding:
-    tenant_id: UUID
+    tenant_id: TenantId
     finding_id: UUID
     analyst: str
     note: str | None = None
@@ -63,14 +65,14 @@ class TriageFinding:
 
 @dataclass(frozen=True, slots=True)
 class ConfirmFinding:
-    tenant_id: UUID
+    tenant_id: TenantId
     finding_id: UUID
     analyst: str
 
 
 @dataclass(frozen=True, slots=True)
 class MarkFindingFalsePositive:
-    tenant_id: UUID
+    tenant_id: TenantId
     finding_id: UUID
     analyst: str
     justification: str
@@ -78,7 +80,7 @@ class MarkFindingFalsePositive:
 
 @dataclass(frozen=True, slots=True)
 class SuppressFinding:
-    tenant_id: UUID
+    tenant_id: TenantId
     finding_id: UUID
     analyst: str
     justification: str
@@ -86,7 +88,7 @@ class SuppressFinding:
 
 @dataclass(frozen=True, slots=True)
 class EscalateFindingToInvestigation:
-    tenant_id: UUID
+    tenant_id: TenantId
     finding_id: UUID
     analyst: str
     investigation_id: str

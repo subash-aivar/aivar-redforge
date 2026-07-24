@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from uuid import uuid4
-
 import pytest
 
 from detection.domain.value_objects.enums import SourceType
@@ -29,7 +27,7 @@ async def test_repo_tenant_isolation(tenant_id, now) -> None:
     repo = _FakeSourceRepo()
     source = make_source(tenant_id=tenant_id, now=now, pop_events=True)
     await repo.save(source)
-    other = TenantId(uuid4())
+    other = TenantId.generate()
     assert await repo.find_by_id(source.source_id, other) is None
 
 

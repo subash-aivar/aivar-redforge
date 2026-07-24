@@ -5,11 +5,12 @@ from uuid import uuid4
 
 from analytics.domain.services.kpi_computation_service import KPIComputationService
 from analytics.domain.value_objects.enums import KPIStatus, KPIType
+from redforge.shared.identifiers import EntityId
 
 
 def test_mttr_requires_m34_when_no_incident_events() -> None:
     svc = KPIComputationService()
-    result = svc.compute(KPIType.MTTR, tenant_id=uuid4(), events={})
+    result = svc.compute(KPIType.MTTR, tenant_id=EntityId.generate(), events={})
     assert result.status == KPIStatus.REQUIRES_M34_DATA
     assert result.value is None
 
@@ -41,7 +42,7 @@ def test_mttr_active_with_qualified_incidents() -> None:
         )
     result = svc.compute(
         KPIType.MTTR,
-        tenant_id=uuid4(),
+        tenant_id=EntityId.generate(),
         events={"incident": rows},
         period_end=now + timedelta(seconds=1),
     )
@@ -52,7 +53,7 @@ def test_mttr_active_with_qualified_incidents() -> None:
 
 def test_mttd_insufficient_data() -> None:
     svc = KPIComputationService()
-    result = svc.compute(KPIType.MTTD, tenant_id=uuid4(), events={})
+    result = svc.compute(KPIType.MTTD, tenant_id=EntityId.generate(), events={})
     assert result.status == KPIStatus.INSUFFICIENT_DATA
 
 
@@ -76,7 +77,7 @@ def test_mttd_computes_hours() -> None:
             }
         ],
     }
-    result = svc.compute(KPIType.MTTD, tenant_id=uuid4(), events=events)
+    result = svc.compute(KPIType.MTTD, tenant_id=EntityId.generate(), events=events)
     assert result.status == KPIStatus.ACTIVE
     assert result.value is not None
     assert result.value == 8.0
@@ -86,7 +87,7 @@ def test_coverage_pct() -> None:
     svc = KPIComputationService()
     result = svc.compute(
         KPIType.COVERAGE_PCT,
-        tenant_id=uuid4(),
+        tenant_id=EntityId.generate(),
         events={},
         attck_total=100,
         active_technique_ids={"T1001", "T1002", "T1003"},
@@ -97,7 +98,7 @@ def test_coverage_pct() -> None:
 
 def test_exposure_trend_insufficient() -> None:
     svc = KPIComputationService()
-    result = svc.compute(KPIType.EXPOSURE_TREND, tenant_id=uuid4(), events={})
+    result = svc.compute(KPIType.EXPOSURE_TREND, tenant_id=EntityId.generate(), events={})
     assert result.status == KPIStatus.INSUFFICIENT_DATA
 
 
@@ -120,7 +121,7 @@ def test_campaign_success_rate() -> None:
             },
         ]
     }
-    result = svc.compute(KPIType.CAMPAIGN_SUCCESS_RATE, tenant_id=uuid4(), events=events)
+    result = svc.compute(KPIType.CAMPAIGN_SUCCESS_RATE, tenant_id=EntityId.generate(), events=events)
     assert result.status == KPIStatus.ACTIVE
     assert result.value == 50.0
 
@@ -144,5 +145,5 @@ def test_ai_risk_trend_insufficient_with_few_assets() -> None:
             },
         ]
     }
-    result = svc.compute(KPIType.AI_RISK_TREND, tenant_id=uuid4(), events=events)
+    result = svc.compute(KPIType.AI_RISK_TREND, tenant_id=EntityId.generate(), events=events)
     assert result.status == KPIStatus.INSUFFICIENT_DATA

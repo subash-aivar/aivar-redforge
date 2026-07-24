@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
-from uuid import UUID
+
+from detection.domain.value_objects.identifiers import TenantId
 
 if TYPE_CHECKING:
     from detection.application.projections.projection_coordinator import (
@@ -20,7 +21,7 @@ class ProjectionReplayService:
         self._coordinator = coordinator
 
     async def replay(
-        self, *, tenant_id: UUID | None = None, from_position: int = 0
+        self, *, tenant_id: TenantId | None = None, from_position: int = 0
     ) -> dict[str, Any]:
         org = str(tenant_id) if tenant_id is not None else None
         result = await self._coordinator.replay(
@@ -74,52 +75,52 @@ class ProjectionApplicationService:
         }
 
     async def replay(
-        self, *, tenant_id: UUID | None = None, from_position: int = 0
+        self, *, tenant_id: TenantId | None = None, from_position: int = 0
     ) -> dict[str, Any]:
         return await self.replay_service.replay(
             tenant_id=tenant_id, from_position=from_position
         )
 
-    async def reconcile(self, tenant_id: UUID) -> dict[str, Any]:
+    async def reconcile(self, tenant_id: TenantId) -> dict[str, Any]:
         return await self._coordinator.reconcile(str(tenant_id))
 
-    async def recover(self, tenant_id: UUID) -> dict[str, Any]:
+    async def recover(self, tenant_id: TenantId) -> dict[str, Any]:
         return await self._coordinator.recover(str(tenant_id))
 
-    async def read_model_refresh(self, tenant_id: UUID) -> dict[str, Any]:
+    async def read_model_refresh(self, tenant_id: TenantId) -> dict[str, Any]:
         return await self.reconcile(tenant_id)
 
-    async def coverage_refresh(self, tenant_id: UUID) -> dict[str, Any]:
+    async def coverage_refresh(self, tenant_id: TenantId) -> dict[str, Any]:
         return await self.reconcile(tenant_id)
 
-    async def get_finding_summary(self, tenant_id: UUID) -> dict[str, Any] | None:
+    async def get_finding_summary(self, tenant_id: TenantId) -> dict[str, Any] | None:
         view = await self._store.load_finding_summary(str(tenant_id))
         return view.to_dict() if view else None
 
-    async def get_coverage_matrix(self, tenant_id: UUID) -> dict[str, Any] | None:
+    async def get_coverage_matrix(self, tenant_id: TenantId) -> dict[str, Any] | None:
         view = await self._store.load_coverage_matrix(str(tenant_id))
         return view.to_dict() if view else None
 
-    async def get_coverage_gap(self, tenant_id: UUID) -> dict[str, Any] | None:
+    async def get_coverage_gap(self, tenant_id: TenantId) -> dict[str, Any] | None:
         view = await self._store.load_coverage_gap(str(tenant_id))
         return view.to_dict() if view else None
 
-    async def get_fp_profile(self, tenant_id: UUID) -> dict[str, Any] | None:
+    async def get_fp_profile(self, tenant_id: TenantId) -> dict[str, Any] | None:
         view = await self._store.load_fp_profile(str(tenant_id))
         return view.to_dict() if view else None
 
-    async def get_execution_health(self, tenant_id: UUID) -> dict[str, Any] | None:
+    async def get_execution_health(self, tenant_id: TenantId) -> dict[str, Any] | None:
         view = await self._store.load_execution_health(str(tenant_id))
         return view.to_dict() if view else None
 
-    async def get_exception_expiry(self, tenant_id: UUID) -> dict[str, Any] | None:
+    async def get_exception_expiry(self, tenant_id: TenantId) -> dict[str, Any] | None:
         view = await self._store.load_exception_expiry(str(tenant_id))
         return view.to_dict() if view else None
 
-    async def platform_validation(self, tenant_id: UUID) -> dict[str, Any]:
+    async def platform_validation(self, tenant_id: TenantId) -> dict[str, Any]:
         return await self._validation.validate_platform(str(tenant_id))
 
-    async def platform_readiness(self, tenant_id: UUID) -> dict[str, Any]:
+    async def platform_readiness(self, tenant_id: TenantId) -> dict[str, Any]:
         report = await self.platform_validation(tenant_id)
         return {
             "ready": bool(report.get("passed")),

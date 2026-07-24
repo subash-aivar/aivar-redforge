@@ -18,7 +18,7 @@ def test_subscribe_and_local_copy(
 ) -> None:
     template = ScenarioTemplate.create(**template_kwargs)
     template.publish(tenant_id, now)
-    subscriber = TenantId(uuid4())
+    subscriber = TenantId.generate()
     local_id = ScenarioTemplateId.generate()
     local = template.create_tenant_local_copy(
         local_template_id=local_id,

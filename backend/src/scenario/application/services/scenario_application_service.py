@@ -13,7 +13,7 @@ from scenario.application.exceptions import (
 from scenario.domain.aggregates.scenario_template import ScenarioTemplate
 from scenario.domain.entities.scenario_entities import ScenarioParameter, ScenarioPhase
 from scenario.domain.services.scenario_instantiation_service import ScenarioInstantiationService
-from scenario.domain.value_objects.identifiers import ScenarioTemplateId, TenantId
+from scenario.domain.value_objects.identifiers import ScenarioTemplateId
 from scenario.domain.value_objects.scenario_vos import (
     CoveredAttackTechniques,
     DefaultSafetyPolicy,
@@ -130,7 +130,7 @@ class ScenarioApplicationService:
             await self._publisher.publish_batch(events)
 
     async def create(self, cmd: CreateScenarioTemplateCommand) -> ScenarioTemplateDTO:
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         now = datetime.now(UTC)
 
         try:
@@ -219,7 +219,7 @@ class ScenarioApplicationService:
         return _to_template_dto(template)
 
     async def publish(self, cmd: PublishScenarioTemplateCommand) -> ScenarioTemplateDTO:
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         template_id = ScenarioTemplateId(cmd.template_id)
         now = datetime.now(UTC)
 
@@ -259,7 +259,7 @@ class ScenarioApplicationService:
             )
 
     async def deprecate(self, cmd: DeprecateScenarioTemplateCommand) -> ScenarioTemplateDTO:
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         template_id = ScenarioTemplateId(cmd.template_id)
         now = datetime.now(UTC)
 
@@ -277,7 +277,7 @@ class ScenarioApplicationService:
         return _to_template_dto(template)
 
     async def archive(self, cmd: ArchiveScenarioTemplateCommand) -> ScenarioTemplateDTO:
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         template_id = ScenarioTemplateId(cmd.template_id)
         now = datetime.now(UTC)
 
@@ -298,9 +298,9 @@ class ScenarioApplicationService:
         self, cmd: SubscribeScenarioToTenantCommand
     ) -> ScenarioTemplateDTO:
         """Subscribe an enterprise tenant and create a tenant-local Published copy (§17)."""
-        owner_tenant = TenantId(cmd.tenant_id)
+        owner_tenant = cmd.tenant_id
         template_id = ScenarioTemplateId(cmd.template_id)
-        subscriber = TenantId(cmd.subscriber_tenant_id)
+        subscriber = cmd.subscriber_tenant_id
         now = datetime.now(UTC)
         local_id = ScenarioTemplateId.generate()
 
@@ -334,7 +334,7 @@ class ScenarioApplicationService:
     async def unsubscribe_from_tenant(
         self, cmd: UnsubscribeScenarioFromTenantCommand
     ) -> ScenarioTemplateDTO:
-        owner_tenant = TenantId(cmd.tenant_id)
+        owner_tenant = cmd.tenant_id
         template_id = ScenarioTemplateId(cmd.template_id)
         now = datetime.now(UTC)
 
@@ -357,7 +357,7 @@ class ScenarioApplicationService:
 
     async def instantiate(self, cmd: InstantiateScenarioCommand) -> InstantiationResultDTO:
         """Produce campaign/task graph draft specs validated by the campaign ACL."""
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         template_id = ScenarioTemplateId(cmd.template_id)
         now = datetime.now(UTC)
 
@@ -422,7 +422,7 @@ class ScenarioApplicationService:
         )
 
     async def list_published(self, query: ListPublishedScenariosQuery) -> list[ScenarioTemplateDTO]:
-        tenant_id = TenantId(query.tenant_id)
+        tenant_id = query.tenant_id
         async with self._uow_factory() as uow:
             templates = await uow.templates.find_published_by_tenant(tenant_id)
         return [_to_template_dto(t) for t in templates]

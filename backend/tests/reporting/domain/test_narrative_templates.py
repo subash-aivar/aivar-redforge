@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from uuid import uuid4
 
 from reporting.domain.aggregates.report_template import ReportTemplate
 from reporting.domain.ports.i_analytics_kpi_query_port import (
@@ -51,7 +50,7 @@ def test_dominant_kpi_pattern_selects_worst_trend() -> None:
 
 def test_narrative_selection_for_all_four_templates() -> None:
     svc = ReportGenerationService()
-    tenant = TenantId(uuid4())
+    tenant = TenantId.generate()
     at = datetime(2026, 7, 21, tzinfo=UTC)
     bundle = AnalyticsKPIBundleDTO(
         kpis=(

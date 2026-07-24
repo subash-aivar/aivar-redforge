@@ -28,7 +28,7 @@ class InMemoryThreatActorMatchCacheRepository(IThreatActorMatchCacheRepository):
     async def load(self, tenant_id: TenantId) -> ThreatActorMatchCache:
         key = str(tenant_id)
         if key not in self._caches:
-            self._caches[key] = ThreatActorMatchCache(tenant_id=tenant_id.value)
+            self._caches[key] = ThreatActorMatchCache(tenant_id=tenant_id)
         return self._caches[key]
 
     async def save(self, tenant_id: TenantId, cache: ThreatActorMatchCache) -> None:

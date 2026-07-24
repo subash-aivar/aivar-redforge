@@ -16,12 +16,13 @@ from ml_pipeline.domain.exceptions.domain_exceptions import (
 from ml_pipeline.domain.services.drift_detection_service import DriftDetectionService
 from ml_pipeline.domain.services.ml_inference_service import MLInferenceService
 from ml_pipeline.infrastructure.container import MLPipelineContainer
+from redforge.shared.identifiers import EntityId
 
 
 @pytest.mark.asyncio
 async def test_train_promote_infer_isolation_forest() -> None:
     c = MLPipelineContainer()
-    tid = uuid4()
+    tid = EntityId.generate()
     trained = await c.app.schedule_training(
         ScheduleMLModelTrainingCommand(tid, "ANOMALY_DETECTOR", None, ("analytics:admin",), ())
     )
@@ -52,7 +53,7 @@ async def test_train_promote_infer_isolation_forest() -> None:
 @pytest.mark.asyncio
 async def test_promotion_requires_admin() -> None:
     c = MLPipelineContainer()
-    tid = uuid4()
+    tid = EntityId.generate()
     trained = await c.app.schedule_training(
         ScheduleMLModelTrainingCommand(tid, "ANOMALY_DETECTOR", None, ("analytics:admin",), ())
     )
@@ -65,7 +66,7 @@ async def test_promotion_requires_admin() -> None:
 @pytest.mark.asyncio
 async def test_cold_start_awaiting_model() -> None:
     c = MLPipelineContainer()
-    tid = uuid4()
+    tid = EntityId.generate()
     result = await c.app.get_signals(tid, ("analytics:viewer",))
     assert result["status"] == "AWAITING_MODEL"
 
@@ -88,7 +89,7 @@ def test_psi_severe_auto_deprecate_threshold() -> None:
 @pytest.mark.asyncio
 async def test_drift_auto_deprecates_deployed_model() -> None:
     c = MLPipelineContainer()
-    tid = uuid4()
+    tid = EntityId.generate()
     trained = await c.app.schedule_training(
         ScheduleMLModelTrainingCommand(tid, "ANOMALY_DETECTOR", None, ("analytics:admin",), ())
     )
@@ -102,7 +103,7 @@ async def test_drift_auto_deprecates_deployed_model() -> None:
 @pytest.mark.asyncio
 async def test_artifact_tenant_isolation() -> None:
     c = MLPipelineContainer()
-    tid = uuid4()
+    tid = EntityId.generate()
     trained = await c.app.schedule_training(
         ScheduleMLModelTrainingCommand(tid, "ANOMALY_DETECTOR", None, ("analytics:admin",), ())
     )
@@ -114,7 +115,7 @@ async def test_artifact_tenant_isolation() -> None:
 @pytest.mark.asyncio
 async def test_training_worker_dedup() -> None:
     c = MLPipelineContainer()
-    tid = uuid4()
+    tid = EntityId.generate()
     r1 = await c.training_worker.run(job_id="j1", tenant_id=tid, model_type="ANOMALY_DETECTOR")
     r2 = await c.training_worker.run(job_id="j1", tenant_id=tid, model_type="ANOMALY_DETECTOR")
     assert r1["deduplicated"] is False

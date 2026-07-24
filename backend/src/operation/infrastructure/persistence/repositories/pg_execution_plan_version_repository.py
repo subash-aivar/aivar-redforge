@@ -61,7 +61,7 @@ class PgExecutionPlanVersionRepository(IExecutionPlanVersionRepository):
             )
         return ExecutionPlanVersion(
             plan_version_id=ExecutionPlanVersionId(model.id),
-            tenant_id=TenantId(model.tenant_id),
+            tenant_id=TenantId.from_uuid(model.tenant_id),
             operation_id=OperationId(model.operation_id),
             version_number=model.version_number,
             snapshot=PlanSnapshot(model.snapshot),

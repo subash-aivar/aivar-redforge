@@ -83,7 +83,7 @@ class ExposureSignalIngestionService:
     async def ingest_vulnerability(
         self, cmd: IngestVulnerabilitySignalCommand
     ) -> ExposureRecordDTO | None:
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         async with self._uow_factory() as uow:
             if await uow.processed_signals.already_processed(tenant, cmd.event_id):
@@ -140,7 +140,7 @@ class ExposureSignalIngestionService:
     async def resolve_vulnerability(
         self, cmd: ResolveVulnerabilitySignalCommand
     ) -> ExposureRecordDTO | None:
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         async with self._uow_factory() as uow:
             if await uow.processed_signals.already_processed(tenant, cmd.event_id):
@@ -164,7 +164,7 @@ class ExposureSignalIngestionService:
     async def kev_status_changed(
         self, cmd: VulnerabilityKevStatusChangedCommand
     ) -> ExposureRecordDTO | None:
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         async with self._uow_factory() as uow:
             if await uow.processed_signals.already_processed(tenant, cmd.event_id):
@@ -203,7 +203,7 @@ class ExposureSignalIngestionService:
     async def ingest_cloud_security(
         self, cmd: IngestCloudSecuritySignalCommand
     ) -> ExposureRecordDTO | None:
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         async with self._uow_factory() as uow:
             if await uow.processed_signals.already_processed(tenant, cmd.event_id):
@@ -263,7 +263,7 @@ class ExposureSignalIngestionService:
     async def remediate_cloud_security(
         self, cmd: RemediateCloudSecuritySignalCommand
     ) -> ExposureRecordDTO | None:
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         async with self._uow_factory() as uow:
             if await uow.processed_signals.already_processed(tenant, cmd.event_id):
@@ -298,7 +298,7 @@ class ExposureSignalIngestionService:
 
         Detection gaps never create standalone ExposureRecords (Finalization D1).
         """
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         attached = 0
         async with self._uow_factory() as uow:
@@ -349,7 +349,7 @@ class ExposureSignalIngestionService:
         return attached
 
     async def ingest_ai_system_risk(self, cmd: IngestAISystemRiskSignalCommand) -> int:
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         attached = 0
         async with self._uow_factory() as uow:
@@ -377,7 +377,7 @@ class ExposureSignalIngestionService:
 
     async def ingest_confirmed_exploitation(self, cmd: IngestConfirmedExploitationCommand) -> int:
         """M29 correlation — ConfirmedExploitation amplifier on matching active records."""
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         attached = 0
         async with self._uow_factory() as uow:

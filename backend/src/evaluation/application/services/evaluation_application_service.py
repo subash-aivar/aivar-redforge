@@ -152,7 +152,7 @@ class EvaluationApplicationService:
 
     async def evaluate_campaign(self, cmd: EvaluateCampaignCommand) -> EvaluationDTO:
         """Full evaluation pipeline: assess objectives → coverage → complete → snapshot → graph."""
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         instance_id = str(cmd.campaign_instance_id)
         now = datetime.now(UTC)
 
@@ -298,7 +298,7 @@ class EvaluationApplicationService:
         )
 
     async def resolve_review(self, cmd: ResolveEvaluationReviewCommand) -> EvaluationDTO:
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         now = datetime.now(UTC)
         async with self._uow_factory() as uow:
             evaluation = await uow.evaluations.find_by_id(
@@ -341,7 +341,7 @@ class EvaluationApplicationService:
             return _to_evaluation_dto(evaluation)
 
     async def get_evaluation(self, query: GetEvaluationQuery) -> EvaluationDTO | None:
-        tenant_id = TenantId(query.tenant_id)
+        tenant_id = query.tenant_id
         async with self._uow_factory() as uow:
             evaluation = await uow.evaluations.find_by_campaign_instance(
                 str(query.campaign_instance_id), tenant_id
@@ -351,7 +351,7 @@ class EvaluationApplicationService:
             return _to_evaluation_dto(evaluation)
 
     async def get_metrics_trend(self, query: GetMetricsTrendQuery) -> DetectionCoverageTrendDTO:
-        tenant_id = TenantId(query.tenant_id)
+        tenant_id = query.tenant_id
         async with self._uow_factory() as uow:
             snapshots = await uow.metrics_snapshots.find_by_campaign(
                 str(query.campaign_id), tenant_id, limit=query.limit
@@ -368,9 +368,9 @@ class EvaluationApplicationService:
         )
 
     async def list_metrics_snapshots(
-        self, tenant_id: UUID, campaign_id: UUID, limit: int = 50
+        self, tenant_id: TenantId, campaign_id: UUID, limit: int = 50
     ) -> list[MetricsSnapshotDTO]:
-        tid = TenantId(tenant_id)
+        tid = tenant_id
         async with self._uow_factory() as uow:
             snapshots = await uow.metrics_snapshots.find_by_campaign(
                 str(campaign_id), tid, limit=limit

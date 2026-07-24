@@ -6,7 +6,7 @@ import os
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
-from uuid import UUID, uuid4
+from uuid import UUID
 
 import pytest
 import pytest_asyncio
@@ -45,6 +45,7 @@ from credential_vault.workers.rotation_scheduler.rotation_scheduler_worker impor
 )
 from credential_vault.workers.version_pruner.version_pruner_worker import VersionPrunerWorker
 from credential_vault.workers.worker_host import CredentialVaultWorkerHost
+from redforge.shared.identifiers import EntityId
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -160,8 +161,8 @@ class FakeKms(IKeyManagementPort):
 
 
 @pytest.fixture
-def tenant_id() -> UUID:
-    return uuid4()
+def tenant_id() -> EntityId:
+    return EntityId.generate()
 
 
 @pytest.fixture

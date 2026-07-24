@@ -42,7 +42,7 @@ def _to_domain(row: CredentialModel) -> Credential:
     )
     return Credential(
         credential_id=CredentialId(row.id),
-        tenant_id=TenantId(row.tenant_id),
+        tenant_id=TenantId.from_uuid(row.tenant_id),
         name=CredentialName(row.name),
         credential_type=credential_type,
         state=CredentialState(row.state),
@@ -103,7 +103,7 @@ class PgCredentialRepository(ICredentialRepository):
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
-    async def _current_row_version(self, credential_id: UUID, tenant_id: UUID) -> int:
+    async def _current_row_version(self, credential_id: UUID, tenant_id: TenantId) -> int:
         stmt = select(CredentialModel.row_version).where(
             CredentialModel.id == credential_id,
             CredentialModel.tenant_id == tenant_id,

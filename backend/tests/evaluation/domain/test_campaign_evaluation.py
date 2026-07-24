@@ -31,7 +31,7 @@ def _start(
     specs: list[ObjectiveSpec] | None = None,
     execution_failed: bool = False,
 ) -> tuple[CampaignEvaluation, TenantId, datetime]:
-    tenant = TenantId(uuid4())
+    tenant = TenantId.generate()
     now = datetime.now(UTC)
     specs = specs or [
         ObjectiveSpec(

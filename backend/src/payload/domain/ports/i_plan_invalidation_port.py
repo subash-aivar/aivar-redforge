@@ -5,6 +5,8 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
+from payload.domain.value_objects.identifiers import TenantId
+
 if TYPE_CHECKING:
     from uuid import UUID
 
@@ -12,7 +14,7 @@ if TYPE_CHECKING:
 class IPlanInvalidationPort(ABC):
     @abstractmethod
     async def invalidate_plans_for_payload(
-        self, tenant_id: UUID, payload_id: UUID
+        self, tenant_id: TenantId, payload_id: UUID
     ) -> int:
         """Supersede SIGNED/EXECUTING plan versions referencing payload_id.
 

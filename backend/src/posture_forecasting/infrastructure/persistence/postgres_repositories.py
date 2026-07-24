@@ -90,7 +90,7 @@ def _row_to_forecast(
 ) -> PostureForecast:
     return PostureForecast(
         forecast_id=ForecastId(row.id),
-        tenant_id=TenantId(row.tenant_id),
+        tenant_id=TenantId.from_uuid(row.tenant_id),
         input_snapshot=snapshot,
         predicted_30d=row.predicted_30d,
         predicted_60d=row.predicted_60d,
@@ -109,7 +109,7 @@ class PgPostureForecastRepository(IPostureForecastRepository):
     async def _load(
         self, session: AsyncSession, row: PostureForecastModel
     ) -> PostureForecast:
-        tenant_id = TenantId(row.tenant_id)
+        tenant_id = TenantId.from_uuid(row.tenant_id)
         snapshot_row = (
             await session.execute(
                 select(ForecastInputSnapshotModel).where(

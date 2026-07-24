@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from uuid import uuid4
-
 from playbook.domain.aggregates.playbook_version import PlaybookVersion
 from playbook.domain.services.playbook_dry_run_service import PlaybookDryRunService
 from playbook.domain.services.trigger_matching_service import TriggerMatchingService
@@ -47,7 +45,7 @@ def test_trigger_matching() -> None:
 
 def test_dry_run_rejects_secrets() -> None:
     v = PlaybookVersion.create_draft(
-        TenantId(uuid4()),
+        TenantId.generate(),
         PlaybookId.generate(),
         1,
         [

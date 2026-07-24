@@ -5,13 +5,15 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from execution.domain.value_objects.identifiers import TenantId
+
 if TYPE_CHECKING:
     from uuid import UUID
 
 
 @dataclass(frozen=True, slots=True)
 class TriggerKillSwitch:
-    tenant_id: UUID
+    tenant_id: TenantId
     scope: str
     scope_ref: UUID
     authority_operator_id: UUID
@@ -21,7 +23,7 @@ class TriggerKillSwitch:
 
 @dataclass(frozen=True, slots=True)
 class ReleaseKillSwitch:
-    tenant_id: UUID
+    tenant_id: TenantId
     scope: str
     scope_ref: UUID
     releasing_operator_id: UUID
@@ -32,7 +34,7 @@ class ReleaseKillSwitch:
 
 @dataclass(frozen=True, slots=True)
 class ReArmKillSwitch:
-    tenant_id: UUID
+    tenant_id: TenantId
     scope: str
     scope_ref: UUID
     authority_operator_id: UUID
@@ -41,13 +43,13 @@ class ReArmKillSwitch:
 
 @dataclass(frozen=True, slots=True)
 class CreateJournal:
-    tenant_id: UUID
+    tenant_id: TenantId
     engagement_id: UUID
 
 
 @dataclass(frozen=True, slots=True)
 class AppendJournalEntry:
-    tenant_id: UUID
+    tenant_id: TenantId
     engagement_id: UUID
     entry_type: str
     content: str
@@ -57,7 +59,7 @@ class AppendJournalEntry:
 
 @dataclass(frozen=True, slots=True)
 class AuthorizeAndStartAttackAction:
-    tenant_id: UUID
+    tenant_id: TenantId
     engagement_id: UUID
     operation_id: UUID
     step_id: UUID
@@ -79,7 +81,7 @@ class AuthorizeAndStartAttackAction:
 
 @dataclass(frozen=True, slots=True)
 class AbortAttackAction:
-    tenant_id: UUID
+    tenant_id: TenantId
     action_id: UUID
     abort_reason: str
     authority_operator_id: UUID
@@ -87,7 +89,7 @@ class AbortAttackAction:
 
 @dataclass(frozen=True, slots=True)
 class CompleteAttackAction:
-    tenant_id: UUID
+    tenant_id: TenantId
     action_id: UUID
     output_hash: str | None = None
     output_storage_ref: str | None = None
@@ -95,14 +97,14 @@ class CompleteAttackAction:
 
 @dataclass(frozen=True, slots=True)
 class FailAttackAction:
-    tenant_id: UUID
+    tenant_id: TenantId
     action_id: UUID
     failure_reason: str
 
 
 @dataclass(frozen=True, slots=True)
 class RecordActionOutput:
-    tenant_id: UUID
+    tenant_id: TenantId
     action_id: UUID
     output_hash: str
     output_storage_ref: str
@@ -110,7 +112,7 @@ class RecordActionOutput:
 
 @dataclass(frozen=True, slots=True)
 class RegisterExecutionWorker:
-    tenant_id: UUID
+    tenant_id: TenantId
     worker_type: str
     network_zone: str
     techniques: tuple[str, ...]
@@ -121,13 +123,13 @@ class RegisterExecutionWorker:
 
 @dataclass(frozen=True, slots=True)
 class DecommissionExecutionWorker:
-    tenant_id: UUID
+    tenant_id: TenantId
     worker_id: UUID
     authority_operator_id: UUID
 
 
 @dataclass(frozen=True, slots=True)
 class RecordWorkerHeartbeat:
-    tenant_id: UUID
+    tenant_id: TenantId
     worker_id: UUID
     health_status: str

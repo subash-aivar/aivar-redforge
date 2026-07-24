@@ -5,13 +5,15 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
+from campaign.domain.value_objects.identifiers import TenantId
+
 if TYPE_CHECKING:
     from uuid import UUID
 
 
 @dataclass(frozen=True, slots=True)
 class CreateCampaignCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     name: str
     classification: str
     kind: str
@@ -28,7 +30,7 @@ class CreateCampaignCommand:
 
 @dataclass(frozen=True, slots=True)
 class AddCampaignObjectiveCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     campaign_id: UUID
     objective_type: str
     description: str
@@ -38,7 +40,7 @@ class AddCampaignObjectiveCommand:
 
 @dataclass(frozen=True, slots=True)
 class AddTargetSelectionRuleCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     campaign_id: UUID
     attribute: str
     operator: str
@@ -47,13 +49,13 @@ class AddTargetSelectionRuleCommand:
 
 @dataclass(frozen=True, slots=True)
 class SubmitCampaignForApprovalCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     campaign_id: UUID
 
 
 @dataclass(frozen=True, slots=True)
 class ApproveCampaignCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     campaign_id: UUID
     approver_id: str
     signature: str
@@ -61,7 +63,7 @@ class ApproveCampaignCommand:
 
 @dataclass(frozen=True, slots=True)
 class ScheduleCampaignCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     campaign_id: UUID
     cron_expression: str
     execution_window_hours: int
@@ -69,13 +71,13 @@ class ScheduleCampaignCommand:
 
 @dataclass(frozen=True, slots=True)
 class StartCampaignInstanceCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     campaign_id: UUID
 
 
 @dataclass(frozen=True, slots=True)
 class AbortCampaignInstanceCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     campaign_id: UUID
     instance_id: UUID
     reason: str
@@ -83,7 +85,7 @@ class AbortCampaignInstanceCommand:
 
 @dataclass(frozen=True, slots=True)
 class ArchiveCampaignCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     campaign_id: UUID
 
 
@@ -92,21 +94,21 @@ class ArchiveCampaignCommand:
 
 @dataclass(frozen=True, slots=True)
 class CancelCampaignScheduleCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     campaign_id: UUID
     job_id: str
 
 
 @dataclass(frozen=True, slots=True)
 class PauseRecurringCampaignCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     campaign_id: UUID
     reason: str
 
 
 @dataclass(frozen=True, slots=True)
 class ResumeRecurringCampaignCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     campaign_id: UUID
 
 
@@ -114,7 +116,7 @@ class ResumeRecurringCampaignCommand:
 class ProcessScheduledFireCommand:
     """Process a schedule fire event — creates a new CampaignInstance if appropriate."""
 
-    tenant_id: UUID
+    tenant_id: TenantId
     campaign_id: UUID
     scheduled_fire_time: str  # ISO-8601 string
     consecutive_skips: int = 0
@@ -122,11 +124,11 @@ class ProcessScheduledFireCommand:
 
 @dataclass(frozen=True, slots=True)
 class ScheduleOneShotCampaignCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     campaign_id: UUID
     fire_at: str  # ISO-8601
 
 
 @dataclass(frozen=True, slots=True)
 class RecoverSchedulesCommand:
-    tenant_id: UUID
+    tenant_id: TenantId

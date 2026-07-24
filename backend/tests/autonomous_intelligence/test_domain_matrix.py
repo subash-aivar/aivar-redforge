@@ -73,13 +73,13 @@ def _target(tt: SuggestionTargetType) -> SuggestionTargetRef:
 
 @pytest.mark.parametrize("tt", list(SuggestionTargetType))
 def test_suggestion_create_status_pending(tt: SuggestionTargetType) -> None:
-    s = IntelligenceSuggestion.create(TenantId(uuid4()), _target(tt), _evidence(0.95))
+    s = IntelligenceSuggestion.create(TenantId.generate(), _target(tt), _evidence(0.95))
     assert s.status is SuggestionStatus.PENDING_REVIEW
 
 
 @pytest.mark.parametrize("tt", list(SuggestionTargetType))
 def test_approve_roles_matrix(tt: SuggestionTargetType) -> None:
-    tenant = TenantId(uuid4())
+    tenant = TenantId.generate()
     s = IntelligenceSuggestion.create(tenant, _target(tt), _evidence(0.95))
     SuggestionReviewService().approve(s, tenant, "reviewer", (REVIEW_ROLES[tt],))
     assert s.status is SuggestionStatus.APPROVED
@@ -96,7 +96,7 @@ def test_approve_roles_matrix(tt: SuggestionTargetType) -> None:
     ],
 )
 def test_invalid_approve_from_terminal(bad: SuggestionStatus) -> None:
-    tenant = TenantId(uuid4())
+    tenant = TenantId.generate()
     s = IntelligenceSuggestion.create(
         tenant, _target(SuggestionTargetType.DETECTION_RULE_TUNING), _evidence()
     )
@@ -112,7 +112,7 @@ def test_confidence_defaults(tt: SuggestionTargetType) -> None:
 
 @pytest.mark.parametrize("tt", list(SuggestionTargetType))
 def test_generation_service_threshold(tt: SuggestionTargetType) -> None:
-    tenant = TenantId(uuid4())
+    tenant = TenantId.generate()
     policy = AutonomousOperationsPolicy.default(tenant)
     low = DEFAULT_MIN_CONFIDENCE[tt] - 0.05
     with pytest.raises(ConfidenceThresholdNotMet):
@@ -142,7 +142,7 @@ def test_generation_service_threshold(tt: SuggestionTargetType) -> None:
     ],
 )
 def test_detection_accuracy_gate(metrics: dict[str, float], ok: bool) -> None:
-    tenant = TenantId(uuid4())
+    tenant = TenantId.generate()
     model = OptimizationModel.start_training(
         tenant, SuggestionTargetType.DETECTION_RULE_TUNING, "m", 1
     )
@@ -165,7 +165,7 @@ def test_detection_accuracy_gate(metrics: dict[str, float], ok: bool) -> None:
     ],
 )
 def test_other_accuracy_gates(tt: SuggestionTargetType, metrics: dict[str, float]) -> None:
-    tenant = TenantId(uuid4())
+    tenant = TenantId.generate()
     model = OptimizationModel.start_training(tenant, tt, f"m-{tt.value}", 1)
     model.mark_validating(metrics)
     ModelGovernanceService().deploy(model, tenant, "eu")
@@ -200,7 +200,7 @@ def test_suggestion_confidence(score: float, threshold: float, ok: bool) -> None
 
 
 def test_llm_prompt_ok() -> None:
-    t = TenantId(uuid4())
+    t = TenantId.generate()
     LLMPrompt(
         tenant_id=t,
         system_instruction="sys",
@@ -211,7 +211,7 @@ def test_llm_prompt_ok() -> None:
 
 
 def test_llm_prompt_mismatch() -> None:
-    t1, t2 = TenantId(uuid4()), TenantId(uuid4())
+    t1, t2 = TenantId.generate(), TenantId.generate()
     with pytest.raises(TenantIsolationViolation):
         LLMPrompt(
             tenant_id=t1,
@@ -223,7 +223,7 @@ def test_llm_prompt_mismatch() -> None:
 
 
 def test_policy_kill_switch_and_types() -> None:
-    p = AutonomousOperationsPolicy.default(TenantId(uuid4()))
+    p = AutonomousOperationsPolicy.default(TenantId.generate())
     assert p.allows(SuggestionTargetType.DETECTION_RULE_TUNING)
     p.activate_kill_switch()
     assert p.kill_switch_active
@@ -231,7 +231,7 @@ def test_policy_kill_switch_and_types() -> None:
 
 
 def test_expire_and_withdraw() -> None:
-    tenant = TenantId(uuid4())
+    tenant = TenantId.generate()
     s = IntelligenceSuggestion.create(
         tenant, _target(SuggestionTargetType.PLAYBOOK_SYNTHESIS), _evidence()
     )
@@ -245,7 +245,7 @@ def test_expire_and_withdraw() -> None:
 
 
 def test_feedback_ingestion() -> None:
-    tenant = TenantId(uuid4())
+    tenant = TenantId.generate()
     model = OptimizationModel.start_training(
         tenant, SuggestionTargetType.DETECTION_RULE_TUNING, "m", 1
     )
@@ -282,7 +282,7 @@ def test_evidence_bounds() -> None:
 
 def test_review_deadline_present() -> None:
     s = IntelligenceSuggestion.create(
-        TenantId(uuid4()),
+        TenantId.generate(),
         _target(SuggestionTargetType.CAMPAIGN_SCENARIO),
         _evidence(),
     )

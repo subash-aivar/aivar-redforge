@@ -35,6 +35,7 @@ from detection.domain.repositories.i_detection_rule_repository import (
 from detection.domain.value_objects.enums import RuleLifecycleState
 from detection.domain.value_objects.identifiers import DetectionRuleId, TenantId
 from detection.domain.value_objects.keys import RuleKey
+from redforge.shared.identifiers import EntityId
 
 
 def _logic_payload() -> dict:
@@ -175,8 +176,8 @@ def service(
 
 
 @pytest.fixture
-def tenant_uuid() -> UUID:
-    return uuid4()
+def tenant_uuid() -> EntityId:
+    return EntityId.generate()
 
 
 async def _author(
@@ -362,7 +363,7 @@ class TestPublishPromoteDemote:
                 semver="1.0.0",
             )
         )
-        agg = await repo.find_by_id(DetectionRuleId(rid), TenantId(tenant_uuid))
+        agg = await repo.find_by_id(DetectionRuleId(rid), tenant_uuid)
         assert agg is not None
         agg.lifecycle_state = RuleLifecycleState.ACTIVE
         await repo.save(agg)

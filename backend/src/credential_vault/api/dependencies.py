@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Annotated
-from uuid import UUID
 
 from fastapi import Depends, Request
 
@@ -23,6 +22,7 @@ from credential_vault.application.services.vault_backend_application_service imp
 )
 from redforge.api.dependencies import get_session_factory
 from redforge.api.security import TenantContext, get_tenant_context
+from redforge.shared.identifiers import EntityId
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
@@ -43,12 +43,12 @@ async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
         yield session
 
 
-def get_tenant_uuid(tenant: TenantContext = Depends(get_tenant_context)) -> UUID:
-    return UUID(tenant.organization_id)
+def get_tenant_uuid(tenant: TenantContext = Depends(get_tenant_context)) -> EntityId:
+    return EntityId.from_string(tenant.organization_id)
 
 
-def get_principal_uuid(tenant: TenantContext = Depends(get_tenant_context)) -> UUID:
-    return UUID(tenant.user_id)
+def get_principal_uuid(tenant: TenantContext = Depends(get_tenant_context)) -> EntityId:
+    return EntityId.from_string(tenant.user_id)
 
 
 async def get_credential_service(
@@ -101,5 +101,5 @@ VaultBackendServiceDep = Annotated[
     VaultBackendApplicationService, Depends(get_vault_backend_service)
 ]
 AuditQueryServiceDep = Annotated[AuditQueryService, Depends(get_audit_query_service)]
-TenantIdDep = Annotated[UUID, Depends(get_tenant_uuid)]
-PrincipalIdDep = Annotated[UUID, Depends(get_principal_uuid)]
+TenantIdDep = Annotated[EntityId, Depends(get_tenant_uuid)]
+PrincipalIdDep = Annotated[EntityId, Depends(get_principal_uuid)]

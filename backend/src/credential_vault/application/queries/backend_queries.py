@@ -5,15 +5,17 @@ from __future__ import annotations
 from dataclasses import dataclass
 from uuid import UUID  # noqa: TC003 — runtime type for frozen dataclass fields
 
+from credential_vault.domain.value_objects.identifiers import TenantId
+
 
 @dataclass(frozen=True, slots=True)
 class GetVaultBackendQuery:
-    tenant_id: UUID
+    tenant_id: TenantId
     backend_id: UUID
     principal_id: UUID
 
 
 @dataclass(frozen=True, slots=True)
 class ListVaultBackendsQuery:
-    tenant_id: UUID
+    tenant_id: TenantId
     principal_id: UUID

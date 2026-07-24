@@ -14,6 +14,7 @@ from execution.application.services.projection_application_service import (
     ProjectionApplicationService,
 )
 from redforge.api.security import TenantContext, get_tenant_context
+from redforge.shared.identifiers import EntityId
 
 if TYPE_CHECKING:
     from execution.infrastructure.container import ExecutionContainer
@@ -24,8 +25,8 @@ async def get_execution_container(request: Request) -> ExecutionContainer:
     return container
 
 
-def get_tenant_uuid(tenant: TenantContext = Depends(get_tenant_context)) -> UUID:
-    return UUID(tenant.organization_id)
+def get_tenant_uuid(tenant: TenantContext = Depends(get_tenant_context)) -> EntityId:
+    return EntityId.from_string(tenant.organization_id)
 
 
 def get_principal_uuid(tenant: TenantContext = Depends(get_tenant_context)) -> UUID:
@@ -48,5 +49,5 @@ ExecutionServiceDep = Annotated[ExecutionApplicationService, Depends(get_executi
 ProjectionServiceDep = Annotated[
     ProjectionApplicationService, Depends(get_projection_service)
 ]
-TenantIdDep = Annotated[UUID, Depends(get_tenant_uuid)]
+TenantIdDep = Annotated[EntityId, Depends(get_tenant_uuid)]
 PrincipalIdDep = Annotated[UUID, Depends(get_principal_uuid)]

@@ -165,7 +165,7 @@ class PgDetectionPackRepository(IDetectionPackRepository):
         ]
         return DetectionPack(
             pack_id=DetectionPackId(model.id),
-            tenant_id=TenantId(model.tenant_id),
+            tenant_id=TenantId.from_uuid(model.tenant_id),
             pack_key=PackKey(model.pack_key),
             title=model.title,
             category=PackCategory(model.category),

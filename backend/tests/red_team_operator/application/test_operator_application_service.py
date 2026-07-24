@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from uuid import uuid4
-
 import pytest
 from tests.red_team_operator.fakes.repos import (
     FakeEventPublisher,
@@ -30,6 +28,7 @@ from red_team_operator.domain.value_objects.enums import (
     OperatorState,
 )
 from red_team_operator.domain.value_objects.identifiers import TenantId
+from redforge.shared.identifiers import EntityId
 
 
 @pytest.fixture
@@ -54,7 +53,7 @@ def service(
 
 @pytest.mark.asyncio
 async def test_activate_operator(service: OperatorApplicationService) -> None:
-    tenant = uuid4()
+    tenant = EntityId.generate()
     dto = await service.activate_operator(
         ActivateOperatorCommand(
             tenant_id=tenant,
@@ -72,7 +71,7 @@ async def test_activate_operator(service: OperatorApplicationService) -> None:
 async def test_suspended_operator_cannot_grant_authority(
     service: OperatorApplicationService,
 ) -> None:
-    tenant = uuid4()
+    tenant = EntityId.generate()
     dto = await service.activate_operator(
         ActivateOperatorCommand(
             tenant_id=tenant,
@@ -103,7 +102,7 @@ async def test_suspended_operator_cannot_grant_authority(
 async def test_cross_tenant_load_not_found(
     service: OperatorApplicationService,
 ) -> None:
-    tenant = uuid4()
+    tenant = EntityId.generate()
     dto = await service.activate_operator(
         ActivateOperatorCommand(
             tenant_id=tenant,
@@ -114,7 +113,7 @@ async def test_cross_tenant_load_not_found(
     with pytest.raises(ApplicationNotFoundError):
         await service.suspend_operator(
             SuspendOperatorCommand(
-                tenant_id=uuid4(),
+                tenant_id=EntityId.generate(),
                 operator_id=dto.operator_id,
                 reason="x",
                 authority="y",
@@ -129,7 +128,7 @@ async def test_l1_cannot_activate_with_approval_scope(
     with pytest.raises(ApplicationValidationError):
         await service.activate_operator(
             ActivateOperatorCommand(
-                tenant_id=uuid4(),
+                tenant_id=EntityId.generate(),
                 identity_ref="l1@aivar.io",
                 clearance_level="L1",
                 approval_scopes=["OperationApproval"],
@@ -145,7 +144,7 @@ async def test_repo_find_authorized_approvers(repo: InMemoryOperatorRepository) 
 
     from red_team_operator.domain.value_objects.enums import ApprovalScope
 
-    tenant = TenantId(uuid4())
+    tenant = TenantId.generate()
     now = datetime(2026, 7, 20, 12, 0, 0, tzinfo=UTC)
     op = make_operator(tenant_id=tenant, now=now, pop_events=True)
     await repo.save(op)

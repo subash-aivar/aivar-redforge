@@ -27,6 +27,7 @@ from ai_supply_chain.application.exceptions import (
     ApplicationNotFoundError,
     ApplicationValidationError,
 )
+from ai_supply_chain.domain.value_objects.identifiers import TenantId
 from ai_supply_chain.infrastructure.container import SupplyChainContainer
 
 router = APIRouter(prefix="/ai-supply-chain", tags=["ai-supply-chain"])
@@ -45,7 +46,7 @@ def _map_error(exc: Exception) -> HTTPException:
 @router.post("/provenances")
 async def record_provenance(
     body: RecordProvenanceRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: SupplyChainContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -71,7 +72,7 @@ async def record_provenance(
 async def verify_provenance(
     provenance_id: UUID,
     body: VerifyProvenanceRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: SupplyChainContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -96,7 +97,7 @@ async def verify_provenance(
 @router.post("/provenances/{provenance_id}/manual-reset")
 async def manual_reset(
     provenance_id: UUID,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: SupplyChainContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -114,7 +115,7 @@ async def manual_reset(
 @router.get("/provenances/{provenance_id}")
 async def get_provenance(
     provenance_id: UUID,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: SupplyChainContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -139,7 +140,7 @@ async def get_provenance(
 async def build_mbom(
     provenance_id: UUID,
     body: BuildMBOMRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: SupplyChainContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -160,7 +161,7 @@ async def build_mbom(
 @router.post("/discovery-scans")
 async def run_discovery_scan(
     body: RunDiscoveryScanRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: SupplyChainContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -181,7 +182,7 @@ async def run_discovery_scan(
 @router.put("/settings/verification-threshold")
 async def set_threshold(
     body: SetThresholdRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: SupplyChainContainer = Depends(get_container),
 ) -> dict[str, Any]:

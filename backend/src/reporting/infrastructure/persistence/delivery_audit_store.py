@@ -7,6 +7,8 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID, uuid4
 
+from reporting.domain.value_objects.identifiers import TenantId
+
 
 @dataclass
 class DeliveryAuditStore:
@@ -15,7 +17,7 @@ class DeliveryAuditStore:
     def append(
         self,
         *,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         instance_id: UUID,
         channel: str,
         recipients: list[str],
@@ -39,6 +41,6 @@ class DeliveryAuditStore:
         self.rows.append(row)
         return row
 
-    def list_for_tenant(self, tenant_id: UUID) -> list[dict[str, Any]]:
+    def list_for_tenant(self, tenant_id: TenantId) -> list[dict[str, Any]]:
         tid = str(tenant_id)
         return [r for r in self.rows if r["tenant_id"] == tid]

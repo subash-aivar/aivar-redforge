@@ -15,7 +15,6 @@ from ai_supply_chain.domain.value_objects.enums import AIPostureRole
 from ai_supply_chain.domain.value_objects.identifiers import (
     AISystemAssetId,
     ModelProvenanceId,
-    TenantId,
 )
 
 if TYPE_CHECKING:
@@ -82,7 +81,7 @@ class SupplyChainQueryHandler:
 
     async def get_provenance(self, query: GetModelProvenanceQuery) -> ModelProvenanceDTO:
         require_at_least(query.actor_roles, AIPostureRole.READER)
-        tenant = TenantId(query.tenant_id)
+        tenant = query.tenant_id
         async with self._uow_factory() as uow:
             prov = await uow.provenances.find_by_id(ModelProvenanceId(query.provenance_id), tenant)
             if prov is None:
@@ -91,7 +90,7 @@ class SupplyChainQueryHandler:
 
     async def get_mbom(self, query: GetMBOMByProvenanceQuery) -> MBOMDTO:
         require_at_least(query.actor_roles, AIPostureRole.READER)
-        tenant = TenantId(query.tenant_id)
+        tenant = query.tenant_id
         async with self._uow_factory() as uow:
             mbom = await uow.mboms.find_by_provenance(
                 ModelProvenanceId(query.provenance_id), tenant
@@ -101,7 +100,7 @@ class SupplyChainQueryHandler:
         return _mbom_dto(mbom)
 
     async def get_integrity_for_asset(self, query: GetIntegrityStatusForAssetQuery) -> str | None:
-        tenant = TenantId(query.tenant_id)
+        tenant = query.tenant_id
         async with self._uow_factory() as uow:
             prov = await uow.provenances.find_by_asset(AISystemAssetId(query.asset_id), tenant)
         return None if prov is None else prov.integrity_status.value
@@ -110,7 +109,7 @@ class SupplyChainQueryHandler:
         self, query: ListRecentDiscoveryScansQuery
     ) -> list[DiscoveryScanRunDTO]:
         require_at_least(query.actor_roles, AIPostureRole.READER)
-        tenant = TenantId(query.tenant_id)
+        tenant = query.tenant_id
         async with self._uow_factory() as uow:
             runs = await uow.scans.find_recent(tenant, query.limit)
         return [

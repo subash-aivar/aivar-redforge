@@ -163,7 +163,7 @@ def _to_domain(row: CampaignModel) -> Campaign:
 
     return Campaign(
         campaign_id=CampaignId(row.id),
-        tenant_id=TenantId(row.tenant_id),
+        tenant_id=TenantId.from_uuid(row.tenant_id),
         name=row.name,
         classification=CampaignClassification(row.classification),
         kind=CampaignKind(row.kind),

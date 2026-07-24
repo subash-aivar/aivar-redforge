@@ -119,7 +119,7 @@ def _execution_to_row(execution: AutomationExecution) -> AutomationExecutionMode
 def _row_to_execution(row: AutomationExecutionModel) -> AutomationExecution:
     return AutomationExecution(
         execution_id=AutomationExecutionId(row.id),
-        tenant_id=TenantId(row.tenant_id),
+        tenant_id=TenantId.from_uuid(row.tenant_id),
         playbook_ref=PlaybookRef(
             playbook_id=str(row.playbook_id),
             version_number=row.playbook_version,
@@ -255,7 +255,7 @@ def _record_to_row(
 def _row_to_record(row: AutomatedActionRecordModel) -> AutomatedActionRecord:
     return AutomatedActionRecord(
         record_id=AutomatedActionRecordId(row.id),
-        tenant_id=TenantId(row.tenant_id),
+        tenant_id=TenantId.from_uuid(row.tenant_id),
         execution_id=AutomationExecutionId(row.execution_id),
         step_number=row.step_number,
         action_type=row.action_type,
@@ -406,7 +406,7 @@ class PgRollbackRecordRepository(IRollbackRecordRepository):
             return [
                 RollbackRecord(
                     rollback_id=RollbackRecordId(r.id),
-                    tenant_id=TenantId(r.tenant_id),
+                    tenant_id=TenantId.from_uuid(r.tenant_id),
                     original_record_id=AutomatedActionRecordId(r.original_record_id),
                     execution_id=AutomationExecutionId(r.execution_id),
                     rollback_status=RollbackStatus(r.rollback_status),

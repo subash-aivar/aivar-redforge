@@ -5,19 +5,21 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from red_team_operator.domain.value_objects.identifiers import TenantId
+
 if TYPE_CHECKING:
     from uuid import UUID
 
 
 @dataclass(frozen=True, slots=True)
 class GetOperatorQuery:
-    tenant_id: UUID
+    tenant_id: TenantId
     operator_id: UUID
 
 
 @dataclass(frozen=True, slots=True)
 class ListOperatorsQuery:
-    tenant_id: UUID
+    tenant_id: TenantId
     include_inactive: bool = False
     limit: int = 100
     offset: int = 0
@@ -25,5 +27,5 @@ class ListOperatorsQuery:
 
 @dataclass(frozen=True, slots=True)
 class FindAuthorizedApproversQuery:
-    tenant_id: UUID
+    tenant_id: TenantId
     scope: str

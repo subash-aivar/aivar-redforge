@@ -6,6 +6,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from execution.domain.value_objects.identifiers import TenantId
+
 if TYPE_CHECKING:
     from uuid import UUID
 
@@ -23,7 +25,7 @@ class IPayloadQueryPort(ABC):
     @abstractmethod
     async def verify_for_dispatch(
         self,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         payload_id: UUID,
         expected_hash: str | None = None,
     ) -> PayloadDispatchCheck:

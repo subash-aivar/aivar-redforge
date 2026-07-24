@@ -26,11 +26,12 @@ from analytics.infrastructure.acl.ml_anomaly_score_adapter import (
     ThresholdMLAnomalyScoreAdapter,
 )
 from analytics.infrastructure.container import AnalyticsContainer
+from redforge.shared.identifiers import EntityId
 
 
 def test_iqr_rolling_tighter_than_iqr() -> None:
     svc = AnomalyDetectionService()
-    tenant = TenantId(uuid4())
+    tenant = TenantId.generate()
     baseline = AnomalyDetectionBaseline.create(
         AnomalyDetectionBaselineId.generate(),
         tenant,
@@ -50,7 +51,7 @@ async def test_ml_isolation_forest_and_graph_write() -> None:
     c = AnalyticsContainer()
     c.ml_anomaly = ThresholdMLAnomalyScoreAdapter(threshold=5.0)
     c.app._ml_anomaly = c.ml_anomaly  # type: ignore[attr-defined]
-    tid = uuid4()
+    tid = EntityId.generate()
     await c.app.create_baseline(
         CreateAnomalyBaselineCommand(
             tid,
@@ -62,7 +63,7 @@ async def test_ml_isolation_forest_and_graph_write() -> None:
     )
     # Force method even if bootstrap left unbootstrapped — ML path doesn't need bootstrap
     baseline = await c.baselines.find_by_signal_type(
-        TenantId(tid), AnomalySignalType.EXPOSURE_SCORE_DELTA
+        tid, AnomalySignalType.EXPOSURE_SCORE_DELTA
     )
     assert baseline is not None
     baseline.method = DetectionMethod.ML_ISOLATION_FOREST

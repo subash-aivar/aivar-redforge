@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
+from scenario.domain.value_objects.identifiers import TenantId
+
 if TYPE_CHECKING:
     from uuid import UUID
 
@@ -16,7 +18,7 @@ if TYPE_CHECKING:
 
 @dataclass(frozen=True, slots=True)
 class CreateScenarioTemplateCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     scenario_key: str
     version: str
     name: str
@@ -37,19 +39,19 @@ class CreateScenarioTemplateCommand:
 
 @dataclass(frozen=True, slots=True)
 class PublishScenarioTemplateCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     template_id: UUID
 
 
 @dataclass(frozen=True, slots=True)
 class DeprecateScenarioTemplateCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     template_id: UUID
 
 
 @dataclass(frozen=True, slots=True)
 class InstantiateScenarioCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     template_id: UUID
     parameter_map: dict[str, str] = field(default_factory=dict)
     engagement_id: UUID | None = None
@@ -59,26 +61,26 @@ class InstantiateScenarioCommand:
 
 @dataclass(frozen=True, slots=True)
 class ListPublishedScenariosQuery:
-    tenant_id: UUID
+    tenant_id: TenantId
 
 
 @dataclass(frozen=True, slots=True)
 class SubscribeScenarioToTenantCommand:
     """Platform owner tenant subscribes an enterprise tenant (M28 pack model)."""
 
-    tenant_id: UUID
+    tenant_id: TenantId
     template_id: UUID
     subscriber_tenant_id: UUID
 
 
 @dataclass(frozen=True, slots=True)
 class UnsubscribeScenarioFromTenantCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     template_id: UUID
     subscriber_tenant_id: UUID
 
 
 @dataclass(frozen=True, slots=True)
 class ArchiveScenarioTemplateCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     template_id: UUID

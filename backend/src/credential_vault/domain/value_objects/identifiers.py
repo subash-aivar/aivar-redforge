@@ -9,6 +9,13 @@ if TYPE_CHECKING:
     from uuid import UUID
 
 
+from redforge.shared.identifiers import EntityId
+
+# TenantId is the shared platform EntityId (ULID-backed) per ADR-0005.
+# Phase 1 convergence: no local UUID-backed TenantId type.
+TenantId = EntityId
+
+
 @dataclass(frozen=True, slots=True)
 class CredentialId:
     value: UUID
@@ -21,16 +28,6 @@ class CredentialId:
         return str(self.value)
 
 
-@dataclass(frozen=True, slots=True)
-class TenantId:
-    value: UUID
-
-    def __post_init__(self) -> None:
-        if self.value.int == 0:
-            raise ValueError("TenantId must not be nil UUID")
-
-    def __str__(self) -> str:
-        return str(self.value)
 
 
 @dataclass(frozen=True, slots=True)

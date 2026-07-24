@@ -68,7 +68,7 @@ def _to_domain(row: CredentialVersionModel) -> CredentialVersion:
     return CredentialVersion(
         version_id=VersionId(row.id),
         credential_id=CredentialId(row.credential_id),
-        tenant_id=TenantId(row.tenant_id),
+        tenant_id=TenantId.from_uuid(row.tenant_id),
         version_number=row.version_number,
         encrypted_payload=payload,
         key_envelope=envelope,
@@ -122,7 +122,7 @@ class PgCredentialVersionRepository(ICredentialVersionRepository):
     def _cache_row_version(self, row: CredentialVersionModel) -> None:
         self._row_version_cache[row.id] = row.row_version
 
-    async def _fetch_row_version(self, version_id: UUID, tenant_id: UUID) -> int:
+    async def _fetch_row_version(self, version_id: UUID, tenant_id: TenantId) -> int:
         cached = self._row_version_cache.get(version_id)
         if cached is not None:
             return cached

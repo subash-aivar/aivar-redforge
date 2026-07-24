@@ -18,7 +18,7 @@ class SuggestionGenerationWorker:
 
     async def handle_signal(
         self,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         target_type: str,
         target_context: str,
         confidence: float,
@@ -64,7 +64,9 @@ class SuggestionApplicationWorker:
         self._app = app
         self.applied = 0
 
-    async def confirm(self, tenant_id: UUID, suggestion_id: UUID, target_context_ref: str) -> Any:
+    async def confirm(
+        self, tenant_id: TenantId, suggestion_id: UUID, target_context_ref: str
+    ) -> Any:
         self.applied += 1
         return await self._app.mark_applied(
             MarkSuggestionApplied(tenant_id, suggestion_id, target_context_ref, ("system",))
@@ -77,23 +79,23 @@ class OutcomeMeasurementWorker:
         self._models = models
         self.measured = 0
 
-    async def tick(self, tenant_id: UUID) -> int:
+    async def tick(self, tenant_id: TenantId) -> int:
         from autonomous_intelligence.domain.services.feedback_ingestion_service import (
             FeedbackIngestionService,
         )
 
         pending = await self._outcomes.find_pending_measurement(
-            datetime.now(UTC), TenantId(tenant_id)
+            datetime.now(UTC), tenant_id
         )
         feedback = FeedbackIngestionService()
         count = 0
         for outcome in pending:
             outcome.record_measurement(outcome.baseline_metric - 0.05, datetime.now(UTC))
-            await self._outcomes.update_measurement(outcome, TenantId(tenant_id))
-            model = await self._models.find_deployed(TenantId(tenant_id), outcome.target_type)
+            await self._outcomes.update_measurement(outcome, tenant_id)
+            model = await self._models.find_deployed(tenant_id, outcome.target_type)
             if model:
                 feedback.ingest(model, outcome)
-                await self._models.save(model, TenantId(tenant_id))
+                await self._models.save(model, tenant_id)
             count += 1
         self.measured += count
         return count
@@ -104,12 +106,12 @@ class ModelRetrainingWorker:
         self._models = models
         self.triggered = 0
 
-    async def tick(self, tenant_id: UUID) -> int:
+    async def tick(self, tenant_id: TenantId) -> int:
         from autonomous_intelligence.domain.value_objects.enums import SuggestionTargetType
 
         count = 0
         for tt in SuggestionTargetType:
-            model = await self._models.find_deployed(TenantId(tenant_id), tt)
+            model = await self._models.find_deployed(tenant_id, tt)
             if model and model.needs_retraining():
                 self.triggered += 1
                 count += 1
@@ -193,7 +195,7 @@ class IntelligenceScheduler:
         self.retrain = retrain
         self.metrics = metrics
 
-    async def tick_all(self, tenant_id: UUID) -> dict[str, int]:
+    async def tick_all(self, tenant_id: TenantId) -> dict[str, int]:
         expired = await self.expiry.tick()
         measured = await self.outcome.tick(tenant_id)
         retrained = await self.retrain.tick(tenant_id)

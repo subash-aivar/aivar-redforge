@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from collections.abc import AsyncIterator
-from uuid import UUID, uuid4
 
 import pytest
 import pytest_asyncio
@@ -17,6 +16,7 @@ from credential_vault.infrastructure.container import CredentialVaultContainer
 from redforge.api.dependencies import get_session_factory
 from redforge.api.security import TenantContext, get_tenant_context
 from redforge.domain.identity.value_objects import MembershipRole, Permission
+from redforge.shared.identifiers import EntityId
 
 
 @pytest.fixture(autouse=True)
@@ -25,20 +25,20 @@ def open_permission_mode(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.fixture
-def organization_id() -> UUID:
-    return uuid4()
+def organization_id() -> EntityId:
+    return EntityId.generate()
 
 
 @pytest.fixture
-def user_id() -> UUID:
-    return uuid4()
+def user_id() -> EntityId:
+    return EntityId.generate()
 
 
 @pytest_asyncio.fixture
 async def app(
     pg_session_factory: object,
-    organization_id: UUID,
-    user_id: UUID,
+    organization_id: EntityId,
+    user_id: EntityId,
 ) -> AsyncIterator[FastAPI]:
     application = FastAPI()
     register_credential_vault_exception_handlers(application)
@@ -76,8 +76,8 @@ async def async_client(app: FastAPI) -> AsyncIterator[AsyncClient]:
 async def other_tenant_client(
     pg_session_factory: object,
 ) -> AsyncIterator[AsyncClient]:
-    other_org = uuid4()
-    other_user = uuid4()
+    other_org = EntityId.generate()
+    other_user = EntityId.generate()
     application = FastAPI()
     register_credential_vault_exception_handlers(application)
     application.include_router(credential_vault_router, prefix="/api/v1")

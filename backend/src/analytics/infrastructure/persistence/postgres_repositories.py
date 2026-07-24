@@ -69,7 +69,7 @@ def _dataset_to_row(ds: AnalyticsDataSet) -> AnalyticsDataSetModel:
 def _row_to_dataset(row: AnalyticsDataSetModel) -> AnalyticsDataSet:
     return AnalyticsDataSet(
         dataset_id=AnalyticsDataSetId(row.id),
-        tenant_id=TenantId(row.tenant_id),
+        tenant_id=TenantId.from_uuid(row.tenant_id),
         domain=SecurityDomain(row.domain),
         schema_version=row.schema_version,
         status=DataSetStatus(row.status),
@@ -151,7 +151,7 @@ def _kpi_to_row(kpi: SecurityKPI) -> SecurityKPIModel:
 def _row_to_kpi(row: SecurityKPIModel) -> SecurityKPI:
     return SecurityKPI(
         kpi_id=SecurityKPIId(row.id),
-        tenant_id=TenantId(row.tenant_id),
+        tenant_id=TenantId.from_uuid(row.tenant_id),
         kpi_type=KPIType(row.kpi_type),
         computation_schedule_cron=row.computation_schedule_cron,
         status=KPIStatus(row.status),
@@ -230,7 +230,7 @@ def _row_to_baseline(row: AnomalyDetectionBaselineModel) -> AnomalyDetectionBase
     params = row.params_json or {}
     return AnomalyDetectionBaseline(
         baseline_id=AnomalyDetectionBaselineId(row.id),
-        tenant_id=TenantId(row.tenant_id),
+        tenant_id=TenantId.from_uuid(row.tenant_id),
         signal_type=AnomalySignalType(row.signal_type),
         method=DetectionMethod(row.method),
         window_days=row.window_days,
@@ -289,7 +289,7 @@ def _query_to_row(query: AnalyticsQuery) -> AnalyticsQueryModel:
 def _row_to_query(row: AnalyticsQueryModel) -> AnalyticsQuery:
     return AnalyticsQuery(
         query_id=AnalyticsQueryId(row.id),
-        tenant_id=TenantId(row.tenant_id),
+        tenant_id=TenantId.from_uuid(row.tenant_id),
         name=row.name,
         query_template=row.template,
         domain=SecurityDomain(row.domain),

@@ -35,7 +35,7 @@ def now() -> datetime:
 
 
 def test_cannot_activate_without_actions(now: datetime) -> None:
-    tenant = TenantId(uuid4())
+    tenant = TenantId.generate()
     env = AgentOperationalEnvelope.draft(
         AgentOperationalEnvelopeId.generate(),
         tenant,
@@ -48,7 +48,7 @@ def test_cannot_activate_without_actions(now: datetime) -> None:
 
 
 def test_human_approval_removal_requires_admin(now: datetime) -> None:
-    tenant = TenantId(uuid4())
+    tenant = TenantId.generate()
     env = AgentOperationalEnvelope.draft(
         AgentOperationalEnvelopeId.generate(),
         tenant,
@@ -69,7 +69,7 @@ def test_human_approval_removal_requires_admin(now: datetime) -> None:
 
 
 def test_required_approval_bypassed_is_high(now: datetime) -> None:
-    tenant = TenantId(uuid4())
+    tenant = TenantId.generate()
     env = AgentOperationalEnvelope.draft(
         AgentOperationalEnvelopeId.generate(),
         tenant,
@@ -96,7 +96,7 @@ def test_required_approval_bypassed_is_high(now: datetime) -> None:
 
 
 def test_benign_requires_notes(now: datetime) -> None:
-    tenant = TenantId(uuid4())
+    tenant = TenantId.generate()
     env = AgentOperationalEnvelope.draft(
         AgentOperationalEnvelopeId.generate(),
         tenant,
@@ -123,7 +123,7 @@ def test_benign_requires_notes(now: datetime) -> None:
 
 
 def test_evaluation_pins_version_at_action_time(now: datetime) -> None:
-    tenant = TenantId(uuid4())
+    tenant = TenantId.generate()
     asset = AISystemAssetId(uuid4())
     env = AgentOperationalEnvelope.draft(
         AgentOperationalEnvelopeId.generate(),

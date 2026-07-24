@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 @dataclass(slots=True)
 class PendingRecomputation:
-    tenant_id: UUID
+    tenant_id: TenantId
     asset_ref_id: UUID
     marked_at: datetime
     debounce_override_seconds: int | None = None
@@ -24,7 +24,7 @@ class PendingRecomputation:
 
 @dataclass(slots=True)
 class TenantExposureProfile:
-    tenant_id: UUID
+    tenant_id: TenantId
     asset_scores: dict[str, float] = field(default_factory=dict)
     recomputing: bool = False
     recomputation_failed_at: datetime | None = None

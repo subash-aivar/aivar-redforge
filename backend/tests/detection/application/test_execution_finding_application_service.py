@@ -292,7 +292,7 @@ async def test_schedule_and_get(tenant_id: TenantId, now: datetime) -> None:
     await rules.save(rule)
     dto = await svc.schedule_rule_execution(
         ScheduleRuleExecution(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             rule_id=rule.rule_id.value,
             source_id="src-1",
             window_start=(now - timedelta(hours=1)).isoformat(),
@@ -302,7 +302,7 @@ async def test_schedule_and_get(tenant_id: TenantId, now: datetime) -> None:
     assert dto.state == "Scheduled"
     assert len(publisher.batches) == 1
     got = await svc.get_execution(
-        GetExecution(tenant_id=tenant_id.value, execution_id=UUID(dto.id))
+        GetExecution(tenant_id=tenant_id, execution_id=UUID(dto.id))
     )
     assert got.id == dto.id
 
@@ -314,7 +314,7 @@ async def test_record_result_and_timeout(tenant_id: TenantId, now: datetime) -> 
     await rules.save(rule)
     scheduled = await svc.schedule_rule_execution(
         ScheduleRuleExecution(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             rule_id=rule.rule_id.value,
             source_id="src-1",
             window_start=(now - timedelta(hours=1)).isoformat(),
@@ -323,7 +323,7 @@ async def test_record_result_and_timeout(tenant_id: TenantId, now: datetime) -> 
     )
     completed = await svc.record_execution_result(
         RecordExecutionResult(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             execution_id=UUID(scheduled.id),
             findings_produced=1,
             duration_ms=10,
@@ -333,7 +333,7 @@ async def test_record_result_and_timeout(tenant_id: TenantId, now: datetime) -> 
 
     scheduled2 = await svc.schedule_rule_execution(
         ScheduleRuleExecution(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             rule_id=rule.rule_id.value,
             source_id="src-1",
             window_start=(now - timedelta(hours=1)).isoformat(),
@@ -342,7 +342,7 @@ async def test_record_result_and_timeout(tenant_id: TenantId, now: datetime) -> 
     )
     timed = await svc.record_execution_result(
         RecordExecutionResult(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             execution_id=UUID(scheduled2.id),
             timed_out=True,
             duration_ms=60000,
@@ -358,7 +358,7 @@ async def test_produce_finding_and_dedup(tenant_id: TenantId, now: datetime) -> 
     await rules.save(rule)
     execution = await svc.schedule_rule_execution(
         ScheduleRuleExecution(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             rule_id=rule.rule_id.value,
             source_id="src-1",
             window_start=(now - timedelta(hours=1)).isoformat(),
@@ -367,7 +367,7 @@ async def test_produce_finding_and_dedup(tenant_id: TenantId, now: datetime) -> 
     )
     first = await svc.produce_finding(
         ProduceFinding(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             rule_id=rule.rule_id.value,
             execution_id=UUID(execution.id),
             asset_id="asset-1",
@@ -381,7 +381,7 @@ async def test_produce_finding_and_dedup(tenant_id: TenantId, now: datetime) -> 
 
     second = await svc.produce_finding(
         ProduceFinding(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             rule_id=rule.rule_id.value,
             execution_id=UUID(execution.id),
             asset_id="asset-1",
@@ -406,7 +406,7 @@ async def test_produce_blocked_on_timed_out(
     await rules.save(rule)
     execution = await svc.schedule_rule_execution(
         ScheduleRuleExecution(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             rule_id=rule.rule_id.value,
             source_id="src-1",
             window_start=(now - timedelta(hours=1)).isoformat(),
@@ -415,7 +415,7 @@ async def test_produce_blocked_on_timed_out(
     )
     await svc.record_execution_result(
         RecordExecutionResult(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             execution_id=UUID(execution.id),
             timed_out=True,
             duration_ms=1,
@@ -424,7 +424,7 @@ async def test_produce_blocked_on_timed_out(
     with pytest.raises(ApplicationValidationError):
         await svc.produce_finding(
             ProduceFinding(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 rule_id=rule.rule_id.value,
                 execution_id=UUID(execution.id),
                 asset_id="a",
@@ -442,7 +442,7 @@ async def test_finding_lifecycle_ops(tenant_id: TenantId, now: datetime) -> None
     await rules.save(rule)
     execution = await svc.schedule_rule_execution(
         ScheduleRuleExecution(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             rule_id=rule.rule_id.value,
             source_id="src-1",
             window_start=(now - timedelta(hours=1)).isoformat(),
@@ -451,7 +451,7 @@ async def test_finding_lifecycle_ops(tenant_id: TenantId, now: datetime) -> None
     )
     finding = await svc.produce_finding(
         ProduceFinding(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             rule_id=rule.rule_id.value,
             execution_id=UUID(execution.id),
             asset_id="asset-1",
@@ -463,12 +463,12 @@ async def test_finding_lifecycle_ops(tenant_id: TenantId, now: datetime) -> None
     fid = UUID(finding.id)
     triaged = await svc.triage_finding(
         TriageFinding(
-            tenant_id=tenant_id.value, finding_id=fid, analyst="a", note="looks real"
+            tenant_id=tenant_id, finding_id=fid, analyst="a", note="looks real"
         )
     )
     assert triaged.state == "Triaged"
     confirmed = await svc.confirm_finding(
-        ConfirmFinding(tenant_id=tenant_id.value, finding_id=fid, analyst="a")
+        ConfirmFinding(tenant_id=tenant_id, finding_id=fid, analyst="a")
     )
     assert confirmed.state == "Confirmed"
 
@@ -482,7 +482,7 @@ async def test_fp_suppress_escalate(tenant_id: TenantId, now: datetime) -> None:
     async def _new_finding(suffix: str) -> UUID:
         execution = await svc.schedule_rule_execution(
             ScheduleRuleExecution(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 rule_id=rule.rule_id.value,
                 source_id="src-1",
                 window_start=(now - timedelta(hours=1)).isoformat(),
@@ -491,7 +491,7 @@ async def test_fp_suppress_escalate(tenant_id: TenantId, now: datetime) -> None:
         )
         finding = await svc.produce_finding(
             ProduceFinding(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 rule_id=rule.rule_id.value,
                 execution_id=UUID(execution.id),
                 asset_id=f"asset-{suffix}",
@@ -505,7 +505,7 @@ async def test_fp_suppress_escalate(tenant_id: TenantId, now: datetime) -> None:
     fp_id = await _new_finding("fp")
     fp = await svc.mark_finding_false_positive(
         MarkFindingFalsePositive(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             finding_id=fp_id,
             analyst="a",
             justification="benign",
@@ -516,7 +516,7 @@ async def test_fp_suppress_escalate(tenant_id: TenantId, now: datetime) -> None:
     sp_id = await _new_finding("sp")
     sp = await svc.suppress_finding(
         SuppressFinding(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             finding_id=sp_id,
             analyst="a",
             justification="noise",
@@ -527,7 +527,7 @@ async def test_fp_suppress_escalate(tenant_id: TenantId, now: datetime) -> None:
     esc_id = await _new_finding("esc")
     esc = await svc.escalate_finding_to_investigation(
         EscalateFindingToInvestigation(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             finding_id=esc_id,
             analyst="a",
             investigation_id="inv-99",
@@ -547,7 +547,7 @@ async def test_list_executions_and_findings(
     for i in range(3):
         await svc.schedule_rule_execution(
             ScheduleRuleExecution(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 rule_id=rule.rule_id.value,
                 source_id=f"src-{i}",
                 window_start=(now - timedelta(hours=1)).isoformat(),
@@ -555,7 +555,7 @@ async def test_list_executions_and_findings(
             )
         )
     page = await svc.list_executions(
-        ListExecutions(tenant_id=tenant_id.value)
+        ListExecutions(tenant_id=tenant_id)
     )
     assert len(page.items) == 3
 
@@ -565,5 +565,5 @@ async def test_get_missing(tenant_id: TenantId) -> None:
     svc, _, _, _, _ = _svc()
     with pytest.raises(ApplicationNotFoundError):
         await svc.get_finding(
-            GetFinding(tenant_id=tenant_id.value, finding_id=uuid4())
+            GetFinding(tenant_id=tenant_id, finding_id=uuid4())
         )

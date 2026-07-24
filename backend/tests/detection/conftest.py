@@ -5,7 +5,6 @@ from __future__ import annotations
 import os
 from datetime import UTC, datetime, timedelta
 from typing import Any
-from uuid import uuid4
 
 import pytest
 
@@ -49,12 +48,12 @@ def now() -> datetime:
 
 @pytest.fixture
 def tenant_id() -> TenantId:
-    return TenantId(uuid4())
+    return TenantId.generate()
 
 
 @pytest.fixture
 def other_tenant_id() -> TenantId:
-    return TenantId(uuid4())
+    return TenantId.generate()
 
 
 def advance(now: datetime, **kwargs: int) -> datetime:

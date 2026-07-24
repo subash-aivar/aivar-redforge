@@ -199,7 +199,7 @@ class PgAttackActionRepository(IAttackActionRepository):
             output = ActionOutputRef(model.output_hash, model.output_storage_ref)
         return AttackAction(
             action_id=AttackActionId(model.id),
-            tenant_id=TenantId(model.tenant_id),
+            tenant_id=TenantId.from_uuid(model.tenant_id),
             engagement_id=EngagementId(model.engagement_id),
             operation_id=OperationId(model.operation_id),
             step_ref=ExecutionStepRef(

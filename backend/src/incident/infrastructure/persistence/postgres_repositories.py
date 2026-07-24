@@ -187,7 +187,7 @@ def _row_to_incident(
     payload = row.payload or {}
     return Incident(
         incident_id=IncidentId(row.incident_id),
-        tenant_id=TenantId(row.tenant_id),
+        tenant_id=TenantId.from_uuid(row.tenant_id),
         title=row.title,
         description=row.description,
         phase=IncidentPhase(row.phase),
@@ -415,7 +415,7 @@ def _containment_to_row(action: ContainmentAction) -> ContainmentActionModel:
 def _row_to_containment(row: ContainmentActionModel) -> ContainmentAction:
     return ContainmentAction(
         action_id=ContainmentActionId(row.action_id),
-        tenant_id=TenantId(row.tenant_id),
+        tenant_id=TenantId.from_uuid(row.tenant_id),
         incident_id=IncidentId(row.incident_id),
         action_type=ContainmentActionType(row.action_type),
         description=row.description,
@@ -496,7 +496,7 @@ def _eradication_to_row(v: EradicationVerification) -> EradicationVerificationMo
 def _row_to_eradication(row: EradicationVerificationModel) -> EradicationVerification:
     return EradicationVerification(
         verification_id=EradicationVerificationId(row.verification_id),
-        tenant_id=TenantId(row.tenant_id),
+        tenant_id=TenantId.from_uuid(row.tenant_id),
         incident_id=IncidentId(row.incident_id),
         assertion=row.assertion,
         evidence_refs=[
@@ -561,7 +561,7 @@ def _milestone_to_row(m: RecoveryMilestone) -> RecoveryMilestoneModel:
 def _row_to_milestone(row: RecoveryMilestoneModel) -> RecoveryMilestone:
     return RecoveryMilestone(
         milestone_id=RecoveryMilestoneId(row.milestone_id),
-        tenant_id=TenantId(row.tenant_id),
+        tenant_id=TenantId.from_uuid(row.tenant_id),
         incident_id=IncidentId(row.incident_id),
         title=row.title,
         description=row.description,
@@ -656,7 +656,7 @@ class PgIncidentCommunicationLogRepository(IIncidentCommunicationLogRepository):
             return [
                 IncidentCommunicationLogEntry(
                     entry_id=CommunicationLogEntryId(r.entry_id),
-                    tenant_id=TenantId(r.tenant_id),
+                    tenant_id=TenantId.from_uuid(r.tenant_id),
                     incident_id=IncidentId(r.incident_id),
                     content=r.content,
                     author=r.author,

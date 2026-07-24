@@ -96,7 +96,7 @@ class AnalyticsDataSet:
     def advance_checkpoint(
         self, tenant_id: TenantId, event_id: str, at: datetime, *, ingested: int = 1
     ) -> None:
-        if self.tenant_id.value != tenant_id.value:
+        if self.tenant_id != tenant_id:
             raise TenantMismatch("tenant mismatch")
         self.projection_checkpoint = event_id
         self.records_ingested += ingested
@@ -111,7 +111,7 @@ class AnalyticsDataSet:
         )
 
     def begin_rebuild(self, tenant_id: TenantId, at: datetime) -> None:
-        if self.tenant_id.value != tenant_id.value:
+        if self.tenant_id != tenant_id:
             raise TenantMismatch("tenant mismatch")
         if self.status == DataSetStatus.REBUILDING:
             raise InvalidDataSetTransition("already rebuilding")
@@ -126,7 +126,7 @@ class AnalyticsDataSet:
     def complete_rebuild(
         self, tenant_id: TenantId, checkpoint: str, at: datetime, records: int
     ) -> None:
-        if self.tenant_id.value != tenant_id.value:
+        if self.tenant_id != tenant_id:
             raise TenantMismatch("tenant mismatch")
         self.status = DataSetStatus.ACTIVE
         self.projection_checkpoint = checkpoint

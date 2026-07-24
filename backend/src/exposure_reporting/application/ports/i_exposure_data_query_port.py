@@ -4,10 +4,8 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from uuid import UUID
+from exposure_reporting.domain.value_objects.identifiers import TenantId
 
 
 @dataclass(frozen=True, slots=True)
@@ -30,4 +28,4 @@ class ExposureDataSnapshot:
 
 class IExposureDataQueryPort(ABC):
     @abstractmethod
-    async def load_snapshot(self, tenant_id: UUID) -> ExposureDataSnapshot: ...
+    async def load_snapshot(self, tenant_id: TenantId) -> ExposureDataSnapshot: ...

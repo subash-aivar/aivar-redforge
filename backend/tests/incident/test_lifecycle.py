@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
-from uuid import uuid4
 
 import pytest
 
@@ -30,12 +29,13 @@ from incident.domain.services.containment_authorization_service import (
 )
 from incident.domain.value_objects.enums import ContainmentActionType, IncidentSeverity
 from incident.infrastructure.container import IncidentContainer
+from redforge.shared.identifiers import EntityId
 
 
 @pytest.mark.asyncio
 async def test_full_lifecycle_and_mttr_publish() -> None:
     c = IncidentContainer()
-    tenant = uuid4()
+    tenant = EntityId.generate()
     roles_a = ("incident:analyst",)
     roles_c = ("incident:commander",)
     d = await c.app.declare(
@@ -68,7 +68,7 @@ async def test_full_lifecycle_and_mttr_publish() -> None:
 @pytest.mark.asyncio
 async def test_network_isolation_requires_ciso() -> None:
     c = IncidentContainer()
-    tenant = uuid4()
+    tenant = EntityId.generate()
     d = await c.app.declare(
         DeclareIncidentCommand(
             tenant, "T", "D", "MANUAL_DECLARATION", "P1_CRITICAL", "a1", ("incident:analyst",)
@@ -99,7 +99,7 @@ def test_containment_matrix() -> None:
 @pytest.mark.asyncio
 async def test_reclassify_justification() -> None:
     c = IncidentContainer()
-    tenant = uuid4()
+    tenant = EntityId.generate()
     d = await c.app.declare(
         DeclareIncidentCommand(
             tenant, "T", "D", "MANUAL_DECLARATION", "P3_MEDIUM", "a1", ("incident:analyst",)
@@ -133,7 +133,7 @@ async def test_reclassify_justification() -> None:
 @pytest.mark.asyncio
 async def test_close_blocked_without_eradication() -> None:
     c = IncidentContainer()
-    tenant = uuid4()
+    tenant = EntityId.generate()
     d = await c.app.declare(
         DeclareIncidentCommand(
             tenant, "T", "D", "MANUAL_DECLARATION", "P2_HIGH", "a1", ("incident:analyst",)
@@ -157,7 +157,7 @@ async def test_comm_log_hash_chain_and_interface() -> None:
     assert "append" in methods and "find_by_incident" in methods
     assert "update" not in methods and "delete" not in methods
     c = IncidentContainer()
-    tenant = uuid4()
+    tenant = EntityId.generate()
     d = await c.app.declare(
         DeclareIncidentCommand(
             tenant, "T", "D", "MANUAL_DECLARATION", "P4_LOW", "a1", ("incident:analyst",)
@@ -183,7 +183,7 @@ async def test_comm_log_hash_chain_and_interface() -> None:
 @pytest.mark.asyncio
 async def test_tenant_isolation() -> None:
     c = IncidentContainer()
-    t1, t2 = uuid4(), uuid4()
+    t1, t2 = EntityId.generate(), EntityId.generate()
     d = await c.app.declare(
         DeclareIncidentCommand(
             t1, "T", "D", "MANUAL_DECLARATION", "P2_HIGH", "a1", ("incident:analyst",)
@@ -198,7 +198,7 @@ async def test_tenant_isolation() -> None:
 @pytest.mark.asyncio
 async def test_mttr_kpi_activates() -> None:
     c = IncidentContainer()
-    tenant = uuid4()
+    tenant = EntityId.generate()
     rows = []
     for _ in range(3):
         d = await c.app.declare(

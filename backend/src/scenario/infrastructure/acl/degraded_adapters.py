@@ -117,7 +117,7 @@ class StubCampaignDraftPort(ICampaignDraftPort):
     async def validate_draft_spec(
         self,
         *,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         draft_spec: dict[str, Any],
     ) -> list[str]:
         errors: list[str] = []
@@ -156,7 +156,7 @@ class StubCampaignDraftPort(ICampaignDraftPort):
     async def create_draft_campaign(
         self,
         *,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         engagement_id: UUID,
         owner_id: str,
         draft_spec: dict[str, Any],

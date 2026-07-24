@@ -19,6 +19,7 @@ from evaluation.domain.value_objects.evaluation_vos import (
 from evaluation.infrastructure.events.projection_bridging_publisher import (
     ProjectionBridgingEventPublisher,
 )
+from redforge.shared.identifiers import EntityId
 from tests.evaluation.conftest import make_service
 from tests.evaluation.fakes.repos import FakeUnitOfWork
 
@@ -54,7 +55,7 @@ async def test_kill_chain_projection_rebuilds_with_per_phase_coverage() -> None:
         ),
     ]
     svc = make_service(uow, bridging, actions=actions, findings=[])
-    tenant = uuid4()
+    tenant = EntityId.generate()
     instance = uuid4()
     dto = await svc.evaluate_campaign(
         EvaluateCampaignCommand(

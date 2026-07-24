@@ -32,7 +32,6 @@ from ai_posture.domain.value_objects.posture_vos import DiscoveredServiceFingerp
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-    from uuid import UUID
 
     from ai_posture.application.commands.posture_commands import (
         BulkResolveShadowAIAlertsCommand,
@@ -73,7 +72,7 @@ class ShadowAIAlertApplicationService:
 
     async def raise_alert(self, cmd: RaiseShadowAIAlertCommand) -> ShadowAIAlertDTO | None:
         require_at_least(cmd.actor_roles, AIPostureRole.ENGINEER)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         try:
             source = AIAssetDiscoverySource(cmd.discovery_source)
@@ -104,7 +103,7 @@ class ShadowAIAlertApplicationService:
 
     async def triage(self, cmd: TriageShadowAIAlertCommand) -> ShadowAIAlertDTO:
         require_at_least(cmd.actor_roles, AIPostureRole.ANALYST)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         async with self._uow_factory() as uow:
             alert = await uow.alerts.find_by_id(ShadowAIAlertId(cmd.alert_id), tenant)
@@ -121,7 +120,7 @@ class ShadowAIAlertApplicationService:
 
     async def confirm(self, cmd: ConfirmShadowAIAlertCommand) -> ShadowAIAlertDTO:
         require_at_least(cmd.actor_roles, AIPostureRole.ANALYST)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         async with self._uow_factory() as uow:
             alert = await uow.alerts.find_by_id(ShadowAIAlertId(cmd.alert_id), tenant)
@@ -140,7 +139,7 @@ class ShadowAIAlertApplicationService:
         self, cmd: DismissShadowAIAlertFalsePositiveCommand
     ) -> ShadowAIAlertDTO:
         require_at_least(cmd.actor_roles, AIPostureRole.ANALYST)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         async with self._uow_factory() as uow:
             alert = await uow.alerts.find_by_id(ShadowAIAlertId(cmd.alert_id), tenant)
@@ -157,7 +156,7 @@ class ShadowAIAlertApplicationService:
 
     async def resolve(self, cmd: ResolveShadowAIAlertCommand) -> ShadowAIAlertDTO:
         require_at_least(cmd.actor_roles, AIPostureRole.ANALYST)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         try:
             action = ResolutionAction(cmd.resolution_action)
@@ -179,7 +178,7 @@ class ShadowAIAlertApplicationService:
 
     async def bulk_triage(self, cmd: BulkTriageShadowAIAlertsCommand) -> BulkTriageResultDTO:
         require_at_least(cmd.actor_roles, AIPostureRole.ANALYST)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         ids: list[str] = []
         async with self._uow_factory() as uow:
@@ -203,7 +202,7 @@ class ShadowAIAlertApplicationService:
 
     async def bulk_resolve(self, cmd: BulkResolveShadowAIAlertsCommand) -> BulkTriageResultDTO:
         require_at_least(cmd.actor_roles, AIPostureRole.APPROVER)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         try:
             action = ResolutionAction(cmd.resolution_action)
@@ -243,14 +242,14 @@ class ShadowAIAlertApplicationService:
 
     async def set_discovery_only_mode(self, cmd: SetDiscoveryOnlyModeCommand) -> bool:
         require_at_least(cmd.actor_roles, AIPostureRole.ADMIN)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         async with self._uow_factory() as uow:
             await uow.settings.set_discovery_only_mode(tenant, cmd.enabled)
             await uow.commit()
             return cmd.enabled
 
-    async def triage_backlog_age(self, tenant_id: UUID) -> TriageBacklogAgeDTO:
-        tenant = TenantId(tenant_id)
+    async def triage_backlog_age(self, tenant_id: TenantId) -> TriageBacklogAgeDTO:
+        tenant = tenant_id
         now = datetime.now(UTC)
         buckets = {"0-1": 0, "2-7": 0, "8-30": 0, "31+": 0}
         async with self._uow_factory() as uow:

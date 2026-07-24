@@ -82,7 +82,7 @@ async def _check_kms(container: CredentialVaultContainer, errors: list[str]) -> 
 
 async def _check_permission_port(container: CredentialVaultContainer, errors: list[str]) -> None:
     try:
-        nil_tenant = TenantId(UUID("00000000-0000-4000-8000-000000000001"))
+        nil_tenant = TenantId.from_uuid(UUID("00000000-0000-4000-8000-000000000001"))
         nil_principal = PrincipalId(UUID("00000000-0000-4000-8000-000000000002"))
         nil_credential = CredentialId(UUID("00000000-0000-4000-8000-000000000003"))
         await container.permission_adapter.has_permission(

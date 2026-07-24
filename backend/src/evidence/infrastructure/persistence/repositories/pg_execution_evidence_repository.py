@@ -93,7 +93,7 @@ class PgExecutionEvidenceRepository(IExecutionEvidenceRepository):
         ]
         return ExecutionEvidence(
             evidence_id=ExecutionEvidenceId(model.id),
-            tenant_id=TenantId(model.tenant_id),
+            tenant_id=TenantId.from_uuid(model.tenant_id),
             evidence_type=EvidenceType(model.evidence_type),
             payload_hash=EvidencePayloadHash(model.payload_hash),
             storage_ref=EvidenceStorageRef(model.storage_ref),

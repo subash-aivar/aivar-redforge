@@ -280,12 +280,9 @@ async def test_invalidate_plans_referencing_payload() -> None:
         ExecutionPlanVersionId,
         OperationId,
     )
-    from operation.domain.value_objects.identifiers import (
-        TenantId as OpTenantId,
-    )
     from operation.domain.value_objects.plan_vos import PlanHash, PlanSnapshot, SignedBy
 
-    tenant = uuid7()
+    tenant = TenantId.generate()
     payload_id = uuid7()
     uow = FakeOperationUnitOfWork()
     now = datetime.now(UTC)
@@ -294,7 +291,7 @@ async def test_invalidate_plans_referencing_payload() -> None:
     )
     pv = ExecutionPlanVersion(
         plan_version_id=ExecutionPlanVersionId(uuid7()),
-        tenant_id=OpTenantId(tenant),
+        tenant_id=tenant,
         operation_id=OperationId(uuid7()),
         version_number=1,
         snapshot=snapshot,
@@ -322,6 +319,6 @@ async def test_invalidate_plans_referencing_payload() -> None:
         tenant_id=tenant, payload_id=payload_id
     )
     assert count == 1
-    refreshed = await uow.plan_versions.find_by_id(pv.plan_version_id, OpTenantId(tenant))
+    refreshed = await uow.plan_versions.find_by_id(pv.plan_version_id, tenant)
     assert refreshed is not None
     assert refreshed.state == ExecutionPlanVersionState.SUPERSEDED

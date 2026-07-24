@@ -15,7 +15,7 @@ from red_team_operator.application.exceptions import (
     ApplicationValidationError,
 )
 from red_team_operator.domain.value_objects.enums import ApprovalScope
-from red_team_operator.domain.value_objects.identifiers import OperatorId, TenantId
+from red_team_operator.domain.value_objects.identifiers import OperatorId
 
 if TYPE_CHECKING:
     from red_team_operator.application.queries.operator_queries import (
@@ -44,7 +44,7 @@ class OperatorQueryService:
         validate_uuid(query.tenant_id, "tenant_id")
         validate_uuid(query.operator_id, "operator_id")
 
-        tenant_id = TenantId(query.tenant_id)
+        tenant_id = query.tenant_id
         operator_id = OperatorId(query.operator_id)
         op = await self._operators.find_by_id(operator_id)
         if op is None or op.tenant_id != tenant_id:
@@ -56,7 +56,7 @@ class OperatorQueryService:
         limit = validate_limit(query.limit)
         offset = validate_offset(query.offset)
 
-        tenant_id = TenantId(query.tenant_id)
+        tenant_id = query.tenant_id
         ops = await self._operators.find_by_tenant(
             tenant_id,
             include_inactive=query.include_inactive,
@@ -70,6 +70,6 @@ class OperatorQueryService:
     ) -> list[OperatorDTO]:
         validate_uuid(query.tenant_id, "tenant_id")
         scope = self._parse_scope(query.scope)
-        tenant_id = TenantId(query.tenant_id)
+        tenant_id = query.tenant_id
         ops = await self._operators.find_authorized_approvers(scope, tenant_id)
         return [OperatorDTO.from_aggregate(op) for op in ops]

@@ -25,7 +25,7 @@ async def test_graph_idempotent_under_replay() -> None:
     store = InMemoryReadModelStore()
     graph = InMemorySecurityGraphAdapter()
     svc = M31ProjectionService(store, graph)
-    tenant = TenantId(uuid4())
+    tenant = TenantId.generate()
     event = AISystemAssetRegistered(
         event_id="e1",
         occurred_at=datetime.now(UTC),
@@ -45,7 +45,7 @@ async def test_risk_register_surfaces_score_input_version() -> None:
     store = InMemoryReadModelStore()
     graph = InMemorySecurityGraphAdapter()
     svc = M31ProjectionService(store, graph)
-    tenant = TenantId(uuid4())
+    tenant = TenantId.generate()
     asset = str(uuid4())
     await svc.apply(
         AIRiskScoreComputed(
@@ -124,7 +124,7 @@ async def test_compliance_posture_labels_evaluation_mode() -> None:
     store = InMemoryReadModelStore()
     graph = InMemorySecurityGraphAdapter()
     svc = M31ProjectionService(store, graph)
-    tenant = TenantId(uuid4())
+    tenant = TenantId.generate()
     await svc.apply(
         AIComplianceMappingRecorded(
             event_id="c1",

@@ -5,7 +5,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
-from uuid import UUID, uuid4
+from uuid import uuid4
+
+from analytics.domain.value_objects.identifiers import TenantId
 
 
 @dataclass
@@ -19,7 +21,7 @@ class OperationalMetricsStore:
         value: float,
         *,
         unit: str = "count",
-        tenant_id: UUID | None = None,
+        tenant_id: TenantId | None = None,
         labels: dict[str, str] | None = None,
     ) -> None:
         self.metrics.append(

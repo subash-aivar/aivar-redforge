@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
-from uuid import UUID
+
+from detection.domain.value_objects.identifiers import TenantId
 
 if TYPE_CHECKING:
     from detection.application.projections.projection_coordinator import (
@@ -86,7 +87,7 @@ class PlatformOrchestrationService:
         """Feed committed domain events into projection pipeline."""
         return await self.coordinator.handle_batch(events)
 
-    async def platform_status(self, tenant_id: UUID) -> dict[str, Any]:
+    async def platform_status(self, tenant_id: TenantId) -> dict[str, Any]:
         readiness = await self.projections.platform_readiness(tenant_id)
         return {
             "lifecycle": self.lifecycle_map(),

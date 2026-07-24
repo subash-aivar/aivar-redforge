@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from uuid import uuid4
-
 import pytest
 
 from ml_pipeline.api.dependencies import reset_container
 from ml_pipeline.infrastructure.container import MLPipelineContainer
+from redforge.shared.identifiers import EntityId
 
 
 @pytest.fixture
@@ -17,7 +16,7 @@ def container() -> MLPipelineContainer:
 
 @pytest.fixture
 def tenant_id():
-    return uuid4()
+    return EntityId.generate()
 
 
 @pytest.fixture

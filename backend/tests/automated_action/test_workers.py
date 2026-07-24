@@ -7,12 +7,13 @@ import pytest
 from automated_action.application.commands.automation_commands import TriggerPlaybookExecution
 from automated_action.application.ports.lookups import PlaybookLookupView, PlaybookStepView
 from automated_action.infrastructure.container import AutomatedActionContainer
+from redforge.shared.identifiers import EntityId
 
 
 @pytest.mark.asyncio
 async def test_scheduler_processes_pending() -> None:
     c = AutomatedActionContainer()
-    tenant = uuid4()
+    tenant = EntityId.generate()
     pb = uuid4()
     c.playbook_lookup.put(
         PlaybookLookupView(

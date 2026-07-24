@@ -24,6 +24,7 @@ from campaignexecution.infrastructure.acl.degraded_adapters import (
     StubAttackActionQueryAdapter,
     StubOperationCreationAdapter,
 )
+from redforge.shared.identifiers import EntityId
 from tests.campaignexecution.fakes.repos import FakeEventPublisher, FakeUnitOfWork
 
 
@@ -58,7 +59,7 @@ def service(uow: FakeUnitOfWork, publisher: FakeEventPublisher) -> ExecutionAppl
 
 @pytest.fixture()
 def tenant_id() -> object:
-    return uuid4()
+    return EntityId.generate()
 
 
 # ── Initialization ─────────────────────────────────────────────────────────────
@@ -135,17 +136,16 @@ async def test_dispatch_task_returns_running_state(
     from campaignexecution.domain.value_objects.identifiers import (
         CampaignTaskId,
         TaskGraphExecutionId,
-        TenantId,
     )
 
     execution = await uow.executions.find_by_id(
         TaskGraphExecutionId(UUID(exec_id)),
-        TenantId(tenant_id),  # type: ignore[arg-type]
+        tenant_id,  # type: ignore[arg-type]
     )
     assert execution is not None
     from datetime import UTC, datetime
 
-    execution.mark_task_ready(TenantId(tenant_id), CampaignTaskId(task_id), datetime.now(UTC))  # type: ignore[arg-type]
+    execution.mark_task_ready(tenant_id, CampaignTaskId(task_id), datetime.now(UTC))  # type: ignore[arg-type]
 
     dispatch_cmd = DispatchNextTasksCommand(
         tenant_id=tenant_id,  # type: ignore[arg-type]
@@ -176,7 +176,6 @@ async def test_record_task_completion(
     from campaignexecution.domain.value_objects.identifiers import (
         CampaignTaskId,
         TaskGraphExecutionId,
-        TenantId,
     )
 
     task_id = uuid4()
@@ -194,13 +193,13 @@ async def test_record_task_completion(
 
     execution = await uow.executions.find_by_id(
         TaskGraphExecutionId(exec_id),
-        TenantId(tenant_id),  # type: ignore[arg-type]
+        tenant_id,  # type: ignore[arg-type]
     )
     assert execution is not None
     t = CampaignTaskId(task_id)
-    execution.mark_task_ready(TenantId(tenant_id), t, datetime.now(UTC))  # type: ignore[arg-type]
+    execution.mark_task_ready(tenant_id, t, datetime.now(UTC))  # type: ignore[arg-type]
     op_ref = OperationRef(operation_id=uuid4(), tenant_id=tenant_id)  # type: ignore[arg-type]
-    execution.record_task_dispatched(TenantId(tenant_id), t, op_ref, datetime.now(UTC))  # type: ignore[arg-type]
+    execution.record_task_dispatched(tenant_id, t, op_ref, datetime.now(UTC))  # type: ignore[arg-type]
 
     complete_cmd = RecordTaskCompletionCommand(
         tenant_id=tenant_id,  # type: ignore[arg-type]
@@ -230,7 +229,6 @@ async def test_record_task_failure(
     from campaignexecution.domain.value_objects.identifiers import (
         CampaignTaskId,
         TaskGraphExecutionId,
-        TenantId,
     )
 
     task_id = uuid4()
@@ -248,13 +246,13 @@ async def test_record_task_failure(
 
     execution = await uow.executions.find_by_id(
         TaskGraphExecutionId(exec_id),
-        TenantId(tenant_id),  # type: ignore[arg-type]
+        tenant_id,  # type: ignore[arg-type]
     )
     assert execution is not None
     t = CampaignTaskId(task_id)
-    execution.mark_task_ready(TenantId(tenant_id), t, datetime.now(UTC))  # type: ignore[arg-type]
+    execution.mark_task_ready(tenant_id, t, datetime.now(UTC))  # type: ignore[arg-type]
     op_ref = OperationRef(operation_id=uuid4(), tenant_id=tenant_id)  # type: ignore[arg-type]
-    execution.record_task_dispatched(TenantId(tenant_id), t, op_ref, datetime.now(UTC))  # type: ignore[arg-type]
+    execution.record_task_dispatched(tenant_id, t, op_ref, datetime.now(UTC))  # type: ignore[arg-type]
 
     fail_cmd = RecordTaskFailureCommand(
         tenant_id=tenant_id,  # type: ignore[arg-type]
@@ -445,7 +443,6 @@ async def test_record_completion_uses_branch_resolution_service(
     from campaignexecution.domain.value_objects.identifiers import (
         CampaignTaskId,
         TaskGraphExecutionId,
-        TenantId,
     )
 
     task_a = uuid4()
@@ -465,10 +462,10 @@ async def test_record_completion_uses_branch_resolution_service(
     exec_id = UUID(init_dto.execution_id)
     execution = await uow.executions.find_by_id(
         TaskGraphExecutionId(exec_id),
-        TenantId(tenant_id),  # type: ignore[arg-type]
+        tenant_id,  # type: ignore[arg-type]
     )
     assert execution is not None
-    tid = TenantId(tenant_id)  # type: ignore[arg-type]
+    tid = tenant_id  # type: ignore[arg-type]
     now = datetime.now(UTC)
     execution.mark_task_ready(tid, CampaignTaskId(task_a), now)
     execution.record_task_dispatched(
@@ -582,7 +579,6 @@ async def test_parallel_dispatch_emits_track_started(
     from campaignexecution.domain.value_objects.identifiers import (
         CampaignTaskId,
         TaskGraphExecutionId,
-        TenantId,
     )
 
     t1, t2 = uuid4(), uuid4()
@@ -600,10 +596,10 @@ async def test_parallel_dispatch_emits_track_started(
     exec_id = UUID(dto.execution_id)
     execution = await uow.executions.find_by_id(
         TaskGraphExecutionId(exec_id),
-        TenantId(tenant_id),  # type: ignore[arg-type]
+        tenant_id,  # type: ignore[arg-type]
     )
     assert execution is not None
-    tid = TenantId(tenant_id)  # type: ignore[arg-type]
+    tid = tenant_id  # type: ignore[arg-type]
     now = datetime.now(UTC)
     execution.mark_task_ready(tid, CampaignTaskId(t1), now)
     execution.mark_task_ready(tid, CampaignTaskId(t2), now)

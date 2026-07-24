@@ -38,8 +38,9 @@ from operation.domain.value_objects.enums import (
     ExecutionPlanVersionState,
     OperationState,
 )
-from operation.domain.value_objects.identifiers import OperationId, TenantId
+from operation.domain.value_objects.identifiers import OperationId
 from operation.domain.value_objects.plan_vos import PlanSnapshot
+from redforge.shared.identifiers import EntityId
 
 
 @pytest.fixture
@@ -121,7 +122,7 @@ async def _create_simple_probe_plan(
 async def test_create_operation(service: OperationApplicationService) -> None:
     dto = await service.create_operation(
         CreateOperation(
-            tenant_id=uuid4(),
+            tenant_id=EntityId.generate(),
             engagement_id=uuid4(),
             name="Recon",
             classification="Reconnaissance",
@@ -135,7 +136,7 @@ async def test_create_operation(service: OperationApplicationService) -> None:
 async def test_out_of_scope_blocks_validate(
     service: OperationApplicationService, asset_id: UUID
 ) -> None:
-    tenant = uuid4()
+    tenant = EntityId.generate()
     created = await service.create_operation(
         CreateOperation(
             tenant_id=tenant,
@@ -170,7 +171,7 @@ async def test_unauthorized_technique_blocks_sign(
     engagement_port: FakeEngagementQueryPort,
     asset_id: UUID,
 ) -> None:
-    tenant = uuid4()
+    tenant = EntityId.generate()
     oid = await _create_simple_probe_plan(service, tenant_id=tenant, asset_id=asset_id)
     engagement_port.techniques = {"T1021"}
     with pytest.raises(PlanValidationError, match="not authorized"):
@@ -188,7 +189,7 @@ async def test_unauthorized_technique_blocks_sign(
 async def test_sign_computes_plan_hash(
     service: OperationApplicationService, asset_id: UUID
 ) -> None:
-    tenant = uuid4()
+    tenant = EntityId.generate()
     oid = await _create_simple_probe_plan(service, tenant_id=tenant, asset_id=asset_id)
     signed = await service.sign_execution_plan(
         SignExecutionPlan(
@@ -209,7 +210,7 @@ async def test_queue_requires_active_engagement(
     engagement_port: FakeEngagementQueryPort,
     asset_id: UUID,
 ) -> None:
-    tenant = uuid4()
+    tenant = EntityId.generate()
     oid = await _create_simple_probe_plan(service, tenant_id=tenant, asset_id=asset_id)
     await service.submit_for_approval(
         SubmitOperationForApproval(tenant_id=tenant, operation_id=oid)
@@ -235,7 +236,7 @@ async def test_only_one_executing_plan_per_operation(
     plans_repo: InMemoryPlanVersionRepository,
     asset_id: UUID,
 ) -> None:
-    tenant = uuid4()
+    tenant = EntityId.generate()
     oid = await _create_simple_probe_plan(service, tenant_id=tenant, asset_id=asset_id)
     signed = await service.sign_execution_plan(
         SignExecutionPlan(
@@ -251,13 +252,13 @@ async def test_only_one_executing_plan_per_operation(
 
     now = datetime.now(UTC)
     other = ExecutionPlanVersion.create_draft(
-        tenant_id=TenantId(tenant),
+        tenant_id=tenant,
         operation_id=OperationId(oid),
         version_number=99,
         snapshot=PlanSnapshot('{"steps":[]}'),
         now=now,
     )
-    other.sign(tenant_id=TenantId(tenant), operator_id=uuid4(), signature="x", now=now)
+    other.sign(tenant_id=tenant, operator_id=uuid4(), signature="x", now=now)
     other.pop_events()
     await plans_repo.save(other)
 
@@ -271,7 +272,7 @@ async def test_only_one_executing_plan_per_operation(
 async def test_critical_two_party_via_app_service(
     service: OperationApplicationService,
 ) -> None:
-    tenant = uuid4()
+    tenant = EntityId.generate()
     created = await service.create_operation(
         CreateOperation(
             tenant_id=tenant,
@@ -320,7 +321,7 @@ async def test_critical_two_party_via_app_service(
 async def test_mutating_plan_with_verification_validates(
     service: OperationApplicationService, asset_id: UUID
 ) -> None:
-    tenant = uuid4()
+    tenant = EntityId.generate()
     created = await service.create_operation(
         CreateOperation(
             tenant_id=tenant,

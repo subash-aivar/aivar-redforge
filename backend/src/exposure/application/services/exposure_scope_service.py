@@ -35,7 +35,7 @@ class ExposureScopeService:
     async def query_scope(
         self,
         *,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         actor_roles: tuple[str, ...],
         max_assets: int = 100,
         min_exposure_score: float | None = None,
@@ -46,7 +46,7 @@ class ExposureScopeService:
         del asset_kind_filter
         require_at_least(actor_roles, ExposureRole.VIEWER)
         started = datetime.now(UTC)
-        tenant = TenantId(tenant_id)
+        tenant = tenant_id
         max_assets = max(1, min(max_assets, 1000))
         amp_filter = set(amplifier_filter or [])
 

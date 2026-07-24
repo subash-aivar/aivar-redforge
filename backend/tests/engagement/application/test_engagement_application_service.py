@@ -32,6 +32,7 @@ from engagement.application.services.engagement_application_service import (
 )
 from engagement.domain.value_objects.enums import EngagementState
 from engagement.domain.value_objects.identifiers import TenantId
+from redforge.shared.identifiers import EntityId
 
 
 @pytest.fixture
@@ -64,7 +65,7 @@ def service(
 
 @pytest.mark.asyncio
 async def test_create_and_get_engagement(service: EngagementApplicationService) -> None:
-    tenant = uuid4()
+    tenant = EntityId.generate()
     dto = await service.create_engagement(
         CreateEngagementCommand(
             tenant_id=tenant,
@@ -87,8 +88,8 @@ async def test_create_and_get_engagement(service: EngagementApplicationService) 
 async def test_cross_tenant_query_returns_not_found(
     service: EngagementApplicationService,
 ) -> None:
-    tenant = uuid4()
-    other = uuid4()
+    tenant = EntityId.generate()
+    other = EntityId.generate()
     dto = await service.create_engagement(
         CreateEngagementCommand(
             tenant_id=tenant,
@@ -107,7 +108,7 @@ async def test_cross_tenant_query_returns_not_found(
 async def test_activation_flow_via_application_service(
     service: EngagementApplicationService,
 ) -> None:
-    tenant = uuid4()
+    tenant = EntityId.generate()
     now = datetime.now(UTC)
     dto = await service.create_engagement(
         CreateEngagementCommand(
@@ -176,8 +177,8 @@ async def test_in_memory_repo_cross_tenant_isolation(
 
     eng_repo, _ = repos
     now = datetime(2026, 7, 20, 12, 0, 0, tzinfo=UTC)
-    tenant_a = TenantId(uuid4())
-    tenant_b = TenantId(uuid4())
+    tenant_a = TenantId.generate()
+    tenant_b = TenantId.generate()
     eng = make_engagement(tenant_id=tenant_a, now=now, pop_events=True)
     await eng_repo.save(eng)
 

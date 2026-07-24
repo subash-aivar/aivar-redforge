@@ -18,6 +18,7 @@ from evaluation.domain.value_objects.evaluation_vos import (
     ObjectiveSpec,
 )
 from evaluation.infrastructure.acl.degraded_adapters import StubSecurityGraphWriteAdapter
+from redforge.shared.identifiers import EntityId
 from tests.evaluation.conftest import make_service
 from tests.evaluation.fakes.repos import FakeEventPublisher, FakeUnitOfWork
 
@@ -40,7 +41,7 @@ async def test_evaluate_campaign_full_pipeline() -> None:
         )
     ]
     svc = make_service(uow, publisher, actions=actions, findings=[], graph=graph)
-    tenant = uuid4()
+    tenant = EntityId.generate()
     instance = uuid4()
     campaign = uuid4()
     specs = [
@@ -89,7 +90,7 @@ async def test_detection_absent_quality_gate() -> None:
     svc = make_service(uow, publisher, actions=[], findings=findings)
     dto = await svc.evaluate_campaign(
         EvaluateCampaignCommand(
-            tenant_id=uuid4(),
+            tenant_id=EntityId.generate(),
             campaign_instance_id=uuid4(),
             campaign_id=uuid4(),
             run_number=1,
@@ -112,7 +113,7 @@ async def test_metrics_trend_direction() -> None:
     uow = FakeUnitOfWork()
     publisher = FakeEventPublisher()
     now = datetime(2026, 7, 21, 12, 0, tzinfo=UTC)
-    tenant = uuid4()
+    tenant = EntityId.generate()
     campaign = uuid4()
 
     # Three runs with increasing coverage

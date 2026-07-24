@@ -10,10 +10,10 @@ from analytics.application.commands.analytics_commands import (
     TriggerKPIComputationCommand,
 )
 from analytics.domain.value_objects.enums import KPIType
+from analytics.domain.value_objects.identifiers import TenantId
 from analytics.infrastructure.projections.event_projection_store import DOMAIN_TABLES
 
 if TYPE_CHECKING:
-    from uuid import UUID
 
     from analytics.application.services.analytics_application_service import (
         AnalyticsApplicationService,
@@ -44,7 +44,7 @@ class AnalyticsProjectionWorker:
     async def handle(
         self,
         *,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         domain: str,
         event_id: str,
         event_type: str,
@@ -100,7 +100,7 @@ class KPIComputationWorker:
         self._app = app
         self._metrics = metrics
 
-    async def run_for_tenant(self, tenant_id: UUID) -> list[dict[str, object]]:
+    async def run_for_tenant(self, tenant_id: TenantId) -> list[dict[str, object]]:
         results: list[dict[str, object]] = []
         started = datetime.now(UTC)
         for kpi_type in (
@@ -135,7 +135,7 @@ class RetentionPolicyWorker:
     def __init__(self, store: EventProjectionStore) -> None:
         self._store = store
 
-    async def run(self, tenant_id: UUID, *, event_retention_days: int = 730) -> dict[str, object]:
+    async def run(self, tenant_id: TenantId, *, event_retention_days: int = 730) -> dict[str, object]:
         before = datetime.now(UTC) - timedelta(days=event_retention_days)
         total = 0
         for domain in DOMAIN_TABLES:
@@ -160,7 +160,7 @@ class ProjectionRebuildWorker:
     def __init__(self, app: AnalyticsApplicationService) -> None:
         self._app = app
 
-    async def run(self, tenant_id: UUID, domain: str | None = None) -> dict[str, object]:
+    async def run(self, tenant_id: TenantId, domain: str | None = None) -> dict[str, object]:
         from analytics.application.commands.analytics_commands import (
             TriggerProjectionRebuildCommand,
         )

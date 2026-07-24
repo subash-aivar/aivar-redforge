@@ -7,14 +7,14 @@ from integration_hub.domain.value_objects.enums import ConnectorHealthStatus
 from integration_hub.domain.value_objects.identifiers import (
     ConnectorHealthRecordId,
     ConnectorId,
-    TenantId,
+    EntityId,
 )
 
 
 @dataclass
 class ConnectorHealthRecord:
     record_id: ConnectorHealthRecordId
-    tenant_id: TenantId
+    tenant_id: EntityId
     connector_id: ConnectorId
     status: ConnectorHealthStatus
     response_time_ms: int | None
@@ -24,7 +24,7 @@ class ConnectorHealthRecord:
     @classmethod
     def create(
         cls,
-        tenant_id: TenantId,
+        tenant_id: EntityId,
         connector_id: ConnectorId,
         status: ConnectorHealthStatus,
         response_time_ms: int | None,

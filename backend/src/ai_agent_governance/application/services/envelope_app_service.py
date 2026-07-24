@@ -70,7 +70,7 @@ class EnvelopeApplicationService:
 
     async def draft(self, cmd: DraftEnvelopeCommand) -> EnvelopeDTO:
         require_at_least(cmd.actor_roles, AIPostureRole.ENGINEER)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         human = {AuthorizedActionCategory(x) for x in cmd.requires_human_approval_for}
         async with self._uow_factory() as uow:
@@ -93,7 +93,7 @@ class EnvelopeApplicationService:
 
     async def add_action(self, cmd: AddAuthorizedActionCommand) -> EnvelopeDTO:
         require_at_least(cmd.actor_roles, AIPostureRole.ENGINEER)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         async with self._uow_factory() as uow:
             env = await uow.envelopes.find_by_id(
                 AgentOperationalEnvelopeId(cmd.envelope_id), tenant
@@ -110,7 +110,7 @@ class EnvelopeApplicationService:
 
     async def approve(self, cmd: ApproveEnvelopeCommand) -> EnvelopeDTO:
         require_at_least(cmd.actor_roles, AIPostureRole.APPROVER)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         async with self._uow_factory() as uow:
             env = await uow.envelopes.find_by_id(
@@ -130,7 +130,7 @@ class EnvelopeApplicationService:
 
     async def revise(self, cmd: ReviseEnvelopeCommand) -> EnvelopeDTO:
         require_at_least(cmd.actor_roles, AIPostureRole.ENGINEER)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         async with self._uow_factory() as uow:
             env = await uow.envelopes.find_by_id(
@@ -162,7 +162,7 @@ class EnvelopeApplicationService:
 
     async def suspend(self, cmd: SuspendEnvelopeCommand) -> EnvelopeDTO:
         require_at_least(cmd.actor_roles, AIPostureRole.APPROVER)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         async with self._uow_factory() as uow:
             env = await uow.envelopes.find_by_id(
@@ -178,7 +178,7 @@ class EnvelopeApplicationService:
 
     async def retire(self, cmd: RetireEnvelopeCommand) -> EnvelopeDTO:
         require_at_least(cmd.actor_roles, AIPostureRole.ADMIN)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         async with self._uow_factory() as uow:
             env = await uow.envelopes.find_by_id(
@@ -192,8 +192,8 @@ class EnvelopeApplicationService:
             await self._publisher.publish_batch(env.pop_events())
         return _to_dto(env)
 
-    async def advisories(self, tenant_id: UUID, envelope_id: UUID) -> list[AdvisoryDTO]:
-        tenant = TenantId(tenant_id)
+    async def advisories(self, tenant_id: TenantId, envelope_id: UUID) -> list[AdvisoryDTO]:
+        tenant = tenant_id
         async with self._uow_factory() as uow:
             env = await uow.envelopes.find_by_id(AgentOperationalEnvelopeId(envelope_id), tenant)
             if env is None:

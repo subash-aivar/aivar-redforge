@@ -87,7 +87,7 @@ class TestCreateTaskGraph:
     async def test_create_persists_and_returns_dto(self, tenant_id, now) -> None:
         svc, _, __ = make_service(tenant_id)
         cmd = CreateTaskGraphCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             name="APT29 Kill Chain",
             description="Full kill chain simulation",
             engagement_window_seconds=86400,
@@ -101,7 +101,7 @@ class TestCreateTaskGraph:
     async def test_create_empty_name_raises(self, tenant_id, now) -> None:
         svc, _, _ = make_service(tenant_id)
         cmd = CreateTaskGraphCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             name="  ",
             description="",
             engagement_window_seconds=86400,
@@ -114,7 +114,7 @@ class TestCreateTaskGraph:
         svc, _, _ = make_service(tenant_id)
         result = await svc.get_task_graph(
             GetTaskGraphQuery(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 graph_id=uuid4(),
             )
         )
@@ -126,7 +126,7 @@ class TestAddTasksAndDependencies:
     async def test_add_task_increments_count(self, tenant_id, now) -> None:
         svc, _, __ = make_service(tenant_id)
         create_cmd = CreateTaskGraphCommand(
-            tenant_id=tenant_id.value,
+            tenant_id=tenant_id,
             name="Test Graph",
             description="",
             engagement_window_seconds=86400,
@@ -136,7 +136,7 @@ class TestAddTasksAndDependencies:
 
         task_dto = await svc.add_task(
             AddTaskCommand(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 graph_id=graph_id,
                 task_type="OperationTask",
                 name="Initial Access",
@@ -151,7 +151,7 @@ class TestAddTasksAndDependencies:
         assert task_dto.task_type == "OperationTask"
 
         fetched = await svc.get_task_graph(
-            GetTaskGraphQuery(tenant_id=tenant_id.value, graph_id=graph_id)
+            GetTaskGraphQuery(tenant_id=tenant_id, graph_id=graph_id)
         )
         assert fetched is not None
         assert fetched.task_count == 1
@@ -161,7 +161,7 @@ class TestAddTasksAndDependencies:
         svc, _, __ = make_service(tenant_id)
         create_dto = await svc.create_task_graph(
             CreateTaskGraphCommand(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 name="Graph A",
                 description="",
                 engagement_window_seconds=86400,
@@ -171,7 +171,7 @@ class TestAddTasksAndDependencies:
 
         t1_dto = await svc.add_task(
             AddTaskCommand(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 graph_id=graph_id,
                 task_type="OperationTask",
                 name="T1",
@@ -184,7 +184,7 @@ class TestAddTasksAndDependencies:
         )
         t2_dto = await svc.add_task(
             AddTaskCommand(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 graph_id=graph_id,
                 task_type="OperationTask",
                 name="T2",
@@ -197,7 +197,7 @@ class TestAddTasksAndDependencies:
         )
         await svc.add_dependency(
             AddDependencyCommand(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 graph_id=graph_id,
                 predecessor_task_id=t1_dto.task_id,
                 successor_task_id=t2_dto.task_id,
@@ -206,7 +206,7 @@ class TestAddTasksAndDependencies:
         )
 
         fetched = await svc.get_task_graph(
-            GetTaskGraphQuery(tenant_id=tenant_id.value, graph_id=graph_id)
+            GetTaskGraphQuery(tenant_id=tenant_id, graph_id=graph_id)
         )
         assert fetched is not None
         assert fetched.dependency_count == 1
@@ -218,7 +218,7 @@ class TestValidateSignActivate:
         svc, _, __ = make_service(tenant_id)
         create_dto = await svc.create_task_graph(
             CreateTaskGraphCommand(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 name="Kill Chain",
                 description="",
                 engagement_window_seconds=86400,
@@ -229,7 +229,7 @@ class TestValidateSignActivate:
         # Add a task
         await svc.add_task(
             AddTaskCommand(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 graph_id=graph_id,
                 task_type="OperationTask",
                 name="Recon",
@@ -244,7 +244,7 @@ class TestValidateSignActivate:
         # Validate
         result = await svc.validate_task_graph(
             ValidateTaskGraphCommand(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 graph_id=graph_id,
             )
         )
@@ -253,7 +253,7 @@ class TestValidateSignActivate:
         # Sign
         await svc.sign_task_graph(
             SignTaskGraphCommand(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 graph_id=graph_id,
                 signed_by="operator-1",
                 signature="sig-abc",
@@ -263,13 +263,13 @@ class TestValidateSignActivate:
         # Activate
         await svc.activate_task_graph(
             ActivateTaskGraphCommand(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 graph_id=graph_id,
             )
         )
 
         fetched = await svc.get_task_graph(
-            GetTaskGraphQuery(tenant_id=tenant_id.value, graph_id=graph_id)
+            GetTaskGraphQuery(tenant_id=tenant_id, graph_id=graph_id)
         )
         assert fetched is not None
         assert fetched.state == "Active"
@@ -280,7 +280,7 @@ class TestValidateSignActivate:
         svc, _, __ = make_service(tenant_id)
         create_dto = await svc.create_task_graph(
             CreateTaskGraphCommand(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 name="Cyclic Graph",
                 description="",
                 engagement_window_seconds=86400,
@@ -290,7 +290,7 @@ class TestValidateSignActivate:
 
         t1 = await svc.add_task(
             AddTaskCommand(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 graph_id=graph_id,
                 task_type="OperationTask",
                 name="A",
@@ -303,7 +303,7 @@ class TestValidateSignActivate:
         )
         t2 = await svc.add_task(
             AddTaskCommand(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 graph_id=graph_id,
                 task_type="OperationTask",
                 name="B",
@@ -317,7 +317,7 @@ class TestValidateSignActivate:
         # Create cycle: A→B and B→A
         await svc.add_dependency(
             AddDependencyCommand(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 graph_id=graph_id,
                 predecessor_task_id=t1.task_id,
                 successor_task_id=t2.task_id,
@@ -326,7 +326,7 @@ class TestValidateSignActivate:
         )
         await svc.add_dependency(
             AddDependencyCommand(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 graph_id=graph_id,
                 predecessor_task_id=t2.task_id,
                 successor_task_id=t1.task_id,
@@ -336,7 +336,7 @@ class TestValidateSignActivate:
 
         result = await svc.validate_task_graph(
             ValidateTaskGraphCommand(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 graph_id=graph_id,
             )
         )
@@ -350,7 +350,7 @@ class TestExecutionOrderQuery:
         svc, _, __ = make_service(tenant_id)
         create_dto = await svc.create_task_graph(
             CreateTaskGraphCommand(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 name="Diamond",
                 description="",
                 engagement_window_seconds=86400,
@@ -360,7 +360,7 @@ class TestExecutionOrderQuery:
 
         a = await svc.add_task(
             AddTaskCommand(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 graph_id=graph_id,
                 task_type="OperationTask",
                 name="A",
@@ -373,7 +373,7 @@ class TestExecutionOrderQuery:
         )
         b = await svc.add_task(
             AddTaskCommand(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 graph_id=graph_id,
                 task_type="OperationTask",
                 name="B",
@@ -386,7 +386,7 @@ class TestExecutionOrderQuery:
         )
         c = await svc.add_task(
             AddTaskCommand(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 graph_id=graph_id,
                 task_type="OperationTask",
                 name="C",
@@ -399,7 +399,7 @@ class TestExecutionOrderQuery:
         )
         d = await svc.add_task(
             AddTaskCommand(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 graph_id=graph_id,
                 task_type="OperationTask",
                 name="D",
@@ -413,7 +413,7 @@ class TestExecutionOrderQuery:
 
         await svc.add_dependency(
             AddDependencyCommand(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 graph_id=graph_id,
                 predecessor_task_id=a.task_id,
                 successor_task_id=b.task_id,
@@ -422,7 +422,7 @@ class TestExecutionOrderQuery:
         )
         await svc.add_dependency(
             AddDependencyCommand(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 graph_id=graph_id,
                 predecessor_task_id=a.task_id,
                 successor_task_id=c.task_id,
@@ -431,7 +431,7 @@ class TestExecutionOrderQuery:
         )
         await svc.add_dependency(
             AddDependencyCommand(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 graph_id=graph_id,
                 predecessor_task_id=b.task_id,
                 successor_task_id=d.task_id,
@@ -440,7 +440,7 @@ class TestExecutionOrderQuery:
         )
         await svc.add_dependency(
             AddDependencyCommand(
-                tenant_id=tenant_id.value,
+                tenant_id=tenant_id,
                 graph_id=graph_id,
                 predecessor_task_id=c.task_id,
                 successor_task_id=d.task_id,
@@ -449,7 +449,7 @@ class TestExecutionOrderQuery:
         )
 
         order_dto = await svc.get_execution_order(
-            GetExecutionOrderQuery(tenant_id=tenant_id.value, graph_id=graph_id)
+            GetExecutionOrderQuery(tenant_id=tenant_id, graph_id=graph_id)
         )
         assert len(order_dto.layers) == 3
         assert str(a.task_id) in order_dto.layers[0]

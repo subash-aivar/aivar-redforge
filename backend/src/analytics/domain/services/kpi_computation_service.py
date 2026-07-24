@@ -4,12 +4,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from analytics.domain.value_objects.enums import KPIStatus, KPIType
-
-if TYPE_CHECKING:
-    from uuid import UUID
+from analytics.domain.value_objects.identifiers import TenantId
 
 
 @dataclass(frozen=True, slots=True)
@@ -29,7 +27,7 @@ class KPIComputationService:
         self,
         kpi_type: KPIType,
         *,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         events: dict[str, list[dict[str, Any]]],
         period_end: datetime | None = None,
         attck_total: int = 0,

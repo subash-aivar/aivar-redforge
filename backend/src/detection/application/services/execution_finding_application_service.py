@@ -57,7 +57,6 @@ from detection.domain.value_objects.identifiers import (
     DetectionExecutionId,
     DetectionFindingId,
     DetectionRuleId,
-    TenantId,
 )
 from detection.domain.value_objects.keys import TelemetrySourceRef
 from detection.infrastructure.persistence.serialization import (
@@ -186,7 +185,7 @@ class ExecutionFindingApplicationService:
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_uuid(cmd.rule_id, "rule_id")
         validate_str(cmd.source_id, "source_id", max_len=64)
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         rule_id = DetectionRuleId(cmd.rule_id)
         try:
             trigger = ExecutionTrigger(cmd.trigger)
@@ -228,7 +227,7 @@ class ExecutionFindingApplicationService:
     ) -> DetectionExecutionDTO:
         validate_uuid(cmd.tenant_id, "tenant_id")
         validate_uuid(cmd.execution_id, "execution_id")
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         execution_id = DetectionExecutionId(cmd.execution_id)
         now = datetime.now(UTC)
         async with self._uow_factory() as uow:
@@ -292,7 +291,7 @@ class ExecutionFindingApplicationService:
         validate_uuid(cmd.execution_id, "execution_id")
         validate_str(cmd.asset_id, "asset_id", max_len=256)
         validate_str(cmd.signal_id, "signal_id", max_len=256)
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         rule_id = DetectionRuleId(cmd.rule_id)
         execution_id = DetectionExecutionId(cmd.execution_id)
         observed_at = self._parse_dt(cmd.observed_at, "observed_at")
@@ -453,7 +452,7 @@ class ExecutionFindingApplicationService:
     ) -> DetectionFindingDTO:
         validate_uuid(tenant_uuid, "tenant_id")
         validate_uuid(finding_uuid, "finding_id")
-        tenant_id = TenantId(tenant_uuid)
+        tenant_id = tenant_uuid
         finding_id = DetectionFindingId(finding_uuid)
         stamp = now or datetime.now(UTC)
         async with self._uow_factory() as uow:
@@ -482,7 +481,7 @@ class ExecutionFindingApplicationService:
         async with self._uow_factory() as uow:
             execution = await uow.detection_executions.find_by_id(
                 DetectionExecutionId(query.execution_id),
-                TenantId(query.tenant_id),
+                query.tenant_id,
             )
             if execution is None:
                 raise ApplicationNotFoundError(
@@ -494,7 +493,7 @@ class ExecutionFindingApplicationService:
         validate_uuid(query.tenant_id, "tenant_id")
         limit = validate_limit(query.limit)
         offset = validate_offset(query.offset)
-        tenant_id = TenantId(query.tenant_id)
+        tenant_id = query.tenant_id
         async with self._uow_factory() as uow:
             if query.state:
                 try:
@@ -519,7 +518,7 @@ class ExecutionFindingApplicationService:
         async with self._uow_factory() as uow:
             finding = await uow.detection_findings.find_by_id(
                 DetectionFindingId(query.finding_id),
-                TenantId(query.tenant_id),
+                query.tenant_id,
             )
             if finding is None:
                 raise ApplicationNotFoundError(
@@ -531,7 +530,7 @@ class ExecutionFindingApplicationService:
         validate_uuid(query.tenant_id, "tenant_id")
         limit = validate_limit(query.limit)
         offset = validate_offset(query.offset)
-        tenant_id = TenantId(query.tenant_id)
+        tenant_id = query.tenant_id
         async with self._uow_factory() as uow:
             if query.asset_id:
                 items = await uow.detection_findings.find_by_asset(

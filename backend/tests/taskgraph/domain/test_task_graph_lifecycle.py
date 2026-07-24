@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from uuid import uuid4
-
 import pytest
 
 from taskgraph.domain.events.task_graph_events import (
@@ -70,7 +68,7 @@ class TestAddRemoveTasks:
     def test_wrong_tenant_raises(self, tenant_id, now) -> None:
         graph = make_task_graph(tenant_id=tenant_id, now=now, pop_events=True)
         task = make_operation_task("Task A")
-        other_tenant = TenantId(uuid4())
+        other_tenant = TenantId.generate()
         with pytest.raises(TenantMismatch):
             graph.add_task(other_tenant, task, now)
 

@@ -4,10 +4,12 @@ from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
 
+from incident.domain.value_objects.identifiers import TenantId
+
 
 @dataclass(frozen=True, slots=True)
 class DeclareIncidentCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     title: str
     description: str
     trigger_type: str
@@ -20,7 +22,7 @@ class DeclareIncidentCommand:
 
 @dataclass(frozen=True, slots=True)
 class ClassifyIncidentCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     incident_id: UUID
     severity: str
     method: str
@@ -30,7 +32,7 @@ class ClassifyIncidentCommand:
 
 @dataclass(frozen=True, slots=True)
 class ReclassifyIncidentCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     incident_id: UUID
     new_severity: str
     justification: str
@@ -40,7 +42,7 @@ class ReclassifyIncidentCommand:
 
 @dataclass(frozen=True, slots=True)
 class AuthorizeContainmentCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     incident_id: UUID
     action_type: str
     description: str
@@ -50,7 +52,7 @@ class AuthorizeContainmentCommand:
 
 @dataclass(frozen=True, slots=True)
 class CompleteContainmentCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     action_id: UUID
     evidence_ref: str
     actor: str
@@ -59,7 +61,7 @@ class CompleteContainmentCommand:
 
 @dataclass(frozen=True, slots=True)
 class FailContainmentCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     action_id: UUID
     failure_reason: str
     actor: str
@@ -68,7 +70,7 @@ class FailContainmentCommand:
 
 @dataclass(frozen=True, slots=True)
 class SubmitEradicationCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     incident_id: UUID
     assertion: str
     evidence_ids: tuple[str, ...]
@@ -78,7 +80,7 @@ class SubmitEradicationCommand:
 
 @dataclass(frozen=True, slots=True)
 class VerifyEradicationCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     incident_id: UUID
     actor: str
     roles: tuple[str, ...]
@@ -86,7 +88,7 @@ class VerifyEradicationCommand:
 
 @dataclass(frozen=True, slots=True)
 class CloseIncidentCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     incident_id: UUID
     resolution_type: str
     actor: str
@@ -97,7 +99,7 @@ class CloseIncidentCommand:
 
 @dataclass(frozen=True, slots=True)
 class AddRecoveryMilestoneCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     incident_id: UUID
     title: str
     description: str
@@ -109,7 +111,7 @@ class AddRecoveryMilestoneCommand:
 
 @dataclass(frozen=True, slots=True)
 class CompleteRecoveryMilestoneCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     incident_id: UUID
     milestone_id: UUID
     notes: str
@@ -120,7 +122,7 @@ class CompleteRecoveryMilestoneCommand:
 
 @dataclass(frozen=True, slots=True)
 class LogCommunicationCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     incident_id: UUID
     content: str
     communication_type: str

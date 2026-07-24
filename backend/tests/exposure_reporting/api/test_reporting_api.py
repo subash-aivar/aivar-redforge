@@ -14,6 +14,7 @@ from exposure_reporting.infrastructure.acl.exposure_data_query_adapter import (
 from exposure_reporting.infrastructure.container import ExposureReportingContainer
 from redforge.api.security import TenantContext, get_tenant_context
 from redforge.domain.identity.value_objects import MembershipRole, Permission
+from redforge.shared.identifiers import EntityId
 
 
 def _override_tenant_context(
@@ -49,7 +50,7 @@ def app() -> FastAPI:
 
 @pytest.mark.asyncio
 async def test_reporting_api_flow(app: FastAPI) -> None:
-    tenant = str(uuid4())
+    tenant = str(EntityId.generate())
     asset = str(uuid4())
     headers_eng = {
         "X-Tenant-Id": tenant,

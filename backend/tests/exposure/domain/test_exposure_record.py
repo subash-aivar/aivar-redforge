@@ -25,7 +25,7 @@ def _now() -> datetime:
 
 
 def _record(tenant: TenantId | None = None) -> ExposureRecord:
-    tenant = tenant or TenantId(uuid4())
+    tenant = tenant or TenantId.generate()
     return ExposureRecord.create(
         ExposureRecordId.generate(),
         tenant,

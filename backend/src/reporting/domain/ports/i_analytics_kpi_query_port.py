@@ -4,10 +4,8 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from uuid import UUID
+from reporting.domain.value_objects.identifiers import TenantId
 
 
 @dataclass(frozen=True, slots=True)
@@ -37,4 +35,4 @@ class AnalyticsKPIBundleDTO:
 
 class IAnalyticsKPIQueryPort(ABC):
     @abstractmethod
-    async def load_kpi_bundle(self, tenant_id: UUID) -> AnalyticsKPIBundleDTO: ...
+    async def load_kpi_bundle(self, tenant_id: TenantId) -> AnalyticsKPIBundleDTO: ...

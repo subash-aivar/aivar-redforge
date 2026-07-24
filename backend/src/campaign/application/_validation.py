@@ -4,10 +4,15 @@ from __future__ import annotations
 
 from uuid import UUID
 
+from ulid import ULID
+
 from campaign.application.exceptions import ApplicationValidationError
+from redforge.shared.identifiers import EntityId
 
 
-def validate_uuid(value: UUID, field: str) -> None:
+def validate_uuid(value: UUID | EntityId, field: str) -> None:
+    if isinstance(value, (EntityId, ULID)):
+        return
     if value.int == 0:
         raise ApplicationValidationError(f"'{field}' must be a valid non-nil UUID")
 

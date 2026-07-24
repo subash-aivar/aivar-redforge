@@ -5,10 +5,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from uuid import UUID  # noqa: TC003 — runtime type for frozen dataclass fields
 
+from credential_vault.domain.value_objects.identifiers import TenantId
+
 
 @dataclass(frozen=True, slots=True)
 class RegisterVaultBackendCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     principal_id: UUID
     name: str
     backend_type: str
@@ -18,6 +20,6 @@ class RegisterVaultBackendCommand:
 
 @dataclass(frozen=True, slots=True)
 class DeleteVaultBackendCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     backend_id: UUID
     principal_id: UUID

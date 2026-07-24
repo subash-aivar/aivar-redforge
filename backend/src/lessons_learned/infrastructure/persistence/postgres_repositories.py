@@ -72,7 +72,7 @@ class PgLessonsLearnedRepository:
     async def _load(self, session: AsyncSession, row: LessonsLearnedRecordModel) -> LessonsLearned:
         ll = LessonsLearned(
             LessonsLearnedId(row.ll_id),
-            TenantId(row.tenant_id),
+            TenantId.from_uuid(row.tenant_id),
             str(row.incident_id),
             LLStatus(row.status),
             row.created_at,
@@ -238,7 +238,7 @@ def _report_to_row(report: PostIncidentReport) -> PostIncidentReportModel:
 def _row_to_report(row: PostIncidentReportModel) -> PostIncidentReport:
     report = PostIncidentReport(
         PostIncidentReportId(row.report_id),
-        TenantId(row.tenant_id),
+        TenantId.from_uuid(row.tenant_id),
         str(row.incident_id),
         LessonsLearnedId(row.lessons_learned_id),
         ReportFormat(row.format),

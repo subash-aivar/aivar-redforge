@@ -13,7 +13,6 @@ from exposure_reporting.domain.value_objects.enums import ReportingRole
 from exposure_reporting.domain.value_objects.identifiers import TenantId
 
 if TYPE_CHECKING:
-    from uuid import UUID
 
     from exposure_reporting.application.ports.i_exposure_data_query_port import (
         IExposureDataQueryPort,
@@ -53,7 +52,7 @@ class ProjectionRebuildService:
         self._graph = graph_port
 
     async def rebuild_read_models(
-        self, tenant_id: UUID, actor_roles: tuple[str, ...]
+        self, tenant_id: TenantId, actor_roles: tuple[str, ...]
     ) -> dict[str, object]:
         require_at_least(actor_roles, ReportingRole.ADMIN)
         now = datetime.now(UTC)
@@ -79,7 +78,7 @@ class ProjectionRebuildService:
         return {"ok": True, "kpi": kpi}
 
     async def repair_projections(
-        self, tenant_id: UUID, actor_roles: tuple[str, ...]
+        self, tenant_id: TenantId, actor_roles: tuple[str, ...]
     ) -> dict[str, object]:
         """Repair: clear KPI then rebuild from live exposure data."""
         require_at_least(actor_roles, ReportingRole.ADMIN)
@@ -88,10 +87,10 @@ class ProjectionRebuildService:
         return {"ok": True, "repaired": True, **result}
 
     async def sync_graph_from_reports(
-        self, tenant_id: UUID, actor_roles: tuple[str, ...]
+        self, tenant_id: TenantId, actor_roles: tuple[str, ...]
     ) -> dict[str, object]:
         require_at_least(actor_roles, ReportingRole.ADMIN)
-        reports = await self._reports.list_by_tenant(TenantId(tenant_id))
+        reports = await self._reports.list_by_tenant(tenant_id)
         upserted = 0
         for report in reports:
             await self._graph.upsert_exposure_node(

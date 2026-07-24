@@ -26,7 +26,7 @@ from detection.domain.value_objects.identifiers import TenantId
 
 
 def _tid() -> TenantId:
-    return TenantId(uuid4())
+    return TenantId.generate()
 
 
 @pytest.mark.asyncio

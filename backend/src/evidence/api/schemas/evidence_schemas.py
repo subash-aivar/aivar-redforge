@@ -81,7 +81,7 @@ class ExecutionEvidenceResponse(BaseModel):
     def from_dto(cls, dto: ExecutionEvidenceDTO) -> ExecutionEvidenceResponse:
         return cls(
             evidence_id=dto.evidence_id,
-            tenant_id=dto.tenant_id,
+            tenant_id=str(dto.tenant_id),
             evidence_type=dto.evidence_type,
             payload_hash=dto.payload_hash,
             storage_ref=dto.storage_ref,
@@ -138,7 +138,7 @@ class EvidenceChainResponse(BaseModel):
     def from_dto(cls, dto: EvidenceChainDTO) -> EvidenceChainResponse:
         return cls(
             chain_id=dto.chain_id,
-            tenant_id=dto.tenant_id,
+            tenant_id=str(dto.tenant_id),
             operation_id=dto.operation_id,
             engagement_id=dto.engagement_id,
             state=dto.state,

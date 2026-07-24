@@ -9,7 +9,6 @@ from ai_supply_chain.domain.services.ai_discovery_scan_coordinator import (
     AIDiscoveryScanCoordinator,
 )
 from ai_supply_chain.domain.value_objects.enums import AIPostureRole, DiscoverySourceType
-from ai_supply_chain.domain.value_objects.identifiers import TenantId
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -61,7 +60,7 @@ class DiscoveryApplicationService:
 
     async def run_scan(self, cmd: RunDiscoveryScanCommand) -> DiscoveryScanRunDTO:
         require_at_least(cmd.actor_roles, AIPostureRole.ENGINEER)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         sources = [DiscoverySourceType(s) for s in cmd.sources] or list(DiscoverySourceType)
         async with self._uow_factory() as uow:

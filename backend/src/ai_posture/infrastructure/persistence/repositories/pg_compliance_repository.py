@@ -104,7 +104,7 @@ class PgComplianceMappingRepository(IAIComplianceMappingRepository):
             )
         return AIComplianceMapping(
             mapping_id=AIComplianceMappingId(row.id),
-            tenant_id=TenantId(row.tenant_id),
+            tenant_id=TenantId.from_uuid(row.tenant_id),
             ai_system_asset_id=AISystemAssetId(row.ai_system_asset_id),
             framework_ref=AIComplianceFrameworkRef(
                 ComplianceFrameworkId(row.framework_id),

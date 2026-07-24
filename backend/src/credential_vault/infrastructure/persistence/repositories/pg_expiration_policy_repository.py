@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 def _to_domain(row: ExpirationPolicyModel) -> ExpirationPolicy:
     return ExpirationPolicy(
         policy_id=ExpirationPolicyId(row.id),
-        tenant_id=TenantId(row.tenant_id),
+        tenant_id=TenantId.from_uuid(row.tenant_id),
         name=row.name,
         ttl_days=row.ttl_days,
         warn_days_before=row.warn_days_before,
@@ -61,7 +61,7 @@ class PgExpirationPolicyRepository(IExpirationPolicyRepository):
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
-    async def _current_row_version(self, policy_id: UUID, tenant_id: UUID) -> int:
+    async def _current_row_version(self, policy_id: UUID, tenant_id: TenantId) -> int:
         stmt = select(ExpirationPolicyModel.row_version).where(
             ExpirationPolicyModel.id == policy_id,
             ExpirationPolicyModel.tenant_id == tenant_id,
@@ -70,7 +70,7 @@ class PgExpirationPolicyRepository(IExpirationPolicyRepository):
         row_version = result.scalar_one_or_none()
         return row_version if row_version is not None else -1
 
-    async def _name_conflict(self, name: str, tenant_id: UUID, exclude_id: UUID | None) -> bool:
+    async def _name_conflict(self, name: str, tenant_id: TenantId, exclude_id: UUID | None) -> bool:
         stmt = select(ExpirationPolicyModel.id).where(
             ExpirationPolicyModel.name == name,
             ExpirationPolicyModel.tenant_id == tenant_id,

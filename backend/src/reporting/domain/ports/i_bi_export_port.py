@@ -7,15 +7,14 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
-if TYPE_CHECKING:
-    from uuid import UUID
+from reporting.domain.value_objects.identifiers import TenantId
 
 
 @dataclass(frozen=True, slots=True)
 class BIExportRequest:
-    tenant_id: UUID
+    tenant_id: TenantId
     dataset_ref: str
     page: int
     page_size: int

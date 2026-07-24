@@ -26,10 +26,10 @@ class ReportExportService:
         self._reports = report_repo
 
     async def export_json(
-        self, tenant_id: UUID, report_id: UUID, actor_roles: tuple[str, ...]
+        self, tenant_id: TenantId, report_id: UUID, actor_roles: tuple[str, ...]
     ) -> str:
         require_at_least(actor_roles, ReportingRole.VIEWER)
-        report = await self._reports.get(TenantId(tenant_id), ExposureReportId(report_id))
+        report = await self._reports.get(tenant_id, ExposureReportId(report_id))
         if report is None:
             raise ApplicationNotFoundError(str(report_id))
         payload = {
@@ -46,10 +46,10 @@ class ReportExportService:
         return json.dumps(payload, sort_keys=True, indent=2)
 
     async def export_markdown(
-        self, tenant_id: UUID, report_id: UUID, actor_roles: tuple[str, ...]
+        self, tenant_id: TenantId, report_id: UUID, actor_roles: tuple[str, ...]
     ) -> str:
         require_at_least(actor_roles, ReportingRole.VIEWER)
-        report = await self._reports.get(TenantId(tenant_id), ExposureReportId(report_id))
+        report = await self._reports.get(tenant_id, ExposureReportId(report_id))
         if report is None:
             raise ApplicationNotFoundError(str(report_id))
         lines = [

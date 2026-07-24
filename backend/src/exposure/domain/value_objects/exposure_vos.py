@@ -7,6 +7,7 @@ from decimal import Decimal
 from uuid import UUID
 
 from exposure.domain.value_objects.enums import RiskAmplifierType, SignalDomain
+from exposure.domain.value_objects.identifiers import TenantId
 
 
 @dataclass(frozen=True, slots=True)
@@ -58,7 +59,7 @@ class AmplifierWeight:
 class ExposureIdentityKey:
     """Canonical ExposureRecord identity (ADR-M32-001)."""
 
-    tenant_id: UUID
+    tenant_id: TenantId
     asset_ref_id: UUID
     signal_domain: SignalDomain
     signal_source_ref: str

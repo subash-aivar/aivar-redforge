@@ -4,8 +4,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from exposure.domain.value_objects.identifiers import TenantId
+
 if TYPE_CHECKING:
-    from uuid import UUID
 
     from exposure.application.services.threat_actor_match_sync_service import (
         ThreatActorMatchSyncService,
@@ -21,7 +22,7 @@ class ThreatActorTargetingSubscriber:
     async def on_threat_actor_asset_class_targeting_updated(
         self,
         *,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         event_id: str,
         threat_actor_ref: str,
         targeted_cve_ids: list[str],

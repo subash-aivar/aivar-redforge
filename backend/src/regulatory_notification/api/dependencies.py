@@ -5,6 +5,7 @@ from uuid import UUID
 from fastapi import Depends, Header, Request
 
 from redforge.api.security import TenantContext, get_tenant_context
+from redforge.shared.identifiers import EntityId
 from regulatory_notification.infrastructure.container import RegulatoryNotificationContainer
 
 
@@ -26,7 +27,7 @@ def tenant_id_header(tenant: TenantContext = Depends(get_tenant_context)) -> UUI
     server-side, so organization_id can no longer be spoofed via a
     request header.
     """
-    return UUID(tenant.organization_id)
+    return EntityId.from_string(tenant.organization_id)
 
 
 def roles_header(

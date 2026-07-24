@@ -87,7 +87,7 @@ class ComplianceMappingApplicationService:
 
     async def evaluate(self, cmd: EvaluateComplianceMappingCommand) -> list[AIComplianceMappingDTO]:
         require_at_least(cmd.actor_roles, AIPostureRole.ENGINEER)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         results: list[AIComplianceMappingDTO] = []
         async with self._uow_factory() as uow:
@@ -135,7 +135,7 @@ class ComplianceMappingApplicationService:
         self, cmd: RecordComplianceAttestationCommand
     ) -> AIComplianceMappingDTO:
         require_at_least(cmd.actor_roles, AIPostureRole.ANALYST)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         async with self._uow_factory() as uow:
             mapping = await uow.compliance_mappings.find_by_id(
@@ -157,14 +157,14 @@ class ComplianceMappingApplicationService:
             await self._publisher.publish_batch(mapping.pop_events())
         return _to_dto(mapping)
 
-    async def list_for_asset(self, tenant_id: UUID, asset_id: UUID) -> list[AIComplianceMappingDTO]:
-        tenant = TenantId(tenant_id)
+    async def list_for_asset(self, tenant_id: TenantId, asset_id: UUID) -> list[AIComplianceMappingDTO]:
+        tenant = tenant_id
         async with self._uow_factory() as uow:
             items = await uow.compliance_mappings.find_by_asset(AISystemAssetId(asset_id), tenant)
         return [_to_dto(m) for m in items]
 
-    async def gap_count_for_asset(self, tenant_id: UUID, asset_id: UUID) -> int:
-        tenant = TenantId(tenant_id)
+    async def gap_count_for_asset(self, tenant_id: TenantId, asset_id: UUID) -> int:
+        tenant = tenant_id
         async with self._uow_factory() as uow:
             return await uow.compliance_mappings.count_gaps_for_asset(
                 AISystemAssetId(asset_id), tenant

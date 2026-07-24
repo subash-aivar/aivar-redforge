@@ -82,7 +82,9 @@ class AutomationApplicationService:
         self._idempotency: set[str] = set()
 
     def _tenant(self, value: UUID) -> TenantId:
-        return TenantId(value)
+        if isinstance(value, TenantId):
+            return value
+        return TenantId.from_string(str(value))
 
     def _dto(self, ex: AutomationExecution) -> AutomationExecutionDTO:
         return AutomationExecutionDTO(
@@ -145,7 +147,7 @@ class AutomationApplicationService:
         return self._dto(ex)
 
     async def run_pending_step_loop(
-        self, tenant_id: UUID, execution_id: UUID
+        self, tenant_id: TenantId, execution_id: UUID
     ) -> AutomationExecutionDTO:
         tenant = self._tenant(tenant_id)
         ex = await self._executions.get(AutomationExecutionId(execution_id), tenant)
@@ -369,7 +371,7 @@ class AutomationApplicationService:
         return self._dto(ex)
 
     async def get(
-        self, tenant_id: UUID, execution_id: UUID, roles: tuple[str, ...]
+        self, tenant_id: TenantId, execution_id: UUID, roles: tuple[str, ...]
     ) -> AutomationExecutionDTO:
         require_any(roles, "playbook:analyst", "automation:operator", "soc:commander")
         ex = await self._executions.get(
@@ -381,7 +383,7 @@ class AutomationApplicationService:
 
     async def list_executions(
         self,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         roles: tuple[str, ...],
         *,
         status_filter: str | None = None,
@@ -400,7 +402,7 @@ class AutomationApplicationService:
         return [self._dto(r) for r in rows]
 
     async def action_records(
-        self, tenant_id: UUID, execution_id: UUID, roles: tuple[str, ...]
+        self, tenant_id: TenantId, execution_id: UUID, roles: tuple[str, ...]
     ) -> list[AutomatedActionRecordDTO]:
         require_any(roles, "playbook:analyst", "soc:commander")
         rows = await self._records.find_by_execution(
@@ -421,7 +423,7 @@ class AutomationApplicationService:
         ]
 
     async def pending_escalations(
-        self, tenant_id: UUID, roles: tuple[str, ...]
+        self, tenant_id: TenantId, roles: tuple[str, ...]
     ) -> list[AutomationExecutionDTO]:
         require_any(roles, "soc:commander", "incident:ciso", "playbook:analyst")
         rows = await self._executions.find_by_status(

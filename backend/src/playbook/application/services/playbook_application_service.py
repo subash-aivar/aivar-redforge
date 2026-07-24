@@ -84,7 +84,9 @@ class PlaybookApplicationService:
         self._kill = KillSwitchService()
 
     def _tenant(self, value: UUID) -> TenantId:
-        return TenantId(value)
+        if isinstance(value, TenantId):
+            return value
+        return TenantId.from_string(str(value))
 
     def _to_dto(self, pb: Playbook) -> PlaybookDTO:
         return PlaybookDTO(
@@ -373,7 +375,7 @@ class PlaybookApplicationService:
         return self._policy_dto(policy)
 
     async def get_playbook(
-        self, tenant_id: UUID, playbook_id: UUID, roles: tuple[str, ...]
+        self, tenant_id: TenantId, playbook_id: UUID, roles: tuple[str, ...]
     ) -> PlaybookDTO:
         require_any(
             roles, "playbook:analyst", "playbook:engineer", "soc:commander", "incident:ciso"
@@ -386,7 +388,7 @@ class PlaybookApplicationService:
 
     async def list_playbooks(
         self,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         roles: tuple[str, ...],
         *,
         status_filter: str | None = None,
@@ -401,7 +403,7 @@ class PlaybookApplicationService:
         )
         return [self._to_dto(r) for r in rows]
 
-    async def get_policy(self, tenant_id: UUID, roles: tuple[str, ...]) -> AutomationPolicyDTO:
+    async def get_policy(self, tenant_id: TenantId, roles: tuple[str, ...]) -> AutomationPolicyDTO:
         require_any(roles, "playbook:analyst", "soc:commander", "incident:ciso")
         policy = await self._policies.get_or_create_default(self._tenant(tenant_id))
         return self._policy_dto(policy)
@@ -416,7 +418,7 @@ class PlaybookApplicationService:
         )
 
     async def get_version(
-        self, tenant_id: UUID, playbook_id: UUID, version_number: int, roles: tuple[str, ...]
+        self, tenant_id: TenantId, playbook_id: UUID, version_number: int, roles: tuple[str, ...]
     ) -> PlaybookVersionDTO:
         require_any(roles, "playbook:analyst", "playbook:engineer")
         tenant = self._tenant(tenant_id)

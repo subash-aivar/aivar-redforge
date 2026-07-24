@@ -28,7 +28,8 @@ from credential_vault.domain.events.backend_events import (
 from credential_vault.domain.exceptions.domain_exceptions import AccessDenied
 from credential_vault.domain.ports.i_permission_port import IPermissionPort
 from credential_vault.domain.value_objects.audit_types import VaultBackendType
-from credential_vault.domain.value_objects.identifiers import TenantId, VaultBackendId
+from credential_vault.domain.value_objects.identifiers import VaultBackendId
+from redforge.shared.identifiers import EntityId
 
 
 @pytest.fixture
@@ -166,8 +167,8 @@ async def test_delete_vault_backend_success(
     mock_uow: AsyncMock,
     mock_event_publisher: AsyncMock,
 ) -> None:
-    tenant_uuid = uuid4()
-    backend = make_vault_backend(tenant_id=TenantId(tenant_uuid), name="to-delete")
+    tenant_uuid = EntityId.generate()
+    backend = make_vault_backend(tenant_id=tenant_uuid, name="to-delete")
     mock_uow.vault_backends.get_by_id.return_value = backend
     cmd = DeleteVaultBackendCommand(
         tenant_id=tenant_uuid,
@@ -179,11 +180,11 @@ async def test_delete_vault_backend_success(
 
     mock_uow.vault_backends.get_by_id.assert_awaited_once_with(
         VaultBackendId(backend.backend_id.value),
-        TenantId(tenant_uuid),
+        tenant_uuid,
     )
     mock_uow.vault_backends.delete.assert_awaited_once_with(
         VaultBackendId(backend.backend_id.value),
-        TenantId(tenant_uuid),
+        tenant_uuid,
     )
     mock_uow.commit.assert_awaited_once()
     events = mock_event_publisher.publish_batch.await_args.args[0]
@@ -198,7 +199,7 @@ async def test_delete_vault_backend_access_denied(
 ) -> None:
     mock_permission_port.has_permission.return_value = False
     cmd = DeleteVaultBackendCommand(
-        tenant_id=uuid4(),
+        tenant_id=EntityId.generate(),
         backend_id=uuid4(),
         principal_id=uuid4(),
     )
@@ -233,8 +234,8 @@ async def test_delete_vault_backend_publish_failure_nonfatal(
     mock_uow: AsyncMock,
     mock_event_publisher: AsyncMock,
 ) -> None:
-    tenant_uuid = uuid4()
-    backend = make_vault_backend(tenant_id=TenantId(tenant_uuid))
+    tenant_uuid = EntityId.generate()
+    backend = make_vault_backend(tenant_id=tenant_uuid)
     mock_uow.vault_backends.get_by_id.return_value = backend
     mock_event_publisher.publish_batch.side_effect = RuntimeError("broker down")
     cmd = DeleteVaultBackendCommand(
@@ -256,8 +257,8 @@ async def test_get_vault_backend_success(
     service: VaultBackendApplicationService,
     mock_uow: AsyncMock,
 ) -> None:
-    tenant_uuid = uuid4()
-    backend = make_vault_backend(tenant_id=TenantId(tenant_uuid), name="lookup")
+    tenant_uuid = EntityId.generate()
+    backend = make_vault_backend(tenant_id=tenant_uuid, name="lookup")
     mock_uow.vault_backends.get_by_id.return_value = backend
     qry = GetVaultBackendQuery(
         tenant_id=tenant_uuid,
@@ -281,7 +282,7 @@ async def test_get_vault_backend_access_denied(
 ) -> None:
     mock_permission_port.has_permission.return_value = False
     qry = GetVaultBackendQuery(
-        tenant_id=uuid4(),
+        tenant_id=EntityId.generate(),
         backend_id=uuid4(),
         principal_id=uuid4(),
     )
@@ -300,10 +301,10 @@ async def test_list_vault_backends_success(
     service: VaultBackendApplicationService,
     mock_uow: AsyncMock,
 ) -> None:
-    tenant_uuid = uuid4()
+    tenant_uuid = EntityId.generate()
     backends = [
-        make_vault_backend(tenant_id=TenantId(tenant_uuid), name="a"),
-        make_vault_backend(tenant_id=TenantId(tenant_uuid), name="b"),
+        make_vault_backend(tenant_id=tenant_uuid, name="a"),
+        make_vault_backend(tenant_id=tenant_uuid, name="b"),
     ]
     mock_uow.vault_backends.list_by_tenant.return_value = backends
     qry = ListVaultBackendsQuery(tenant_id=tenant_uuid, principal_id=uuid4())
@@ -313,7 +314,7 @@ async def test_list_vault_backends_success(
     assert len(result) == 2
     assert {dto.name for dto in result} == {"a", "b"}
     assert all(not hasattr(dto, "config") for dto in result)
-    mock_uow.vault_backends.list_by_tenant.assert_awaited_once_with(TenantId(tenant_uuid))
+    mock_uow.vault_backends.list_by_tenant.assert_awaited_once_with(tenant_uuid)
     mock_uow.commit.assert_not_called()
 
 
@@ -323,7 +324,7 @@ async def test_list_vault_backends_access_denied(
     mock_permission_port: AsyncMock,
 ) -> None:
     mock_permission_port.has_permission.return_value = False
-    qry = ListVaultBackendsQuery(tenant_id=uuid4(), principal_id=uuid4())
+    qry = ListVaultBackendsQuery(tenant_id=EntityId.generate(), principal_id=uuid4())
 
     with pytest.raises(AccessDenied) as exc_info:
         await service.list_vault_backends(qry)

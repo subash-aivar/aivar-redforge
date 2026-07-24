@@ -204,7 +204,7 @@ class PgEnvelopeRepository(IAgentOperationalEnvelopeRepository):
             )
         return AgentOperationalEnvelope(
             envelope_id=AgentOperationalEnvelopeId(row.id),
-            tenant_id=TenantId(row.tenant_id),
+            tenant_id=TenantId.from_uuid(row.tenant_id),
             ai_system_asset_id=AISystemAssetId(row.ai_system_asset_id),
             state=EnvelopeState(row.state),
             envelope_version=row.envelope_version,

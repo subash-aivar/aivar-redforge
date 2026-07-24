@@ -6,9 +6,9 @@ from typing import TYPE_CHECKING
 
 from campaign.domain.exceptions.domain_exceptions import TargetResolutionFailed
 from campaign.domain.value_objects.campaign_vos import SelectedTargetSet
+from campaign.domain.value_objects.identifiers import TenantId
 
 if TYPE_CHECKING:
-    from uuid import UUID
 
     from campaign.domain.ports.i_engagement_query_port import IEngagementQueryPort
     from campaign.domain.ports.i_inventory_query_port import IInventoryQueryPort
@@ -30,7 +30,7 @@ class TargetResolutionService:
         self,
         criteria: list[TargetSelectionRule],
         engagement_ref: EngagementRef,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         inventory_port: IInventoryQueryPort,
         engagement_port: IEngagementQueryPort,
     ) -> SelectedTargetSet:

@@ -4,17 +4,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
-from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from uuid import UUID
+from exposure.domain.value_objects.identifiers import TenantId
 
 STALE_AFTER = timedelta(hours=48)
 
 
 @dataclass(slots=True)
 class ThreatActorMatchCache:
-    tenant_id: UUID
+    tenant_id: TenantId
     entries: dict[str, list[str]] = field(default_factory=dict)  # cve → actors
     asset_class_entries: dict[str, list[str]] = field(default_factory=dict)
     technique_entries: dict[str, list[str]] = field(default_factory=dict)  # ATT&CK/TTP

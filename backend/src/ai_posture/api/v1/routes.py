@@ -41,6 +41,7 @@ from ai_posture.application.exceptions import (
     ApplicationValidationError,
 )
 from ai_posture.domain.exceptions.domain_exceptions import InventoryAssetNotFound
+from ai_posture.domain.value_objects.identifiers import TenantId
 from ai_posture.infrastructure.container import AIPostureContainer
 
 router = APIRouter(prefix="/ai-posture", tags=["ai-posture"])
@@ -59,7 +60,7 @@ def _map_error(exc: Exception) -> HTTPException:
 @router.post("/assets")
 async def register_asset(
     body: RegisterAssetRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AIPostureContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -83,7 +84,7 @@ async def register_asset(
 async def classify_asset(
     asset_id: UUID,
     body: ClassifyAssetRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AIPostureContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -105,7 +106,7 @@ async def classify_asset(
 async def assign_owner(
     asset_id: UUID,
     body: AssignOwnerRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AIPostureContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -127,7 +128,7 @@ async def assign_owner(
 @router.post("/assets/{asset_id}/approve")
 async def approve_asset(
     asset_id: UUID,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AIPostureContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -145,7 +146,7 @@ async def approve_asset(
 @router.post("/assets/{asset_id}/decommission")
 async def decommission_asset(
     asset_id: UUID,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AIPostureContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -166,7 +167,7 @@ async def decommission_asset(
 @router.get("/assets/{asset_id}")
 async def get_asset(
     asset_id: UUID,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     container: AIPostureContainer = Depends(get_container),
 ) -> dict[str, Any]:
     try:
@@ -179,7 +180,7 @@ async def get_asset(
 @router.post("/shadow-alerts")
 async def raise_alert(
     body: RaiseAlertRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AIPostureContainer = Depends(get_container),
 ) -> dict[str, Any] | None:
@@ -204,7 +205,7 @@ async def raise_alert(
 async def triage_alert(
     alert_id: UUID,
     body: TriageAlertRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AIPostureContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -226,7 +227,7 @@ async def triage_alert(
 @router.post("/shadow-alerts/bulk-triage")
 async def bulk_triage(
     body: BulkTriageRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AIPostureContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -250,7 +251,7 @@ async def bulk_triage(
 @router.post("/shadow-alerts/bulk-resolve")
 async def bulk_resolve(
     body: BulkResolveRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AIPostureContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -272,7 +273,7 @@ async def bulk_resolve(
 
 @router.get("/shadow-alerts/backlog-age")
 async def backlog_age(
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     container: AIPostureContainer = Depends(get_container),
 ) -> dict[str, Any]:
     dto = await container.alert_service.triage_backlog_age(tenant_id)
@@ -282,7 +283,7 @@ async def backlog_age(
 @router.put("/settings/discovery-only-mode")
 async def set_discovery_only(
     body: SetDiscoveryOnlyModeRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AIPostureContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -300,7 +301,7 @@ async def set_discovery_only(
 @router.post("/assets/{asset_id}/threat-profile")
 async def create_threat_profile(
     asset_id: UUID,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AIPostureContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -317,7 +318,7 @@ async def create_threat_profile(
 async def assess_threat_profile(
     asset_id: UUID,
     body: AssessThreatRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AIPostureContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -338,7 +339,7 @@ async def assess_threat_profile(
 @router.post("/assets/{asset_id}/risk-score/compute")
 async def compute_risk_score(
     asset_id: UUID,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AIPostureContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -355,7 +356,7 @@ async def compute_risk_score(
 @router.get("/assets/{asset_id}/risk-score")
 async def get_risk_score(
     asset_id: UUID,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     container: AIPostureContainer = Depends(get_container),
 ) -> dict[str, Any] | None:
     """Read cached snapshot only — never computes synchronously."""
@@ -370,7 +371,7 @@ async def get_risk_score(
 async def evaluate_compliance(
     asset_id: UUID,
     framework_id: str,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AIPostureContainer = Depends(get_container),
 ) -> list[dict[str, Any]]:
@@ -398,7 +399,7 @@ async def attest_compliance(
     attestor_id: str,
     satisfied: bool = True,
     notes: str = "",
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AIPostureContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -425,7 +426,7 @@ async def attest_compliance(
 @router.get("/assets/{asset_id}/compliance")
 async def list_compliance(
     asset_id: UUID,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     container: AIPostureContainer = Depends(get_container),
 ) -> list[dict[str, Any]]:
     items = await container.compliance_service.list_for_asset(tenant_id, asset_id)
@@ -434,7 +435,7 @@ async def list_compliance(
 
 @router.get("/dashboards/inventory")
 async def inventory_dashboard(
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AIPostureContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -450,7 +451,7 @@ async def inventory_dashboard(
 
 @router.get("/dashboards/risk-register")
 async def risk_register(
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AIPostureContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -466,7 +467,7 @@ async def risk_register(
 
 @router.get("/reports/shadow-ai-discovery")
 async def shadow_ai_discovery_report(
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AIPostureContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -485,7 +486,7 @@ async def shadow_ai_discovery_report(
 @router.get("/reports/compliance-posture")
 async def compliance_posture_report(
     framework_id: str,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AIPostureContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -503,7 +504,7 @@ async def compliance_posture_report(
 
 @router.get("/reports/supply-chain-integrity")
 async def supply_chain_integrity_report(
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AIPostureContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -521,7 +522,7 @@ async def supply_chain_integrity_report(
 
 @router.get("/reports/agent-deviations")
 async def agent_deviation_report(
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AIPostureContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -540,7 +541,7 @@ async def agent_deviation_report(
 @router.get("/audit/envelopes/{envelope_id}/human-approval-history")
 async def envelope_human_approval_audit(
     envelope_id: UUID,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AIPostureContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -560,7 +561,7 @@ async def envelope_human_approval_audit(
 
 @router.post("/projections/rebuild")
 async def rebuild_projections(
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: AIPostureContainer = Depends(get_container),
 ) -> dict[str, Any]:

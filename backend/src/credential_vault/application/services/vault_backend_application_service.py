@@ -101,7 +101,7 @@ class VaultBackendApplicationService:
         self._validate_config(cmd.config)
 
         backend_uuid = uuid7()
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         principal = PrincipalId(cmd.principal_id)
         await self._require_admin(principal, CredentialId(backend_uuid), tenant_id)
 
@@ -127,7 +127,7 @@ class VaultBackendApplicationService:
         validate_uuid(cmd.backend_id, "backend_id")
         validate_uuid(cmd.principal_id, "principal_id")
 
-        tenant_id = TenantId(cmd.tenant_id)
+        tenant_id = cmd.tenant_id
         backend_id = VaultBackendId(cmd.backend_id)
         principal = PrincipalId(cmd.principal_id)
         await self._require_admin(principal, CredentialId(cmd.backend_id), tenant_id)
@@ -146,7 +146,7 @@ class VaultBackendApplicationService:
         validate_uuid(qry.backend_id, "backend_id")
         validate_uuid(qry.principal_id, "principal_id")
 
-        tenant_id = TenantId(qry.tenant_id)
+        tenant_id = qry.tenant_id
         backend_id = VaultBackendId(qry.backend_id)
         await self._require_admin(
             PrincipalId(qry.principal_id),
@@ -162,7 +162,7 @@ class VaultBackendApplicationService:
         validate_uuid(qry.tenant_id, "tenant_id")
         validate_uuid(qry.principal_id, "principal_id")
 
-        tenant_id = TenantId(qry.tenant_id)
+        tenant_id = qry.tenant_id
         resource_id = CredentialId(uuid7())
         await self._require_admin(PrincipalId(qry.principal_id), resource_id, tenant_id)
 

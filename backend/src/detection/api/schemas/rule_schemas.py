@@ -137,7 +137,7 @@ class DetectionRuleResponse(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True, frozen=True)
 
     rule_id: UUID
-    tenant_id: UUID
+    tenant_id: str
     rule_key: str
     title: str
     description: str
@@ -166,7 +166,7 @@ class DetectionRuleResponse(BaseModel):
     def from_dto(cls, dto: object) -> DetectionRuleResponse:
         data = dto.to_dict()  # type: ignore[attr-defined]
         data["rule_id"] = UUID(str(data["rule_id"]))
-        data["tenant_id"] = UUID(str(data["tenant_id"]))
+        data["tenant_id"] = str(data["tenant_id"])
         data["created_at"] = datetime.fromisoformat(str(data["created_at"]))
         data["updated_at"] = datetime.fromisoformat(str(data["updated_at"]))
         return cls(**data)

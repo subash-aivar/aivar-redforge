@@ -156,7 +156,7 @@ def _to_domain(row: EngagementModel) -> Engagement:
 
     return Engagement(
         engagement_id=EngagementId(row.id),
-        tenant_id=TenantId(row.tenant_id),
+        tenant_id=TenantId.from_uuid(row.tenant_id),
         name=row.name,
         classification=EngagementClassification(row.classification),
         owner_id=row.owner_id,

@@ -94,7 +94,7 @@ def _row_to_plan(row: ExposureReductionPlanModel) -> ExposureReductionPlan:
     )
     return ExposureReductionPlan(
         plan_id=ExposureReductionPlanId(row.id),
-        tenant_id=TenantId(row.tenant_id),
+        tenant_id=TenantId.from_uuid(row.tenant_id),
         simulation=simulation,
         status=PlanStatus(row.status),
         generated_at=row.generated_at,

@@ -73,7 +73,7 @@ async def _load_candidate(
     ).scalars().all()
     return ThreatHuntCandidate(
         candidate_id=CandidateId(row.id),
-        tenant_id=TenantId(row.tenant_id),
+        tenant_id=TenantId.from_uuid(row.tenant_id),
         anomaly_signal_refs=tuple(
             AnomalySignalRef(signal_id=s.signal_id, source=s.source) for s in signal_rows
         ),

@@ -23,6 +23,7 @@ from remediation_impact.application.exceptions import (
 from remediation_impact.domain.exceptions.domain_exceptions import (
     RemediationImpactDomainError,
 )
+from remediation_impact.domain.value_objects.identifiers import TenantId
 from remediation_impact.infrastructure.container import RemediationImpactContainer
 
 router = APIRouter(prefix="/remediation-impact", tags=["remediation-impact"])
@@ -41,7 +42,7 @@ def _map_error(exc: Exception) -> HTTPException:
 @router.post("/plans")
 async def generate_plan(
     body: GeneratePlanRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: RemediationImpactContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -75,7 +76,7 @@ async def generate_plan(
 async def commit_plan(
     plan_id: UUID,
     body: CommitPlanRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: RemediationImpactContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -96,7 +97,7 @@ async def commit_plan(
 @router.get("/plans/{plan_id}")
 async def get_plan(
     plan_id: UUID,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: RemediationImpactContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -109,7 +110,7 @@ async def get_plan(
 @router.get("/plans")
 async def list_plans(
     status: str | None = Query(default=None),
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: RemediationImpactContainer = Depends(get_container),
 ) -> list[dict[str, Any]]:

@@ -4,8 +4,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from exposure.domain.value_objects.identifiers import TenantId
+
 if TYPE_CHECKING:
-    from uuid import UUID
 
     from exposure.application.services.threat_actor_match_sync_service import (
         ThreatActorMatchSyncService,
@@ -19,7 +20,7 @@ class ThreatActorPollScheduler:
         self._sync = sync_service
         self._last_run_at: str | None = None
 
-    async def run_for_tenant(self, tenant_id: UUID) -> dict[str, object]:
+    async def run_for_tenant(self, tenant_id: TenantId) -> dict[str, object]:
         result = await self._sync.poll_and_refresh(tenant_id)
         from datetime import UTC, datetime
 

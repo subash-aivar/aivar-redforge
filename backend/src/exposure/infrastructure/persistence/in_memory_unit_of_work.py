@@ -231,7 +231,7 @@ class InMemoryPendingStore(IPendingRecomputationStore):
         existing = self.rows.get(key)
         if existing is None:
             self.rows[key] = PendingRecomputation(
-                tenant_id.value,
+                tenant_id,
                 asset_ref_id,
                 marked_at,
                 debounce_override_seconds,
@@ -309,7 +309,7 @@ class InMemoryProfileStore(ITenantExposureProfileStore):
     async def load(self, tenant_id: TenantId) -> TenantExposureProfile:
         key = str(tenant_id)
         if key not in self.profiles:
-            self.profiles[key] = TenantExposureProfile(tenant_id=tenant_id.value)
+            self.profiles[key] = TenantExposureProfile(tenant_id=tenant_id)
         return self.profiles[key]
 
     async def save(self, tenant_id: TenantId, profile: TenantExposureProfile) -> None:

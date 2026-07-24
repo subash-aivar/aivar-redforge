@@ -134,7 +134,7 @@ class PgModelProvenanceRepository(IModelProvenanceRepository):
         ]
         return ModelProvenance(
             provenance_id=ModelProvenanceId(row.id),
-            tenant_id=TenantId(row.tenant_id),
+            tenant_id=TenantId.from_uuid(row.tenant_id),
             ai_system_asset_id=AISystemAssetId(row.ai_system_asset_id),
             model_origin=ModelOrigin(row.model_origin),
             source_registry_ref=self._registry(row.source_registry_json),

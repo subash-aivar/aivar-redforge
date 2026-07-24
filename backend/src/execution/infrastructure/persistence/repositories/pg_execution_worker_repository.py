@@ -131,7 +131,7 @@ class PgExecutionWorkerRepository(IExecutionWorkerRepository):
     def _to_domain(self, model: ExecutionWorkerModel) -> ExecutionWorker:
         return ExecutionWorker(
             worker_id=ExecutionWorkerId(model.id),
-            tenant_id=TenantId(model.tenant_id),
+            tenant_id=TenantId.from_uuid(model.tenant_id),
             worker_type=WorkerType(model.worker_type),
             capabilities=frozenset(str(c) for c in model.capabilities_json),
             trust_level=WorkerTrustLevel(model.trust_level),

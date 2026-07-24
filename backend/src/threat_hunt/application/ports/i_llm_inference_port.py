@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Protocol
-from uuid import UUID
+
+from threat_hunt.domain.value_objects.identifiers import TenantId
 
 
 @dataclass(frozen=True, slots=True)
 class HuntLLMPrompt:
-    tenant_id: UUID
+    tenant_id: TenantId
     task: str
     context: str
 
@@ -19,4 +20,4 @@ class HuntLLMResponse:
 
 
 class ILLMInferencePort(Protocol):
-    async def generate(self, prompt: HuntLLMPrompt, tenant_id: UUID) -> HuntLLMResponse: ...
+    async def generate(self, prompt: HuntLLMPrompt, tenant_id: TenantId) -> HuntLLMResponse: ...

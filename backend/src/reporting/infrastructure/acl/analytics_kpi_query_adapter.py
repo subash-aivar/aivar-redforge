@@ -12,11 +12,11 @@ from reporting.domain.ports.i_analytics_kpi_query_port import (
 )
 
 if TYPE_CHECKING:
-    from uuid import UUID
 
     from analytics.domain.repositories.i_analytics_repositories import (
         ISecurityKPIRepository,
     )
+    from reporting.domain.value_objects.identifiers import TenantId
 
 
 class StaticAnalyticsKPIQueryAdapter(IAnalyticsKPIQueryPort):
@@ -37,7 +37,7 @@ class StaticAnalyticsKPIQueryAdapter(IAnalyticsKPIQueryPort):
         )
         self._anomalies = anomalies or ()
 
-    async def load_kpi_bundle(self, tenant_id: UUID) -> AnalyticsKPIBundleDTO:
+    async def load_kpi_bundle(self, tenant_id: TenantId) -> AnalyticsKPIBundleDTO:
         del tenant_id
         return AnalyticsKPIBundleDTO(kpis=self._kpis, anomalies=self._anomalies)
 
@@ -48,11 +48,10 @@ class AnalyticsKPIQueryAdapter(IAnalyticsKPIQueryPort):
     def __init__(self, kpi_repo: ISecurityKPIRepository) -> None:
         self._kpis = kpi_repo
 
-    async def load_kpi_bundle(self, tenant_id: UUID) -> AnalyticsKPIBundleDTO:
+    async def load_kpi_bundle(self, tenant_id: TenantId) -> AnalyticsKPIBundleDTO:
         from analytics.domain.value_objects.enums import KPIType
-        from analytics.domain.value_objects.identifiers import TenantId as ATenantId
 
-        tenant = ATenantId(tenant_id)
+        tenant = tenant_id  # ATenantId is the identical EntityId alias; no re-wrap needed
         snapshots: list[KPISnapshotDTO] = []
         for kpi_type in KPIType:
             if kpi_type.value == "MTTR":

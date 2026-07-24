@@ -13,6 +13,7 @@ from campaign.domain.ports.i_inventory_query_port import IInventoryQueryPort
 from campaign.domain.ports.i_scheduler_port import ISchedulerPort
 from campaign.domain.ports.i_security_graph_write_port import ISecurityGraphWritePort
 from campaign.domain.value_objects.campaign_vos import RecurrencePolicy, TargetRef
+from campaign.domain.value_objects.identifiers import TenantId
 
 
 class AlwaysActiveEngagementAdapter(IEngagementQueryPort):
@@ -25,7 +26,7 @@ class AlwaysActiveEngagementAdapter(IEngagementQueryPort):
     async def get_engagement_status(
         self,
         engagement_id: UUID,
-        tenant_id: UUID,
+        tenant_id: TenantId,
     ) -> EngagementStatus:
         return EngagementStatus(
             engagement_id=engagement_id,
@@ -46,7 +47,7 @@ class StubInventoryQueryAdapter(IInventoryQueryPort):
     async def resolve_targets(
         self,
         rules: list[dict[str, str]],
-        tenant_id: UUID,
+        tenant_id: TenantId,
     ) -> list[TargetRef]:
         stub_id = UUID("00000000-0000-0000-0000-000000000001")
         return [

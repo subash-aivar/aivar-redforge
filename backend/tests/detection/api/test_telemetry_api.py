@@ -6,7 +6,7 @@ from collections.abc import AsyncIterator
 from datetime import UTC, datetime, timedelta
 from types import TracebackType
 from typing import Self
-from uuid import UUID, uuid4
+from uuid import UUID
 
 import pytest
 import pytest_asyncio
@@ -42,6 +42,7 @@ from detection.domain.value_objects.keys import RuleKey
 from redforge.api.dependencies import get_organization_service
 from redforge.api.security import TenantContext, get_tenant_context
 from redforge.domain.identity.value_objects import MembershipRole, Permission
+from redforge.shared.identifiers import EntityId
 from tests.detection.application.test_telemetry_application_service import _FakeQueryPort
 from tests.detection.phase2_helpers import StubTelemetryAdapter
 
@@ -230,8 +231,8 @@ def _rule_payload(key: str = "aivar.api_sim_rule") -> dict[str, object]:
 
 @pytest_asyncio.fixture
 async def phase2_client() -> AsyncIterator[AsyncClient]:
-    org_id = uuid4()
-    user_id = uuid4()
+    org_id = EntityId.generate()
+    user_id = EntityId.generate()
     rules = _FakeRuleRepo()
     sources = _FakeSourceRepo()
     registry = TelemetryProviderRegistry()

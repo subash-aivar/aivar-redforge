@@ -4,10 +4,8 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from uuid import UUID
+from reporting.domain.value_objects.identifiers import TenantId
 
 
 @dataclass(frozen=True, slots=True)
@@ -27,4 +25,4 @@ class MLSignalBundleDTO:
 
 class IMLSignalQueryPort(ABC):
     @abstractmethod
-    async def load_active_signals(self, tenant_id: UUID) -> MLSignalBundleDTO: ...
+    async def load_active_signals(self, tenant_id: TenantId) -> MLSignalBundleDTO: ...

@@ -83,7 +83,7 @@ class PgDetectionFindingRepository(IDetectionFindingRepository):
     def _to_domain(self, model: DetectionFindingModel) -> DetectionFinding:
         return DetectionFinding(
             finding_id=DetectionFindingId(model.id),
-            tenant_id=TenantId(model.tenant_id),
+            tenant_id=TenantId.from_uuid(model.tenant_id),
             finding_key=FindingKey(model.finding_key),
             rule_ref=DetectionRuleRef(
                 rule_id=model.rule_id, rule_version=model.rule_version

@@ -6,10 +6,12 @@ from dataclasses import dataclass
 from datetime import datetime  # noqa: TC003 — runtime type for frozen dataclass fields
 from uuid import UUID  # noqa: TC003 — runtime type for frozen dataclass fields
 
+from credential_vault.domain.value_objects.identifiers import TenantId
+
 
 @dataclass(frozen=True, slots=True)
 class ListAuditEntriesQuery:
-    tenant_id: UUID
+    tenant_id: TenantId
     credential_id: UUID
     principal_id: UUID
     since: datetime | None = None

@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
+from campaign.domain.value_objects.identifiers import TenantId
+
 if TYPE_CHECKING:
     from datetime import datetime
     from uuid import UUID
@@ -13,7 +15,7 @@ if TYPE_CHECKING:
 @dataclass(frozen=True, slots=True)
 class EngagementRef:
     engagement_id: UUID
-    tenant_id: UUID
+    tenant_id: TenantId
 
 
 @dataclass(frozen=True, slots=True)

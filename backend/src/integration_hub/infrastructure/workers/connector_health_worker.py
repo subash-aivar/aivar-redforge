@@ -4,6 +4,7 @@ from typing import Any
 from uuid import UUID
 
 from integration_hub.application.commands.connector_commands import TriggerHealthCheck
+from integration_hub.domain.value_objects.identifiers import TenantId
 
 
 class ConnectorHealthWorker:
@@ -11,7 +12,9 @@ class ConnectorHealthWorker:
         self._app = app
         self.ticks = 0
 
-    async def tick(self, tenant_id: UUID, roles: tuple[str, ...] = ("integration:admin",)) -> int:
+    async def tick(
+        self, tenant_id: TenantId, roles: tuple[str, ...] = ("integration:admin",)
+    ) -> int:
         self.ticks += 1
         regs = await self._app.list_connectors(tenant_id, roles)
         checked = 0
@@ -29,5 +32,5 @@ class HealthScheduler:
     def __init__(self, worker: ConnectorHealthWorker) -> None:
         self.worker = worker
 
-    async def tick(self, tenant_id: UUID) -> int:
+    async def tick(self, tenant_id: TenantId) -> int:
         return await self.worker.tick(tenant_id)

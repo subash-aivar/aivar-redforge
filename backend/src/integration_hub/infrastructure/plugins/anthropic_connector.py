@@ -21,6 +21,7 @@ from integration_hub.domain.plugin import (
     ConnectorPlugin,
     CredentialFieldSpec,
 )
+from integration_hub.domain.value_objects.discovery import DiscoveryPage
 from integration_hub.domain.value_objects.enums import ConnectorHealthStatus
 
 _BASE_URL = "https://api.anthropic.com/v1"
@@ -43,6 +44,26 @@ async def _health_check(secret: str, config: dict[str, str]) -> ConnectorHealthS
         return ConnectorHealthStatus.DEGRADED
     except httpx.HTTPError:
         return ConnectorHealthStatus.UNHEALTHY
+
+
+async def _discover(
+    secret: str, config: dict[str, str], cursor: str | None = None
+) -> DiscoveryPage:
+    """List models via the same GET /v1/models endpoint the health check
+    already proves reachable. Anthropic's models endpoint is not
+    paginated by the vendor, so this always returns a single, complete
+    page (`has_more=False`) — `cursor` is accepted for contract
+    compatibility but unused."""
+    base_url = config.get("base_url", _BASE_URL)
+    headers = {
+        "x-api-key": secret,
+        "anthropic-version": _ANTHROPIC_VERSION,
+    }
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.get(f"{base_url}/models", headers=headers)
+    resp.raise_for_status()
+    body = resp.json()
+    return DiscoveryPage(items=list(body.get("data", [])), next_cursor=None, has_more=False)
 
 
 PLUGIN = ConnectorPlugin(
@@ -109,4 +130,5 @@ PLUGIN = ConnectorPlugin(
         ),
     ),
     health_check=_health_check,
+    discover=_discover,
 )

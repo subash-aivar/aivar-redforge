@@ -7,6 +7,8 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 from uuid import UUID
 
+from red_team_operator.domain.value_objects.identifiers import TenantId
+
 if TYPE_CHECKING:
     from red_team_operator.domain.aggregates.red_team_operator import RedTeamOperator
 
@@ -14,7 +16,7 @@ if TYPE_CHECKING:
 @dataclass(frozen=True, slots=True)
 class OperatorDTO:
     operator_id: UUID
-    tenant_id: UUID
+    tenant_id: TenantId
     identity_ref: str
     display_name: str
     clearance_level: str

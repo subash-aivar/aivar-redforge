@@ -82,7 +82,7 @@ async def test_correlate_finding_enriches() -> None:
         CorrelationPublisher(pub),
     )
     result = await coordinator.correlate_finding(
-        tenant_uuid=finding.tenant_id.value,
+        tenant_uuid=finding.tenant_id,
         finding_id=finding.finding_id.value,
     )
     assert result["status"] in {"Completed", "Partial"}
@@ -111,11 +111,11 @@ async def test_correlate_skips_when_already_enriched() -> None:
         CorrelationPublisher(pub),
     )
     await coordinator.correlate_finding(
-        tenant_uuid=finding.tenant_id.value,
+        tenant_uuid=finding.tenant_id,
         finding_id=finding.finding_id.value,
     )
     result = await coordinator.correlate_finding(
-        tenant_uuid=finding.tenant_id.value,
+        tenant_uuid=finding.tenant_id,
         finding_id=finding.finding_id.value,
     )
     assert result.get("skipped") is True
@@ -141,7 +141,7 @@ async def test_correlate_many(i: int) -> None:
         CorrelationPublisher(pub),
     )
     result = await coordinator.correlate_finding(
-        tenant_uuid=finding.tenant_id.value,
+        tenant_uuid=finding.tenant_id,
         finding_id=finding.finding_id.value,
         refresh=True,
     )

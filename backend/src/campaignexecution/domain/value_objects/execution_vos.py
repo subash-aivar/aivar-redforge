@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
+from campaignexecution.domain.value_objects.identifiers import TenantId
+
 if TYPE_CHECKING:
     from datetime import datetime
     from uuid import UUID
@@ -18,7 +20,7 @@ if TYPE_CHECKING:
 class CampaignInstanceRef:
     instance_id: UUID
     campaign_id: UUID
-    tenant_id: UUID
+    tenant_id: TenantId
 
 
 @dataclass(frozen=True, slots=True)
@@ -32,7 +34,7 @@ class OperationRef:
     """Reference to an M29 Operation created for a task execution."""
 
     operation_id: UUID
-    tenant_id: UUID
+    tenant_id: TenantId
 
 
 @dataclass(frozen=True, slots=True)
@@ -70,7 +72,7 @@ class EngagementRef:
     """Reference to M29 engagement for operation dispatch."""
 
     engagement_id: UUID
-    tenant_id: UUID
+    tenant_id: TenantId
 
 
 @dataclass(slots=True)

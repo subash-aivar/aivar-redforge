@@ -76,7 +76,7 @@ class PgTelemetrySourceRepository(ITelemetrySourceRepository):
         )
         return TelemetrySource(
             source_id=TelemetrySourceId(model.id),
-            tenant_id=TenantId(model.tenant_id),
+            tenant_id=TenantId.from_uuid(model.tenant_id),
             name=model.name,
             source_type=SourceType(model.source_type),
             trust_level=SourceTrustLevel(model.trust_level),

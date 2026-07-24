@@ -17,7 +17,6 @@ from credential_vault.application.commands.credential_commands import (
 )
 from credential_vault.domain.value_objects.identifiers import (
     CredentialId,
-    TenantId,
 )
 from credential_vault.infrastructure import metrics
 from credential_vault.workers.rotation_scheduler.rotation_schedule_repository import (
@@ -149,7 +148,7 @@ class RotationSchedulerWorker:
             version_repo: ICredentialVersionRepository = PgCredentialVersionRepository(session)
             policy_repo: IRotationPolicyRepository = PgRotationPolicyRepository(session)
 
-            tenant_id = TenantId(item.tenant_id)
+            tenant_id = item.tenant_id
             credential_id = CredentialId(item.credential_id)
             credential = await cred_repo.get_by_id(credential_id, tenant_id)
             if credential.rotation_policy_id is None:

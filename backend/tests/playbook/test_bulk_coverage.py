@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from uuid import uuid4
 
 import pytest
 
@@ -40,6 +39,7 @@ from playbook.domain.value_objects.identifiers import (
     TenantId,
 )
 from playbook.infrastructure.container import PlaybookContainer
+from redforge.shared.identifiers import EntityId
 
 
 @pytest.mark.parametrize(
@@ -102,20 +102,20 @@ def test_lifecycle_max_impact(
 
 
 def test_playbook_create_emits_event() -> None:
-    pb = Playbook.create(TenantId(uuid4()), "n", "d", "u1")
+    pb = Playbook.create(TenantId.generate(), "n", "d", "u1")
     events = pb.pop_events()
     assert pb.status == PlaybookStatus.DRAFT
     assert len(events) == 1
 
 
 def test_submit_requires_version() -> None:
-    pb = Playbook.create(TenantId(uuid4()), "n", "d", "u1")
+    pb = Playbook.create(TenantId.generate(), "n", "d", "u1")
     with pytest.raises(DomainInvariantViolation):
         pb.submit_for_approval(pb.tenant_id)
 
 
 def test_deprecate_twice_fails() -> None:
-    pb = Playbook.create(TenantId(uuid4()), "n", "d", "u1")
+    pb = Playbook.create(TenantId.generate(), "n", "d", "u1")
     pb.deprecate(pb.tenant_id, "u", "r")
     with pytest.raises(InvalidPlaybookTransition):
         pb.deprecate(pb.tenant_id, "u", "r2")
@@ -123,7 +123,7 @@ def test_deprecate_twice_fails() -> None:
 
 def test_version_immutable_after_publish() -> None:
     v = PlaybookVersion.create_draft(
-        TenantId(uuid4()),
+        TenantId.generate(),
         PlaybookId.generate(),
         1,
         [
@@ -144,7 +144,7 @@ def test_version_immutable_after_publish() -> None:
 
 
 def test_policy_budgets_bounds() -> None:
-    p = AutomationPolicy.default(TenantId(uuid4()))
+    p = AutomationPolicy.default(TenantId.generate())
     with pytest.raises(DomainInvariantViolation):
         p.update_budgets(max_concurrent_executions=0)
     with pytest.raises(DomainInvariantViolation):
@@ -154,7 +154,7 @@ def test_policy_budgets_bounds() -> None:
 
 
 def test_kill_switch_service() -> None:
-    p = AutomationPolicy.default(TenantId(uuid4()))
+    p = AutomationPolicy.default(TenantId.generate())
     svc = KillSwitchService()
     assert svc.is_triggered(p) is False
     svc.activate(p, "ciso", "stop")
@@ -181,7 +181,7 @@ def test_rollback_definition() -> None:
 @pytest.mark.asyncio
 async def test_container_list_empty() -> None:
     c = PlaybookContainer()
-    rows = await c.app.list_playbooks(uuid4(), ("playbook:analyst",))
+    rows = await c.app.list_playbooks(EntityId.generate(), ("playbook:analyst",))
     assert rows == []
 
 
@@ -194,7 +194,7 @@ async def test_scheduler_ticks() -> None:
 
 def test_playbook_test_result_factory() -> None:
     result = PlaybookTestResult.create(
-        TenantId(uuid4()),
+        TenantId.generate(),
         PlaybookId.generate(),
         PlaybookVersionId.generate(),
         "abc",

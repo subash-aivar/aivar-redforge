@@ -12,6 +12,7 @@ from ml_pipeline.api.dependencies import reset_container
 from ml_pipeline.api.v1 import router
 from redforge.api.security import TenantContext, get_tenant_context
 from redforge.domain.identity.value_objects import MembershipRole, Permission
+from redforge.shared.identifiers import EntityId
 
 
 def _override_tenant_context(
@@ -50,7 +51,7 @@ async def test_health(app: FastAPI) -> None:
 
 @pytest.mark.asyncio
 async def test_train_promote_requires_admin(app: FastAPI) -> None:
-    tenant = str(uuid4())
+    tenant = str(EntityId.generate())
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         forbidden = await client.post(

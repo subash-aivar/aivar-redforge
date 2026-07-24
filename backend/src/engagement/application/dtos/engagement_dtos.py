@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
+from engagement.domain.value_objects.identifiers import TenantId
+
 if TYPE_CHECKING:
     from datetime import datetime
     from uuid import UUID
@@ -46,7 +48,7 @@ class PhaseDTO:
 @dataclass(frozen=True, slots=True)
 class EngagementDTO:
     engagement_id: UUID
-    tenant_id: UUID
+    tenant_id: TenantId
     name: str
     classification: str
     owner_id: str
@@ -75,7 +77,7 @@ class EngagementDTO:
 @dataclass(frozen=True, slots=True)
 class TargetAuthorizationDTO:
     authorization_id: UUID
-    tenant_id: UUID
+    tenant_id: TenantId
     engagement_id: UUID
     asset_id: UUID
     display_name: str | None

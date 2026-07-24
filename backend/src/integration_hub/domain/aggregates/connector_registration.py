@@ -17,7 +17,7 @@ from integration_hub.domain.value_objects.enums import (
     ConnectorStatus,
     ConnectorType,
 )
-from integration_hub.domain.value_objects.identifiers import ConnectorId, TenantId
+from integration_hub.domain.value_objects.identifiers import ConnectorId, EntityId
 
 
 class ConnectorRegistration:
@@ -42,7 +42,7 @@ class ConnectorRegistration:
     def __init__(
         self,
         connector_id: ConnectorId,
-        tenant_id: TenantId,
+        tenant_id: EntityId,
         connector_type: ConnectorType | str,
         display_name: str,
         status: ConnectorStatus,
@@ -89,14 +89,14 @@ class ConnectorRegistration:
         self._pending_events.clear()
         return events
 
-    def _assert_tenant(self, tenant_id: TenantId) -> None:
+    def _assert_tenant(self, tenant_id: EntityId) -> None:
         if self.tenant_id.value != tenant_id.value:
             raise TenantMismatch("tenant mismatch")
 
     @classmethod
     def register(
         cls,
-        tenant_id: TenantId,
+        tenant_id: EntityId,
         connector_type: ConnectorType | str,
         display_name: str,
         credential_vault_key: str,
@@ -129,7 +129,7 @@ class ConnectorRegistration:
         )
         return reg
 
-    def disable(self, tenant_id: TenantId, disabled_by: str, reason: str) -> None:
+    def disable(self, tenant_id: EntityId, disabled_by: str, reason: str) -> None:
         self._assert_tenant(tenant_id)
         now = datetime.now(UTC)
         self.status = ConnectorStatus.DISABLED

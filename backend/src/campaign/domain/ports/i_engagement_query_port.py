@@ -6,6 +6,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
+from campaign.domain.value_objects.identifiers import TenantId
+
 if TYPE_CHECKING:
     from uuid import UUID
 
@@ -30,6 +32,6 @@ class IEngagementQueryPort(ABC):
     async def get_engagement_status(
         self,
         engagement_id: UUID,
-        tenant_id: UUID,
+        tenant_id: TenantId,
     ) -> EngagementStatus | None:
         """Return the current status of the specified engagement, or None if not found."""

@@ -5,6 +5,8 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any
 
+from scenario.domain.value_objects.identifiers import TenantId
+
 if TYPE_CHECKING:
     from uuid import UUID
 
@@ -19,7 +21,7 @@ class ICampaignDraftPort(ABC):
     async def validate_draft_spec(
         self,
         *,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         draft_spec: dict[str, Any],
     ) -> list[str]:
         """Return validation error messages; empty list means Phase 1 gates pass."""
@@ -28,7 +30,7 @@ class ICampaignDraftPort(ABC):
     async def create_draft_campaign(
         self,
         *,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         engagement_id: UUID,
         owner_id: str,
         draft_spec: dict[str, Any],

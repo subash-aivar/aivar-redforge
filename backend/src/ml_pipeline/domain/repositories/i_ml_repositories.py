@@ -62,8 +62,8 @@ class IPredictiveRiskSignalRepository(ABC):
 class IMLModelArtifactStore(ABC):
     @abstractmethod
     async def store_artifact(
-        self, tenant_id: UUID, model_id: UUID, artifact_bytes: bytes
+        self, tenant_id: TenantId, model_id: UUID, artifact_bytes: bytes
     ) -> str: ...
 
     @abstractmethod
-    async def load_artifact(self, tenant_id: UUID, model_id: UUID) -> tuple[bytes, str]: ...
+    async def load_artifact(self, tenant_id: TenantId, model_id: UUID) -> tuple[bytes, str]: ...

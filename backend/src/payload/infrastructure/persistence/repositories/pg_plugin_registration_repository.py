@@ -35,7 +35,7 @@ class PgPluginRegistrationRepository(IPluginRegistrationRepository):
     def _to_domain(self, model: PluginRegistrationModel) -> PluginRegistration:
         return PluginRegistration(
             plugin_id=PluginId(model.id),
-            tenant_id=TenantId(model.tenant_id),
+            tenant_id=TenantId.from_uuid(model.tenant_id),
             name=model.name,
             plugin_type=PluginType(model.plugin_type),
             plugin_version=PluginVersion(model.plugin_version),

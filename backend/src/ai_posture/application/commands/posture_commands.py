@@ -5,13 +5,15 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
+from ai_posture.domain.value_objects.identifiers import TenantId
+
 if TYPE_CHECKING:
     from uuid import UUID
 
 
 @dataclass(frozen=True, slots=True)
 class RegisterAISystemAssetCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     asset_ref_id: UUID
     discovery_source: str
     data_sensitivity: str = "Internal"
@@ -21,7 +23,7 @@ class RegisterAISystemAssetCommand:
 
 @dataclass(frozen=True, slots=True)
 class ClassifyAISystemAssetCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     asset_id: UUID
     ai_system_kind: str
     actor_roles: tuple[str, ...] = ()
@@ -29,7 +31,7 @@ class ClassifyAISystemAssetCommand:
 
 @dataclass(frozen=True, slots=True)
 class AssignAssetOwnerCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     asset_id: UUID
     owner_id: str
     owner_display_name: str = ""
@@ -38,14 +40,14 @@ class AssignAssetOwnerCommand:
 
 @dataclass(frozen=True, slots=True)
 class ApproveAISystemAssetRegistrationCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     asset_id: UUID
     actor_roles: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
 class DeprecateAISystemAssetCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     asset_id: UUID
     reason: str
     actor_roles: tuple[str, ...] = ()
@@ -53,7 +55,7 @@ class DeprecateAISystemAssetCommand:
 
 @dataclass(frozen=True, slots=True)
 class DecommissionAISystemAssetCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     asset_id: UUID
     reason: str
     actor_roles: tuple[str, ...] = ()
@@ -61,7 +63,7 @@ class DecommissionAISystemAssetCommand:
 
 @dataclass(frozen=True, slots=True)
 class RaiseShadowAIAlertCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     cloud_account: str
     resource_identifier: str
     service_type: str
@@ -72,7 +74,7 @@ class RaiseShadowAIAlertCommand:
 
 @dataclass(frozen=True, slots=True)
 class TriageShadowAIAlertCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     alert_id: UUID
     triaged_by: str
     notes: str = ""
@@ -81,14 +83,14 @@ class TriageShadowAIAlertCommand:
 
 @dataclass(frozen=True, slots=True)
 class ConfirmShadowAIAlertCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     alert_id: UUID
     actor_roles: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
 class DismissShadowAIAlertFalsePositiveCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     alert_id: UUID
     reason: str
     actor_roles: tuple[str, ...] = ()
@@ -96,7 +98,7 @@ class DismissShadowAIAlertFalsePositiveCommand:
 
 @dataclass(frozen=True, slots=True)
 class ResolveShadowAIAlertCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     alert_id: UUID
     resolution_action: str
     linked_asset_id: UUID | None = None
@@ -105,7 +107,7 @@ class ResolveShadowAIAlertCommand:
 
 @dataclass(frozen=True, slots=True)
 class BulkTriageShadowAIAlertsCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     triaged_by: str
     discovery_source: str | None = None
     cloud_account: str | None = None
@@ -116,7 +118,7 @@ class BulkTriageShadowAIAlertsCommand:
 
 @dataclass(frozen=True, slots=True)
 class BulkResolveShadowAIAlertsCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     alert_ids: tuple[UUID, ...]
     resolution_action: str
     confirm_as: str  # ConfirmedShadowAI | ConfirmedFalsePositive
@@ -126,21 +128,21 @@ class BulkResolveShadowAIAlertsCommand:
 
 @dataclass(frozen=True, slots=True)
 class SetDiscoveryOnlyModeCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     enabled: bool
     actor_roles: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
 class CreateThreatProfileCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     asset_id: UUID
     actor_roles: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
 class AssessThreatProfileCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     asset_id: UUID
     evidence_refs: list[str] = field(default_factory=list)
     actor_roles: tuple[str, ...] = ()
@@ -148,21 +150,21 @@ class AssessThreatProfileCommand:
 
 @dataclass(frozen=True, slots=True)
 class ComputeRiskScoreCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     asset_id: UUID
     actor_roles: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
 class RunStalenessSweepCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     threat_threshold_days: int = 90
     actor_roles: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
 class EvaluateComplianceMappingCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     asset_id: UUID
     framework_id: str
     actor_roles: tuple[str, ...] = ()
@@ -170,7 +172,7 @@ class EvaluateComplianceMappingCommand:
 
 @dataclass(frozen=True, slots=True)
 class RecordComplianceAttestationCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     mapping_id: UUID
     attestor_id: str
     satisfied: bool = True
@@ -180,5 +182,5 @@ class RecordComplianceAttestationCommand:
 
 @dataclass(frozen=True, slots=True)
 class RebuildProjectionsCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     actor_roles: tuple[str, ...] = ()

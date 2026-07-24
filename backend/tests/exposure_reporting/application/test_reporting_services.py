@@ -21,6 +21,7 @@ from exposure_reporting.infrastructure.acl.security_graph_write_adapter import (
     InMemorySecurityGraphWriteAdapter,
 )
 from exposure_reporting.infrastructure.container import ExposureReportingContainer
+from redforge.shared.identifiers import EntityId
 
 ANALYST = ("exposure:analyst",)
 ENGINEER = ("exposure:engineer",)
@@ -44,7 +45,7 @@ def container() -> ExposureReportingContainer:
 
 @pytest.mark.asyncio
 async def test_generate_board_report_and_graph(container: ExposureReportingContainer) -> None:
-    tenant = uuid4()
+    tenant = EntityId.generate()
     dto = await container.report_service.generate(
         GenerateExposureReportCommand(
             tenant_id=tenant,
@@ -64,7 +65,7 @@ async def test_generate_board_report_and_graph(container: ExposureReportingConta
 
 @pytest.mark.asyncio
 async def test_all_core_report_types(container: ExposureReportingContainer) -> None:
-    tenant = uuid4()
+    tenant = EntityId.generate()
     for rtype in (
         "BoardRiskSummary",
         "RemediationRoadmap",
@@ -87,8 +88,8 @@ async def test_all_core_report_types(container: ExposureReportingContainer) -> N
 async def test_business_impact_crud_tenant_isolation(
     container: ExposureReportingContainer,
 ) -> None:
-    tenant_a = uuid4()
-    tenant_b = uuid4()
+    tenant_a = EntityId.generate()
+    tenant_b = EntityId.generate()
     asset = uuid4()
     created = await container.mapping_service.create(
         CreateBusinessImpactMappingCommand(
@@ -133,7 +134,7 @@ async def test_viewer_cannot_generate(container: ExposureReportingContainer) -> 
     with pytest.raises(ApplicationForbiddenError):
         await container.report_service.generate(
             GenerateExposureReportCommand(
-                tenant_id=uuid4(),
+                tenant_id=EntityId.generate(),
                 report_type="BoardRiskSummary",
                 generated_by="v",
                 actor_roles=VIEWER,
@@ -143,7 +144,7 @@ async def test_viewer_cannot_generate(container: ExposureReportingContainer) -> 
 
 @pytest.mark.asyncio
 async def test_dashboard_trends_rebuild(container: ExposureReportingContainer) -> None:
-    tenant = uuid4()
+    tenant = EntityId.generate()
     dash = await container.dashboard.get_dashboard(tenant, VIEWER)
     assert dash.asset_count == 2
     assert dash.dominant_amplifier == "KevPresent"

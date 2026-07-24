@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 
 from redforge.api.security import TenantContext, get_tenant_context
 from redforge.domain.identity.value_objects import MembershipRole, Permission
+from redforge.shared.identifiers import EntityId
 from threat_hunt.api.dependencies import get_container
 from threat_hunt.api.v1 import router
 from threat_hunt.application.commands.hunt_commands import (
@@ -24,7 +25,6 @@ from threat_hunt.domain.value_objects.enums import DetectionRuleFormat, ThreatHu
 from threat_hunt.domain.value_objects.identifiers import (
     AnomalySignalRef,
     AttckTechniqueRef,
-    TenantId,
 )
 from threat_hunt.infrastructure.acl.m33_anomaly_translator import (
     AnomalySignalDetectedPayload,
@@ -58,7 +58,7 @@ async def test_generate_matrix(conf: float) -> None:
     c = ThreatHuntContainer()
     dto = await c.app.generate(
         GenerateThreatHuntCandidate(
-            uuid4(),
+            EntityId.generate(),
             ("s1",),
             ("T1059",),
             "title: draft",
@@ -73,7 +73,7 @@ async def test_generate_matrix(conf: float) -> None:
 @pytest.mark.parametrize("i", range(8))
 async def test_promote_matrix(i: int) -> None:
     c = ThreatHuntContainer()
-    tenant = uuid4()
+    tenant = EntityId.generate()
     created = await c.app.generate(
         GenerateThreatHuntCandidate(tenant, ("s1",), ("T1059",), "title: draft", 0.8, ("system",))
     )
@@ -93,7 +93,7 @@ async def test_promote_matrix(i: int) -> None:
 @pytest.mark.parametrize("i", range(8))
 async def test_reject_matrix(i: int) -> None:
     c = ThreatHuntContainer()
-    tenant = uuid4()
+    tenant = EntityId.generate()
     created = await c.app.generate(
         GenerateThreatHuntCandidate(tenant, ("s1",), ("T1059",), "title: draft", 0.8, ("system",))
     )
@@ -112,14 +112,14 @@ async def test_reject_matrix(i: int) -> None:
 @pytest.mark.asyncio
 async def test_promote_requires_reviewed_by() -> None:
     c = ThreatHuntContainer()
-    tenant = uuid4()
+    tenant = EntityId.generate()
     created = await c.app.generate(
         GenerateThreatHuntCandidate(tenant, ("s1",), ("T1059",), "title: draft", 0.8, ("system",))
     )
-    cand = await c.candidates.find_by_id(UUID(created.candidate_id), TenantId(tenant))
+    cand = await c.candidates.find_by_id(UUID(created.candidate_id), tenant)
     assert cand is not None
     with pytest.raises(DomainInvariantViolation):
-        cand.promote(TenantId(tenant), "", ("soc:detection_engineer",), uuid4())
+        cand.promote(tenant, "", ("soc:detection_engineer",), uuid4())
 
 
 @pytest.mark.asyncio
@@ -161,7 +161,7 @@ def test_api_health(client: TestClient, i: int) -> None:
 def test_api_generate(client: TestClient, conf: float) -> None:
     r = client.post(
         "/threat-hunt/candidates",
-        headers={"X-Tenant-Id": str(uuid4()), "X-Roles": "system,ai:operator"},
+        headers={"X-Tenant-Id": str(EntityId.generate()), "X-Roles": "system,ai:operator"},
         json={"anomaly_signal_ids": ["s1"], "confidence_score": conf},
     )
     assert r.status_code == 201

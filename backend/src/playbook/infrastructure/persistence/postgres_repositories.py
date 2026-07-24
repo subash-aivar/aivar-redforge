@@ -100,7 +100,7 @@ def _row_to_playbook(row: PlaybookModel) -> Playbook:
     ]
     return Playbook(
         playbook_id=PlaybookId(row.id),
-        tenant_id=TenantId(row.tenant_id),
+        tenant_id=TenantId.from_uuid(row.tenant_id),
         name=row.name,
         description=row.description,
         status=PlaybookStatus(row.status),
@@ -259,7 +259,7 @@ class PgPlaybookVersionRepository(IPlaybookVersionRepository):
         action_steps, trigger_configs = await self._load_children(session, tenant_id, row)
         return PlaybookVersion(
             version_id=PlaybookVersionId(row.id),
-            tenant_id=TenantId(row.tenant_id),
+            tenant_id=TenantId.from_uuid(row.tenant_id),
             playbook_id=PlaybookId(row.playbook_id),
             version_number=row.version_number,
             status=VersionStatus(row.status),
@@ -426,7 +426,7 @@ class PgPlaybookTestResultRepository(IPlaybookTestResultRepository):
                 return None
             return PlaybookTestResult(
                 test_id=PlaybookTestResultId(row.id),
-                tenant_id=TenantId(row.tenant_id),
+                tenant_id=TenantId.from_uuid(row.tenant_id),
                 playbook_id=PlaybookId(row.playbook_id),
                 version_id=PlaybookVersionId(row.version_id),
                 content_hash_at_test=row.content_hash_at_test,
@@ -489,7 +489,7 @@ def _policy_to_row(policy: AutomationPolicy) -> AutomationPolicyModel:
 
 def _row_to_policy(row: AutomationPolicyModel) -> AutomationPolicy:
     return AutomationPolicy(
-        tenant_id=TenantId(row.tenant_id),
+        tenant_id=TenantId.from_uuid(row.tenant_id),
         kill_switch_state=KillSwitchState(row.kill_switch_state),
         kill_switch_triggered_at=row.kill_switch_triggered_at,
         kill_switch_triggered_by=row.kill_switch_triggered_by,

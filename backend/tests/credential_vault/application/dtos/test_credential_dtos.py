@@ -156,5 +156,5 @@ def test_ids_serialized_as_strings() -> None:
     assert dto.credential_id == str(credential.credential_id)
     assert dto.tenant_id == str(credential.tenant_id)
     assert isinstance(CredentialId(uuid4()), CredentialId)
-    assert isinstance(TenantId(uuid4()), TenantId)
+    assert isinstance(TenantId.generate(), TenantId)
     assert isinstance(AuditLogId(uuid4()), AuditLogId)

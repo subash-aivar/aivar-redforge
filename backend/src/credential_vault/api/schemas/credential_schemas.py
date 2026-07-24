@@ -99,7 +99,7 @@ class CredentialResponse(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True, frozen=True)
 
     credential_id: UUID
-    tenant_id: UUID
+    tenant_id: str
     name: str
     category: str
     subtype: str
@@ -121,7 +121,6 @@ class CredentialResponse(BaseModel):
         data = dto.to_dict()  # type: ignore[attr-defined]
         for key in (
             "credential_id",
-            "tenant_id",
             "owner_principal_id",
             "active_version_id",
             "rotation_policy_id",
@@ -133,6 +132,7 @@ class CredentialResponse(BaseModel):
                 data[key] = UUID(str(data[key]))
             else:
                 data[key] = None
+        data["tenant_id"] = str(data["tenant_id"])
         data["created_at"] = datetime.fromisoformat(str(data["created_at"]))
         data["updated_at"] = datetime.fromisoformat(str(data["updated_at"]))
         return cls(**data)
@@ -143,7 +143,7 @@ class VersionResponse(BaseModel):
 
     version_id: UUID
     credential_id: UUID
-    tenant_id: UUID
+    tenant_id: str
     version_number: int
     version_state: str
     created_by: UUID
@@ -158,7 +158,6 @@ class VersionResponse(BaseModel):
         for key in (
             "version_id",
             "credential_id",
-            "tenant_id",
             "created_by",
             "rotation_policy_id",
         ):
@@ -166,6 +165,7 @@ class VersionResponse(BaseModel):
                 data[key] = UUID(str(data[key]))
             else:
                 data[key] = None
+        data["tenant_id"] = str(data["tenant_id"])
         data["created_at"] = datetime.fromisoformat(str(data["created_at"]))
         expires = data.get("expires_at")
         data["expires_at"] = datetime.fromisoformat(str(expires)) if expires is not None else None

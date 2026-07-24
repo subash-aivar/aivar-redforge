@@ -38,7 +38,7 @@ if TYPE_CHECKING:
 @dataclass(frozen=True, slots=True)
 class ScoreRecomputationJob:
     job_id: str
-    tenant_id: UUID
+    tenant_id: TenantId
     asset_ref_id: UUID
     dispatched_at: datetime
 
@@ -49,13 +49,13 @@ class RecomputationDebouncerService:
 
     async def mark(
         self,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         asset_ref_id: UUID,
         *,
         debounce_override_seconds: int | None = None,
         bypass: bool = False,
     ) -> None:
-        tenant = TenantId(tenant_id)
+        tenant = tenant_id
         now = datetime.now(UTC)
         async with self._uow_factory() as uow:
             await uow.pending.upsert(
@@ -134,7 +134,7 @@ class RecomputationDispatcherService:
                         dispatched_at=now,
                     )
                 )
-                await uow.pending.delete(TenantId(row.tenant_id), row.asset_ref_id)
+                await uow.pending.delete(row.tenant_id, row.asset_ref_id)
                 tenant_counts[row.tenant_id] = tcount + 1
                 global_count += 1
             await uow.commit()
@@ -153,7 +153,7 @@ class ExposureScoreComputationWorker:
         self._events = event_publisher
 
     async def compute(self, job: ScoreRecomputationJob) -> ExposureScoreSnapshot | None:
-        tenant = TenantId(job.tenant_id)
+        tenant = job.tenant_id
         now = datetime.now(UTC)
         bucket_start = dispatch_window_bucket(job.dispatched_at)
         async with self._uow_factory() as uow:

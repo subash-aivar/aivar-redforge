@@ -10,7 +10,7 @@ from reporting.domain.ports.i_ml_signal_query_port import (
 )
 
 if TYPE_CHECKING:
-    from uuid import UUID
+    from reporting.domain.value_objects.identifiers import TenantId
 
 
 class StubMLSignalQueryAdapter(IMLSignalQueryPort):
@@ -19,10 +19,10 @@ class StubMLSignalQueryAdapter(IMLSignalQueryPort):
     def __init__(self) -> None:
         self._by_tenant: dict[str, MLSignalBundleDTO] = {}
 
-    def seed(self, tenant_id: UUID, bundle: MLSignalBundleDTO) -> None:
+    def seed(self, tenant_id: TenantId, bundle: MLSignalBundleDTO) -> None:
         self._by_tenant[str(tenant_id)] = bundle
 
-    async def load_active_signals(self, tenant_id: UUID) -> MLSignalBundleDTO:
+    async def load_active_signals(self, tenant_id: TenantId) -> MLSignalBundleDTO:
         return self._by_tenant.get(
             str(tenant_id), MLSignalBundleDTO(signals=(), model_deployed=False)
         )

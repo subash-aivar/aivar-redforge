@@ -8,6 +8,7 @@ from httpx import ASGITransport, AsyncClient
 
 from redforge.api.security import TenantContext, get_tenant_context
 from redforge.domain.identity.value_objects import MembershipRole, Permission
+from redforge.shared.identifiers import EntityId
 from reporting.api import dependencies as deps
 from reporting.api.v1 import router
 from reporting.domain.ports.i_analytics_kpi_query_port import KPISnapshotDTO
@@ -53,7 +54,7 @@ def _headers(tenant: str, role: str) -> dict[str, str]:
 
 @pytest.mark.asyncio
 async def test_reporting_api_flow(app: FastAPI) -> None:
-    tenant = str(uuid4())
+    tenant = str(EntityId.generate())
     container = await deps.get_container()
     template_id = container.template_id_for(ReportType.SECURITY_PROGRAM_DASHBOARD)
     assert template_id is not None
@@ -117,7 +118,7 @@ async def test_reporting_api_flow(app: FastAPI) -> None:
 
 @pytest.mark.asyncio
 async def test_viewer_forbidden_on_generate(app: FastAPI) -> None:
-    tenant = str(uuid4())
+    tenant = str(EntityId.generate())
     container = await deps.get_container()
     template_id = container.template_id_for(ReportType.KPI_TREND_REPORT)
     assert template_id is not None

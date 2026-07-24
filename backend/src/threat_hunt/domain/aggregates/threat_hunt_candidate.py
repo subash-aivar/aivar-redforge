@@ -121,7 +121,7 @@ class ThreatHuntCandidate:
         roles: tuple[str, ...],
         promoted_rule_version_id: UUID,
     ) -> None:
-        if self.tenant_id.value != tenant_id.value:
+        if self.tenant_id != tenant_id:
             raise TenantMismatch("tenant mismatch")
         if "soc:detection_engineer" not in roles:
             raise AuthorizationDenied("requires soc:detection_engineer")
@@ -151,7 +151,7 @@ class ThreatHuntCandidate:
     def reject(
         self, tenant_id: TenantId, rejected_by: str, reason: str, roles: tuple[str, ...]
     ) -> None:
-        if self.tenant_id.value != tenant_id.value:
+        if self.tenant_id != tenant_id:
             raise TenantMismatch("tenant mismatch")
         if "soc:detection_engineer" not in roles:
             raise AuthorizationDenied("requires soc:detection_engineer")

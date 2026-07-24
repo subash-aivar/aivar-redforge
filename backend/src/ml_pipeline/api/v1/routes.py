@@ -24,6 +24,7 @@ from ml_pipeline.application.exceptions import (
     ApplicationValidationError,
 )
 from ml_pipeline.domain.exceptions.domain_exceptions import MLPipelineDomainError
+from ml_pipeline.domain.value_objects.identifiers import TenantId
 from ml_pipeline.infrastructure.container import MLPipelineContainer
 
 router = APIRouter(prefix="/ml-pipeline", tags=["ml-pipeline"])
@@ -42,7 +43,7 @@ def _map(exc: Exception) -> HTTPException:
 @router.post("/models/train")
 async def schedule_training(
     body: ScheduleTrainingRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: MLPipelineContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -64,7 +65,7 @@ async def schedule_training(
 async def promote(
     model_id: UUID,
     body: PromoteRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: MLPipelineContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -80,7 +81,7 @@ async def promote(
 async def deprecate(
     model_id: UUID,
     body: DeprecateRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: MLPipelineContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -95,7 +96,7 @@ async def deprecate(
 @router.get("/models/{model_id}")
 async def get_model(
     model_id: UUID,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: MLPipelineContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -107,7 +108,7 @@ async def get_model(
 
 @router.get("/models")
 async def list_models(
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     model_type: str | None = None,
     status: str | None = None,
@@ -124,7 +125,7 @@ async def list_models(
 @router.get("/models/{model_id}/governance")
 async def governance(
     model_id: UUID,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: MLPipelineContainer = Depends(get_container),
 ) -> list[dict[str, Any]]:
@@ -136,7 +137,7 @@ async def governance(
 
 @router.get("/signals")
 async def get_signals(
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     asset_ref_id: UUID | None = Query(default=None),
     signal_type: str | None = Query(default=None),
@@ -153,7 +154,7 @@ async def get_signals(
 @router.post("/inference")
 async def inference(
     body: InferenceRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: MLPipelineContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -167,7 +168,7 @@ async def inference(
 async def drift_check(
     model_id: UUID,
     body: DriftRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: MLPipelineContainer = Depends(get_container),
 ) -> dict[str, Any]:

@@ -29,10 +29,10 @@ from credential_vault.domain.repositories.i_credential_version_repository import
 )
 from credential_vault.domain.value_objects.identifiers import (
     CredentialId,
-    TenantId,
     VersionId,
 )
 from credential_vault.domain.value_objects.states import CredentialState, VersionState
+from redforge.shared.identifiers import EntityId
 
 
 @pytest.fixture
@@ -66,10 +66,10 @@ async def test_get_credential_success(
     credential_repo: AsyncMock,
     mock_permission_port: AsyncMock,
 ) -> None:
-    tenant_uuid = uuid4()
+    tenant_uuid = EntityId.generate()
     credential_uuid = uuid4()
     credential = make_credential(
-        tenant_id=TenantId(tenant_uuid),
+        tenant_id=tenant_uuid,
         credential_id=CredentialId(credential_uuid),
         name="query-me",
     )
@@ -90,7 +90,7 @@ async def test_get_credential_success(
     assert mock_permission_port.has_permission.await_args.args[2] == IPermissionPort.PERMISSION_READ
     credential_repo.get_by_id.assert_awaited_once_with(
         CredentialId(credential_uuid),
-        TenantId(tenant_uuid),
+        tenant_uuid,
     )
 
 
@@ -101,7 +101,7 @@ async def test_get_credential_access_denied(
 ) -> None:
     mock_permission_port.has_permission.return_value = False
     qry = GetCredentialQuery(
-        tenant_id=uuid4(),
+        tenant_id=EntityId.generate(),
         credential_id=uuid4(),
         principal_id=uuid4(),
     )
@@ -121,10 +121,10 @@ async def test_list_credentials_success(
     credential_repo: AsyncMock,
     mock_permission_port: AsyncMock,
 ) -> None:
-    tenant_uuid = uuid4()
+    tenant_uuid = EntityId.generate()
     credentials = [
-        make_credential(tenant_id=TenantId(tenant_uuid), name="one"),
-        make_credential(tenant_id=TenantId(tenant_uuid), name="two"),
+        make_credential(tenant_id=tenant_uuid, name="one"),
+        make_credential(tenant_id=tenant_uuid, name="two"),
     ]
     credential_repo.list_by_tenant.return_value = credentials
     qry = ListCredentialsQuery(
@@ -142,7 +142,7 @@ async def test_list_credentials_success(
     assert {dto.name for dto in result} == {"one", "two"}
     mock_permission_port.has_permission.assert_not_called()
     credential_repo.list_by_tenant.assert_awaited_once_with(
-        TenantId(tenant_uuid),
+        tenant_uuid,
         [CredentialState.ACTIVE],
         50,
         10,
@@ -154,7 +154,7 @@ async def test_list_credentials_invalid_state_string(
     credential_repo: AsyncMock,
 ) -> None:
     qry = ListCredentialsQuery(
-        tenant_id=uuid4(),
+        tenant_id=EntityId.generate(),
         principal_id=uuid4(),
         states=["NOT_A_STATE"],
     )
@@ -172,7 +172,7 @@ async def test_list_credentials_invalid_limit(
     credential_repo: AsyncMock,
 ) -> None:
     qry = ListCredentialsQuery(
-        tenant_id=uuid4(),
+        tenant_id=EntityId.generate(),
         principal_id=uuid4(),
         limit=0,
     )
@@ -189,7 +189,7 @@ async def test_list_credentials_invalid_offset(
     credential_repo: AsyncMock,
 ) -> None:
     qry = ListCredentialsQuery(
-        tenant_id=uuid4(),
+        tenant_id=EntityId.generate(),
         principal_id=uuid4(),
         offset=-1,
     )
@@ -205,7 +205,7 @@ async def test_list_credentials_clamps_limit(
     service: CredentialQueryService,
     credential_repo: AsyncMock,
 ) -> None:
-    tenant_uuid = uuid4()
+    tenant_uuid = EntityId.generate()
     credential_repo.list_by_tenant.return_value = []
     qry = ListCredentialsQuery(
         tenant_id=tenant_uuid,
@@ -217,7 +217,7 @@ async def test_list_credentials_clamps_limit(
     await service.list_credentials(qry)
 
     credential_repo.list_by_tenant.assert_awaited_once_with(
-        TenantId(tenant_uuid),
+        tenant_uuid,
         None,
         1000,
         0,
@@ -232,11 +232,11 @@ async def test_get_version_success(
     version_repo: AsyncMock,
     mock_permission_port: AsyncMock,
 ) -> None:
-    tenant_uuid = uuid4()
+    tenant_uuid = EntityId.generate()
     credential_uuid = uuid4()
     version_uuid = uuid4()
     version = make_version(
-        tenant_id=TenantId(tenant_uuid),
+        tenant_id=tenant_uuid,
         credential_id=CredentialId(credential_uuid),
         version_id=VersionId(version_uuid),
         state=VersionState.ACTIVE,
@@ -258,7 +258,7 @@ async def test_get_version_success(
     mock_permission_port.has_permission.assert_awaited_once()
     version_repo.get_by_id.assert_awaited_once_with(
         VersionId(version_uuid),
-        TenantId(tenant_uuid),
+        tenant_uuid,
     )
 
 
@@ -269,7 +269,7 @@ async def test_get_version_access_denied(
 ) -> None:
     mock_permission_port.has_permission.return_value = False
     qry = GetVersionQuery(
-        tenant_id=uuid4(),
+        tenant_id=EntityId.generate(),
         credential_id=uuid4(),
         version_id=uuid4(),
         principal_id=uuid4(),
@@ -289,16 +289,16 @@ async def test_list_versions_success(
     version_repo: AsyncMock,
     mock_permission_port: AsyncMock,
 ) -> None:
-    tenant_uuid = uuid4()
+    tenant_uuid = EntityId.generate()
     credential_uuid = uuid4()
     versions = [
         make_version(
-            tenant_id=TenantId(tenant_uuid),
+            tenant_id=tenant_uuid,
             credential_id=CredentialId(credential_uuid),
             version_number=1,
         ),
         make_version(
-            tenant_id=TenantId(tenant_uuid),
+            tenant_id=tenant_uuid,
             credential_id=CredentialId(credential_uuid),
             version_number=2,
             state=VersionState.PENDING,
@@ -319,7 +319,7 @@ async def test_list_versions_success(
     mock_permission_port.has_permission.assert_awaited_once()
     version_repo.list_by_credential.assert_awaited_once_with(
         CredentialId(credential_uuid),
-        TenantId(tenant_uuid),
+        tenant_uuid,
         [VersionState.ACTIVE, VersionState.PENDING],
     )
 
@@ -331,7 +331,7 @@ async def test_list_versions_access_denied(
 ) -> None:
     mock_permission_port.has_permission.return_value = False
     qry = ListVersionsQuery(
-        tenant_id=uuid4(),
+        tenant_id=EntityId.generate(),
         credential_id=uuid4(),
         principal_id=uuid4(),
     )
@@ -347,7 +347,7 @@ async def test_list_versions_invalid_state_string(
     version_repo: AsyncMock,
 ) -> None:
     qry = ListVersionsQuery(
-        tenant_id=uuid4(),
+        tenant_id=EntityId.generate(),
         credential_id=uuid4(),
         principal_id=uuid4(),
         states=["BOGUS"],

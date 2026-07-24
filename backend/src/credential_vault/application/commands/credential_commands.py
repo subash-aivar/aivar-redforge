@@ -6,10 +6,12 @@ from dataclasses import dataclass
 from datetime import datetime  # noqa: TC003 — runtime type for frozen dataclass fields
 from uuid import UUID  # noqa: TC003 — runtime type for frozen dataclass fields
 
+from credential_vault.domain.value_objects.identifiers import TenantId
+
 
 @dataclass(frozen=True, slots=True)
 class CreateCredentialCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     name: str
     category: str
     subtype: str
@@ -24,7 +26,7 @@ class CreateCredentialCommand:
 
 @dataclass(frozen=True, slots=True)
 class ResolveCredentialCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     credential_id: UUID
     principal_id: UUID
     purpose: str
@@ -36,7 +38,7 @@ class ResolveCredentialCommand:
 
 @dataclass(frozen=True, slots=True)
 class RotateCredentialCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     credential_id: UUID
     principal_id: UUID
     new_plaintext_secret: bytes
@@ -47,14 +49,14 @@ class RotateCredentialCommand:
 
 @dataclass(frozen=True, slots=True)
 class CommitRotationCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     credential_id: UUID
     principal_id: UUID
 
 
 @dataclass(frozen=True, slots=True)
 class AbortRotationCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     credential_id: UUID
     principal_id: UUID
     reason: str
@@ -62,7 +64,7 @@ class AbortRotationCommand:
 
 @dataclass(frozen=True, slots=True)
 class DisableCredentialCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     credential_id: UUID
     principal_id: UUID
     reason: str
@@ -70,14 +72,14 @@ class DisableCredentialCommand:
 
 @dataclass(frozen=True, slots=True)
 class EnableCredentialCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     credential_id: UUID
     principal_id: UUID
 
 
 @dataclass(frozen=True, slots=True)
 class RevokeCredentialCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     credential_id: UUID
     principal_id: UUID
     reason: str
@@ -85,7 +87,7 @@ class RevokeCredentialCommand:
 
 @dataclass(frozen=True, slots=True)
 class EmergencyRevokeCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     credential_id: UUID
     principal_id: UUID
     justification: str
@@ -93,14 +95,14 @@ class EmergencyRevokeCommand:
 
 @dataclass(frozen=True, slots=True)
 class ExpireCredentialCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     credential_id: UUID
     principal_id: UUID
 
 
 @dataclass(frozen=True, slots=True)
 class RecoverCredentialCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     credential_id: UUID
     principal_id: UUID
     target_version_id: UUID
@@ -109,14 +111,14 @@ class RecoverCredentialCommand:
 
 @dataclass(frozen=True, slots=True)
 class HardDeleteCredentialCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     credential_id: UUID
     principal_id: UUID
 
 
 @dataclass(frozen=True, slots=True)
 class RollbackVersionCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     credential_id: UUID
     principal_id: UUID
     target_version_id: UUID
@@ -124,7 +126,7 @@ class RollbackVersionCommand:
 
 @dataclass(frozen=True, slots=True)
 class UpdateCredentialMetadataCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     credential_id: UUID
     principal_id: UUID
     description: str | None
@@ -133,7 +135,7 @@ class UpdateCredentialMetadataCommand:
 
 @dataclass(frozen=True, slots=True)
 class AttachRotationPolicyCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     credential_id: UUID
     policy_id: UUID
     principal_id: UUID
@@ -141,14 +143,14 @@ class AttachRotationPolicyCommand:
 
 @dataclass(frozen=True, slots=True)
 class DetachRotationPolicyCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     credential_id: UUID
     principal_id: UUID
 
 
 @dataclass(frozen=True, slots=True)
 class AttachExpirationPolicyCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     credential_id: UUID
     policy_id: UUID
     principal_id: UUID
@@ -156,6 +158,6 @@ class AttachExpirationPolicyCommand:
 
 @dataclass(frozen=True, slots=True)
 class DetachExpirationPolicyCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     credential_id: UUID
     principal_id: UUID

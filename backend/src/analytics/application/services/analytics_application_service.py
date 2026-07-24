@@ -103,7 +103,7 @@ class AnalyticsApplicationService:
             domain = SecurityDomain(cmd.domain)
         except ValueError as exc:
             raise ApplicationValidationError(str(exc)) from exc
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         ds = AnalyticsDataSet.register(
             AnalyticsDataSetId.generate(), tenant, domain, cmd.schema_version, now
@@ -123,7 +123,7 @@ class AnalyticsApplicationService:
             kpi_type = KPIType(cmd.kpi_type)
         except ValueError as exc:
             raise ApplicationValidationError(str(exc)) from exc
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         existing = await self._kpis.find_by_type(tenant, kpi_type)
         if existing is not None:
             return {
@@ -153,7 +153,7 @@ class AnalyticsApplicationService:
             method = DetectionMethod(cmd.method)
         except ValueError as exc:
             raise ApplicationValidationError(str(exc)) from exc
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         baseline = AnomalyDetectionBaseline.create(
             AnomalyDetectionBaselineId.generate(),
@@ -175,7 +175,7 @@ class AnalyticsApplicationService:
             "observation_count": baseline.observation_count,
         }
 
-    def _signal_series(self, tenant_id: UUID, signal: AnomalySignalType) -> list[float]:
+    def _signal_series(self, tenant_id: TenantId, signal: AnomalySignalType) -> list[float]:
         # Simplified daily counts for bootstrap
         if signal == AnomalySignalType.VULNERABILITY_INGEST_RATE:
             rows = self._store.list_events(tenant_id, "vulnerability")
@@ -204,7 +204,7 @@ class AnalyticsApplicationService:
             payload=dict(cmd.payload),
         )
         if inserted:
-            tenant = TenantId(cmd.tenant_id)
+            tenant = cmd.tenant_id
             try:
                 sec_domain = SecurityDomain(cmd.domain)
             except ValueError:
@@ -222,7 +222,7 @@ class AnalyticsApplicationService:
             kpi_type = KPIType(cmd.kpi_type)
         except ValueError as exc:
             raise ApplicationValidationError(str(exc)) from exc
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         kpi = await self._kpis.find_by_type(tenant, kpi_type)
         if kpi is None:
             kpi = SecurityKPI.define(
@@ -276,7 +276,7 @@ class AnalyticsApplicationService:
 
     async def trigger_rebuild(self, cmd: TriggerProjectionRebuildCommand) -> dict[str, Any]:
         require_at_least(cmd.actor_roles, AnalyticsRole.ADMIN)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         active = await self._datasets.find_all_active(tenant)
         rebuilt = 0
         for ds in active:
@@ -315,14 +315,14 @@ class AnalyticsApplicationService:
         return {"rebuilt_datasets": rebuilt}
 
     async def get_kpi(
-        self, tenant_id: UUID, kpi_type: str, actor_roles: tuple[str, ...]
+        self, tenant_id: TenantId, kpi_type: str, actor_roles: tuple[str, ...]
     ) -> dict[str, Any]:
         require_at_least(actor_roles, AnalyticsRole.VIEWER)
         try:
             kt = KPIType(kpi_type)
         except ValueError as exc:
             raise ApplicationValidationError(str(exc)) from exc
-        kpi = await self._kpis.find_by_type(TenantId(tenant_id), kt)
+        kpi = await self._kpis.find_by_type(tenant_id, kt)
         if kpi is None:
             raise ApplicationNotFoundError(kpi_type)
         history = self._store.list_kpi_snapshots(tenant_id, kt.value)
@@ -340,22 +340,22 @@ class AnalyticsApplicationService:
         }
 
     async def get_kpi_history(
-        self, tenant_id: UUID, kpi_type: str, actor_roles: tuple[str, ...]
+        self, tenant_id: TenantId, kpi_type: str, actor_roles: tuple[str, ...]
     ) -> list[dict[str, Any]]:
         require_at_least(actor_roles, AnalyticsRole.VIEWER)
         return self._store.list_kpi_snapshots(tenant_id, kpi_type)
 
     async def list_anomalies(
-        self, tenant_id: UUID, actor_roles: tuple[str, ...]
+        self, tenant_id: TenantId, actor_roles: tuple[str, ...]
     ) -> list[dict[str, Any]]:
         require_at_least(actor_roles, AnalyticsRole.VIEWER)
         return self._store.list_anomalies(tenant_id)
 
     async def get_dataset_status(
-        self, tenant_id: UUID, dataset_id: UUID, actor_roles: tuple[str, ...]
+        self, tenant_id: TenantId, dataset_id: UUID, actor_roles: tuple[str, ...]
     ) -> dict[str, Any]:
         require_at_least(actor_roles, AnalyticsRole.VIEWER)
-        ds = await self._datasets.find_by_id(TenantId(tenant_id), AnalyticsDataSetId(dataset_id))
+        ds = await self._datasets.find_by_id(tenant_id, AnalyticsDataSetId(dataset_id))
         if ds is None:
             raise ApplicationNotFoundError(str(dataset_id))
         return {
@@ -366,9 +366,9 @@ class AnalyticsApplicationService:
             "records_ingested": ds.records_ingested,
         }
 
-    async def get_summary(self, tenant_id: UUID, actor_roles: tuple[str, ...]) -> dict[str, Any]:
+    async def get_summary(self, tenant_id: TenantId, actor_roles: tuple[str, ...]) -> dict[str, Any]:
         require_at_least(actor_roles, AnalyticsRole.VIEWER)
-        tenant = TenantId(tenant_id)
+        tenant = tenant_id
         kpis = []
         for kt in KPIType:
             row = await self._kpis.find_by_type(tenant, kt)
@@ -389,14 +389,14 @@ class AnalyticsApplicationService:
 
     async def evaluate_anomaly(
         self,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         signal_type: str,
         observed: float,
         actor_roles: tuple[str, ...],
     ) -> dict[str, Any]:
         require_at_least(actor_roles, AnalyticsRole.ANALYST)
         baseline = await self._baselines.find_by_signal_type(
-            TenantId(tenant_id), AnomalySignalType(signal_type)
+            tenant_id, AnomalySignalType(signal_type)
         )
         if baseline is None:
             raise ApplicationNotFoundError(signal_type)
@@ -465,7 +465,7 @@ class AnalyticsApplicationService:
             raise ApplicationValidationError(str(exc)) from exc
         if domain == SecurityDomain.CROSS_DOMAIN:
             require_at_least(cmd.actor_roles, AnalyticsRole.ENGINEER)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         now = datetime.now(UTC)
         query = AnalyticsQuery.create(
             AnalyticsQueryId.generate(),
@@ -487,7 +487,7 @@ class AnalyticsApplicationService:
 
     async def execute_query(self, cmd: ExecuteAnalyticsQueryCommand) -> dict[str, Any]:
         require_at_least(cmd.actor_roles, AnalyticsRole.ANALYST)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         query = await self._queries.find_by_id(tenant, AnalyticsQueryId(cmd.query_id))
         if query is None:
             raise ApplicationNotFoundError(str(cmd.query_id))
@@ -529,7 +529,7 @@ class AnalyticsApplicationService:
         }
 
     def _safe_execute(
-        self, template: str, params: dict[str, object], tenant_id: UUID
+        self, template: str, params: dict[str, object], tenant_id: TenantId
     ) -> list[dict[str, Any]]:
         """Parameterized-safe projection query (no SQL string formatting)."""
         del template  # validated template; execution uses typed store
@@ -560,10 +560,10 @@ class AnalyticsApplicationService:
         ]
 
     async def list_queries(
-        self, tenant_id: UUID, actor_roles: tuple[str, ...]
+        self, tenant_id: TenantId, actor_roles: tuple[str, ...]
     ) -> list[dict[str, Any]]:
         require_at_least(actor_roles, AnalyticsRole.VIEWER)
-        rows = await self._queries.find_all(TenantId(tenant_id))
+        rows = await self._queries.find_all(tenant_id)
         return [
             {
                 "query_id": str(q.query_id),
@@ -574,7 +574,7 @@ class AnalyticsApplicationService:
         ]
 
     async def get_query_result(
-        self, tenant_id: UUID, execution_id: str, actor_roles: tuple[str, ...]
+        self, tenant_id: TenantId, execution_id: str, actor_roles: tuple[str, ...]
     ) -> dict[str, Any]:
         require_at_least(actor_roles, AnalyticsRole.VIEWER)
         del tenant_id
@@ -585,7 +585,7 @@ class AnalyticsApplicationService:
 
     async def export_dataset(
         self,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         dataset_id: UUID,
         actor_roles: tuple[str, ...],
         *,
@@ -593,7 +593,7 @@ class AnalyticsApplicationService:
         page_size: int = 100,
     ) -> dict[str, Any]:
         require_at_least(actor_roles, AnalyticsRole.ANALYST)
-        ds = await self._datasets.find_by_id(TenantId(tenant_id), AnalyticsDataSetId(dataset_id))
+        ds = await self._datasets.find_by_id(tenant_id, AnalyticsDataSetId(dataset_id))
         if ds is None:
             raise ApplicationNotFoundError(str(dataset_id))
         domain_key = {

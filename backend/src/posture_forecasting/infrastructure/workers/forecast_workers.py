@@ -1,7 +1,9 @@
 from __future__ import annotations
 
-from typing import Any
-from uuid import UUID
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from posture_forecasting.domain.value_objects.identifiers import TenantId
 
 from posture_forecasting.application.commands.forecast_commands import GeneratePostureForecast
 
@@ -13,7 +15,7 @@ class PostureForecastWorker:
 
     async def tick(
         self,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         baseline: float = 50.0,
         velocity: float = 1.0,
         critical: int = 2,
@@ -31,10 +33,9 @@ class ForecastAccuracyWorker:
         self._accuracy = accuracy_service
         self.runs = 0
 
-    async def tick(self, tenant_id: UUID, actual_score: float = 40.0) -> int:
+    async def tick(self, tenant_id: TenantId, actual_score: float = 40.0) -> int:
         from datetime import UTC, datetime
 
-        from posture_forecasting.domain.value_objects.identifiers import TenantId
 
         self.runs += 1
         count = 0
@@ -44,7 +45,7 @@ class ForecastAccuracyWorker:
                 if str(forecast.tenant_id) != str(tenant_id):
                     continue
                 self._accuracy.record(forecast, horizon, actual_score)
-                await self._forecasts.save(forecast, TenantId(tenant_id))
+                await self._forecasts.save(forecast, tenant_id)
                 count += 1
         return count
 
@@ -56,7 +57,7 @@ class ForecastScheduler:
         self.forecast_worker = forecast_worker
         self.accuracy_worker = accuracy_worker
 
-    async def tick_all(self, tenant_id: UUID) -> dict[str, int]:
+    async def tick_all(self, tenant_id: TenantId) -> dict[str, int]:
         await self.forecast_worker.tick(tenant_id)
         measured = await self.accuracy_worker.tick(tenant_id)
         return {"forecast_runs": self.forecast_worker.runs, "accuracy_updates": measured}

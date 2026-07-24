@@ -1,11 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from analytics.domain.ports.i_security_graph_write_port import ISecurityGraphWritePort
-
-if TYPE_CHECKING:
-    from uuid import UUID
+from analytics.domain.value_objects.identifiers import TenantId
 
 
 class InMemorySecurityGraphWriteAdapter(ISecurityGraphWritePort):
@@ -16,7 +12,7 @@ class InMemorySecurityGraphWriteAdapter(ISecurityGraphWritePort):
 
     async def upsert_anomaly_node(
         self,
-        tenant_id: UUID,
+        tenant_id: TenantId,
         *,
         signal_type: str,
         severity: str,

@@ -1,17 +1,16 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
-from uuid import uuid4
 
 from integration_hub.domain.aggregates.connector_registration import ConnectorRegistration
 from integration_hub.domain.services.circuit_breaker_service import CircuitBreakerService
 from integration_hub.domain.value_objects.enums import CircuitState, ConnectorType
-from integration_hub.domain.value_objects.identifiers import TenantId
+from integration_hub.domain.value_objects.identifiers import EntityId
 
 
 def _reg() -> ConnectorRegistration:
     return ConnectorRegistration.register(
-        TenantId(uuid4()),
+        EntityId.generate(),
         ConnectorType.CLOUD_AWS,
         "aws",
         "vault/aws",

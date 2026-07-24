@@ -80,7 +80,7 @@ class PgDetectionExceptionRepository(IDetectionExceptionRepository):
         asset = model.asset_scope_json
         return DetectionException(
             exception_id=DetectionExceptionId(model.id),
-            tenant_id=TenantId(model.tenant_id),
+            tenant_id=TenantId.from_uuid(model.tenant_id),
             exception_type=ExceptionType(model.exception_type),
             scope=ExceptionScope(
                 kind=ExceptionScopeKind(str(scope_data["kind"])),

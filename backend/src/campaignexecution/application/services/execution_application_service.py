@@ -35,7 +35,6 @@ from campaignexecution.domain.value_objects.identifiers import (
     CampaignTaskId,
     SafetyMonitorId,
     TaskGraphExecutionId,
-    TenantId,
 )
 
 if TYPE_CHECKING:
@@ -163,7 +162,7 @@ class ExecutionApplicationService:
 
     async def initialize_execution(self, cmd: InitializeCampaignExecutionCommand) -> ExecutionDTO:
         now = datetime.now(UTC)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         execution_id = TaskGraphExecutionId.generate()
         monitor_id = SafetyMonitorId.generate()
 
@@ -222,7 +221,7 @@ class ExecutionApplicationService:
         from campaignexecution.application.commands.execution_commands import DispatchTaskSpec
 
         now = datetime.now(UTC)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         if cmd.tasks:
             specs = list(cmd.tasks)
         elif cmd.task_id is not None:
@@ -289,7 +288,7 @@ class ExecutionApplicationService:
 
     async def record_task_completion(self, cmd: RecordTaskCompletionCommand) -> ExecutionDTO:
         now = datetime.now(UTC)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         task_id = CampaignTaskId(cmd.task_id)
 
         try:
@@ -344,7 +343,7 @@ class ExecutionApplicationService:
         self, cmd: ResolveConditionalBranchCommand
     ) -> ExecutionDTO:
         now = datetime.now(UTC)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         completed_id = CampaignTaskId(cmd.completed_task_id)
         try:
             outcome = TaskOutcome(cmd.outcome)
@@ -377,7 +376,7 @@ class ExecutionApplicationService:
 
     async def record_task_failure(self, cmd: RecordTaskFailureCommand) -> ExecutionDTO:
         now = datetime.now(UTC)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         task_id = CampaignTaskId(cmd.task_id)
 
         async with self._uow_factory() as uow:
@@ -409,7 +408,7 @@ class ExecutionApplicationService:
 
     async def evaluate_barrier(self, cmd: EvaluateBarrierCommand) -> ExecutionDTO:
         now = datetime.now(UTC)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         barrier_id = CampaignTaskId(cmd.barrier_task_id)
         group_ids = [CampaignTaskId(tid) for tid in cmd.task_group_task_ids]
 
@@ -429,7 +428,7 @@ class ExecutionApplicationService:
 
     async def reach_human_approval_gate(self, cmd: ReachHumanApprovalGateCommand) -> ExecutionDTO:
         now = datetime.now(UTC)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         pending_gate = PendingApprovalGate(
             task_id=CampaignTaskId(cmd.task_id),
             gate_created_at=now,
@@ -461,7 +460,7 @@ class ExecutionApplicationService:
 
     async def grant_human_approval(self, cmd: GrantHumanApprovalCommand) -> ExecutionDTO:
         now = datetime.now(UTC)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
 
         async with self._uow_factory() as uow:
             execution = await uow.executions.find_by_id(
@@ -479,7 +478,7 @@ class ExecutionApplicationService:
 
     async def deny_human_approval(self, cmd: DenyHumanApprovalCommand) -> ExecutionDTO:
         now = datetime.now(UTC)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
 
         async with self._uow_factory() as uow:
             execution = await uow.executions.find_by_id(
@@ -497,7 +496,7 @@ class ExecutionApplicationService:
 
     async def handle_approval_timeout(self, cmd: HandleApprovalTimeoutCommand) -> ExecutionDTO:
         now = datetime.now(UTC)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
 
         async with self._uow_factory() as uow:
             execution = await uow.executions.find_by_id(
@@ -515,7 +514,7 @@ class ExecutionApplicationService:
 
     async def pause_execution(self, cmd: PauseCampaignExecutionCommand) -> ExecutionDTO:
         now = datetime.now(UTC)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
 
         async with self._uow_factory() as uow:
             execution = await uow.executions.find_by_id(
@@ -538,7 +537,7 @@ class ExecutionApplicationService:
 
     async def resume_execution(self, cmd: ResumeCampaignExecutionCommand) -> ExecutionDTO:
         now = datetime.now(UTC)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
 
         async with self._uow_factory() as uow:
             execution = await uow.executions.find_by_id(
@@ -558,7 +557,7 @@ class ExecutionApplicationService:
         self, cmd: HandleKillSwitchTriggeredCommand
     ) -> ExecutionDTO:
         now = datetime.now(UTC)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
 
         async with self._uow_factory() as uow:
             execution = await uow.executions.find_by_id(
@@ -581,7 +580,7 @@ class ExecutionApplicationService:
 
     async def initiate_rollback(self, cmd: InitiateRollbackCommand) -> ExecutionDTO:
         now = datetime.now(UTC)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         eligible_ids = [CampaignTaskId(tid) for tid in cmd.rollback_eligible_task_ids]
 
         async with self._uow_factory() as uow:
@@ -619,7 +618,7 @@ class ExecutionApplicationService:
 
     async def complete_execution(self, cmd: CompleteExecutionCommand) -> ExecutionDTO:
         now = datetime.now(UTC)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
 
         async with self._uow_factory() as uow:
             execution = await uow.executions.find_by_id(
@@ -650,7 +649,7 @@ class ExecutionApplicationService:
 
     async def abort_execution(self, cmd: AbortExecutionCommand) -> ExecutionDTO:
         now = datetime.now(UTC)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
 
         async with self._uow_factory() as uow:
             execution = await uow.executions.find_by_id(
@@ -683,7 +682,7 @@ class ExecutionApplicationService:
         self, cmd: TriggerAutoAbortOnDetectionCommand
     ) -> SafetyMonitorDTO | None:
         now = datetime.now(UTC)
-        tenant = TenantId(cmd.tenant_id)
+        tenant = cmd.tenant_id
         instance_id = CampaignInstanceId(cmd.campaign_instance_id)
 
         async with self._uow_factory() as uow:
@@ -718,7 +717,7 @@ class ExecutionApplicationService:
         return _to_monitor_dto(monitor)
 
     async def get_execution(self, query: GetExecutionQuery) -> ExecutionDTO | None:
-        tenant = TenantId(query.tenant_id)
+        tenant = query.tenant_id
         async with self._uow_factory() as uow:
             execution = await uow.executions.find_by_id(
                 TaskGraphExecutionId(query.execution_id), tenant

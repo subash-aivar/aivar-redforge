@@ -78,7 +78,7 @@ class PgEvidenceChainRepository(IEvidenceChainRepository):
             )
         return EvidenceChain(
             chain_id=EvidenceChainId(model.id),
-            tenant_id=TenantId(model.tenant_id),
+            tenant_id=TenantId.from_uuid(model.tenant_id),
             operation_ref=OperationRef(model.operation_id),
             engagement_ref=EngagementRef(model.engagement_id),
             entries=entries,

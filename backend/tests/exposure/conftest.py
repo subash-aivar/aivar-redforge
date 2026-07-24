@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from uuid import uuid4
-
 import pytest
 
 from exposure.domain.value_objects.identifiers import TenantId
@@ -18,7 +16,7 @@ ADMIN = ("exposure:admin",)
 
 @pytest.fixture
 def tenant_id() -> TenantId:
-    return TenantId(uuid4())
+    return TenantId.generate()
 
 
 @pytest.fixture

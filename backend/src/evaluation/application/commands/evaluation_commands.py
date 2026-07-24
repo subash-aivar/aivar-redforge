@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
+from evaluation.domain.value_objects.identifiers import TenantId
+
 if TYPE_CHECKING:
     from uuid import UUID
 
@@ -18,7 +20,7 @@ if TYPE_CHECKING:
 class EvaluateCampaignCommand:
     """Trigger post-completion evaluation for a campaign instance."""
 
-    tenant_id: UUID
+    tenant_id: TenantId
     campaign_instance_id: UUID
     campaign_id: UUID
     run_number: int
@@ -32,19 +34,19 @@ class EvaluateCampaignCommand:
 
 @dataclass(frozen=True, slots=True)
 class ResolveEvaluationReviewCommand:
-    tenant_id: UUID
+    tenant_id: TenantId
     evaluation_id: UUID
     documented_reason: str
 
 
 @dataclass(frozen=True, slots=True)
 class GetEvaluationQuery:
-    tenant_id: UUID
+    tenant_id: TenantId
     campaign_instance_id: UUID
 
 
 @dataclass(frozen=True, slots=True)
 class GetMetricsTrendQuery:
-    tenant_id: UUID
+    tenant_id: TenantId
     campaign_id: UUID
     limit: int = 5

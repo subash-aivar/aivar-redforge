@@ -15,6 +15,7 @@ from threat_hunt.application.commands.hunt_commands import (
 )
 from threat_hunt.application.exceptions import ApplicationForbiddenError, ApplicationNotFoundError
 from threat_hunt.domain.exceptions.domain_exceptions import ThreatHuntDomainError
+from threat_hunt.domain.value_objects.identifiers import TenantId
 from threat_hunt.infrastructure.container import ThreatHuntContainer
 
 router = APIRouter(prefix="/threat-hunt", tags=["threat-hunt"])
@@ -55,7 +56,7 @@ async def health() -> dict[str, str]:
 
 @router.get("/candidates")
 async def list_candidates(
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: ThreatHuntContainer = Depends(get_container),
 ) -> list[dict[str, Any]]:
@@ -68,7 +69,7 @@ async def list_candidates(
 @router.post("/candidates", status_code=201)
 async def generate(
     body: GenerateBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: ThreatHuntContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -93,7 +94,7 @@ async def generate(
 async def promote(
     candidate_id: UUID,
     body: PromoteBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: ThreatHuntContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -116,7 +117,7 @@ async def promote(
 async def reject(
     candidate_id: UUID,
     body: RejectBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: ThreatHuntContainer = Depends(get_container),
 ) -> dict[str, Any]:

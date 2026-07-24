@@ -28,6 +28,7 @@ from credential_vault.application.commands.credential_commands import (
     RotateCredentialCommand,
     UpdateCredentialMetadataCommand,
 )
+from redforge.shared.identifiers import EntityId
 
 
 def test_create_credential_command_has_exactly_11_fields() -> None:
@@ -36,7 +37,7 @@ def test_create_credential_command_has_exactly_11_fields() -> None:
 
 def test_create_credential_command_frozen() -> None:
     cmd = CreateCredentialCommand(
-        tenant_id=uuid4(),
+        tenant_id=EntityId.generate(),
         name="n",
         category="API_KEY",
         subtype="GENERIC",
@@ -53,7 +54,7 @@ def test_create_credential_command_frozen() -> None:
 
 def test_create_credential_command_slots() -> None:
     cmd = CreateCredentialCommand(
-        tenant_id=uuid4(),
+        tenant_id=EntityId.generate(),
         name="n",
         category="API_KEY",
         subtype="GENERIC",

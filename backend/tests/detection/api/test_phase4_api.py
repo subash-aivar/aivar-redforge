@@ -48,6 +48,7 @@ from detection.infrastructure.blob.in_memory_evidence_blob_store import (
 from redforge.api.dependencies import get_organization_service
 from redforge.api.security import TenantContext, get_tenant_context
 from redforge.domain.identity.value_objects import MembershipRole, Permission
+from redforge.shared.identifiers import EntityId
 from tests.detection.application.test_execution_finding_application_service import (
     _FakeExecutions,
     _FakeFindings,
@@ -107,7 +108,7 @@ class _CombinedUow(IUnitOfWork):
 
 @pytest_asyncio.fixture
 async def phase4_client() -> AsyncIterator[AsyncClient]:
-    org_id = uuid4()
+    org_id = EntityId.generate()
     user_id = uuid4()
     rules = _FakeRules()
     executions = _FakeExecutions()
@@ -159,7 +160,7 @@ async def phase4_client() -> AsyncIterator[AsyncClient]:
     app.dependency_overrides[get_correlation_coordinator] = lambda: coordinator
 
     # seed a finding for correlate
-    finding = make_finding(tenant_id=__import__("detection.domain.value_objects.identifiers", fromlist=["TenantId"]).TenantId(org_id), now=datetime.now(UTC))
+    finding = make_finding(tenant_id=org_id, now=datetime.now(UTC))
     await findings.save(finding)
     app.state.seed_finding_id = str(finding.finding_id)
     app.state.org_id = org_id

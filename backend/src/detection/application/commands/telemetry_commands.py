@@ -6,10 +6,12 @@ from dataclasses import dataclass
 from typing import Any
 from uuid import UUID
 
+from detection.domain.value_objects.identifiers import TenantId
+
 
 @dataclass(frozen=True, slots=True)
 class RegisterTelemetrySource:
-    tenant_id: UUID
+    tenant_id: TenantId
     name: str
     source_type: str
     trust_level: str
@@ -28,14 +30,14 @@ class RegisterTelemetrySource:
 
 @dataclass(frozen=True, slots=True)
 class DeactivateTelemetrySource:
-    tenant_id: UUID
+    tenant_id: TenantId
     source_id: UUID
     reason: str
 
 
 @dataclass(frozen=True, slots=True)
 class UpdateTelemetrySourceHealth:
-    tenant_id: UUID
+    tenant_id: TenantId
     source_id: UUID
     status: str
     detail: str | None = None
@@ -44,7 +46,7 @@ class UpdateTelemetrySourceHealth:
 
 @dataclass(frozen=True, slots=True)
 class UpdateTelemetrySource:
-    tenant_id: UUID
+    tenant_id: TenantId
     source_id: UUID
     description: str | None = None
     trust_level: str | None = None
@@ -61,7 +63,7 @@ class UpdateTelemetrySource:
 
 @dataclass(frozen=True, slots=True)
 class ValidateRuleAgainstSchema:
-    tenant_id: UUID
+    tenant_id: TenantId
     rule_id: UUID
     source_id: UUID
     version: str | None = None
@@ -69,7 +71,7 @@ class ValidateRuleAgainstSchema:
 
 @dataclass(frozen=True, slots=True)
 class SimulateRule:
-    tenant_id: UUID
+    tenant_id: TenantId
     rule_id: UUID
     source_id: UUID
     window_start: str

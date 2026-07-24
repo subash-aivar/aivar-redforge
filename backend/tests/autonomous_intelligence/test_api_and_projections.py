@@ -21,6 +21,7 @@ from autonomous_intelligence.infrastructure.workers.intelligence_workers import 
 )
 from redforge.api.security import TenantContext, get_tenant_context
 from redforge.domain.identity.value_objects import MembershipRole, Permission
+from redforge.shared.identifiers import EntityId
 
 
 def _override_tenant_context(
@@ -53,7 +54,7 @@ def _headers(
     tenant: str | None = None,
     roles: str = "system,soc:detection_engineer,ai:ml_engineer,ai:operator,playbook:analyst",
 ) -> dict[str, str]:
-    return {"X-Tenant-Id": tenant or str(uuid4()), "X-Roles": roles}
+    return {"X-Tenant-Id": tenant or str(EntityId.generate()), "X-Roles": roles}
 
 
 @pytest.mark.parametrize("conf", [0.75, 0.8, 0.85, 0.9, 0.95, 1.0])

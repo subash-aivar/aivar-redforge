@@ -147,7 +147,7 @@ class PgExecutionJournalRepository(IExecutionJournalRepository):
         ]
         return ExecutionJournal(
             journal_id=ExecutionJournalId(model.id),
-            tenant_id=TenantId(model.tenant_id),
+            tenant_id=TenantId.from_uuid(model.tenant_id),
             engagement_id=EngagementId(model.engagement_id),
             created_at=model.created_at,
             updated_at=model.updated_at,

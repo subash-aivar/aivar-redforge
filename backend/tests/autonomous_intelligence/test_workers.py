@@ -9,12 +9,13 @@ from autonomous_intelligence.application.commands.intelligence_commands import (
     CreateIntelligenceSuggestion,
 )
 from autonomous_intelligence.infrastructure.container import AutonomousIntelligenceContainer
+from redforge.shared.identifiers import EntityId
 
 
 @pytest.mark.asyncio
 async def test_expiry_worker() -> None:
     c = AutonomousIntelligenceContainer()
-    tenant = uuid4()
+    tenant = EntityId.generate()
     created = await c.app.create_suggestion(
         CreateIntelligenceSuggestion(
             tenant,

@@ -11,6 +11,7 @@ from analytics.api.dependencies import reset_container
 from analytics.api.v1.routes import router
 from redforge.api.security import TenantContext, get_tenant_context
 from redforge.domain.identity.value_objects import MembershipRole, Permission
+from redforge.shared.identifiers import EntityId
 
 
 def _override_tenant_context(
@@ -51,7 +52,7 @@ def _headers(tenant: str, roles: str = "analytics:engineer") -> dict[str, str]:
 
 @pytest.mark.asyncio
 async def test_register_dataset_and_summary(client: AsyncClient) -> None:
-    tenant = str(uuid4())
+    tenant = str(EntityId.generate())
     r = await client.post(
         "/api/v1/analytics/datasets",
         json={"domain": "Vulnerability", "schema_version": "1"},
@@ -76,7 +77,7 @@ async def test_register_dataset_and_summary(client: AsyncClient) -> None:
 
 @pytest.mark.asyncio
 async def test_viewer_cannot_define_kpi(client: AsyncClient) -> None:
-    tenant = str(uuid4())
+    tenant = str(EntityId.generate())
     r = await client.post(
         "/api/v1/analytics/kpis",
         json={"kpi_type": "MTTD"},
@@ -87,7 +88,7 @@ async def test_viewer_cannot_define_kpi(client: AsyncClient) -> None:
 
 @pytest.mark.asyncio
 async def test_ingest_idempotent_and_kpi_compute(client: AsyncClient) -> None:
-    tenant = str(uuid4())
+    tenant = str(EntityId.generate())
     now = datetime.now(UTC).isoformat()
     body = {
         "domain": "Vulnerability",
@@ -122,7 +123,7 @@ async def test_ingest_idempotent_and_kpi_compute(client: AsyncClient) -> None:
 
 @pytest.mark.asyncio
 async def test_query_requires_analyst(client: AsyncClient) -> None:
-    tenant = str(uuid4())
+    tenant = str(EntityId.generate())
     created = await client.post(
         "/api/v1/analytics/queries",
         json={

@@ -4,6 +4,7 @@ from uuid import UUID, uuid4
 
 import pytest
 
+from redforge.shared.identifiers import EntityId
 from reporting.application.commands.reporting_commands import GenerateReportOnDemandCommand
 from reporting.application.exceptions import ApplicationRateLimitedError
 from reporting.domain.ports.i_ml_signal_query_port import MLSignalBundleDTO, MLSignalDTO
@@ -67,7 +68,7 @@ def test_rate_limit_11th_denied() -> None:
 @pytest.mark.asyncio
 async def test_delivery_email_and_webhook_audit() -> None:
     c = ReportingContainer()
-    tid = uuid4()
+    tid = EntityId.generate()
     template_id = c.template_id_for(ReportType.DETECTION_ANALYTICS_REPORT)
     assert template_id
     dto = await c.app.generate_on_demand(
@@ -103,7 +104,7 @@ async def test_bi_export_rate_limit_raises() -> None:
 async def test_predictive_template_end_to_end_cold_start() -> None:
     ml = StubMLSignalQueryAdapter()
     c = ReportingContainer(ml_port=ml)
-    tid = uuid4()
+    tid = EntityId.generate()
     template_id = c.template_id_for(ReportType.PREDICTIVE_THREAT_FORECAST)
     assert template_id
     dto = await c.app.generate_on_demand(

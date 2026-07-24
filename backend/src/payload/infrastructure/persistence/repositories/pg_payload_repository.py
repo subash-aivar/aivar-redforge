@@ -71,7 +71,7 @@ class PgPayloadRepository(IPayloadRepository):
             versions = _versions_from_json(list(versions_raw))
         return Payload(
             payload_id=PayloadId(model.id),
-            tenant_id=TenantId(model.tenant_id),
+            tenant_id=TenantId.from_uuid(model.tenant_id),
             payload_key=PayloadKey(model.payload_key),
             payload_type=PayloadType(model.payload_type),
             impact_ceiling=ImpactCeiling(model.impact_ceiling),

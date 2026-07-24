@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
+from evaluation.domain.value_objects.identifiers import TenantId
+
 if TYPE_CHECKING:
     from uuid import UUID
 
@@ -15,7 +17,7 @@ class CampaignInstanceRef:
 
     instance_id: UUID
     campaign_id: UUID
-    tenant_id: UUID
+    tenant_id: TenantId
     run_number: int
 
 

@@ -70,7 +70,7 @@ def _constraints_from_json(data: dict[str, Any]) -> AuthorizationConstraints:
 def _to_domain(row: TargetAuthorizationModel) -> TargetAuthorization:
     return TargetAuthorization(
         authorization_id=TargetAuthorizationId(row.id),
-        tenant_id=TenantId(row.tenant_id),
+        tenant_id=TenantId.from_uuid(row.tenant_id),
         engagement_id=EngagementId(row.engagement_id),
         target_ref=TargetRef(asset_id=row.asset_id, display_name=row.display_name),
         techniques=_techniques_from_json(row.techniques_json),

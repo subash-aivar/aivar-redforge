@@ -180,7 +180,7 @@ def _to_domain(row: DetectionRuleModel) -> DetectionRule:
     )
     return DetectionRule(
         rule_id=DetectionRuleId(row.id),
-        tenant_id=TenantId(row.tenant_id),
+        tenant_id=TenantId.from_uuid(row.tenant_id),
         rule_key=RuleKey(row.rule_key),
         title=row.title,
         description=row.description,

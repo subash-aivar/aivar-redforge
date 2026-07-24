@@ -166,7 +166,7 @@ class PgOperationRepository(IOperationRepository):
             description=model.description or "",
         )
 
-    async def _load_children(self, operation_id: UUID, tenant_id: UUID) -> tuple[
+    async def _load_children(self, operation_id: UUID, tenant_id: TenantId) -> tuple[
         dict[str, ExecutionStep],
         list[StepDependency],
         list[OperationApproval],
@@ -241,7 +241,7 @@ class PgOperationRepository(IOperationRepository):
     ) -> Operation:
         return Operation(
             operation_id=OperationId(model.id),
-            tenant_id=TenantId(model.tenant_id),
+            tenant_id=TenantId.from_uuid(model.tenant_id),
             engagement_id=EngagementId(model.engagement_id),
             name=model.name,
             classification=OperationClassification(model.classification),

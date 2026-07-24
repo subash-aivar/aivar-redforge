@@ -10,14 +10,14 @@ from integration_hub.domain.services.credential_resolution_service import (
     CredentialResolutionService,
 )
 from integration_hub.domain.value_objects.enums import ConnectorType
-from integration_hub.domain.value_objects.identifiers import TenantId
+from integration_hub.domain.value_objects.identifiers import EntityId
 from integration_hub.infrastructure.vault.in_memory_vault import InMemoryCredentialVault
 
 
 def test_rejects_secret_config() -> None:
     with pytest.raises(DomainInvariantViolation):
         ConnectorRegistration.register(
-            TenantId(uuid4()),
+            EntityId.generate(),
             ConnectorType.IDENTITY_OKTA,
             "okta",
             "vault/okta",

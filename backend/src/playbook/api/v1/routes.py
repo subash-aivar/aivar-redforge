@@ -21,6 +21,7 @@ from playbook.application.commands.playbook_commands import (
 )
 from playbook.application.exceptions import ApplicationForbiddenError, ApplicationNotFoundError
 from playbook.domain.exceptions.domain_exceptions import PlaybookDomainError
+from playbook.domain.value_objects.identifiers import TenantId
 from playbook.infrastructure.container import PlaybookContainer
 
 router = APIRouter(tags=["playbook"])
@@ -82,7 +83,7 @@ class PolicyBody(BaseModel):
 
 @router.get("/health/automation")
 async def automation_health(
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: PlaybookContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -101,7 +102,7 @@ async def list_playbooks(
     status_filter: str | None = None,
     page: int = 1,
     page_size: int = 50,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: PlaybookContainer = Depends(get_container),
 ) -> list[dict[str, Any]]:
@@ -117,7 +118,7 @@ async def list_playbooks(
 @router.post("/playbooks", status_code=201)
 async def create_playbook(
     body: CreateBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: PlaybookContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -133,7 +134,7 @@ async def create_playbook(
 @router.get("/playbooks/{playbook_id}")
 async def get_playbook(
     playbook_id: UUID,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: PlaybookContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -147,7 +148,7 @@ async def get_playbook(
 async def publish_version(
     playbook_id: UUID,
     body: PublishBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: PlaybookContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -171,7 +172,7 @@ async def publish_version(
 async def submit(
     playbook_id: UUID,
     body: SubmitBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: PlaybookContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -190,7 +191,7 @@ async def submit(
 async def approve(
     playbook_id: UUID,
     body: ApproveBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: PlaybookContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -214,7 +215,7 @@ async def approve(
 async def deprecate(
     playbook_id: UUID,
     body: DeprecateBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: PlaybookContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -231,7 +232,7 @@ async def deprecate(
 async def dry_run(
     playbook_id: UUID,
     body: DryRunBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: PlaybookContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -246,7 +247,7 @@ async def dry_run(
 
 @router.get("/automation-policy")
 async def get_policy(
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: PlaybookContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -259,7 +260,7 @@ async def get_policy(
 @router.patch("/automation-policy")
 async def update_policy(
     body: PolicyBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: PlaybookContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -281,7 +282,7 @@ async def update_policy(
 @router.post("/automation-policy/kill-switch")
 async def activate_kill_switch(
     body: KillSwitchBody,
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: PlaybookContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -297,7 +298,7 @@ async def activate_kill_switch(
 @router.delete("/automation-policy/kill-switch")
 async def reset_kill_switch(
     reset_by: str = "api",
-    tenant_id: UUID = Depends(tenant_id_header),
+    tenant_id: TenantId = Depends(tenant_id_header),
     roles: tuple[str, ...] = Depends(roles_header),
     container: PlaybookContainer = Depends(get_container),
 ) -> dict[str, Any]:

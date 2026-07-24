@@ -126,7 +126,7 @@ class PhaseResponse(BaseModel):
 
 class EngagementResponse(BaseModel):
     engagement_id: UUID
-    tenant_id: UUID
+    tenant_id: str
     name: str
     classification: str
     owner_id: str
@@ -155,7 +155,7 @@ class EngagementResponse(BaseModel):
     def from_dto(cls, dto: EngagementDTO) -> EngagementResponse:
         return cls(
             engagement_id=dto.engagement_id,
-            tenant_id=dto.tenant_id,
+            tenant_id=str(dto.tenant_id),
             name=dto.name,
             classification=dto.classification,
             owner_id=dto.owner_id,
@@ -214,7 +214,7 @@ class EngagementResponse(BaseModel):
 
 class TargetAuthorizationResponse(BaseModel):
     authorization_id: UUID
-    tenant_id: UUID
+    tenant_id: str
     engagement_id: UUID
     asset_id: UUID
     display_name: str | None
@@ -234,7 +234,7 @@ class TargetAuthorizationResponse(BaseModel):
     def from_dto(cls, dto: TargetAuthorizationDTO) -> TargetAuthorizationResponse:
         return cls(
             authorization_id=dto.authorization_id,
-            tenant_id=dto.tenant_id,
+            tenant_id=str(dto.tenant_id),
             engagement_id=dto.engagement_id,
             asset_id=dto.asset_id,
             display_name=dto.display_name,

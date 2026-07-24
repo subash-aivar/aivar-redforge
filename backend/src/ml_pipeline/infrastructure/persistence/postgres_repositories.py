@@ -65,7 +65,7 @@ def _model_to_row(model: MLModel) -> MLModelModel:
 def _row_to_model(row: MLModelModel) -> MLModel:
     return MLModel(
         model_id=MLModelId(row.id),
-        tenant_id=TenantId(row.tenant_id),
+        tenant_id=TenantId.from_uuid(row.tenant_id),
         model_type=MLModelType(row.model_type),
         algorithm=MLAlgorithm(row.algorithm),
         created_at=row.created_at,
@@ -206,7 +206,7 @@ class PgPredictiveRiskSignalRepository(IPredictiveRiskSignalRepository):
 def _row_to_signal(row: PredictiveRiskSignalModel) -> PredictiveRiskSignal:
     return PredictiveRiskSignal(
         signal_id=PredictiveRiskSignalId(row.id),
-        tenant_id=TenantId(row.tenant_id),
+        tenant_id=TenantId.from_uuid(row.tenant_id),
         model_id=MLModelId(row.model_id),
         asset_ref_id=row.asset_ref_id,
         signal_type=row.signal_type,
@@ -228,7 +228,7 @@ class PgMLModelArtifactStore(IMLModelArtifactStore):
     def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
         self._session_factory = session_factory
 
-    async def store_artifact(self, tenant_id: UUID, model_id: UUID, artifact_bytes: bytes) -> str:
+    async def store_artifact(self, tenant_id: TenantId, model_id: UUID, artifact_bytes: bytes) -> str:
         digest = hashlib.sha256(artifact_bytes).hexdigest()
         async with self._session_factory() as session:
             await session.execute(
@@ -257,7 +257,7 @@ class PgMLModelArtifactStore(IMLModelArtifactStore):
             await session.commit()
         return digest
 
-    async def load_artifact(self, tenant_id: UUID, model_id: UUID) -> tuple[bytes, str]:
+    async def load_artifact(self, tenant_id: TenantId, model_id: UUID) -> tuple[bytes, str]:
         async with self._session_factory() as session:
             row = (
                 await session.execute(

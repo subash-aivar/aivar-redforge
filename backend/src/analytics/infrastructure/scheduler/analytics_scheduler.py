@@ -4,8 +4,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from analytics.domain.value_objects.identifiers import TenantId
+
 if TYPE_CHECKING:
-    from uuid import UUID
 
     from analytics.infrastructure.workers.analytics_workers import (
         KPIComputationWorker,
@@ -28,7 +29,7 @@ class AnalyticsScheduler:
         self._partition = partition_worker
         self.last_tick_at: str | None = None
 
-    async def daily_tick(self, tenant_id: UUID) -> dict[str, object]:
+    async def daily_tick(self, tenant_id: TenantId) -> dict[str, object]:
         from datetime import UTC, datetime
 
         kpi = await self._kpi.run_for_tenant(tenant_id)

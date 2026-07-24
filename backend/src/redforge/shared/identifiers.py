@@ -19,9 +19,12 @@ Usage:
 from __future__ import annotations
 
 from functools import total_ordering
-from typing import Self
+from typing import TYPE_CHECKING, Self
 
 from ulid import ULID
+
+if TYPE_CHECKING:
+    from uuid import UUID
 
 
 @total_ordering
@@ -56,6 +59,24 @@ class EntityId:
             return cls(ULID.from_str(value))
         except (ValueError, TypeError) as exc:
             raise ValueError(f"Invalid EntityId: '{value}'") from exc
+
+    @classmethod
+    def from_uuid(cls, value: UUID) -> Self:
+        """Build an EntityId from a raw `uuid.UUID` (e.g. a value read back
+        from a `postgresql.UUID(as_uuid=True)` column).
+
+        `EntityId.__init__` expects a `ULID`, not a `uuid.UUID` — passing a
+        raw UUID directly (`EntityId(row.tenant_id)`) silently constructs an
+        object whose `__str__`/`.value`/`__eq__` do not behave like one
+        built via `.generate()`/`.from_string()`, because the underlying
+        `ULID` was never actually parsed from the 128-bit value. This is the
+        single sanctioned way to bridge a raw UUID column value into an
+        EntityId; it uses `ULID.from_uuid`, the same 128-bit-compatible
+        conversion used when a `ULID.value` is written into a UUID column,
+        so the result is always `==` to an EntityId built directly from the
+        same underlying value.
+        """
+        return cls(ULID.from_uuid(value))
 
     @property
     def value(self) -> ULID:

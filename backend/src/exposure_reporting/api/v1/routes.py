@@ -31,6 +31,7 @@ from exposure_reporting.application.exceptions import (
 from exposure_reporting.domain.exceptions.domain_exceptions import (
     ExposureReportingDomainError,
 )
+from exposure_reporting.domain.value_objects.identifiers import TenantId
 from exposure_reporting.infrastructure.container import ExposureReportingContainer
 
 router = APIRouter(prefix="/exposure-reporting", tags=["exposure-reporting"])
@@ -51,7 +52,7 @@ def _map_error(exc: Exception) -> HTTPException:
 @router.post("/reports")
 async def generate_report(
     body: GenerateReportRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: ExposureReportingContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -75,7 +76,7 @@ async def generate_report(
 @router.get("/reports/{report_id}")
 async def get_report(
     report_id: UUID,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: ExposureReportingContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -90,7 +91,7 @@ async def list_reports(
     report_type: str | None = Query(default=None),
     from_dt: datetime | None = Query(default=None, alias="from"),
     to_dt: datetime | None = Query(default=None, alias="to"),
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: ExposureReportingContainer = Depends(get_container),
 ) -> list[dict[str, Any]]:
@@ -107,7 +108,7 @@ async def list_reports(
 async def deliver_report(
     report_id: UUID,
     body: DeliverReportRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: ExposureReportingContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -130,7 +131,7 @@ async def deliver_report(
 async def export_report(
     report_id: UUID,
     format: str = Query(default="json"),
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: ExposureReportingContainer = Depends(get_container),
 ) -> Response:
@@ -147,7 +148,7 @@ async def export_report(
 @router.post("/business-impact-mappings")
 async def create_mapping(
     body: CreateBusinessImpactMappingRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: ExposureReportingContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -176,7 +177,7 @@ async def create_mapping(
 async def update_mapping(
     asset_ref_id: UUID,
     body: UpdateBusinessImpactMappingRequest,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: ExposureReportingContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -206,7 +207,7 @@ async def update_mapping(
 @router.get("/business-impact-mappings/assets/{asset_ref_id}")
 async def get_mapping(
     asset_ref_id: UUID,
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: ExposureReportingContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -218,7 +219,7 @@ async def get_mapping(
 
 @router.get("/business-impact-mappings")
 async def list_mappings(
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: ExposureReportingContainer = Depends(get_container),
 ) -> list[dict[str, Any]]:
@@ -230,7 +231,7 @@ async def list_mappings(
 
 @router.get("/dashboard")
 async def get_dashboard(
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: ExposureReportingContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -242,7 +243,7 @@ async def get_dashboard(
 
 @router.get("/trends")
 async def get_trends(
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: ExposureReportingContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -254,7 +255,7 @@ async def get_trends(
 
 @router.get("/kpis")
 async def get_kpis(
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: ExposureReportingContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -266,7 +267,7 @@ async def get_kpis(
 
 @router.post("/admin/projections/rebuild")
 async def rebuild_projections(
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: ExposureReportingContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -280,7 +281,7 @@ async def rebuild_projections(
 
 @router.post("/admin/projections/repair")
 async def repair_projections(
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: ExposureReportingContainer = Depends(get_container),
 ) -> dict[str, Any]:
@@ -292,7 +293,7 @@ async def repair_projections(
 
 @router.post("/admin/graph/sync")
 async def sync_graph(
-    tenant_id: UUID = Depends(get_tenant_id),
+    tenant_id: TenantId = Depends(get_tenant_id),
     roles: tuple[str, ...] = Depends(get_actor_roles),
     container: ExposureReportingContainer = Depends(get_container),
 ) -> dict[str, Any]:

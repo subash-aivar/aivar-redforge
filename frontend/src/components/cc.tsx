@@ -246,6 +246,55 @@ export function StatusPill({ status }: { status: string }) {
   );
 }
 
+/**
+ * Renders a backend evaluation-state enum honestly: the raw `"UNKNOWN"`
+ * member (never-evaluated default) reads as "Not Yet Evaluated" rather than
+ * as a generic status pill — "Unknown" would misleadingly suggest an
+ * evaluation ran but produced an indeterminate result. Any other value
+ * falls through to the normal `StatusPill` rendering.
+ */
+export function EvaluationStatePill({ state }: { state: string }) {
+  if (state.toUpperCase() === "UNKNOWN") {
+    return (
+      <span className="inline-flex items-center rounded-full border border-gray-700 bg-gray-800/40 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-gray-500">
+        Not Yet Evaluated
+      </span>
+    );
+  }
+  return <StatusPill status={state} />;
+}
+
+/**
+ * Renders a risk score honestly: a `0` score is only ever the model's
+ * never-scored default (see `RiskScore(0)` in
+ * `integration_hub/domain/aggregates/discovered_asset.py`), never a real
+ * "evaluated as zero risk" result — the domain model has no evaluated-at
+ * signal to distinguish those two cases today, so this treats
+ * `risk_score === 0` AND both evaluation states still `UNKNOWN` as
+ * "never scored." A real future scoring engine assigning a genuine `0`
+ * would need to also flip `security_state`/`compliance_state` off
+ * `UNKNOWN` for this to keep reading correctly.
+ */
+export function EvaluatedRiskScore({
+  riskScore,
+  securityState,
+  complianceState,
+}: {
+  riskScore: number;
+  securityState: string;
+  complianceState: string;
+}) {
+  const neverEvaluated =
+    riskScore === 0 &&
+    securityState.toUpperCase() === "UNKNOWN" &&
+    complianceState.toUpperCase() === "UNKNOWN";
+  if (neverEvaluated) {
+    return <span className="text-gray-500">Not Yet Evaluated</span>;
+  }
+  const tone = riskScore >= 70 ? "text-red-400" : riskScore >= 40 ? "text-amber-400" : "text-emerald-400";
+  return <span className={tone}>{riskScore}</span>;
+}
+
 // ── Inline SVG charts (CSP-safe, no external library) ────────────────────────
 
 const BAND_COLOR: Record<string, string> = {
