@@ -6,6 +6,7 @@ from ai_agent_governance.api.v1 import router as ai_agent_governance_router
 from ai_posture.api.v1 import router as ai_posture_router
 from ai_supply_chain.api.v1 import router as ai_supply_chain_router
 from analytics.api.v1 import router as analytics_router
+from attack_surface_management.api.v1 import router as attack_surface_management_router
 from automated_action.api.v1 import router as automated_action_router
 from autonomous_intelligence.api.v1 import router as autonomous_intelligence_router
 from credential_vault.api.v1 import router as credential_vault_router
@@ -89,6 +90,7 @@ from redforge.api.v1.validations import router as validations_router
 from regulatory_notification.api.v1 import router as regulatory_notification_router
 from remediation_impact.api.v1 import router as remediation_impact_router
 from reporting.api.v1 import router as reporting_router
+from risk_engine.api.v1 import router as risk_engine_router
 from threat_hunt.api.v1 import router as threat_hunt_router
 from vulnerability.api.v1 import router as vulnerability_router
 
@@ -174,6 +176,8 @@ router.include_router(integration_hub_router, tags=["integration-hub"])
 router.include_router(regulatory_notification_router, tags=["regulatory-notification"])
 router.include_router(lessons_learned_router, tags=["lessons-learned"])
 router.include_router(operation_router, tags=["operations"])
+router.include_router(risk_engine_router, tags=["risk-engine"])
+router.include_router(attack_surface_management_router, tags=["attack-surface-management"])
 router.include_router(execution_router, tags=["execution"])
 router.include_router(operator_router, tags=["red-team-operators"])
 router.include_router(

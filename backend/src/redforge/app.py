@@ -120,9 +120,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 from redforge.application.platform.projections.kg_projection import (
                     KGProjection,
                 )
+
                 kg_repo = InMemoryReadModelRepository()
                 kg_proj = KGProjection(runtime.knowledge_graph, kg_repo)
                 import contextlib
+
                 with contextlib.suppress(Exception):
                     runtime.projection_registry.register(kg_proj)
                     logger.info("kg_projection_registered")
@@ -202,6 +204,43 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             operation_container = OperationContainer(session_factory=sf)
             app.state.operation_container = operation_container
             logger.info("operation_container_started")
+
+        async def _start_risk_engine() -> None:
+            sf = _session_factory
+            if sf is None:
+                logger.warning("risk_engine_no_session_factory")
+                return
+            from risk_engine.infrastructure.container import RiskEngineContainer
+
+            risk_engine_container = RiskEngineContainer(session_factory=sf)
+            app.state.risk_engine_container = risk_engine_container
+            logger.info("risk_engine_container_started")
+
+        async def _start_attack_surface_management() -> None:
+            sf = _session_factory
+            if sf is None:
+                logger.warning("attack_surface_management_no_session_factory")
+                return
+            from attack_surface_management.infrastructure.container import (
+                AttackSurfaceManagementContainer,
+            )
+
+            attack_surface_management_container = AttackSurfaceManagementContainer(
+                session_factory=sf
+            )
+            app.state.attack_surface_management_container = attack_surface_management_container
+            logger.info("attack_surface_management_container_started")
+
+        async def _start_scanning() -> None:
+            sf = _session_factory
+            if sf is None:
+                logger.warning("scanning_no_session_factory")
+                return
+            from vulnerability.infrastructure.scanning.container import ScanningContainer
+
+            scanning_container = ScanningContainer(session_factory=sf)
+            app.state.scanning_container = scanning_container
+            logger.info("scanning_container_started")
 
         async def _start_execution() -> None:
             sf = _session_factory
@@ -545,14 +584,24 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             correlation_service = TenantSecurityCorrelationService(sf, correlation_registry)
             execution_policy_service = ExecutionPolicyService(sf)
             execution_service = ValidationExecutionService(
-                sf, execution_policy_service, ai_target_service, asset_service,  # type: ignore[arg-type]
-                condition_service, default_adaptive_rule_registry(), correlation_service,
+                sf,
+                execution_policy_service,
+                ai_target_service,
+                asset_service,  # type: ignore[arg-type]
+                condition_service,
+                default_adaptive_rule_registry(),
+                correlation_service,
                 default_protocol_validator_registry(),
             )
             drift_service = SecurityDriftService(sf)
             processor = ContinuousValidationProcessor(
-                sf, execution_service, ai_target_service, asset_service,
-                condition_service, correlation_service, drift_service,
+                sf,
+                execution_service,
+                ai_target_service,
+                asset_service,
+                condition_service,
+                correlation_service,
+                drift_service,
             )
 
             worker = ContinuousValidationSchedulerWorker(
@@ -634,7 +683,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             )
             correlation_service = TenantSecurityCorrelationService(sf, correlation_registry)
             orchestrator = NetworkValidationOrchestrator(
-                sf, asset_service, condition_service, correlation_service,
+                sf,
+                asset_service,
+                condition_service,
+                correlation_service,
             )
             processor = NetworkMonitoringProcessor(sf, orchestrator)
 
@@ -660,22 +712,29 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         coordinator.register_startup("detection", _start_detection)
         coordinator.register_startup("engagement", _start_engagement)
         coordinator.register_startup("operation", _start_operation)
+        coordinator.register_startup("risk_engine", _start_risk_engine)
+        coordinator.register_startup("attack_surface_management", _start_attack_surface_management)
+        coordinator.register_startup("scanning", _start_scanning)
         coordinator.register_startup("execution", _start_execution)
         coordinator.register_startup("operator", _start_operator)
         coordinator.register_startup("evidence", _start_evidence)
         coordinator.register_startup("payload", _start_payload)
         coordinator.register_startup("replay_worker", _start_replay_worker)
         coordinator.register_startup(
-            "continuous_validation_scheduler", _start_continuous_validation_scheduler,
+            "continuous_validation_scheduler",
+            _start_continuous_validation_scheduler,
         )
         coordinator.register_startup(
-            "credential_vault_workers", _start_credential_vault_workers,
+            "credential_vault_workers",
+            _start_credential_vault_workers,
         )
         coordinator.register_startup(
-            "runtime_health_transition_worker", _start_runtime_health_transition_worker,
+            "runtime_health_transition_worker",
+            _start_runtime_health_transition_worker,
         )
         coordinator.register_startup(
-            "network_monitoring_scheduler", _start_network_monitoring_scheduler,
+            "network_monitoring_scheduler",
+            _start_network_monitoring_scheduler,
         )
 
         async def _start_ddos_detection_worker() -> None:
@@ -805,12 +864,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 feed_orchestration=feed_orch,
                 fusion_service=ThreatFusionService(_session_factory),
             )
-            tech_worker = AttackTechniqueSyncWorker(
-                sync_service, session_factory=_session_factory
-            )
-            vuln_worker = VulnerabilitySyncWorker(
-                sync_service, session_factory=_session_factory
-            )
+            tech_worker = AttackTechniqueSyncWorker(sync_service, session_factory=_session_factory)
+            vuln_worker = VulnerabilitySyncWorker(sync_service, session_factory=_session_factory)
             refresh_worker = IndicatorRefreshWorker(
                 _session_factory, IndicatorEnrichmentService(_session_factory)
             )
@@ -905,9 +960,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 container.scheduler.tick_all,
                 per_tenant=True,
                 tenant_query_service=tqs,
-                poll_interval_s=getattr(
-                    settings, "runtime_autonomous_intelligence_poll_s", 300.0
-                ),
+                poll_interval_s=getattr(settings, "runtime_autonomous_intelligence_poll_s", 300.0),
             )
             await runner.start()
             runtime.autonomous_intelligence_scheduler_runner = runner  # type: ignore[attr-defined]
@@ -1008,9 +1061,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 container.scheduler.tick_all,
                 per_tenant=True,
                 tenant_query_service=tqs,
-                poll_interval_s=getattr(
-                    settings, "runtime_posture_forecasting_poll_s", 3600.0
-                ),
+                poll_interval_s=getattr(settings, "runtime_posture_forecasting_poll_s", 3600.0),
             )
             await runner.start()
             runtime.posture_forecasting_scheduler_runner = runner  # type: ignore[attr-defined]
@@ -1035,9 +1086,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 "regulatory_notification_scheduler",
                 _tick,
                 per_tenant=False,
-                poll_interval_s=getattr(
-                    settings, "runtime_regulatory_notification_poll_s", 300.0
-                ),
+                poll_interval_s=getattr(settings, "runtime_regulatory_notification_poll_s", 300.0),
             )
             await runner.start()
             runtime.regulatory_notification_scheduler_runner = runner  # type: ignore[attr-defined]
@@ -1118,9 +1167,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             runtime.integration_hub_scheduler_runner = runner  # type: ignore[attr-defined]
             logger.info("integration_hub_scheduler_started")
 
-        coordinator.register_startup(
-            "integration_hub_scheduler", _start_integration_hub_scheduler
-        )
+        coordinator.register_startup("integration_hub_scheduler", _start_integration_hub_scheduler)
 
         # Register shutdown hooks (run in reverse registration order)
         async def _shutdown_ddos_detection_worker() -> None:
@@ -1284,6 +1331,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     _register_middleware(app)
     _register_routers(app)
 
+    from attack_surface_management.api.exception_handlers import (
+        register_attack_surface_management_exception_handlers,
+    )
     from credential_vault.api.exception_handlers import register_credential_vault_exception_handlers
     from detection.api.exception_handlers import register_detection_exception_handlers
     from engagement.api.exception_handlers import register_engagement_exception_handlers
@@ -1292,10 +1342,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     from operation.api.exception_handlers import register_operation_exception_handlers
     from payload.api.exception_handlers import register_payload_exception_handlers
     from red_team_operator.api.exception_handlers import register_operator_exception_handlers
+    from risk_engine.api.exception_handlers import register_risk_engine_exception_handlers
     from vulnerability.api.exception_handlers import register_vulnerability_exception_handlers
+    from vulnerability.api.scanning.exception_handlers import (
+        register_scanning_exception_handlers,
+    )
 
     register_credential_vault_exception_handlers(app)
     register_vulnerability_exception_handlers(app)
+    register_scanning_exception_handlers(app)
     register_detection_exception_handlers(app)
     register_engagement_exception_handlers(app)
     register_operation_exception_handlers(app)
@@ -1303,6 +1358,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     register_operator_exception_handlers(app)
     register_evidence_exception_handlers(app)
     register_payload_exception_handlers(app)
+    register_risk_engine_exception_handlers(app)
+    register_attack_surface_management_exception_handlers(app)
 
     # Configure OpenTelemetry (after app creation so auto-instrumentation works)
     from redforge.infrastructure.telemetry import configure_telemetry

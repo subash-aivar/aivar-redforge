@@ -6,7 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2] / "src" / "ai_security"
 INFRA_IMPORT = re.compile(r"^\s*(from|import)\s+(fastapi|sqlalchemy|asyncpg|alembic)\b", re.M)
 FORBIDDEN_CONTEXT_IMPORT = re.compile(
-    r"^\s*(from|import)\s+(cloud_security|vulnerability_engine|siem_\w+|"
+    r"^\s*(from|import)\s+(cloud_security|siem_\w+|"
     r"ai_agent_governance|ai_posture|ai_supply_chain)\b",
     re.M,
 )
@@ -44,7 +44,7 @@ def test_application_layer_has_no_infrastructure_imports() -> None:
 def test_context_does_not_import_forbidden_bounded_contexts() -> None:
     """M47A's explicit boundary: ai_security is an entirely new,
     independent bounded context — it must never import from
-    `cloud_security`, `vulnerability_engine`, any `siem_*` context, or
+    `cloud_security`, any `siem_*` context, or
     the unrelated `ai_agent_governance`/`ai_posture`/`ai_supply_chain`
     packages (only the truly-shared `redforge.shared` is legitimate to
     reuse)."""
@@ -52,7 +52,9 @@ def test_context_does_not_import_forbidden_bounded_contexts() -> None:
         text = path.read_text()
         match = FORBIDDEN_CONTEXT_IMPORT.search(text)
         if match:
-            raise AssertionError(f"{path} imports a forbidden bounded-context module: {match.group()}")
+            raise AssertionError(
+                f"{path} imports a forbidden bounded-context module: {match.group()}"
+            )
 
 
 def test_infrastructure_and_api_layers_remain_empty_stubs() -> None:
@@ -116,4 +118,6 @@ def test_no_scan_or_execution_implementations_exist() -> None:
         text = path.read_text()
         match = banned.search(text)
         if match:
-            raise AssertionError(f"{path} references a concrete provider/execution call: {match.group()}")
+            raise AssertionError(
+                f"{path} references a concrete provider/execution call: {match.group()}"
+            )

@@ -131,7 +131,7 @@ select = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["redforge", "credential_vault", "vulnerability", "detection", "engagement", "operation", "execution", "red_team_operator", "evidence", "payload", "campaign", "ai_posture", "ai_supply_chain", "ai_agent_governance", "exposure", "remediation_impact", "exposure_reporting", "analytics", "reporting", "ml_pipeline", "incident", "regulatory_notification", "lessons_learned", "playbook", "automated_action", "integration_hub", "autonomous_intelligence", "posture_forecasting", "threat_hunt", "siem_shared", "siem_ingestion", "siem_normalization", "siem_storage", "siem_detection", "siem_correlation", "siem_alerting", "siem_investigation", "siem_search", "siem_analytics", "cloud_security", "vulnerability_engine", "ai_security"]
+known-first-party = ["redforge", "credential_vault", "vulnerability", "detection", "engagement", "operation", "execution", "red_team_operator", "evidence", "payload", "campaign", "ai_posture", "ai_supply_chain", "ai_agent_governance", "exposure", "remediation_impact", "exposure_reporting", "analytics", "reporting", "ml_pipeline", "incident", "regulatory_notification", "lessons_learned", "playbook", "automated_action", "integration_hub", "autonomous_intelligence", "posture_forecasting", "threat_hunt", "siem_shared", "siem_ingestion", "siem_normalization", "siem_storage", "siem_detection", "siem_correlation", "siem_alerting", "siem_investigation", "siem_search", "siem_analytics", "cloud_security", "ai_security", "risk_engine", "attack_surface_management"]
 
 [tool.ruff.lint.per-file-ignores]
 "src/redforge/api/**" = ["B008", "TC001", "TC003"]  # FastAPI Depends()/Annotated deps need runtime types
@@ -434,10 +434,23 @@ known-first-party = ["redforge", "credential_vault", "vulnerability", "detection
 "src/siem_analytics/domain/**" = ["TC001", "TC003"]
 "src/cloud_security/domain/exceptions/**" = ["N818"]
 "src/cloud_security/domain/**" = ["TC001", "TC003"]
-"src/vulnerability_engine/domain/exceptions/**" = ["N818"]
-"src/vulnerability_engine/domain/**" = ["TC001", "TC003"]
 "src/ai_security/domain/exceptions/**" = ["N818"]
 "src/ai_security/domain/**" = ["TC001", "TC003"]
+"src/risk_engine/domain/exceptions/**" = ["N818"]
+"src/risk_engine/domain/**" = ["TC001", "TC003"]
+"src/risk_engine/infrastructure/persistence/models/**" = ["N811", "TC001", "TC003"]  # PgUUID; Mapped[] needs runtime types
+"src/risk_engine/infrastructure/**" = ["TC001", "TC003"]
+"src/risk_engine/application/**" = ["TC001", "TC003", "TC004"]
+"src/risk_engine/api/**" = ["B008", "TC001", "TC003"]  # FastAPI Depends()/Annotated deps need runtime types
+"src/attack_surface_management/domain/exceptions/**" = ["N818"]
+"src/attack_surface_management/domain/**" = ["TC001", "TC003"]
+"src/attack_surface_management/infrastructure/persistence/models/**" = ["N811", "TC001", "TC003"]  # PgUUID; Mapped[] needs runtime types
+"src/attack_surface_management/infrastructure/**" = ["TC001", "TC003"]
+"src/attack_surface_management/application/**" = ["TC001", "TC003", "TC004"]
+"src/attack_surface_management/api/**" = ["B008", "TC001", "TC003"]  # FastAPI Depends()/Annotated deps need runtime types
+"src/vulnerability/infrastructure/scanning/persistence/models/**" = ["N811", "TC001", "TC003"]  # PgUUID; Mapped[] needs runtime types
+"src/vulnerability/infrastructure/scanning/**" = ["TC001", "TC003"]
+"src/vulnerability/api/scanning/**" = ["B008", "TC001", "TC003"]  # FastAPI Depends()/Annotated deps need runtime types
 "src/regulatory_notification/api/**" = ["B008", "TC001", "TC003"]
 "src/regulatory_notification/application/**" = ["TC001", "TC003", "TC004"]
 "src/regulatory_notification/infrastructure/**" = ["TC001", "TC003"]
