@@ -23,3 +23,8 @@ Each ADR follows this structure:
 | [0002](0002-async-first.md) | Async-First Backend Architecture | Accepted |
 | [0003](0003-evidence-immutability.md) | Evidence Immutability as Architectural Constraint | Accepted |
 | [0004](0004-plugin-based-attack-engine.md) | Plugin-Based Attack Engine | Accepted |
+| [0005](0005-canonical-identifier-strategy.md) | Canonical Identifier Strategy — ULID via Shared EntityId | Accepted |
+| [0006](0006-network-defense-detection-pipeline-ownership.md) | Network Defense Detection/Alerting Pipeline Ownership (Family A vs. siem_*) | Accepted |
+| [0007](0007-threat-intelligence-ownership-for-new-product-work.md) | Threat Intelligence Ownership for New Product Work (M51 Native Suite vs. Legacy) | Accepted |
+| [0008](0008-network-sensor-product-boundary.md) | Network Sensor Product Boundary (BYO + Future RedForge-Managed Sensor) | Accepted (boundary only) |
+| [0009](0009-product-edition-architecture.md) | Product Edition Architecture (Full RedForge + Network Defense Edition) | Accepted (design only) |
