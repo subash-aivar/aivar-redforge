@@ -56,6 +56,15 @@ ENV REDFORGE_ENVIRONMENT=production \
     REDFORGE_LOG_LEVEL=INFO \
     REDFORGE_DEBUG=false
 
+# Product edition (ADR-0009): "full" (default, unchanged behavior) or
+# "network_defense". One Dockerfile, one build, parameterized — not a
+# second Dockerfile. Override at build time with
+# `--build-arg PRODUCT_EDITION=network_defense`; the resulting image's
+# default REDFORGE_PRODUCT_EDITION can still be overridden again at
+# `docker run`/compose time like any other env var.
+ARG PRODUCT_EDITION=full
+ENV REDFORGE_PRODUCT_EDITION=${PRODUCT_EDITION}
+
 # Healthcheck using curl (fast, no Python interpreter overhead)
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD ["curl", "-f", "http://localhost:8000/api/v1/health/live"]

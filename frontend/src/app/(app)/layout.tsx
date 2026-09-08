@@ -8,6 +8,7 @@ import { getMe, getAccessibleOrganizations, logout, type UserProfile } from "@/l
 import { getPlatformAccess } from "@/lib/platform";
 import { getEffectiveAccess } from "@/lib/rbac";
 import { NavigationShell } from "@/components/navigation/NavigationShell";
+import { getProductEdition } from "@/lib/productEdition";
 import { Breadcrumb } from "@/components/navigation/Breadcrumb";
 import { NotificationCenter } from "@/components/navigation/NotificationCenter";
 import { EventBusProvider } from "@/components/platform/EventBusProvider";
@@ -91,6 +92,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           onSignOut={logout}
           mobileOpen={mobileNavOpen}
           onCloseMobile={closeMobileNav}
+          edition={getProductEdition()}
         />
 
         <div className="flex flex-1 flex-col overflow-hidden">

@@ -279,3 +279,55 @@ describe("NavigationShell — mobile drawer", () => {
     expect(onCloseMobile).toHaveBeenCalled();
   });
 });
+
+describe("NavigationShell — product_edition (ADR-0009)", () => {
+  it("defaults to full edition — every existing test/caller above keeps seeing today's exact nav", () => {
+    renderShell({});
+    // A representative full-only item (not in NETWORK_DEFENSE_HREFS).
+    expect(screen.getByText("Vulnerability")).toBeInTheDocument();
+  });
+
+  it("network_defense edition hides an explicitly-unrelated full-only surface", () => {
+    renderShell({ edition: "network_defense" });
+    expect(screen.queryByText("Vulnerability")).not.toBeInTheDocument();
+    expect(screen.queryByText("Compliance")).not.toBeInTheDocument();
+    expect(screen.queryByText("AI Posture")).not.toBeInTheDocument();
+  });
+
+  it("network_defense edition still shows every required shared/network capability that has a real page", () => {
+    renderShell({ edition: "network_defense" });
+    expect(screen.getByText("Asset Inventory")).toBeInTheDocument();
+    expect(screen.getByText("Network Security")).toBeInTheDocument();
+    expect(screen.getByText("DDoS Overview")).toBeInTheDocument();
+    expect(screen.getByText("Traffic Analytics")).toBeInTheDocument();
+    expect(screen.getByText("NDR Operations Center")).toBeInTheDocument();
+    expect(screen.getByText("Threat Intelligence")).toBeInTheDocument();
+    expect(screen.getByText("Live Security")).toBeInTheDocument();
+    expect(screen.getByText("Investigations")).toBeInTheDocument();
+    expect(screen.getByText("Automated Actions")).toBeInTheDocument();
+    expect(screen.getByText("Runtime Health")).toBeInTheDocument();
+  });
+
+  it("network_defense edition excludes incident (M34) — Family A investigations only, per ADR-0006", () => {
+    renderShell({ edition: "network_defense" });
+    expect(screen.queryByText("Incident Response")).not.toBeInTheDocument();
+    expect(screen.getByText("Investigations")).toBeInTheDocument();
+  });
+
+  it("edition filtering composes with the RBAC can() gate, not instead of it", () => {
+    renderShell({ edition: "network_defense", can: (perm) => perm !== "ddos:read" });
+    // Allowed by edition but denied by RBAC — must still be hidden.
+    expect(screen.queryByText("DDoS Overview")).not.toBeInTheDocument();
+    // Allowed by both.
+    expect(screen.getByText("Asset Inventory")).toBeInTheDocument();
+  });
+
+  it("renders the Network Defense brand label only in the network_defense edition", () => {
+    renderShell({ edition: "network_defense" });
+    expect(screen.getByText("RedForge Network Defense")).toBeInTheDocument();
+    cleanup();
+    renderShell({});
+    expect(screen.getByText("RedForge")).toBeInTheDocument();
+    expect(screen.queryByText("RedForge Network Defense")).not.toBeInTheDocument();
+  });
+});

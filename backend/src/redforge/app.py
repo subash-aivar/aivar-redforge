@@ -16,7 +16,7 @@ from typing import Any
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from redforge.api.router import root_router
+from redforge.api.router import build_root_router
 from redforge.application.platform.dynamic_health import (
     make_continuous_validation_scheduler_health_probe,
     make_database_health_probe,
@@ -1502,7 +1502,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
 
     _register_middleware(app)
-    _register_routers(app)
+    _register_routers(app, settings)
 
     from attack_surface_management.api.exception_handlers import (
         register_attack_surface_management_exception_handlers,
@@ -1609,6 +1609,9 @@ def _register_middleware(app: FastAPI) -> None:
     app.add_middleware(ErrorHandlerMiddleware)
 
 
-def _register_routers(app: FastAPI) -> None:
-    """Register all API routers."""
-    app.include_router(root_router)
+def _register_routers(app: FastAPI, settings: Settings) -> None:
+    """Register all API routers for `settings.product_edition` (ADR-0009).
+    "full" mounts every route, identical to pre-edition behavior; any
+    other edition mounts only its allow-listed subset — see
+    `redforge.api.v1.build_v1_router`/`NETWORK_DEFENSE_TAGS`."""
+    app.include_router(build_root_router(settings.product_edition))

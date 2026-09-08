@@ -1,0 +1,32 @@
+# RedForge Network Defense Edition compose profile (ADR-0009).
+#
+# Produces the SAME two images (backend/frontend) as the base
+# `docker-compose.yml`, from the SAME two Dockerfiles, parameterized by
+# `PRODUCT_EDITION` build args — not a second set of Dockerfiles, not a
+# duplicated compose file with everything else copy-pasted.
+#
+# Usage (from the repo root):
+#   docker compose -f docker-compose.yml -f docker-compose.network-defense.yml up --build
+#
+# This intentionally does NOT auto-load alongside the base
+# `docker-compose.override.yml` dev convenience file (Compose only
+# auto-loads `docker-compose.override.yml` by name) — pass both `-f`
+# flags explicitly if you also want the dev hot-reload override on top
+# of a network_defense build.
+#
+# Runs on the SAME ports (8000/3000) as the base file — this profile is
+# meant to be deployed as a SEPARATE environment/host from a Full
+# RedForge deployment, not side by side on one host without remapping
+# ports yourself.
+services:
+  backend:
+    build:
+      args:
+        PRODUCT_EDITION: network_defense
+    environment:
+      REDFORGE_PRODUCT_EDITION: "network_defense"
+
+  frontend:
+    build:
+      args:
+        PRODUCT_EDITION: network_defense

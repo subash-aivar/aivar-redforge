@@ -4,8 +4,12 @@ Uses Pydantic Settings to parse and validate configuration at startup.
 The application fails fast if required configuration is missing or invalid.
 """
 
+from typing import Literal
+
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+ProductEdition = Literal["full", "network_defense"]
 
 
 class Settings(BaseSettings):
@@ -31,6 +35,19 @@ class Settings(BaseSettings):
     app_version: str = "0.1.0"
     debug: bool = False
     environment: str = "development"
+
+    # Product edition (ADR-0009): the ONE concept controlling backend
+    # router exposure, frontend nav/shell, build artifact, deployment
+    # config, and CI matrix. Defaults to "full" so existing deployments
+    # are entirely unaffected unless REDFORGE_PRODUCT_EDITION is set
+    # explicitly. An unrecognized value fails Settings construction at
+    # startup (pydantic Literal validation) rather than silently
+    # falling back to "full" or starting in an undefined state — see
+    # tests/unit/test_product_edition.py::test_unknown_edition_value_fails_safely.
+    # This is deliberately NOT a second RBAC system, NOT a scattered
+    # feature-flag set, and NOT a forked migration chain — see ADR-0009
+    # for the full rationale and what it must never become.
+    product_edition: ProductEdition = "full"
 
     # Server
     host: str = "0.0.0.0"

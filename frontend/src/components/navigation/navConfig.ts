@@ -19,6 +19,65 @@ export interface NavGroup {
   items: NavItem[];
 }
 
+/** Mirrors `redforge.core.config.ProductEdition` (ADR-0009) exactly —
+ * the ONE edition concept, frontend side. */
+export type ProductEdition = "full" | "network_defense";
+
+/**
+ * The ONE Network Defense Edition navigation allow-list (ADR-0009) —
+ * mirrors the backend's tag-based `NETWORK_DEFENSE_TAGS`
+ * (`redforge.api.v1.NETWORK_DEFENSE_TAGS`), using `href` as the
+ * filtering key since nav items don't carry a router "tag". Every
+ * entry here points at an EXISTING, already-working page — this list
+ * adds no new pages and no new capability, only edition-scoped
+ * visibility of what already exists (mission: "reuse existing working
+ * pages", "missing future capabilities must not masquerade as working
+ * product features" — there is deliberately no "Sensor Health" entry
+ * anywhere in this file, because no such page exists yet).
+ *
+ * "full" edition applies no filter at all (mirrors the backend's
+ * `allowed=None` for "full") — this set is only ever consulted for
+ * "network_defense".
+ */
+export const NETWORK_DEFENSE_HREFS: ReadonlySet<string> = new Set([
+  // Alerts (ADR-0006: the live SSE feed, not siem_alerting)
+  "/security-operations",
+  // Threat Intelligence (ADR-0007: M51 native suite shell)
+  "/threat-intelligence",
+  // Assets
+  "/assets",
+  // Network Overview
+  "/network-security",
+  "/connectors",
+  // Network Behavior
+  "/behavior",
+  "/behavior/detections",
+  "/behavior/entities",
+  "/behavior/network",
+  // DDoS + Traffic Analysis
+  "/ddos",
+  "/ddos/incidents",
+  "/ddos/traffic",
+  "/ddos/protected-resources",
+  "/ddos/mitigation",
+  // Investigations (ADR-0006: Family A, not incident/M34)
+  "/investigations",
+  // Response / Mitigation (governance + connector/credential surface)
+  "/playbooks",
+  "/automated-actions",
+  "/integrations",
+  "/credential-vault",
+  // Operational / admin (shared core, required to operate the product)
+  "/health",
+  "/roles",
+  "/groups-rbac",
+  "/access-explorer",
+]);
+
+export function isNavItemVisibleInEdition(href: string, edition: ProductEdition): boolean {
+  return edition === "full" || NETWORK_DEFENSE_HREFS.has(href);
+}
+
 export const NAV_GROUPS: NavGroup[] = [
   {
     title: "Command Center",

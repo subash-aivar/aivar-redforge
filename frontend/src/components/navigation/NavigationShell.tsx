@@ -3,7 +3,12 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { NAV_GROUPS, isItemActive } from "@/components/navigation/navConfig";
+import {
+  NAV_GROUPS,
+  isItemActive,
+  isNavItemVisibleInEdition,
+  type ProductEdition,
+} from "@/components/navigation/navConfig";
 import {
   NavGroupSection,
   NavLink,
@@ -33,6 +38,12 @@ interface NavigationShellProps {
    * (and every existing test) keeps working unchanged. */
   mobileOpen?: boolean;
   onCloseMobile?: () => void;
+  /** ADR-0009 — defaults to "full" so every existing caller/test keeps
+   * seeing today's exact nav, unchanged. Product packaging only: RBAC
+   * (`can`) remains the sole authorization gate; this only ever hides
+   * an item a user could otherwise open by direct URL — the backend
+   * enforces the real boundary (see `NETWORK_DEFENSE_TAGS`). */
+  edition?: ProductEdition;
 }
 
 /**
@@ -51,6 +62,7 @@ export function NavigationShell({
   onSignOut,
   mobileOpen = false,
   onCloseMobile = () => {},
+  edition = "full",
 }: NavigationShellProps) {
   const router = useRouter();
   const {
@@ -174,9 +186,11 @@ export function NavigationShell({
     () =>
       NAV_GROUPS.map((group) => ({
         ...group,
-        items: group.items.filter((item) => can(item.perm)),
+        items: group.items.filter(
+          (item) => can(item.perm) && isNavItemVisibleInEdition(item.href, edition),
+        ),
       })).filter((group) => group.items.length > 0),
-    [can],
+    [can, edition],
   );
 
   const itemByHref = useMemo(() => {
@@ -221,7 +235,9 @@ export function NavigationShell({
         }`}
       >
         <div className="flex h-14 items-center border-b border-gray-800 px-5">
-          <span className="text-lg font-bold text-red-500">RedForge</span>
+          <span className="text-lg font-bold text-red-500">
+            {edition === "network_defense" ? "RedForge Network Defense" : "RedForge"}
+          </span>
         </div>
 
         <div className="border-b border-gray-800 px-3 py-3">
