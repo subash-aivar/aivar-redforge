@@ -37,6 +37,7 @@ describe("GlobalStatusBar", () => {
       dlq_total_entries: 0,
       metrics_sample_count: 10,
       checked_at: new Date().toISOString(),
+      product_edition: "full",
     });
 
     renderBar("Acme Security");
@@ -65,6 +66,7 @@ describe("GlobalStatusBar", () => {
       dlq_total_entries: 3,
       metrics_sample_count: 10,
       checked_at: new Date().toISOString(),
+      product_edition: "full",
     });
 
     renderBar();

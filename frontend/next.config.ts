@@ -2,6 +2,39 @@ import type { NextConfig } from "next";
 
 const isDev = process.env.NODE_ENV !== "production";
 
+// ADR-0009 — product_edition build-time enforcement point.
+//
+// `frontend/src/lib/productEdition.ts::getProductEdition()` throws on
+// an unrecognized `NEXT_PUBLIC_PRODUCT_EDITION`, but that throw only
+// fires when a component actually CALLS it during render — and
+// `next build`'s static prerendering does not necessarily execute
+// every "use client" component that reads it (verified: a build with
+// `NEXT_PUBLIC_PRODUCT_EDITION=bogus_edition` completed with exit code
+// 0, no error, because the pages that call `getProductEdition()` never
+// got far enough into render during static generation to reach it).
+// This module, by contrast, is loaded and evaluated by the Next.js CLI
+// itself before ANY build/dev-server work starts — so validating here
+// is the one enforcement point guaranteed to run on every `next build`
+// and `next dev`, deterministically failing the process instead of
+// silently shipping a build whose baked-in edition nobody validated.
+// Keep this list in sync with `VALID_EDITIONS` in
+// `src/lib/productEdition.ts` (duplicated, not imported, so this
+// config file has no dependency on app source / path aliases).
+const VALID_PRODUCT_EDITIONS = ["full", "network_defense"];
+const rawProductEdition = process.env.NEXT_PUBLIC_PRODUCT_EDITION;
+if (
+  rawProductEdition !== undefined &&
+  rawProductEdition !== "" &&
+  !VALID_PRODUCT_EDITIONS.includes(rawProductEdition)
+) {
+  throw new Error(
+    `Invalid NEXT_PUBLIC_PRODUCT_EDITION: "${rawProductEdition}". Must be one of ` +
+      `${VALID_PRODUCT_EDITIONS.join(", ")}, or unset (defaults to "full"). ` +
+      `Failing the build/dev-server at config-load time rather than shipping ` +
+      `a frontend build whose edition could not be validated.`,
+  );
+}
+
 // Canonical local-development API-origin model: the browser NEVER talks
 // to the backend cross-origin. Every `/api/v1/*` request the frontend
 // issues (see src/lib/api.ts's same-origin-by-default API_BASE) is

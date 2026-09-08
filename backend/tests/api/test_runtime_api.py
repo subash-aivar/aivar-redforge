@@ -147,6 +147,17 @@ async def test_status_contains_required_fields(runtime_client: AsyncClient) -> N
     assert "dlq_total_entries" in body
     assert "metrics_sample_count" in body
     assert "checked_at" in body
+    assert "product_edition" in body
+
+
+async def test_status_reports_product_edition_matching_settings(
+    runtime_client: AsyncClient,
+) -> None:
+    """ADR-0009: `/runtime/status` exposes the backend's own
+    `Settings.product_edition` (never anything a client supplies) so a
+    frontend build can detect a frontend<->backend edition mismatch."""
+    body = (await runtime_client.get("/api/v1/runtime/status")).json()
+    assert body["product_edition"] == _test_settings().product_edition == "full"
 
 
 async def test_status_shows_running_phase(runtime_client: AsyncClient) -> None:

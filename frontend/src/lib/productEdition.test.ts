@@ -27,8 +27,13 @@ describe("getProductEdition", () => {
     expect(getProductEdition()).toBe("full");
   });
 
-  it("fails safe to full (the superset) on an unrecognized value, never to a smaller surface", () => {
+  it("throws on an unrecognized value instead of silently coercing to any edition", () => {
     process.env.NEXT_PUBLIC_PRODUCT_EDITION = "not_a_real_edition";
-    expect(getProductEdition()).toBe("full");
+    expect(() => getProductEdition()).toThrow(/Invalid NEXT_PUBLIC_PRODUCT_EDITION/);
+  });
+
+  it("throws (never falls back to full) on an empty-looking-but-invalid value like whitespace", () => {
+    process.env.NEXT_PUBLIC_PRODUCT_EDITION = "Full";
+    expect(() => getProductEdition()).toThrow(/Invalid NEXT_PUBLIC_PRODUCT_EDITION/);
   });
 });

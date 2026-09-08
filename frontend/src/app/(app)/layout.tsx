@@ -9,6 +9,8 @@ import { getPlatformAccess } from "@/lib/platform";
 import { getEffectiveAccess } from "@/lib/rbac";
 import { NavigationShell } from "@/components/navigation/NavigationShell";
 import { getProductEdition } from "@/lib/productEdition";
+import { detectEditionMismatch, editionMismatchDiagnostic } from "@/lib/editionMismatch";
+import { getRuntimeStatus } from "@/lib/runtime";
 import { Breadcrumb } from "@/components/navigation/Breadcrumb";
 import { NotificationCenter } from "@/components/navigation/NotificationCenter";
 import { EventBusProvider } from "@/components/platform/EventBusProvider";
@@ -24,6 +26,35 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [organizationName, setOrganizationName] = useState<string | null>(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const mobileNavTriggerRef = useRef<HTMLButtonElement>(null);
+  // ADR-0009: frontend<->backend product_edition consistency. Config
+  // integrity only — never widens or narrows backend route access,
+  // which the backend alone decides from its own `Settings`. `null` =
+  // not yet checked (don't block render on a slow/failed health call);
+  // an explicit mismatch blocks the normal app shell in favor of a
+  // clear operator-facing error below.
+  const [editionMismatch, setEditionMismatch] = useState<
+    ReturnType<typeof detectEditionMismatch> | null
+  >(null);
+
+  useEffect(() => {
+    getRuntimeStatus()
+      .then((status) => {
+        const info = detectEditionMismatch(getProductEdition(), status.product_edition);
+        if (info.mismatched) {
+          // Structured, secret-free diagnostic only (two edition
+          // strings) — no env dump, no tokens, no settings object.
+          // eslint-disable-next-line no-console
+          console.error(editionMismatchDiagnostic(info));
+        }
+        setEditionMismatch(info);
+      })
+      .catch(() => {
+        // Runtime status unreachable — fail open on the mismatch
+        // check itself (this is a config-integrity nicety, not the
+        // security boundary); normal auth/RBAC flow still applies.
+        setEditionMismatch(null);
+      });
+  }, []);
 
   // Route change (including browser back/forward) never leaves a
   // stale open drawer behind.
@@ -74,6 +105,32 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-950">
         <div className="text-gray-400">Loading...</div>
+      </div>
+    );
+  }
+
+  if (editionMismatch?.mismatched) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-950 p-6">
+        <div
+          role="alert"
+          className="max-w-lg rounded-lg border border-red-800 bg-red-950/40 p-6 text-center"
+        >
+          <div className="text-lg font-semibold text-red-300">
+            Configuration error: product edition mismatch
+          </div>
+          <p className="mt-3 text-sm text-gray-300">
+            This frontend was built for the{" "}
+            <span className="font-mono text-red-300">{editionMismatch.frontendEdition}</span>{" "}
+            edition, but the backend it is connected to reports the{" "}
+            <span className="font-mono text-red-300">{editionMismatch.backendEdition}</span>{" "}
+            edition.
+          </p>
+          <p className="mt-2 text-sm text-gray-400">
+            Rebuild the frontend for the backend&apos;s edition, or point it at a backend
+            running the same edition. See ADR-0009.
+          </p>
+        </div>
       </div>
     );
   }

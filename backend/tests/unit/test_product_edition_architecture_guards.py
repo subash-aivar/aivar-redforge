@@ -30,6 +30,13 @@ _EDITION_AWARE_FILES = {
     # SecurityOperationsSummaryService / SecurityOperationsStreamService /
     # SecurityChangeFeedService for the request's edition.
     BACKEND_SRC / "redforge" / "api" / "dependencies.py",
+    # `GET /api/v1/runtime/status` exposes `product_edition` as safe,
+    # non-secret runtime metadata so a frontend build can detect a
+    # frontend<->backend edition mismatch (see
+    # `frontend/src/lib/editionMismatch.ts`). This is read-only
+    # diagnostic exposure, not a second exposure-decision point — the
+    # mounted route set is still decided solely by `build_v1_router`.
+    BACKEND_SRC / "redforge" / "api" / "v1" / "runtime.py",
 }
 
 

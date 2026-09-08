@@ -20,6 +20,10 @@ export interface RuntimeStatus {
   dlq_total_entries: number;
   metrics_sample_count: number;
   checked_at: string;
+  /** ADR-0009 — the backend's own `Settings.product_edition`, exposed
+   * so the frontend can detect a build/deploy edition mismatch. See
+   * `@/lib/editionMismatch`. */
+  product_edition: string;
 }
 
 export interface ComponentHealth {

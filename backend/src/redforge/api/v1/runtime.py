@@ -39,6 +39,7 @@ from redforge.api.dependencies import (
 )
 from redforge.api.security import get_tenant_context, require_permission
 from redforge.application.platform.dead_letter_queue import DeadLetterEntryNotFoundError
+from redforge.core.config import get_settings
 from redforge.core.logging import get_logger
 from redforge.domain.identity.value_objects import Permission
 
@@ -79,6 +80,14 @@ class RuntimeStatusResponse(BaseModel):
     dlq_total_entries: int
     metrics_sample_count: int
     checked_at: datetime
+    # Product edition (ADR-0009): safe, non-secret runtime metadata —
+    # not a credential, not tenant data — exposed here so a frontend
+    # build can detect a frontend<->backend edition mismatch (see
+    # `frontend/src/lib/editionMismatch.ts`). This is diagnostic only:
+    # the backend's actual mounted route set is determined solely by
+    # `Settings.product_edition` at `build_root_router` time, never by
+    # anything a client reads back from this field.
+    product_edition: str
 
 
 class AggregatedHealthResponse(BaseModel):
@@ -195,6 +204,7 @@ async def runtime_status(
         dlq_total_entries=total_dlq,
         metrics_sample_count=metrics.total_samples,
         checked_at=_utc_now(),
+        product_edition=get_settings().product_edition,
     )
 
 
