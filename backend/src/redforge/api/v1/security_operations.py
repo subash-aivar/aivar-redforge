@@ -63,7 +63,21 @@ if TYPE_CHECKING:
     )
     from redforge.domain.security_operations.operational_event import OperationalEvent
 
-router = APIRouter(prefix="/security-operations", tags=["security-operations"])
+# Two routers sharing the same `/security-operations` prefix so that
+# edition membership can be assigned per-router (see api/v1/__init__.py's
+# `_Registration.editions`) without changing a single URL or Full
+# RedForge's response contract:
+#   - `common_router`: summary/changes/events/events-stream/runtime —
+#     available to both editions (with edition-aware data composition
+#     applied inside the services themselves, not here).
+#   - `executions_router`: a pure M11 ValidationExecution projection with
+#     zero Network Defense relevance — Full-only, absent (404) from the
+#     Network Defense mounted API surface.
+# `router` remains the combined router (both sub-routers, in the same
+# route order) for backward compatibility with call sites/tests that
+# still import and mount `security_operations.router` directly.
+common_router = APIRouter(prefix="/security-operations", tags=["security-operations"])
+executions_router = APIRouter(prefix="/security-operations", tags=["security-operations"])
 
 
 # ─── Response models ───────────────────────────────────────────────────────
@@ -95,16 +109,18 @@ class OperationalEventResponse(BaseModel):
 
 class SummaryResponse(BaseModel):
     period: str
-    active_targets: int
     canonical_assets: int
-    active_continuous_validation_policies: int
-    validations_running: int
-    validations_blocked_in_period: int
-    validations_failed_in_period: int
     critical_high_conditions: int
     active_correlations: int
-    drift_events_in_period: int
     runtime_unhealthy_components: int
+    # Full-only fields — real integers for the "full" edition, `null` for
+    # "network_defense" (never fabricated as 0; see SecurityOperationsSummaryDTO).
+    active_targets: int | None = None
+    active_continuous_validation_policies: int | None = None
+    validations_running: int | None = None
+    validations_blocked_in_period: int | None = None
+    validations_failed_in_period: int | None = None
+    drift_events_in_period: int | None = None
 
     @classmethod
     def from_dto(cls, dto: SecurityOperationsSummaryDTO) -> SummaryResponse:
@@ -149,7 +165,7 @@ class RuntimeComponentResponse(BaseModel):
 # ─── Summary / change feed ─────────────────────────────────────────────────
 
 
-@router.get("/summary", response_model=SummaryResponse)
+@common_router.get("/summary", response_model=SummaryResponse)
 async def get_summary(
     period: BoundedPeriod = Query(default=BoundedPeriod.TWENTY_FOUR_HOURS),
     tenant: TenantContext = Depends(require_permission(Permission.SECURITY_OPERATIONS_READ)),
@@ -159,7 +175,7 @@ async def get_summary(
     return SummaryResponse.from_dto(dto)
 
 
-@router.get("/changes", response_model=list[OperationalEventResponse])
+@common_router.get("/changes", response_model=list[OperationalEventResponse])
 async def list_changes(
     period: BoundedPeriod = Query(default=BoundedPeriod.TWENTY_FOUR_HOURS),
     source_domain: SourceDomain | None = Query(default=None),
@@ -176,7 +192,7 @@ async def list_changes(
     return [OperationalEventResponse.from_event(e) for e in events]
 
 
-@router.get("/events", response_model=list[OperationalEventResponse])
+@common_router.get("/events", response_model=list[OperationalEventResponse])
 async def list_events(
     since_cursor: str | None = Query(default=None),
     limit: int = Query(default=50, ge=1, le=200),
@@ -198,7 +214,7 @@ def _sse_frame(event: OperationalEvent) -> str:
     return f"id: {event.cursor}\nevent: operational_event\ndata: {json.dumps(payload)}\n\n"
 
 
-@router.get("/events/stream")
+@common_router.get("/events/stream")
 async def stream_events(
     request: Request,
     last_event_id: str | None = Header(default=None, alias="Last-Event-ID"),
@@ -244,7 +260,7 @@ async def stream_events(
 # ─── Execution telemetry ───────────────────────────────────────────────────
 
 
-@router.get("/executions", response_model=list[ExecutionTelemetrySummaryResponse])
+@executions_router.get("/executions", response_model=list[ExecutionTelemetrySummaryResponse])
 async def list_executions(
     state: str | None = Query(default=None),
     trigger: str | None = Query(default=None),
@@ -260,7 +276,9 @@ async def list_executions(
     return [ExecutionTelemetrySummaryResponse(**asdict(s)) for s in summaries]
 
 
-@router.get("/executions/{execution_id}", response_model=ExecutionTelemetryDetailResponse)
+@executions_router.get(
+    "/executions/{execution_id}", response_model=ExecutionTelemetryDetailResponse,
+)
 async def get_execution_detail(
     execution_id: str,
     tenant: TenantContext = Depends(require_permission(Permission.SECURITY_OPERATIONS_READ)),
@@ -277,10 +295,20 @@ async def get_execution_detail(
 # ─── Runtime operations ─────────────────────────────────────────────────────
 
 
-@router.get("/runtime", response_model=list[RuntimeComponentResponse])
+@common_router.get("/runtime", response_model=list[RuntimeComponentResponse])
 async def list_runtime_components(
     tenant: TenantContext = Depends(require_permission(Permission.SECURITY_OPERATIONS_READ)),
     service: RuntimeOperationsService = Depends(get_runtime_operations_service),
 ) -> list[RuntimeComponentResponse]:
     components = await service.list_components()
     return [RuntimeComponentResponse(**asdict(c)) for c in components]
+
+
+# Combined router — every route above, in the same order, for backward
+# compatibility with call sites that mount `security_operations.router`
+# directly (e.g. backend/tests/api/test_security_operations_isolation.py).
+# Edition-aware exposure is decided at the registry level (api/v1/__init__.py)
+# by registering `common_router`/`executions_router` separately, never here.
+router = APIRouter()
+router.include_router(common_router)
+router.include_router(executions_router)

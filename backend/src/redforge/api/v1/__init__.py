@@ -4,22 +4,15 @@ from typing import NamedTuple
 
 from fastapi import APIRouter
 
-from redforge.core.config import ProductEdition
-
 from ai_agent_governance.api.v1 import router as ai_agent_governance_router
 from ai_posture.api.v1 import router as ai_posture_router
 from ai_supply_chain.api.v1 import router as ai_supply_chain_router
 from analytics.api.v1 import router as analytics_router
 from attack_pattern_intel.api.v1 import router as attack_pattern_intel_router
-from intelligence_relationships.api.v1 import router as intelligence_relationships_router
-from malware_intel.api.v1 import router as malware_intel_router
-from campaign_intel.api.v1 import router as campaign_intel_router
-from tool_intel.api.v1 import router as tool_intel_router
-from infrastructure_intel.api.v1 import router as infrastructure_intel_router
-from threat_report_intel.api.v1 import router as threat_report_intel_router
 from attack_surface_management.api.v1 import router as attack_surface_management_router
 from automated_action.api.v1 import router as automated_action_router
 from autonomous_intelligence.api.v1 import router as autonomous_intelligence_router
+from campaign_intel.api.v1 import router as campaign_intel_router
 from credential_vault.api.v1 import router as credential_vault_router
 from detection.api.v1 import router as detection_router
 from engagement.api.v1 import router as engagement_router
@@ -28,9 +21,12 @@ from execution.api.v1 import router as execution_router
 from exposure.api.v1 import router as exposure_router
 from exposure_reporting.api.v1 import router as exposure_reporting_router
 from incident.api.v1 import router as incident_router
+from infrastructure_intel.api.v1 import router as infrastructure_intel_router
 from integration_hub.api.v1 import router as integration_hub_router
+from intelligence_relationships.api.v1 import router as intelligence_relationships_router
 from ioc_intelligence.api.v1 import router as ioc_intelligence_router
 from lessons_learned.api.v1 import router as lessons_learned_router
+from malware_intel.api.v1 import router as malware_intel_router
 from ml_pipeline.api.v1 import router as ml_pipeline_router
 from operation.api.v1 import router as operation_router
 from payload.api.v1 import router as payload_router
@@ -90,7 +86,10 @@ from redforge.api.v1.runtime import router as runtime_router
 from redforge.api.v1.security_conditions import router as security_conditions_router
 from redforge.api.v1.security_correlations import router as security_correlations_router
 from redforge.api.v1.security_graph import router as security_graph_router
-from redforge.api.v1.security_operations import router as security_operations_router
+from redforge.api.v1.security_operations import common_router as security_operations_common_router
+from redforge.api.v1.security_operations import (
+    executions_router as security_operations_executions_router,
+)
 from redforge.api.v1.telemetry import router as telemetry_router
 from redforge.api.v1.threat_fusion import router as threat_fusion_router
 from redforge.api.v1.threat_intel import router as threat_intel_router
@@ -99,17 +98,31 @@ from redforge.api.v1.threat_intel_reference_data import (
 )
 from redforge.api.v1.validation_executions import router as validation_executions_router
 from redforge.api.v1.validations import router as validations_router
+from redforge.core.config import ProductEdition
 from regulatory_notification.api.v1 import router as regulatory_notification_router
 from remediation_impact.api.v1 import router as remediation_impact_router
 from reporting.api.v1 import router as reporting_router
 from risk_engine.api.v1 import router as risk_engine_router
 from threat_actor_intel.api.v1 import router as threat_actor_intel_router
 from threat_hunt.api.v1 import router as threat_hunt_router
+from threat_report_intel.api.v1 import router as threat_report_intel_router
+from tool_intel.api.v1 import router as tool_intel_router
 from vulnerability.api.v1 import router as vulnerability_router
+
+# ── Edition membership constants (ADR-0009) ─────────────────────────────────
+#
+# The two possible `_Registration.editions` values. "full" always
+# receives every registration (see `build_v1_router`), so `_FULL_ONLY`
+# exists purely for readability/documentation at each call site below —
+# it is never treated differently from `_BOTH` for the "full" edition.
+_FULL_ONLY: frozenset[ProductEdition] = frozenset({"full"})
+_BOTH: frozenset[ProductEdition] = frozenset({"full", "network_defense"})
+
 
 class _Registration(NamedTuple):
     router: APIRouter
     tags: tuple[str, ...]
+    editions: frozenset[ProductEdition]
     prefix: str = ""
 
 
@@ -122,204 +135,130 @@ class _Registration(NamedTuple):
 # call sites below. "full" always includes every entry, in this exact order,
 # so Full RedForge's route set is provably unchanged by this refactor (see
 # tests/unit/test_product_edition_router_surface.py).
+#
+# `editions` is the ONLY thing that decides whether a registration is
+# mounted for a given edition (`build_v1_router` filters on it directly).
+# `tags` remains purely OpenAPI/presentation metadata — renaming a tag
+# string, or reusing the same tag across two registrations with different
+# `editions`, has zero effect on which editions see which routes (see
+# `test_tag_renaming_does_not_change_exposure` in
+# tests/unit/test_product_edition_router_surface.py).
 _REGISTRATIONS: tuple[_Registration, ...] = (
-    _Registration(health_router, ("health",)),
-    _Registration(metrics_router, ("metrics",)),
-    _Registration(auth_router, ("auth",)),
-    _Registration(organizations_router, ("organizations",)),
-    _Registration(memberships_router, ("memberships",)),
-    _Registration(invitations_org_router, ("invitations",)),
-    _Registration(invitations_token_router, ("invitations",)),
-    _Registration(ai_targets_router, ("ai-targets",)),
-    _Registration(validations_router, ("validations",)),
-    _Registration(findings_router, ("findings",)),
-    _Registration(evidence_router, ("evidence",)),
-    _Registration(attack_library_router, ("attack-library",)),
-    _Registration(policies_router, ("policies",)),
-    _Registration(execution_plans_router, ("execution-plans",)),
-    _Registration(providers_router, ("providers",)),
-    _Registration(payload_templates_router, ("payload-templates",)),
-    _Registration(risk_incidents_router, ("risk-incidents",)),
-    _Registration(knowledge_graph_router, ("knowledge-graph",)),
-    _Registration(runtime_router, ("runtime",)),
-    _Registration(red_team_router, ("red-team",)),
-    _Registration(platform_router, ("platform",)),
-    _Registration(assets_router, ("assets",)),
-    _Registration(connectors_router, ("connectors",)),
-    _Registration(continuous_validation_router, ("continuous-validation",)),
-    _Registration(security_graph_router, ("security-graph",)),
-    _Registration(directory_security_router, ("directory-security",)),
-    _Registration(network_exposure_router, ("network-exposure",)),
-    _Registration(cloud_foundation_router, ("cloud-foundation",)),
-    _Registration(cloud_discovery_router, ("cloud-foundation",)),
-    _Registration(cloud_identity_router, ("cloud-foundation",)),
-    _Registration(cloud_cspm_router, ("cloud-foundation",)),
-    _Registration(cloud_k8s_router, ("cloud-foundation",)),
-    _Registration(cloud_runtime_router, ("cloud-foundation",)),
-    _Registration(cloud_risk_router, ("cloud-foundation",)),
-    _Registration(cloud_platform_router, ("cloud-foundation",)),
-    _Registration(cloud_security_router, ("cloud-security",)),
-    _Registration(security_conditions_router, ("security-conditions",)),
-    _Registration(security_correlations_router, ("security-correlations",)),
-    _Registration(attack_surface_router, ("attack-surface",)),
-    _Registration(authorizations_router, ("authorizations",)),
-    _Registration(validation_executions_router, ("validation-executions",)),
-    _Registration(security_operations_router, ("security-operations",)),
-    _Registration(network_security_router, ("network-security",)),
-    _Registration(admin_rbac_router, ("admin-rbac",)),
-    _Registration(command_center_router, ("command-center",)),
-    _Registration(threat_intel_router, ("threat-intel",)),
-    _Registration(threat_intel_reference_data_router, ("threat-intel-reference-data",)),
-    _Registration(feed_sync_router, ("threat-intel-feed-sync",)),
-    _Registration(threat_fusion_router, ("threat-fusion",)),
-    _Registration(attack_paths_router, ("attack-paths",)),
-    _Registration(telemetry_router, ("telemetry",)),
-    _Registration(ddos_router, ("ddos",)),
-    _Registration(behavior_router, ("behavior",)),
-    _Registration(investigations_router, ("investigations",)),
-    _Registration(compliance_router, ("compliance",)),
-    _Registration(compliance_assessment_router, ("compliance-assessment",)),
-    _Registration(compliance_recommendations_router, ("compliance-recommendations",)),
-    _Registration(compliance_console_router, ("compliance-console",)),
-    _Registration(credential_vault_router, ("credential-vault",)),
-    _Registration(vulnerability_router, ("vulnerabilities",)),
-    _Registration(detection_router, ("detection-rules",)),
-    _Registration(engagement_router, ("engagements",)),
-    _Registration(ai_posture_router, ("ai-posture",)),
-    _Registration(ai_supply_chain_router, ("ai-supply-chain",)),
-    _Registration(ai_agent_governance_router, ("ai-agent-governance",)),
-    _Registration(exposure_router, ("exposure",)),
-    _Registration(remediation_impact_router, ("remediation-impact",)),
-    _Registration(exposure_reporting_router, ("exposure-reporting",)),
-    _Registration(analytics_router, ("analytics",)),
-    _Registration(reporting_router, ("reporting",)),
-    _Registration(ml_pipeline_router, ("ml-pipeline",)),
-    _Registration(incident_router, ("incident",)),
-    _Registration(playbook_router, ("playbook",)),
-    _Registration(autonomous_intelligence_router, ("autonomous-intelligence",)),
-    _Registration(posture_forecasting_router, ("posture-forecasting",)),
-    _Registration(threat_hunt_router, ("threat-hunt",)),
-    _Registration(automated_action_router, ("automated-action",)),
-    _Registration(integration_hub_router, ("integration-hub",)),
-    _Registration(regulatory_notification_router, ("regulatory-notification",)),
-    _Registration(lessons_learned_router, ("lessons-learned",)),
-    _Registration(operation_router, ("operations",)),
-    _Registration(risk_engine_router, ("risk-engine",)),
-    _Registration(threat_actor_intel_router, ("threat-actor-intel",)),
-    _Registration(ioc_intelligence_router, ("ioc-intelligence",)),
-    _Registration(attack_pattern_intel_router, ("attack-pattern-intel",)),
-    _Registration(intelligence_relationships_router, ("intelligence-relationships",)),
-    _Registration(malware_intel_router, ("malware-intel",)),
-    _Registration(campaign_intel_router, ("campaign-intel",)),
-    _Registration(tool_intel_router, ("tool-intel",)),
-    _Registration(infrastructure_intel_router, ("infrastructure-intel",)),
-    _Registration(threat_report_intel_router, ("threat-report-intel",)),
-    _Registration(attack_surface_management_router, ("attack-surface-management",)),
-    _Registration(execution_router, ("execution",)),
-    _Registration(operator_router, ("red-team-operators",)),
-    _Registration(evidence_bc_router, ("red-team-evidence",), prefix="/red-team-evidence"),
-    _Registration(payload_router, ("red-team-payloads",), prefix="/red-team-payloads"),
+    _Registration(health_router, ("health",), _BOTH),
+    _Registration(metrics_router, ("metrics",), _BOTH),
+    _Registration(auth_router, ("auth",), _BOTH),
+    _Registration(organizations_router, ("organizations",), _BOTH),
+    _Registration(memberships_router, ("memberships",), _BOTH),
+    _Registration(invitations_org_router, ("invitations",), _BOTH),
+    _Registration(invitations_token_router, ("invitations",), _BOTH),
+    _Registration(ai_targets_router, ("ai-targets",), _FULL_ONLY),
+    _Registration(validations_router, ("validations",), _FULL_ONLY),
+    _Registration(findings_router, ("findings",), _FULL_ONLY),
+    _Registration(evidence_router, ("evidence",), _BOTH),
+    _Registration(attack_library_router, ("attack-library",), _FULL_ONLY),
+    _Registration(policies_router, ("policies",), _FULL_ONLY),
+    _Registration(execution_plans_router, ("execution-plans",), _FULL_ONLY),
+    _Registration(providers_router, ("providers",), _FULL_ONLY),
+    _Registration(payload_templates_router, ("payload-templates",), _FULL_ONLY),
+    _Registration(risk_incidents_router, ("risk-incidents",), _FULL_ONLY),
+    _Registration(knowledge_graph_router, ("knowledge-graph",), _FULL_ONLY),
+    _Registration(runtime_router, ("runtime",), _BOTH),
+    _Registration(red_team_router, ("red-team",), _FULL_ONLY),
+    _Registration(platform_router, ("platform",), _BOTH),
+    _Registration(assets_router, ("assets",), _BOTH),
+    _Registration(connectors_router, ("connectors",), _BOTH),
+    _Registration(continuous_validation_router, ("continuous-validation",), _FULL_ONLY),
+    _Registration(security_graph_router, ("security-graph",), _BOTH),
+    _Registration(directory_security_router, ("directory-security",), _FULL_ONLY),
+    _Registration(network_exposure_router, ("network-exposure",), _FULL_ONLY),
+    _Registration(cloud_foundation_router, ("cloud-foundation",), _FULL_ONLY),
+    _Registration(cloud_discovery_router, ("cloud-foundation",), _FULL_ONLY),
+    _Registration(cloud_identity_router, ("cloud-foundation",), _FULL_ONLY),
+    _Registration(cloud_cspm_router, ("cloud-foundation",), _FULL_ONLY),
+    _Registration(cloud_k8s_router, ("cloud-foundation",), _FULL_ONLY),
+    _Registration(cloud_runtime_router, ("cloud-foundation",), _FULL_ONLY),
+    _Registration(cloud_risk_router, ("cloud-foundation",), _FULL_ONLY),
+    _Registration(cloud_platform_router, ("cloud-foundation",), _FULL_ONLY),
+    _Registration(cloud_security_router, ("cloud-security",), _FULL_ONLY),
+    _Registration(security_conditions_router, ("security-conditions",), _BOTH),
+    _Registration(security_correlations_router, ("security-correlations",), _BOTH),
+    _Registration(attack_surface_router, ("attack-surface",), _FULL_ONLY),
+    _Registration(authorizations_router, ("authorizations",), _FULL_ONLY),
+    _Registration(validation_executions_router, ("validation-executions",), _FULL_ONLY),
+    # security_operations is split across two routers sharing the same
+    # `/security-operations` prefix so edition membership can differ per
+    # route (see security_operations.py's own module docstring):
+    # summary/changes/runtime/events/events-stream are common to both
+    # editions; executions (list + detail) are Full-only.
+    _Registration(security_operations_common_router, ("security-operations",), _BOTH),
+    _Registration(security_operations_executions_router, ("security-operations",), _FULL_ONLY),
+    _Registration(network_security_router, ("network-security",), _BOTH),
+    _Registration(admin_rbac_router, ("admin-rbac",), _BOTH),
+    _Registration(command_center_router, ("command-center",), _FULL_ONLY),
+    _Registration(threat_intel_router, ("threat-intel",), _BOTH),
+    _Registration(
+        threat_intel_reference_data_router, ("threat-intel-reference-data",), _FULL_ONLY,
+    ),
+    _Registration(feed_sync_router, ("threat-intel-feed-sync",), _BOTH),
+    _Registration(threat_fusion_router, ("threat-fusion",), _FULL_ONLY),
+    _Registration(attack_paths_router, ("attack-paths",), _FULL_ONLY),
+    _Registration(telemetry_router, ("telemetry",), _BOTH),
+    _Registration(ddos_router, ("ddos",), _BOTH),
+    _Registration(behavior_router, ("behavior",), _BOTH),
+    _Registration(investigations_router, ("investigations",), _BOTH),
+    _Registration(compliance_router, ("compliance",), _FULL_ONLY),
+    _Registration(compliance_assessment_router, ("compliance-assessment",), _FULL_ONLY),
+    _Registration(
+        compliance_recommendations_router, ("compliance-recommendations",), _FULL_ONLY,
+    ),
+    _Registration(compliance_console_router, ("compliance-console",), _FULL_ONLY),
+    _Registration(credential_vault_router, ("credential-vault",), _BOTH),
+    _Registration(vulnerability_router, ("vulnerabilities",), _FULL_ONLY),
+    _Registration(detection_router, ("detection-rules",), _FULL_ONLY),
+    _Registration(engagement_router, ("engagements",), _FULL_ONLY),
+    _Registration(ai_posture_router, ("ai-posture",), _FULL_ONLY),
+    _Registration(ai_supply_chain_router, ("ai-supply-chain",), _FULL_ONLY),
+    _Registration(ai_agent_governance_router, ("ai-agent-governance",), _FULL_ONLY),
+    _Registration(exposure_router, ("exposure",), _FULL_ONLY),
+    _Registration(remediation_impact_router, ("remediation-impact",), _FULL_ONLY),
+    _Registration(exposure_reporting_router, ("exposure-reporting",), _FULL_ONLY),
+    _Registration(analytics_router, ("analytics",), _FULL_ONLY),
+    _Registration(reporting_router, ("reporting",), _FULL_ONLY),
+    _Registration(ml_pipeline_router, ("ml-pipeline",), _FULL_ONLY),
+    _Registration(incident_router, ("incident",), _FULL_ONLY),
+    _Registration(playbook_router, ("playbook",), _BOTH),
+    _Registration(autonomous_intelligence_router, ("autonomous-intelligence",), _FULL_ONLY),
+    _Registration(posture_forecasting_router, ("posture-forecasting",), _FULL_ONLY),
+    _Registration(threat_hunt_router, ("threat-hunt",), _FULL_ONLY),
+    _Registration(automated_action_router, ("automated-action",), _BOTH),
+    _Registration(integration_hub_router, ("integration-hub",), _BOTH),
+    _Registration(regulatory_notification_router, ("regulatory-notification",), _FULL_ONLY),
+    _Registration(lessons_learned_router, ("lessons-learned",), _FULL_ONLY),
+    _Registration(operation_router, ("operations",), _FULL_ONLY),
+    _Registration(risk_engine_router, ("risk-engine",), _FULL_ONLY),
+    _Registration(threat_actor_intel_router, ("threat-actor-intel",), _BOTH),
+    _Registration(ioc_intelligence_router, ("ioc-intelligence",), _BOTH),
+    _Registration(attack_pattern_intel_router, ("attack-pattern-intel",), _BOTH),
+    _Registration(
+        intelligence_relationships_router, ("intelligence-relationships",), _BOTH,
+    ),
+    _Registration(malware_intel_router, ("malware-intel",), _BOTH),
+    _Registration(campaign_intel_router, ("campaign-intel",), _BOTH),
+    _Registration(tool_intel_router, ("tool-intel",), _BOTH),
+    _Registration(infrastructure_intel_router, ("infrastructure-intel",), _BOTH),
+    _Registration(threat_report_intel_router, ("threat-report-intel",), _BOTH),
+    _Registration(
+        attack_surface_management_router, ("attack-surface-management",), _FULL_ONLY,
+    ),
+    _Registration(execution_router, ("execution",), _FULL_ONLY),
+    _Registration(operator_router, ("red-team-operators",), _FULL_ONLY),
+    _Registration(
+        evidence_bc_router, ("red-team-evidence",), _FULL_ONLY, prefix="/red-team-evidence",
+    ),
+    _Registration(
+        payload_router, ("red-team-payloads",), _FULL_ONLY, prefix="/red-team-payloads",
+    ),
 )
-
-
-# ── Network Defense Edition allow-list (ADR-0006/0007/0009) ─────────────────
-#
-# Tags, not routers, are the filtering key — this list stays readable and
-# reviewable without touching a single `_Registration(...)` entry above.
-# Rationale per tag group (see the four Network Defense ADRs for the full
-# architecture reasoning; this comment is only the "why this tag" summary):
-#
-# - health/metrics/runtime: operational endpoints, always required (mission
-#   item 4: "metrics / health / operational endpoints").
-# - auth/organizations/memberships/invitations: identity/org, required for
-#   any authenticated product.
-# - platform/admin-rbac: "platform identity where operationally required" —
-#   several network capabilities below are platform-gated (e.g. IOC
-#   Intelligence's global scope, DDoS platform-wide sweeps).
-# - assets: asset inventory (mission item: "asset inventory").
-# - telemetry/ddos/behavior/network-security: the Family-A network detection
-#   stack itself (ADR-0006).
-# - security-operations: the live SSE alert feed Family A actually uses
-#   (ADR-0006) — NOT siem_alerting (deliberately excluded, ADR-0006).
-# - investigations: the Family-A investigation system (ADR-0006) — NOT
-#   `incident` (M34) or siem_investigation (deliberately excluded).
-# - evidence/security-conditions/security-correlations: evidence citations
-#   and the correlation data network_security's own rules and
-#   investigations' adapters depend on. NOT red-team-evidence (a different,
-#   red-team-engagement-scoped evidence router).
-# - security-graph: the real asset/network topology graph backing a future
-#   "Network Topology" screen.
-# - ioc-intelligence/threat-actor-intel/attack-pattern-intel/
-#   intelligence-relationships/malware-intel/campaign-intel/tool-intel/
-#   infrastructure-intel/threat-report-intel: the M51 native Threat
-#   Intelligence suite, canonical per ADR-0007.
-# - threat-intel/threat-intel-feed-sync: legacy Threat Intelligence
-#   continuing ONLY as an existing provider/enrichment/correlation source
-#   consumed by the network pipeline, per ADR-0007's explicit carve-out —
-#   no NEW product ownership is added here.
-# - automated-action/playbook: response/governance (mission item:
-#   "response/governance capabilities").
-# - connectors/credential-vault/integration-hub: connector/credential
-#   capabilities required for future mitigation (mission item).
-#
-# Deliberately EXCLUDED (not exhaustive, illustrative of the boundary):
-# ai-*, cloud-*, compliance-*, red-team-*, payload*, risk-*, vulnerabilities,
-# detection-rules, engagements, exposure*, analytics, reporting, ml-pipeline,
-# incident, autonomous-intelligence, posture-forecasting, threat-hunt,
-# regulatory-notification, lessons-learned, operations, attack-surface*,
-# directory-security, network-exposure, knowledge-graph, attack-paths,
-# attack-library, command-center, threat-fusion, threat-intel-reference-data,
-# continuous-validation, authorizations, validation-executions, findings,
-# validations, ai-targets, policies, execution-plans, providers,
-# payload-templates, risk-incidents, red-team, execution.
-NETWORK_DEFENSE_TAGS: frozenset[str] = frozenset(
-    {
-        "health",
-        "metrics",
-        "runtime",
-        "auth",
-        "organizations",
-        "memberships",
-        "invitations",
-        "platform",
-        "admin-rbac",
-        "assets",
-        "telemetry",
-        "ddos",
-        "behavior",
-        "network-security",
-        "security-operations",
-        "investigations",
-        "evidence",
-        "security-conditions",
-        "security-correlations",
-        "security-graph",
-        "ioc-intelligence",
-        "threat-actor-intel",
-        "attack-pattern-intel",
-        "intelligence-relationships",
-        "malware-intel",
-        "campaign-intel",
-        "tool-intel",
-        "infrastructure-intel",
-        "threat-report-intel",
-        "threat-intel",
-        "threat-intel-feed-sync",
-        "automated-action",
-        "playbook",
-        "connectors",
-        "credential-vault",
-        "integration-hub",
-    }
-)
-
-# Edition -> allowed tag set. "full" is `None`, meaning "no filter, include
-# everything" — this is what makes Full RedForge's route set provably
-# identical to pre-edition behavior (see build_v1_router below).
-_EDITION_TAG_ALLOWLISTS: dict[ProductEdition, frozenset[str] | None] = {
-    "full": None,
-    "network_defense": NETWORK_DEFENSE_TAGS,
-}
 
 
 def build_v1_router(edition: ProductEdition = "full") -> APIRouter:
@@ -327,11 +266,16 @@ def build_v1_router(edition: ProductEdition = "full") -> APIRouter:
     product edition (ADR-0009). `edition` must be one of the two values
     `ProductEdition` allows — an unrecognized value raises `KeyError`
     immediately (fail safely, never silently falls back to "full" or to
-    an empty/partial router set)."""
-    allowed = _EDITION_TAG_ALLOWLISTS[edition]
+    an empty/partial router set).
+
+    Filtering is by `_Registration.editions` alone — `tags` is never
+    consulted here. A registration is mounted iff `edition` is a member
+    of its `editions` set."""
+    if edition not in ("full", "network_defense"):
+        raise KeyError(edition)
     v1 = APIRouter()
     for reg in _REGISTRATIONS:
-        if allowed is not None and not (set(reg.tags) & allowed):
+        if edition not in reg.editions:
             continue
         v1.include_router(reg.router, prefix=reg.prefix, tags=list(reg.tags))
     return v1

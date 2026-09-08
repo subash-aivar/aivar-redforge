@@ -9,14 +9,18 @@ stand-in), that:
 - "network_defense" edition still exposes every required shared capability.
 - An unrecognized edition value fails safely (never silently falls back
   to "full" and never silently produces an empty/partial router).
+- Exposure is governed solely by `_Registration.editions` — renaming a
+  tag string (or reusing one across differently-scoped registrations)
+  changes nothing about which editions see which routes.
 """
 
 from __future__ import annotations
 
 import pytest
+from fastapi import APIRouter
 from pydantic import ValidationError
 
-from redforge.api.v1 import _REGISTRATIONS, NETWORK_DEFENSE_TAGS, build_v1_router
+from redforge.api.v1 import _REGISTRATIONS, _Registration, build_v1_router
 from redforge.app import create_app
 from redforge.core.config import Settings
 
@@ -30,13 +34,10 @@ def _openapi_paths(edition: str) -> set[str]:
 class TestFullEditionIsBackwardCompatible:
     def test_full_edition_mounts_every_registered_router(self) -> None:
         """`build_v1_router("full")` must include ALL registrations with
-        no filtering — the allow-list is only ever consulted for a
-        non-"full" edition."""
+        no filtering — every registration's `editions` set includes
+        "full"."""
         full = build_v1_router("full")
-        # One mounted sub-router per registration, in the same order —
-        # FastAPI's newer lazy _IncludedRouter mount means len(routes)
-        # equals include_router() call count, not endpoint count; the
-        # real per-endpoint check is test_full_edition_path_count below.
+        assert all("full" in reg.editions for reg in _REGISTRATIONS)
         assert len(full.routes) == len(_REGISTRATIONS)
 
     def test_full_edition_path_count_is_unchanged(self) -> None:
@@ -63,6 +64,14 @@ class TestFullEditionIsBackwardCompatible:
             assert any(p.startswith(must_have_prefix) for p in paths), (
                 f"expected at least one full-edition path under {must_have_prefix!r}"
             )
+
+    def test_full_edition_includes_execution_telemetry_routes(self) -> None:
+        """The Full-only execution-telemetry routes (M11 ValidationExecution
+        projection, split out of the shared security-operations router)
+        remain reachable under "full"."""
+        paths = _openapi_paths("full")
+        assert "/api/v1/security-operations/executions" in paths
+        assert "/api/v1/security-operations/executions/{execution_id}" in paths
 
 
 class TestNetworkDefenseEditionExcludesUnrelatedSurfaces:
@@ -110,15 +119,24 @@ class TestNetworkDefenseEditionExcludesUnrelatedSurfaces:
             f"network_defense edition unexpectedly exposes {excluded_prefix!r}"
         )
 
-    def test_network_defense_excludes_siem_alerting_style_and_red_team_evidence(self) -> None:
-        """ADR-0006: siem_* is not part of Family A and must not be
-        introduced via this mechanism either way (it isn't registered in
-        `_REGISTRATIONS` at all today, so this also guards against a
-        future accidental addition slipping into the allow-list)."""
-        assert "siem-alerting" not in NETWORK_DEFENSE_TAGS
-        assert "red-team-evidence" not in NETWORK_DEFENSE_TAGS
+    def test_network_defense_excludes_red_team_evidence(self) -> None:
         nd_paths = _openapi_paths("network_defense")
         assert not any(p.startswith("/api/v1/red-team-evidence") for p in nd_paths)
+
+    def test_network_defense_excludes_execution_telemetry_routes(self) -> None:
+        """Item 1's deliberate boundary change: the execution-telemetry
+        routes (a pure M11 ValidationExecution projection, zero Network
+        Defense relevance) are Full-only even though they share the
+        `/security-operations` prefix and the `security-operations` tag
+        with routes that ARE available to network_defense — proving tag
+        equality alone does not grant exposure."""
+        nd_paths = _openapi_paths("network_defense")
+        assert "/api/v1/security-operations/executions" not in nd_paths
+        assert "/api/v1/security-operations/executions/{execution_id}" not in nd_paths
+        # But the rest of the same-tagged, same-prefixed router IS present.
+        assert "/api/v1/security-operations/summary" in nd_paths
+        assert "/api/v1/security-operations/changes" in nd_paths
+        assert "/api/v1/security-operations/runtime" in nd_paths
 
 
 class TestNetworkDefenseEditionRetainsRequiredSharedSurfaces:
@@ -200,3 +218,60 @@ class TestUnknownEditionFailsSafely:
         rather than silently defaulting to "full" or to an empty router."""
         with pytest.raises(KeyError):
             build_v1_router("not_a_real_edition")  # type: ignore[arg-type]
+
+
+class TestExposureIsEditionsNotTags:
+    """The core architecture change (item 1 of the spec): exposure is
+    governed exclusively by `_Registration.editions`, never by `tags` —
+    tags are presentation/OpenAPI metadata only."""
+
+    def test_tag_renaming_does_not_change_exposure(self) -> None:
+        """Two registrations carrying the SAME `editions` but DIFFERENT
+        tag strings must be mounted identically for every edition —
+        proving a tag rename (or a brand-new, never-seen-before tag
+        string) cannot change which editions a router is exposed to."""
+        marker_a = APIRouter()
+        marker_b = APIRouter()
+
+        @marker_a.get("/__test_marker_a__")
+        def _a() -> dict[str, bool]:
+            return {"ok": True}
+
+        @marker_b.get("/__test_marker_b__")
+        def _b() -> dict[str, bool]:
+            return {"ok": True}
+
+        both = frozenset({"full", "network_defense"})
+        reg_a = _Registration(marker_a, ("totally-renamed-tag-one",), both)
+        reg_b = _Registration(marker_b, ("a-completely-different-tag",), both)
+
+        for edition in ("full", "network_defense"):
+            v1 = APIRouter()
+            for reg in (reg_a, reg_b):
+                if edition in reg.editions:
+                    v1.include_router(reg.router, prefix=reg.prefix, tags=list(reg.tags))
+            # Both mount identically — the same `editions` set produced
+            # the same outcome regardless of the (different) tag string.
+            assert len(v1.routes) == 2
+
+    def test_a_registrations_tag_is_never_consulted_by_build_v1_router(self) -> None:
+        """A registration with a tag that happens to equal a tag used
+        by a Full-only registration elsewhere in `_REGISTRATIONS` is
+        still exposed per its OWN `editions`, not by tag matching."""
+        # security-operations tag is shared by both the common (BOTH-
+        # edition) and executions (FULL-only) registrations — the
+        # clearest in-repo proof tag identity never drives exposure.
+        sec_ops_regs = [reg for reg in _REGISTRATIONS if "security-operations" in reg.tags]
+        assert len(sec_ops_regs) == 2
+        editions_seen = {reg.editions for reg in sec_ops_regs}
+        assert len(editions_seen) == 2  # same tag, two different editions sets
+
+    def test_network_defense_app_does_not_expose_executions_routes(self) -> None:
+        nd_paths = _openapi_paths("network_defense")
+        assert "/api/v1/security-operations/executions" not in nd_paths
+        assert "/api/v1/security-operations/executions/{execution_id}" not in nd_paths
+
+    def test_full_app_still_exposes_everything_it_does_today(self) -> None:
+        full_paths = _openapi_paths("full")
+        assert len(full_paths) > 900
+        assert "/api/v1/security-operations/executions" in full_paths

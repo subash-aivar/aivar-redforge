@@ -42,6 +42,27 @@ class SourceDomain(StrEnum):
     UNKNOWN = "unknown"
 
 
+# Network Defense Edition allow-list (ADR-0006/0009) — the repository-
+# grounded Family-A domains: DDoS, behavior/NDR, network security itself,
+# platform-wide runtime health, and cross-domain investigations built on
+# top of them. Everything else this bounded context can project
+# (VALIDATION/CONTINUOUS_VALIDATION/SECURITY_DRIFT — all M11/M14 AI
+# red-team & continuous-validation content — plus AUTHORIZATION/
+# SECURITY_CONDITION/SECURITY_CORRELATION, none of which this module's
+# stream/change-feed merge currently projects) is Full-only and must
+# never be queried or transmitted to a Network Defense client. Consumed
+# by `application/security_operations/stream_service.py` and
+# `change_feed_service.py` — the one shared filtering point for
+# `/changes`, `/events`, and `/events/stream` alike.
+NETWORK_DEFENSE_ALLOWED_DOMAINS: frozenset[SourceDomain] = frozenset({
+    SourceDomain.RUNTIME,
+    SourceDomain.NETWORK_SECURITY,
+    SourceDomain.DDOS,
+    SourceDomain.BEHAVIOR,
+    SourceDomain.INVESTIGATION,
+})
+
+
 @unique
 class OperationalImportance(StrEnum):
     """A controlled operational importance classification.

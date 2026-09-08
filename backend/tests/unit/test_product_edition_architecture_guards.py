@@ -1,5 +1,6 @@
 """Architecture guard tests for the Network Defense Edition foundation
-(Phase 0.2). These prove the constraints ADR-0006/0007/0008/0009
+(Phase 0.2, refactored per ADR-0009 to an explicit `editions`-membership
+router registry). These prove the constraints ADR-0006/0007/0008/0009
 explicitly forbid are NOT violated by the product_edition mechanism —
 not by inspecting intent, but by inspecting the actual repository state.
 """
@@ -23,6 +24,12 @@ _EDITION_AWARE_FILES = {
     BACKEND_SRC / "redforge" / "api" / "v1" / "__init__.py",
     BACKEND_SRC / "redforge" / "api" / "router.py",
     BACKEND_SRC / "redforge" / "app.py",
+    # Edition-aware DI wiring (ADR-0009 item 5): the ONE place the
+    # existing FastAPI dependency-provider pattern reads
+    # `get_settings().product_edition` to construct
+    # SecurityOperationsSummaryService / SecurityOperationsStreamService /
+    # SecurityChangeFeedService for the request's edition.
+    BACKEND_SRC / "redforge" / "api" / "dependencies.py",
 }
 
 
@@ -47,26 +54,18 @@ class TestProductEditionLogicIsCentralized:
             f"product_edition logic leaked outside the centralized allow-list: {offenders}"
         )
 
-    def test_only_one_edition_to_tag_allowlist_exists(self) -> None:
-        """There must be exactly one filtering table (`_EDITION_TAG_ALLOWLISTS`
-        in `api/v1/__init__.py`) — not a second one anywhere else."""
+    def test_registrations_editions_is_the_one_exposure_mechanism(self) -> None:
+        """There must be exactly one place a `_Registration.editions` set
+        is assigned (`api/v1/__init__.py`) — no second edition->exposure
+        table anywhere else, and `build_v1_router` is the only consumer
+        of it."""
         hits = []
         for path in _iter_python_source_files():
             text = path.read_text(encoding="utf-8", errors="ignore")
-            if "_EDITION_TAG_ALLOWLISTS" in text or "NETWORK_DEFENSE_TAGS" in text:
+            if "_Registration(" in text or "build_v1_router" in text:
                 hits.append(path)
         v1_init = BACKEND_SRC / "redforge" / "api" / "v1" / "__init__.py"
         assert v1_init in hits
-        # Every OTHER hit must only be a consumer (e.g. a test importing
-        # NETWORK_DEFENSE_TAGS to assert against it), never a second
-        # definition of an edition->tags table.
-        for path in hits:
-            if path == v1_init:
-                continue
-            text = path.read_text(encoding="utf-8", errors="ignore")
-            assert "_EDITION_TAG_ALLOWLISTS" not in text or "import" in text.split(
-                "_EDITION_TAG_ALLOWLISTS"
-            )[0].rsplit("\n", 1)[-1]
 
 
 class TestNoSecondRbacSystem:
@@ -136,14 +135,15 @@ class TestNoDuplicateCanonicalCore:
             assert "network_defense" not in name
             assert name != "product_edition"
 
-    def test_router_registration_count_is_unchanged_from_pre_edition_checkpoint(self) -> None:
+    def test_router_registration_count_reflects_only_the_security_operations_split(self) -> None:
         """Proves no router/bounded context was added or removed while
-        introducing the edition mechanism — exactly the same 96
-        registrations as the M51 WIP checkpoint (aa3f1c5), just
-        restructured into a filterable list."""
+        moving to the explicit-`editions` mechanism — exactly one more
+        registration than the M51 WIP checkpoint's 96 (the deliberate
+        `security_operations` common/executions split, item 1 of the
+        ADR-0009 refactor), never a real product change."""
         from redforge.api.v1 import _REGISTRATIONS
 
-        assert len(_REGISTRATIONS) == 96
+        assert len(_REGISTRATIONS) == 97
 
 
 class TestNoNewDetectionPipelineOrSiemDependency:
@@ -151,35 +151,46 @@ class TestNoNewDetectionPipelineOrSiemDependency:
         """ADR-0006: Network Defense Edition must not depend on siem_*
         for new product work. None of the edition-mechanism files may
         IMPORT it — mentioning it in a comment (to document that it is
-        deliberately excluded, as `api/v1/__init__.py` does) is fine and
-        expected; an actual `import siem_*`/`from siem_*` is not."""
+        deliberately excluded) is fine and expected; an actual
+        `import siem_*`/`from siem_*` is not."""
         import_pattern = re.compile(r"^\s*(?:from|import)\s+siem_\w+", re.M)
         for path in _EDITION_AWARE_FILES:
+            if not path.exists():
+                continue
             text = path.read_text(encoding="utf-8", errors="ignore")
             assert not import_pattern.search(text), (
                 f"{path} imports siem_*, forbidden by ADR-0006"
             )
 
-    def test_network_defense_tags_contains_no_siem_tag(self) -> None:
-        from redforge.api.v1 import NETWORK_DEFENSE_TAGS
+    def test_no_siem_tagged_registration_carries_network_defense_edition(self) -> None:
+        from redforge.api.v1 import _REGISTRATIONS
 
-        assert not any(tag.startswith("siem") for tag in NETWORK_DEFENSE_TAGS)
+        for reg in _REGISTRATIONS:
+            if any(tag.startswith("siem") for tag in reg.tags):
+                assert "network_defense" not in reg.editions
 
-    def test_network_defense_tags_contains_no_incident_m34_tag(self) -> None:
+    def test_incident_m34_registration_is_full_only_not_investigations(self) -> None:
         """ADR-0006: `incident` (M34) is explicitly NOT the canonical
         investigation system for Network Defense Edition — only
         `investigations` (Family A) is."""
-        from redforge.api.v1 import NETWORK_DEFENSE_TAGS
+        from redforge.api.v1 import _REGISTRATIONS
 
-        assert "incident" not in NETWORK_DEFENSE_TAGS
-        assert "investigations" in NETWORK_DEFENSE_TAGS
+        incident_regs = [reg for reg in _REGISTRATIONS if "incident" in reg.tags]
+        assert incident_regs
+        for reg in incident_regs:
+            assert "network_defense" not in reg.editions
+
+        investigations_regs = [reg for reg in _REGISTRATIONS if "investigations" in reg.tags]
+        assert investigations_regs
+        for reg in investigations_regs:
+            assert "network_defense" in reg.editions
 
 
 class TestM51ThreatIntelRemainsCanonical:
-    def test_all_nine_m51_threat_intel_tags_are_allow_listed(self) -> None:
+    def test_all_nine_m51_threat_intel_tags_are_network_defense_visible(self) -> None:
         """ADR-0007: the M51 native suite is canonical for Network
         Defense Edition's Threat Intelligence surface."""
-        from redforge.api.v1 import NETWORK_DEFENSE_TAGS
+        from redforge.api.v1 import _REGISTRATIONS
 
         m51_tags = {
             "ioc-intelligence",
@@ -192,17 +203,27 @@ class TestM51ThreatIntelRemainsCanonical:
             "infrastructure-intel",
             "threat-report-intel",
         }
-        assert m51_tags <= NETWORK_DEFENSE_TAGS
+        seen = set()
+        for reg in _REGISTRATIONS:
+            for tag in reg.tags:
+                if tag in m51_tags:
+                    assert "network_defense" in reg.editions, (
+                        f"{tag!r} must be network_defense-visible per ADR-0007"
+                    )
+                    seen.add(tag)
+        assert m51_tags <= seen
 
     def test_legacy_threat_intel_present_only_as_carve_out_not_expanded(self) -> None:
-        """Legacy `threat_intel`/`threat-intel-feed-sync` remain allowed
-        (ADR-0007's explicit enrichment/correlation carve-out), but
-        `threat-fusion` and `threat-intel-reference-data` — broader
-        legacy surfaces not required for network correlation — are NOT
-        allow-listed, proving the carve-out wasn't silently widened."""
-        from redforge.api.v1 import NETWORK_DEFENSE_TAGS
+        """Legacy `threat_intel`/`threat-intel-feed-sync` remain
+        network_defense-visible (ADR-0007's explicit enrichment/
+        correlation carve-out), but `threat-fusion` and
+        `threat-intel-reference-data` — broader legacy surfaces not
+        required for network correlation — are NOT, proving the
+        carve-out wasn't silently widened."""
+        from redforge.api.v1 import _REGISTRATIONS
 
-        assert "threat-intel" in NETWORK_DEFENSE_TAGS
-        assert "threat-intel-feed-sync" in NETWORK_DEFENSE_TAGS
-        assert "threat-fusion" not in NETWORK_DEFENSE_TAGS
-        assert "threat-intel-reference-data" not in NETWORK_DEFENSE_TAGS
+        by_tag = {tag: reg for reg in _REGISTRATIONS for tag in reg.tags}
+        assert "network_defense" in by_tag["threat-intel"].editions
+        assert "network_defense" in by_tag["threat-intel-feed-sync"].editions
+        assert "network_defense" not in by_tag["threat-fusion"].editions
+        assert "network_defense" not in by_tag["threat-intel-reference-data"].editions

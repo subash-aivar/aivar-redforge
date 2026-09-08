@@ -61,14 +61,28 @@ from redforge.application.security_operations.projection_registry import (
 )
 from redforge.domain.security_operations.value_objects import (
     EVENT_VISIBILITY_LAG_SECONDS,
+    NETWORK_DEFENSE_ALLOWED_DOMAINS,
     STREAM_BATCH_SIZE,
+    SourceDomain,
 )
 from redforge.shared.identifiers import EntityId
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+    from redforge.core.config import ProductEdition
     from redforge.domain.security_operations.operational_event import OperationalEvent
+
+
+def allowed_domains_for_edition(edition: ProductEdition) -> frozenset[SourceDomain] | None:
+    """`None` for "full" (no filter — today's unfiltered behavior
+    unchanged); `NETWORK_DEFENSE_ALLOWED_DOMAINS` (domain/security_operations
+    /value_objects.py — the one definition of the allow-list) otherwise.
+    The one place edition maps to an allow-list; both the stream service
+    and the change-feed service build on it rather than duplicating it."""
+    if edition == "full":
+        return None
+    return NETWORK_DEFENSE_ALLOWED_DOMAINS
 
 
 def _canonical_ts(dt: datetime) -> str:
@@ -105,11 +119,25 @@ async def fetch_merged_candidates(
     query_since: datetime,
     per_source_limit: int,
     apply_visibility_lag: bool = True,
+    allowed_domains: frozenset[SourceDomain] | None = None,
 ) -> list[OperationalEvent]:
     """Queries all four sources since `query_since`, projects each row,
     assigns its composite cursor, and returns them in cursor order —
     the one shared merge routine `poll()` and the change-feed service
-    both build on."""
+    both build on.
+
+    `allowed_domains`, when not None, is an edition-aware allow-list
+    (see `redforge.domain.security_operations.value_objects.
+    NETWORK_DEFENSE_ALLOWED_DOMAINS`): a source whose `SourceDomain` is
+    not in the set is never queried in the first place (not merely
+    filtered out afterwards), and — as a defensive invariant against any
+    future source added inside this function without an explicit skip
+    guard — the merged result is also filtered by the same allow-list
+    before it is returned. A caller passing `None` (the default) gets
+    today's unfiltered "full" behavior unchanged."""
+
+    def _allowed(domain: SourceDomain) -> bool:
+        return allowed_domains is None or domain in allowed_domains
     from redforge.infrastructure.database.repositories.continuous_validation.drift_repository import (  # noqa: E501
         SqlAlchemySecurityDriftEventRepository,
     )
@@ -139,250 +167,282 @@ async def fetch_merged_candidates(
     candidates: list[OperationalEvent] = []
 
     async with session_factory() as session:
-        exec_repo = SqlAlchemyExecutionEventRepository(session)
-        exec_events = await exec_repo.list_for_organization_since(
-            org_id, query_since, per_source_limit,
-        )
-        for ev in exec_events:
-            if ev.occurred_at >= visibility_cutoff:
-                continue
-            projected = project_execution_event(
-                event_type=str(ev.event_type), payload=ev.payload,
-                execution_id=str(ev.execution_id), organization_id=organization_id,
-                occurred_at=ev.occurred_at.isoformat(),
+        if _allowed(SourceDomain.VALIDATION):
+            exec_repo = SqlAlchemyExecutionEventRepository(session)
+            exec_events = await exec_repo.list_for_organization_since(
+                org_id, query_since, per_source_limit,
             )
-            if projected is None:
-                continue
-            cursor = make_cursor(ev.occurred_at, "E", str(ev.id))
-            candidates.append(projected.with_cursor(cursor))
+            for ev in exec_events:
+                if ev.occurred_at >= visibility_cutoff:
+                    continue
+                projected = project_execution_event(
+                    event_type=str(ev.event_type), payload=ev.payload,
+                    execution_id=str(ev.execution_id), organization_id=organization_id,
+                    occurred_at=ev.occurred_at.isoformat(),
+                )
+                if projected is None:
+                    continue
+                cursor = make_cursor(ev.occurred_at, "E", str(ev.id))
+                candidates.append(projected.with_cursor(cursor))
 
-        drift_repo = SqlAlchemySecurityDriftEventRepository(session)
-        drift_events = await drift_repo.list_for_organization_since(
-            org_id, query_since, per_source_limit,
-        )
-        for de in drift_events:
-            if de.detected_at >= visibility_cutoff:
-                continue
-            projected = project_drift_event(
-                drift_event_id=str(de.id), category=str(de.category), summary=de.summary,
-                execution_id=str(de.execution_id),
-                continuous_policy_id=str(de.continuous_policy_id),
-                organization_id=organization_id, occurred_at=de.detected_at.isoformat(),
+        if _allowed(SourceDomain.SECURITY_DRIFT):
+            drift_repo = SqlAlchemySecurityDriftEventRepository(session)
+            drift_events = await drift_repo.list_for_organization_since(
+                org_id, query_since, per_source_limit,
             )
-            cursor = make_cursor(de.detected_at, "D", str(de.id))
-            candidates.append(projected.with_cursor(cursor))
+            for de in drift_events:
+                if de.detected_at >= visibility_cutoff:
+                    continue
+                projected = project_drift_event(
+                    drift_event_id=str(de.id), category=str(de.category), summary=de.summary,
+                    execution_id=str(de.execution_id),
+                    continuous_policy_id=str(de.continuous_policy_id),
+                    organization_id=organization_id, occurred_at=de.detected_at.isoformat(),
+                )
+                cursor = make_cursor(de.detected_at, "D", str(de.id))
+                candidates.append(projected.with_cursor(cursor))
 
-        policy_repo = SqlAlchemyPolicyLifecycleEventRepository(session)
-        for pe in await policy_repo.list_for_organization_since(
-            organization_id, query_since, per_source_limit,
-        ):
-            if pe.occurred_at >= visibility_cutoff:
-                continue
-            projected = project_policy_lifecycle_event(
-                event_id=pe.id, event_type=pe.event_type, policy_id=pe.policy_id,
-                organization_id=organization_id, occurred_at=pe.occurred_at.isoformat(),
-            )
-            cursor = make_cursor(pe.occurred_at, "P", pe.id)
-            candidates.append(projected.with_cursor(cursor))
+        if _allowed(SourceDomain.CONTINUOUS_VALIDATION):
+            policy_repo = SqlAlchemyPolicyLifecycleEventRepository(session)
+            for pe in await policy_repo.list_for_organization_since(
+                organization_id, query_since, per_source_limit,
+            ):
+                if pe.occurred_at >= visibility_cutoff:
+                    continue
+                projected = project_policy_lifecycle_event(
+                    event_id=pe.id, event_type=pe.event_type, policy_id=pe.policy_id,
+                    organization_id=organization_id, occurred_at=pe.occurred_at.isoformat(),
+                )
+                cursor = make_cursor(pe.occurred_at, "P", pe.id)
+                candidates.append(projected.with_cursor(cursor))
 
-        runtime_repo = SqlAlchemyRuntimeHealthRepository(session)
-        for rt in await runtime_repo.list_transitions_since(query_since, per_source_limit):
-            if rt.occurred_at >= visibility_cutoff:
-                continue
-            projected = project_runtime_transition(
-                transition_id=rt.id, component_id=rt.component_id,
-                old_status=rt.old_status, new_status=rt.new_status,
-                organization_id=organization_id, occurred_at=rt.occurred_at.isoformat(),
-            )
-            cursor = make_cursor(rt.occurred_at, "R", rt.id)
-            candidates.append(projected.with_cursor(cursor))
+        if _allowed(SourceDomain.RUNTIME):
+            runtime_repo = SqlAlchemyRuntimeHealthRepository(session)
+            for rt in await runtime_repo.list_transitions_since(query_since, per_source_limit):
+                if rt.occurred_at >= visibility_cutoff:
+                    continue
+                projected = project_runtime_transition(
+                    transition_id=rt.id, component_id=rt.component_id,
+                    old_status=rt.old_status, new_status=rt.new_status,
+                    organization_id=organization_id, occurred_at=rt.occurred_at.isoformat(),
+                )
+                cursor = make_cursor(rt.occurred_at, "R", rt.id)
+                candidates.append(projected.with_cursor(cursor))
 
-        network_run_repo = SqlAlchemyNetworkRunEventRepository(session)
-        for ne in await network_run_repo.list_for_organization_since(
-            organization_id, query_since, per_source_limit,
-        ):
-            if ne.occurred_at >= visibility_cutoff:
-                continue
-            projected = project_network_run_event(
-                event_type=ne.event_type, payload=ne.payload, run_id=ne.run_id,
-                organization_id=organization_id, occurred_at=ne.occurred_at.isoformat(),
-            )
-            if projected is None:
-                continue
-            cursor = make_cursor(ne.occurred_at, "N", ne.id)
-            candidates.append(projected.with_cursor(cursor))
+        if _allowed(SourceDomain.NETWORK_SECURITY):
+            network_run_repo = SqlAlchemyNetworkRunEventRepository(session)
+            for ne in await network_run_repo.list_for_organization_since(
+                organization_id, query_since, per_source_limit,
+            ):
+                if ne.occurred_at >= visibility_cutoff:
+                    continue
+                projected = project_network_run_event(
+                    event_type=ne.event_type, payload=ne.payload, run_id=ne.run_id,
+                    organization_id=organization_id, occurred_at=ne.occurred_at.isoformat(),
+                )
+                if projected is None:
+                    continue
+                cursor = make_cursor(ne.occurred_at, "N", ne.id)
+                candidates.append(projected.with_cursor(cursor))
 
-        network_policy_repo = SqlAlchemyNetworkPolicyLifecycleEventRepository(session)
-        for npe in await network_policy_repo.list_for_organization_since(
-            organization_id, query_since, per_source_limit,
-        ):
-            if npe.occurred_at >= visibility_cutoff:
-                continue
-            projected = project_network_policy_lifecycle_event(
-                event_id=npe.id, event_type=npe.event_type, policy_id=npe.policy_id,
-                organization_id=organization_id, occurred_at=npe.occurred_at.isoformat(),
-            )
-            cursor = make_cursor(npe.occurred_at, "M", npe.id)
-            candidates.append(projected.with_cursor(cursor))
+            network_policy_repo = SqlAlchemyNetworkPolicyLifecycleEventRepository(session)
+            for npe in await network_policy_repo.list_for_organization_since(
+                organization_id, query_since, per_source_limit,
+            ):
+                if npe.occurred_at >= visibility_cutoff:
+                    continue
+                projected = project_network_policy_lifecycle_event(
+                    event_id=npe.id, event_type=npe.event_type, policy_id=npe.policy_id,
+                    organization_id=organization_id, occurred_at=npe.occurred_at.isoformat(),
+                )
+                cursor = make_cursor(npe.occurred_at, "M", npe.id)
+                candidates.append(projected.with_cursor(cursor))
 
-        # M16 network_drift_events — persisted+deduped since M16 but had no
-        # consumer until M18 wired it here (source tag "K"). This is the
-        # canonical deterministic evidence for HBA/NBA behavior signals.
-        network_drift_repo = SqlAlchemyNetworkDriftEventRepository(session)
-        for nde in await network_drift_repo.list_for_organization_since(
-            org_id, query_since, per_source_limit,
-        ):
-            if nde.detected_at >= visibility_cutoff:
-                continue
-            projected = project_network_drift_event(
-                drift_event_id=str(nde.id), category=str(nde.category), summary=nde.summary,
-                policy_id=str(nde.policy_id), organization_id=organization_id,
-                occurred_at=nde.detected_at.isoformat(),
-            )
-            cursor = make_cursor(nde.detected_at, "K", str(nde.id))
-            candidates.append(projected.with_cursor(cursor))
+            # M16 network_drift_events — persisted+deduped since M16 but had
+            # no consumer until M18 wired it here (source tag "K"). This is
+            # the canonical deterministic evidence for HBA/NBA behavior
+            # signals.
+            network_drift_repo = SqlAlchemyNetworkDriftEventRepository(session)
+            for nde in await network_drift_repo.list_for_organization_since(
+                org_id, query_since, per_source_limit,
+            ):
+                if nde.detected_at >= visibility_cutoff:
+                    continue
+                projected = project_network_drift_event(
+                    drift_event_id=str(nde.id), category=str(nde.category),
+                    summary=nde.summary,
+                    policy_id=str(nde.policy_id), organization_id=organization_id,
+                    occurred_at=nde.detected_at.isoformat(),
+                )
+                cursor = make_cursor(nde.detected_at, "K", str(nde.id))
+                candidates.append(projected.with_cursor(cursor))
 
         # M19 DDoS incident events — source tag "Z"
         # Surfaces DDoS incident lifecycle events (detection, escalation,
         # resolution) into the shared security operations stream.
-        try:
-            from redforge.domain.security_operations.operational_event import OperationalEvent
-            from redforge.domain.security_operations.value_objects import (
-                OperationalImportance,
-                SourceDomain,
-            )
-            from redforge.infrastructure.database.repositories.ddos.incident_repository import (
-                SqlAlchemyDDoSIncidentEventRepository,
-            )
+        if _allowed(SourceDomain.DDOS):
+            try:
+                from redforge.domain.security_operations.operational_event import (
+                    OperationalEvent,
+                )
+                from redforge.domain.security_operations.value_objects import (
+                    OperationalImportance,
+                )
+                from redforge.infrastructure.database.repositories.ddos.incident_repository import (
+                    SqlAlchemyDDoSIncidentEventRepository,
+                )
 
-            ddos_event_repo = SqlAlchemyDDoSIncidentEventRepository(session)
-            ddos_events = await ddos_event_repo.list_for_org_since(
-                organization_id, query_since, per_source_limit,
-            )
-            _high_event_types = frozenset({"detection_opened", "severity_escalated"})
-            for dze in ddos_events:
-                if dze.occurred_at >= visibility_cutoff:
-                    continue
-                importance = (
-                    OperationalImportance.HIGH
-                    if dze.event_type in _high_event_types
-                    else OperationalImportance.NOTICE
+                ddos_event_repo = SqlAlchemyDDoSIncidentEventRepository(session)
+                ddos_events = await ddos_event_repo.list_for_org_since(
+                    organization_id, query_since, per_source_limit,
                 )
-                event = OperationalEvent(
-                    cursor=make_cursor(dze.occurred_at, "Z", dze.id),
-                    event_id=dze.id,
-                    organization_id=organization_id,
-                    source_domain=SourceDomain.DDOS,
-                    importance=importance,
-                    title=f"DDoS: {dze.description[:120]}",
-                    summary=dze.description,
-                    entity_type="ddos_incident",
-                    entity_id=dze.incident_id,
-                    occurred_at=dze.occurred_at.isoformat(),
-                )
-                candidates.append(event)
-        except Exception:
-            pass  # DDoS tables not yet migrated in test or dev environments
+                _high_event_types = frozenset({"detection_opened", "severity_escalated"})
+                for dze in ddos_events:
+                    if dze.occurred_at >= visibility_cutoff:
+                        continue
+                    importance = (
+                        OperationalImportance.HIGH
+                        if dze.event_type in _high_event_types
+                        else OperationalImportance.NOTICE
+                    )
+                    event = OperationalEvent(
+                        cursor=make_cursor(dze.occurred_at, "Z", dze.id),
+                        event_id=dze.id,
+                        organization_id=organization_id,
+                        source_domain=SourceDomain.DDOS,
+                        importance=importance,
+                        title=f"DDoS: {dze.description[:120]}",
+                        summary=dze.description,
+                        entity_type="ddos_incident",
+                        entity_id=dze.incident_id,
+                        occurred_at=dze.occurred_at.isoformat(),
+                    )
+                    candidates.append(event)
+            except Exception:
+                pass  # DDoS tables not yet migrated in test or dev environments
 
         # M20 Behavioral NDR detection events — source tag "W"
         # Surfaces DETECTION_OPENED events from the behavior bounded context
         # into the shared security operations stream. Re-observation updates
         # are not surfaced — only new detection openings.
-        try:
-            from redforge.domain.security_operations.operational_event import OperationalEvent
-            from redforge.domain.security_operations.value_objects import (
-                OperationalImportance,
-                SourceDomain,
-            )
-            from redforge.infrastructure.database.repositories.behavior.detection_repository import (  # noqa: E501
-                SqlAlchemyBehaviorDetectionRepository,
-            )
+        if _allowed(SourceDomain.BEHAVIOR):
+            try:
+                from redforge.domain.security_operations.operational_event import (
+                    OperationalEvent,
+                )
+                from redforge.domain.security_operations.value_objects import (
+                    OperationalImportance,
+                )
+                from redforge.infrastructure.database.repositories.behavior.detection_repository import (  # noqa: E501
+                    SqlAlchemyBehaviorDetectionRepository,
+                )
 
-            beh_det_repo = SqlAlchemyBehaviorDetectionRepository(session)
-            beh_events = await beh_det_repo.list_detection_events_since(
-                organization_id, query_since, per_source_limit,
-            )
-            _high_behavior_types = frozenset({
-                "BEACONING_SUSPECTED", "HIGH_FAN_OUT",
-                "PORT_SCAN_SUSPECTED", "ABNORMAL_OUTBOUND_TRANSFER",
-            })
-            for be in beh_events:
-                if be.created_at >= visibility_cutoff:
-                    continue
-                # Determine importance from detection type embedded in event detail
-                importance = (
-                    OperationalImportance.HIGH
-                    if any(t in be.detail for t in _high_behavior_types)
-                    else OperationalImportance.NOTICE
+                beh_det_repo = SqlAlchemyBehaviorDetectionRepository(session)
+                beh_events = await beh_det_repo.list_detection_events_since(
+                    organization_id, query_since, per_source_limit,
                 )
-                event = OperationalEvent(
-                    cursor=make_cursor(be.created_at, "W", be.id),
-                    event_id=be.id,
-                    organization_id=organization_id,
-                    source_domain=SourceDomain.BEHAVIOR,
-                    importance=importance,
-                    title=f"Behavioral Detection: {be.detail[:120]}",
-                    summary=be.detail,
-                    entity_type="behavior_detection",
-                    entity_id=be.detection_id,
-                    occurred_at=be.created_at.isoformat(),
-                )
-                candidates.append(event)
-        except Exception:
-            pass  # Behavior tables not yet migrated in test or dev environments
+                _high_behavior_types = frozenset({
+                    "BEACONING_SUSPECTED", "HIGH_FAN_OUT",
+                    "PORT_SCAN_SUSPECTED", "ABNORMAL_OUTBOUND_TRANSFER",
+                })
+                for be in beh_events:
+                    if be.created_at >= visibility_cutoff:
+                        continue
+                    # Determine importance from detection type embedded in event detail
+                    importance = (
+                        OperationalImportance.HIGH
+                        if any(t in be.detail for t in _high_behavior_types)
+                        else OperationalImportance.NOTICE
+                    )
+                    event = OperationalEvent(
+                        cursor=make_cursor(be.created_at, "W", be.id),
+                        event_id=be.id,
+                        organization_id=organization_id,
+                        source_domain=SourceDomain.BEHAVIOR,
+                        importance=importance,
+                        title=f"Behavioral Detection: {be.detail[:120]}",
+                        summary=be.detail,
+                        entity_type="behavior_detection",
+                        entity_id=be.detection_id,
+                        occurred_at=be.created_at.isoformat(),
+                    )
+                    candidates.append(event)
+            except Exception:
+                pass  # Behavior tables not yet migrated in test or dev environments
 
         # M21 Investigation case events — source tag "I"
         # Surfaces CASE_OPENED events from the investigation bounded context.
-        try:
-            from redforge.domain.security_operations.operational_event import OperationalEvent
-            from redforge.domain.security_operations.value_objects import (
-                OperationalImportance,
-                SourceDomain,
-            )
-            from redforge.infrastructure.database.repositories.investigations.case_repository import (  # noqa: E501
-                SqlAlchemyInvestigationEventRepository,
-            )
+        if _allowed(SourceDomain.INVESTIGATION):
+            try:
+                from redforge.domain.security_operations.operational_event import (
+                    OperationalEvent,
+                )
+                from redforge.domain.security_operations.value_objects import (
+                    OperationalImportance,
+                )
+                from redforge.infrastructure.database.repositories.investigations.case_repository import (  # noqa: E501
+                    SqlAlchemyInvestigationEventRepository,
+                )
 
-            inv_event_repo = SqlAlchemyInvestigationEventRepository(session)
-            inv_events = await inv_event_repo.list_opened_events_since(
-                organization_id, query_since, per_source_limit,
-            )
-            for ie in inv_events:
-                if ie.occurred_at >= visibility_cutoff:
-                    continue
-                detail = ie.detail or {}
-                severity = detail.get("severity", "MEDIUM")
-                importance = (
-                    OperationalImportance.CRITICAL
-                    if severity == "CRITICAL"
-                    else OperationalImportance.HIGH
-                    if severity == "HIGH"
-                    else OperationalImportance.WARNING
+                inv_event_repo = SqlAlchemyInvestigationEventRepository(session)
+                inv_events = await inv_event_repo.list_opened_events_since(
+                    organization_id, query_since, per_source_limit,
                 )
-                title = detail.get("title", "New Cross-Domain Investigation")
-                event = OperationalEvent(
-                    cursor=make_cursor(ie.occurred_at, "I", ie.id),
-                    event_id=ie.id,
-                    organization_id=organization_id,
-                    source_domain=SourceDomain.INVESTIGATION,
-                    importance=importance,
-                    title=f"Investigation: {title[:120]}",
-                    summary=detail.get("reason", "Cross-domain security correlation"),
-                    entity_type="investigation_case",
-                    entity_id=ie.case_id,
-                    occurred_at=ie.occurred_at.isoformat(),
-                )
-                candidates.append(event)
-        except Exception:
-            pass  # Investigation tables not yet migrated in test or dev environments
+                for ie in inv_events:
+                    if ie.occurred_at >= visibility_cutoff:
+                        continue
+                    detail = ie.detail or {}
+                    severity = detail.get("severity", "MEDIUM")
+                    importance = (
+                        OperationalImportance.CRITICAL
+                        if severity == "CRITICAL"
+                        else OperationalImportance.HIGH
+                        if severity == "HIGH"
+                        else OperationalImportance.WARNING
+                    )
+                    title = detail.get("title", "New Cross-Domain Investigation")
+                    event = OperationalEvent(
+                        cursor=make_cursor(ie.occurred_at, "I", ie.id),
+                        event_id=ie.id,
+                        organization_id=organization_id,
+                        source_domain=SourceDomain.INVESTIGATION,
+                        importance=importance,
+                        title=f"Investigation: {title[:120]}",
+                        summary=detail.get("reason", "Cross-domain security correlation"),
+                        entity_type="investigation_case",
+                        entity_id=ie.case_id,
+                        occurred_at=ie.occurred_at.isoformat(),
+                    )
+                    candidates.append(event)
+            except Exception:
+                pass  # Investigation tables not yet migrated in test or dev environments
+
+    # Defensive invariant (belt-and-suspenders on top of the per-source
+    # skips above): never return anything outside `allowed_domains`, even
+    # if a future source is added above without its own `_allowed(...)`
+    # guard. A Network Defense caller must never receive Full-only domain
+    # data via this function under any code path.
+    if allowed_domains is not None:
+        candidates = [c for c in candidates if c.source_domain in allowed_domains]
 
     candidates.sort(key=lambda e: e.cursor)
     return candidates
 
 
 class SecurityOperationsStreamService:
-    def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
+    def __init__(
+        self,
+        session_factory: async_sessionmaker[AsyncSession],
+        allowed_domains: frozenset[SourceDomain] | None = None,
+    ) -> None:
+        """`allowed_domains`, when not None, is the edition-aware
+        Network Defense allow-list (see `NETWORK_DEFENSE_ALLOWED_DOMAINS`
+        in domain/security_operations/value_objects.py) applied to both
+        the JSON poll endpoint and the SSE stream — the same
+        `fetch_merged_candidates` call both build on. `None` (the
+        default) preserves today's unfiltered Full RedForge behavior."""
         self._session_factory = session_factory
+        self._allowed_domains = allowed_domains
 
     async def poll(
         self,
@@ -416,6 +476,7 @@ class SecurityOperationsStreamService:
 
         candidates = await fetch_merged_candidates(
             self._session_factory, organization_id, query_since, per_source_limit,
+            allowed_domains=self._allowed_domains,
         )
         if valid_cursor is not None:
             candidates = [e for e in candidates if e.cursor > valid_cursor]

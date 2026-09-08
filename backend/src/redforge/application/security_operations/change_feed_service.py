@@ -32,8 +32,20 @@ if TYPE_CHECKING:
 
 
 class SecurityChangeFeedService:
-    def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
+    def __init__(
+        self,
+        session_factory: async_sessionmaker[AsyncSession],
+        allowed_domains: frozenset[SourceDomain] | None = None,
+    ) -> None:
+        """`allowed_domains`, when not None, is the edition-aware Network
+        Defense allow-list (`NETWORK_DEFENSE_ALLOWED_DOMAINS`) — Full-only
+        domains are never queried (see `fetch_merged_candidates`) and, as
+        a defensive invariant, an explicit client-supplied `source_domain`
+        outside the allow-list can never bypass it: the result is simply
+        empty, following this endpoint's existing convention for a filter
+        that matches nothing, never a silently-exposed Full-only payload."""
         self._session_factory = session_factory
+        self._allowed_domains = allowed_domains
 
     async def list_changes(
         self,
@@ -55,7 +67,7 @@ class SecurityChangeFeedService:
 
         candidates = await fetch_merged_candidates(
             self._session_factory, organization_id, since, per_source_limit,
-            apply_visibility_lag=False,
+            apply_visibility_lag=False, allowed_domains=self._allowed_domains,
         )
         if source_domain is not None:
             candidates = [e for e in candidates if e.source_domain == source_domain]

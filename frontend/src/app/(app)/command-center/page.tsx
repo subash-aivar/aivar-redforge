@@ -282,19 +282,27 @@ export default function CommandCenterOverviewPage() {
         <AsyncContent state={summary}>
           {(s) => (
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-              <KpiTile label="Active targets" value={s.active_targets} />
+              {/* This page is Full-edition-only (see nav/router edition
+                  gating), so these fields are always real integers, never
+                  null, in practice — `?? 0` here is a defensive display
+                  fallback only, not a fabricated value substituting for a
+                  real one. */}
+              <KpiTile label="Active targets" value={s.active_targets ?? 0} />
               <KpiTile label="Canonical assets" value={s.canonical_assets} />
-              <KpiTile label="CV policies" value={s.active_continuous_validation_policies} />
-              <KpiTile label="Validations running" value={s.validations_running} />
+              <KpiTile
+                label="CV policies"
+                value={s.active_continuous_validation_policies ?? 0}
+              />
+              <KpiTile label="Validations running" value={s.validations_running ?? 0} />
               <KpiTile
                 label="Blocked (period)"
-                value={s.validations_blocked_in_period}
-                tone={s.validations_blocked_in_period > 0 ? "warning" : "ok"}
+                value={s.validations_blocked_in_period ?? 0}
+                tone={(s.validations_blocked_in_period ?? 0) > 0 ? "warning" : "ok"}
               />
               <KpiTile
                 label="Failed (period)"
-                value={s.validations_failed_in_period}
-                tone={s.validations_failed_in_period > 0 ? "danger" : "ok"}
+                value={s.validations_failed_in_period ?? 0}
+                tone={(s.validations_failed_in_period ?? 0) > 0 ? "danger" : "ok"}
               />
             </div>
           )}

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, waitFor, cleanup } from "@testing-library/react";
 import * as securityOperations from "@/lib/securityOperations";
+import * as productEdition from "@/lib/productEdition";
 import { EventBusProvider } from "@/components/platform/EventBusProvider";
 import SecurityOperationsPage from "./page";
 import type {
@@ -39,6 +40,10 @@ vi.mock("@/lib/useSecurityOperationsStream", () => ({
     events: [],
     lastEventReceivedAt: null,
   })),
+}));
+
+vi.mock("@/lib/productEdition", () => ({
+  getProductEdition: vi.fn(() => "full"),
 }));
 
 function renderPage() {
@@ -235,5 +240,85 @@ describe("SecurityOperationsPage change feed drill-down", () => {
       expect(screen.getByText("Runtime component degraded")).toBeInTheDocument();
     });
     expect(screen.queryByRole("link", { name: /Runtime component degraded/i })).not.toBeInTheDocument();
+  });
+});
+
+describe("SecurityOperationsPage — product_edition (ADR-0009, item 6)", () => {
+  afterEach(() => {
+    vi.mocked(productEdition.getProductEdition).mockReturnValue("full");
+  });
+
+  it("network_defense edition never calls listExecutions", async () => {
+    vi.mocked(productEdition.getProductEdition).mockReturnValue("network_defense");
+    vi.mocked(securityOperations.listExecutions).mockClear();
+    mockClients({
+      summary: makeSummary({
+        active_targets: null,
+        active_continuous_validation_policies: null,
+        validations_running: null,
+        validations_blocked_in_period: null,
+        validations_failed_in_period: null,
+        drift_events_in_period: null,
+      }),
+    });
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText("Runtime Components")).toBeInTheDocument();
+    });
+    expect(securityOperations.listExecutions).not.toHaveBeenCalled();
+  });
+
+  it("network_defense edition never renders the Active Executions panel", async () => {
+    vi.mocked(productEdition.getProductEdition).mockReturnValue("network_defense");
+    mockClients({});
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText("Runtime Components")).toBeInTheDocument();
+    });
+    expect(screen.queryByText("Active Executions")).not.toBeInTheDocument();
+  });
+
+  it("network_defense edition never renders the Full-only summary cards", async () => {
+    vi.mocked(productEdition.getProductEdition).mockReturnValue("network_defense");
+    mockClients({
+      summary: makeSummary({
+        active_targets: null,
+        active_continuous_validation_policies: null,
+        validations_running: null,
+        validations_blocked_in_period: null,
+        validations_failed_in_period: null,
+        drift_events_in_period: null,
+        critical_high_conditions: 4,
+      }),
+    });
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText("Critical/High Conditions")).toBeInTheDocument();
+    });
+    expect(screen.queryByText("Active Targets")).not.toBeInTheDocument();
+    expect(screen.queryByText("Running Validations")).not.toBeInTheDocument();
+    expect(screen.queryByText("Blocked (24h)")).not.toBeInTheDocument();
+    expect(screen.queryByText("Drift Events (24h)")).not.toBeInTheDocument();
+  });
+
+  it("full edition still calls listExecutions and renders the Active Executions panel", async () => {
+    vi.mocked(productEdition.getProductEdition).mockReturnValue("full");
+    mockClients({ executions: [makeExecution()] });
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText("Active Executions")).toBeInTheDocument();
+    });
+    expect(securityOperations.listExecutions).toHaveBeenCalled();
+  });
+
+  it("full edition still renders every summary card when the backend returns real values", async () => {
+    vi.mocked(productEdition.getProductEdition).mockReturnValue("full");
+    mockClients({ summary: makeSummary({ active_targets: 3 }) });
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText("Active Targets")).toBeInTheDocument();
+    });
+    expect(screen.getByText("Running Validations")).toBeInTheDocument();
+    expect(screen.getByText("Drift Events (24h)")).toBeInTheDocument();
   });
 });

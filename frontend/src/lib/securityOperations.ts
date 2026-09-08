@@ -62,16 +62,19 @@ export interface OperationalEvent {
 
 export interface SecurityOperationsSummary {
   period: string;
-  active_targets: number;
   canonical_assets: number;
-  active_continuous_validation_policies: number;
-  validations_running: number;
-  validations_blocked_in_period: number;
-  validations_failed_in_period: number;
   critical_high_conditions: number;
   active_correlations: number;
-  drift_events_in_period: number;
   runtime_unhealthy_components: number;
+  // Full-only fields (ai_targets / continuous_validation / validation_execution
+  // bounded contexts) — `null` for the network_defense edition, never a
+  // fabricated 0. See backend SecurityOperationsSummaryDTO.
+  active_targets: number | null;
+  active_continuous_validation_policies: number | null;
+  validations_running: number | null;
+  validations_blocked_in_period: number | null;
+  validations_failed_in_period: number | null;
+  drift_events_in_period: number | null;
 }
 
 export interface ExecutionTelemetrySummary {

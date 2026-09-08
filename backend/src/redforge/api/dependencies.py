@@ -1126,9 +1126,14 @@ def get_execution_telemetry_service() -> object:
 def _security_operations_stream_service() -> object:
     from redforge.application.security_operations.stream_service import (
         SecurityOperationsStreamService,
+        allowed_domains_for_edition,
     )
+    from redforge.core.config import get_settings
 
-    return SecurityOperationsStreamService(_session_factory())
+    return SecurityOperationsStreamService(
+        _session_factory(),
+        allowed_domains=allowed_domains_for_edition(get_settings().product_edition),
+    )
 
 
 def get_security_operations_stream_service() -> object:
@@ -1140,8 +1145,15 @@ def _security_change_feed_service() -> object:
     from redforge.application.security_operations.change_feed_service import (
         SecurityChangeFeedService,
     )
+    from redforge.application.security_operations.stream_service import (
+        allowed_domains_for_edition,
+    )
+    from redforge.core.config import get_settings
 
-    return SecurityChangeFeedService(_session_factory())
+    return SecurityChangeFeedService(
+        _session_factory(),
+        allowed_domains=allowed_domains_for_edition(get_settings().product_edition),
+    )
 
 
 def get_security_change_feed_service() -> object:
@@ -1159,6 +1171,7 @@ def get_security_operations_summary_service(request: Request) -> object:
     from redforge.application.security_operations.summary_service import (
         SecurityOperationsSummaryService,
     )
+    from redforge.core.config import get_settings
 
     health_engine = get_health_engine(request)
 
@@ -1174,6 +1187,7 @@ def get_security_operations_summary_service(request: Request) -> object:
         cast("Any", get_tenant_security_condition_service()),
         cast("Any", _tenant_security_correlation_service()),
         _runtime_unhealthy_count,
+        edition=get_settings().product_edition,
     )
 
 

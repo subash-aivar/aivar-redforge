@@ -13,6 +13,7 @@ import {
   type SecurityOperationsSummary,
 } from "@/lib/securityOperations";
 import { PageHeader } from "@/components/cc";
+import { getProductEdition } from "@/lib/productEdition";
 import { usePlatformEventBus } from "@/components/platform/EventBusProvider";
 import { entityLink } from "@/lib/eventEntityLink";
 import { useLivePoll } from "@/lib/useLivePoll";
@@ -178,11 +179,18 @@ export default function SecurityOperationsPage() {
   // NotificationCenter and the Global Status Bar already subscribe to.
   const stream = usePlatformEventBus();
 
+  // Defensive only (belt-and-suspenders): the backend is the authority —
+  // network_defense's `/executions` routes are absent (404) server-side
+  // regardless of what this client does. This just avoids issuing a
+  // pointless request and rendering a panel with data that could never
+  // arrive in this edition.
+  const isFullEdition = getProductEdition() === "full";
+
   const load = useCallback(() => {
     Promise.all([
       getSummary("24h"),
       listChanges({ period: "24h", limit: 20 }),
-      listExecutions({ limit: 20 }),
+      isFullEdition ? listExecutions({ limit: 20 }) : Promise.resolve([]),
       listRuntimeComponents(),
     ])
       .then(([s, c, e, r]) => {
@@ -200,7 +208,7 @@ export default function SecurityOperationsPage() {
     // blocking the rest of the command center on an unrelated context.
     listIncidents({ limit: 5 }).then(setDdosIncidents).catch(() => setDdosIncidents([]));
     listDetections({ limit: 5 }).then(setDetections).catch(() => setDetections([]));
-  }, []);
+  }, [isFullEdition]);
 
   useLivePoll(load, 15000);
 
@@ -229,11 +237,25 @@ export default function SecurityOperationsPage() {
 
       {summary ? (
         <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-          <MetricCard label="Active Targets" value={summary.active_targets} />
-          <MetricCard label="Running Validations" value={summary.validations_running} />
-          <MetricCard label="Blocked (24h)" value={summary.validations_blocked_in_period} tone="warning" />
+          {/* Full-only cards — null (not 0) for network_defense, so these
+              render only when the backend actually returned a real value. */}
+          {summary.active_targets !== null && (
+            <MetricCard label="Active Targets" value={summary.active_targets} />
+          )}
+          {summary.validations_running !== null && (
+            <MetricCard label="Running Validations" value={summary.validations_running} />
+          )}
+          {summary.validations_blocked_in_period !== null && (
+            <MetricCard
+              label="Blocked (24h)"
+              value={summary.validations_blocked_in_period}
+              tone="warning"
+            />
+          )}
           <MetricCard label="Critical/High Conditions" value={summary.critical_high_conditions} tone="danger" />
-          <MetricCard label="Drift Events (24h)" value={summary.drift_events_in_period} tone="warning" />
+          {summary.drift_events_in_period !== null && (
+            <MetricCard label="Drift Events (24h)" value={summary.drift_events_in_period} tone="warning" />
+          )}
         </div>
       ) : null}
 
@@ -263,17 +285,19 @@ export default function SecurityOperationsPage() {
         </div>
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="rounded-xl border border-gray-800 bg-gray-900 p-5 lg:col-span-2">
-          <h2 className="text-sm font-semibold text-white">Active Executions</h2>
-          <div className="mt-3">
-            {executions.length === 0 ? (
-              <p className="py-6 text-center text-xs text-gray-500">No recent executions.</p>
-            ) : (
-              executions.map((e) => <ExecutionRow key={e.id} execution={e} />)
-            )}
+      <div className={`mt-6 grid grid-cols-1 gap-6 ${isFullEdition ? "lg:grid-cols-3" : ""}`}>
+        {isFullEdition ? (
+          <div className="rounded-xl border border-gray-800 bg-gray-900 p-5 lg:col-span-2">
+            <h2 className="text-sm font-semibold text-white">Active Executions</h2>
+            <div className="mt-3">
+              {executions.length === 0 ? (
+                <p className="py-6 text-center text-xs text-gray-500">No recent executions.</p>
+              ) : (
+                executions.map((e) => <ExecutionRow key={e.id} execution={e} />)
+              )}
+            </div>
           </div>
-        </div>
+        ) : null}
 
         <div className="rounded-xl border border-gray-800 bg-gray-900 p-5">
           <h2 className="text-sm font-semibold text-white">Runtime Components</h2>

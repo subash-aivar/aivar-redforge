@@ -245,11 +245,18 @@ export default function PlatformOverviewPage() {
           <AsyncContent state={opsSummary} emptyLabel="No security-operations summary available.">
             {(data) => (
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-                <MiniStat label="Validations Running" value={data.validations_running} />
-                <MiniStat label="Validations Blocked" value={data.validations_blocked_in_period} tone="danger" />
+                {/* Platform Control Plane is Full-edition-only, so these
+                    are always real integers, never null, in practice —
+                    `?? 0` here is a defensive display fallback only. */}
+                <MiniStat label="Validations Running" value={data.validations_running ?? 0} />
+                <MiniStat
+                  label="Validations Blocked"
+                  value={data.validations_blocked_in_period ?? 0}
+                  tone="danger"
+                />
                 <MiniStat label="Critical/High Conditions" value={data.critical_high_conditions} tone="danger" />
                 <MiniStat label="Active Correlations" value={data.active_correlations} />
-                <MiniStat label="Drift Events" value={data.drift_events_in_period} />
+                <MiniStat label="Drift Events" value={data.drift_events_in_period ?? 0} />
                 <MiniStat label="Unhealthy Runtime" value={data.runtime_unhealthy_components} tone="danger" />
               </div>
             )}
