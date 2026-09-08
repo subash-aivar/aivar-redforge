@@ -209,6 +209,14 @@ describe("CredentialVaultPage — Credentials tab", () => {
     await waitFor(() => expect(screen.getByText("Prod API Key")).toBeInTheDocument());
     fireEvent.click(screen.getByText("Prod API Key"));
     await waitFor(() => expect(screen.getByRole("dialog")).toBeInTheDocument());
+    // The dialog's own "Loading…" shell shares the same role — the
+    // Resolve Secret button only exists once the async credential
+    // detail fetch resolves, so wait for it specifically before
+    // clicking (a race under slower runners otherwise; this exact
+    // race is what caused this test to flake on GitHub-hosted CI).
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Resolve Secret" })).toBeInTheDocument()
+    );
 
     fireEvent.click(screen.getByRole("button", { name: "Resolve Secret" }));
 
@@ -226,6 +234,9 @@ describe("CredentialVaultPage — Credentials tab", () => {
     fireEvent.click(screen.getByText("Prod API Key"));
     await waitFor(() => expect(screen.getByRole("dialog")).toBeInTheDocument());
 
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Resolve Secret" })).toBeInTheDocument()
+    );
     fireEvent.change(screen.getByLabelText("Purpose", { exact: false }), {
       target: { value: "incident triage" },
     });
@@ -252,6 +263,9 @@ describe("CredentialVaultPage — Credentials tab", () => {
     fireEvent.click(screen.getByText("Prod API Key"));
     await waitFor(() => expect(screen.getByRole("dialog")).toBeInTheDocument());
 
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Resolve Secret" })).toBeInTheDocument()
+    );
     fireEvent.change(screen.getByLabelText("Purpose", { exact: false }), {
       target: { value: "incident triage" },
     });

@@ -694,9 +694,18 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             execution_policy_service = ExecutionPolicyService(sf)
             execution_service = ValidationExecutionService(
                 sf,
-                execution_policy_service,
+                # ExecutionPolicyService.evaluate() returns
+                # ExecutionPolicyResultDTO, which structurally satisfies
+                # both application.campaigns.contracts and
+                # application.validation_execution.contracts'
+                # independently-declared ExecutionPolicyDecisionResult
+                # Protocols (same three str fields, by design — see
+                # validation_execution/contracts.py's own docstring) —
+                # mypy doesn't resolve that structural equivalence across
+                # a Coroutine return position, hence the ignore.
+                execution_policy_service,  # type: ignore[arg-type]
                 ai_target_service,
-                asset_service,  # type: ignore[arg-type]
+                asset_service,
                 condition_service,
                 default_adaptive_rule_registry(),
                 correlation_service,
@@ -1504,37 +1513,31 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     _register_middleware(app)
     _register_routers(app, settings)
 
+    from attack_pattern_intel.api.exception_handlers import (
+        register_attack_pattern_intel_exception_handlers,
+    )
     from attack_surface_management.api.exception_handlers import (
         register_attack_surface_management_exception_handlers,
+    )
+    from campaign_intel.api.exception_handlers import (
+        register_campaign_intel_exception_handlers,
     )
     from credential_vault.api.exception_handlers import register_credential_vault_exception_handlers
     from detection.api.exception_handlers import register_detection_exception_handlers
     from engagement.api.exception_handlers import register_engagement_exception_handlers
     from evidence.api.exception_handlers import register_evidence_exception_handlers
     from execution.api.exception_handlers import register_execution_exception_handlers
-    from ioc_intelligence.api.exception_handlers import (
-        register_ioc_intelligence_exception_handlers,
-    )
-    from attack_pattern_intel.api.exception_handlers import (
-        register_attack_pattern_intel_exception_handlers,
+    from infrastructure_intel.api.exception_handlers import (
+        register_infrastructure_intel_exception_handlers,
     )
     from intelligence_relationships.api.exception_handlers import (
         register_intelligence_relationships_exception_handlers,
     )
+    from ioc_intelligence.api.exception_handlers import (
+        register_ioc_intelligence_exception_handlers,
+    )
     from malware_intel.api.exception_handlers import (
         register_malware_intel_exception_handlers,
-    )
-    from campaign_intel.api.exception_handlers import (
-        register_campaign_intel_exception_handlers,
-    )
-    from tool_intel.api.exception_handlers import (
-        register_tool_intel_exception_handlers,
-    )
-    from infrastructure_intel.api.exception_handlers import (
-        register_infrastructure_intel_exception_handlers,
-    )
-    from threat_report_intel.api.exception_handlers import (
-        register_threat_report_intel_exception_handlers,
     )
     from operation.api.exception_handlers import register_operation_exception_handlers
     from payload.api.exception_handlers import register_payload_exception_handlers
@@ -1542,6 +1545,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     from risk_engine.api.exception_handlers import register_risk_engine_exception_handlers
     from threat_actor_intel.api.exception_handlers import (
         register_threat_actor_intel_exception_handlers,
+    )
+    from threat_report_intel.api.exception_handlers import (
+        register_threat_report_intel_exception_handlers,
+    )
+    from tool_intel.api.exception_handlers import (
+        register_tool_intel_exception_handlers,
     )
     from vulnerability.api.exception_handlers import register_vulnerability_exception_handlers
     from vulnerability.api.scanning.exception_handlers import (
