@@ -20,7 +20,12 @@ dependencies = [
     "argon2-cffi>=25.1,<26.0",
     "PyJWT[crypto]>=2.8,<3.0",
     "pyotp>=2.9,<3.0",
-    "cryptography>=43.0,<50.0",
+    # >=50.0.0: 49.0.0 carries PYSEC-2026-3552 (pkcs7_decrypt_* timing/
+    # oracle side-channel), fixed in 50.0.0. Upper bound kept one major
+    # version ahead only — verified: Fernet/AESGCM/aes_key_wrap usages
+    # (evidence KMS, credential_vault encryption, MFA secret encryption)
+    # all pass unchanged under 50.0.1.
+    "cryptography>=50.0,<51.0",
     "opentelemetry-api>=1.20,<2.0",
     "opentelemetry-sdk>=1.20,<2.0",
     "opentelemetry-exporter-otlp-proto-grpc>=1.20,<2.0",
@@ -28,7 +33,13 @@ dependencies = [
     "opentelemetry-instrumentation-sqlalchemy>=0.40b0",
     "opentelemetry-instrumentation-httpx>=0.40b0",
     "ldap3>=2.9,<3.0",
-    "pyasn1>=0.4,<0.5",  # ldap3 2.9's asn1 encoder uses pyasn1's pre-0.5 tagMap/typeMap API
+    # >=0.6.3: 0.4.8 carries PYSEC-2026-2263/-3455/-3456/-3457 (uncontrolled
+    # recursion / quadratic-time BER-decoding DoS). ldap3 2.9.1 (latest —
+    # no newer release exists) imports the pre-0.5 tagMap/typeMap names,
+    # which 0.6.x keeps as deprecated-but-functional aliases — see the
+    # matching filterwarnings entries above. Verified: ldap3 imports and
+    # its adapter's own tests pass unchanged under pyasn1 0.6.4.
+    "pyasn1>=0.6.3,<0.7",
     "boto3>=1.34,<2.0",
     "maxminddb>=2.6,<4.0",  # reads an operator-supplied local GeoLite2 .mmdb file; we never bundle or auto-download the database itself (MaxMind EULA)
     "PyYAML>=6.0,<7.0",  # M26 CSPM policy library (YAML definitions)
@@ -109,6 +120,35 @@ filterwarnings = [
     "ignore::starlette.exceptions.StarletteDeprecationWarning",
     "ignore::DeprecationWarning:pytest_asyncio",
     "ignore::jwt.warnings.InsecureKeyLengthWarning",
+    # starlette 1.6.0 (latest) still spells its TestClient portal-factory
+    # type hint as `anyio.abc.BlockingPortal` — anyio 4.15.1 (also
+    # latest) has renamed that to `anyio.from_thread.BlockingPortal` and
+    # kept the old name only as a deprecated lazy-import alias. Both
+    # packages are already at their newest release; this is upstream's
+    # own not-yet-finished migration, not a stale pin here to bump. The
+    # alias still resolves and works correctly — only a warning, raised
+    # at `starlette.testclient` import time via anyio's lazy-attribute
+    # shim (see anyio/_lazyimport.py), which `filterwarnings = ["error"]`
+    # above turns into a hard collection-time error for every test file
+    # that imports FastAPI's TestClient. Ignored by message (not by
+    # module=anyio._lazyimport, whose `stacklevel=3` reports the
+    # warning's origin as the importing module instead) — the same
+    # precedent as the StarletteDeprecationWarning ignore two lines up.
+    "ignore:.*BlockingPortal alias is deprecated.*:DeprecationWarning",
+    # pyasn1 0.6.x (upgraded from 0.4.8 to resolve PYSEC-2026-2263/
+    # -3455/-3456/-3457, see the pyasn1 dependency pin's own comment)
+    # renamed its `tagMap`/`typeMap` module attributes to `TAG_MAP`/
+    # `TYPE_MAP`, keeping the old names as deprecated-but-functional
+    # aliases (a `__getattr__` shim returning the same object, not a
+    # behavior change). ldap3 2.9.1 — the newest release that exists —
+    # still imports the old names at module load time
+    # (ldap3/utils/asn1.py). Verified: ldap3 imports and its adapter's
+    # own tests pass unchanged under pyasn1 0.6.4; this only silences
+    # the warning our `filterwarnings = ["error"]` would otherwise
+    # escalate into a collection-time failure for anything importing
+    # ldap3 (directory_security's LDAP adapter).
+    "ignore:.*tagMap is deprecated.*:DeprecationWarning",
+    "ignore:.*typeMap is deprecated.*:DeprecationWarning",
 ]
 
 [tool.ruff]
