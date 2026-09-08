@@ -4,6 +4,8 @@ import { useState } from "react";
 import {
   AsyncContent,
   DataConsole,
+  FormField,
+  FormModal,
   InvestigationDrawer,
   KpiTile,
   PageHeader,
@@ -201,78 +203,89 @@ function GeneratePlanModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-2xl rounded-xl border border-gray-800 bg-gray-900 p-5">
-        <h3 className="mb-3 text-sm font-semibold text-gray-100">Generate Exposure Reduction Plan</h3>
-
-        <label className="mb-1 block text-xs text-gray-500">Plan Budget (max remediations selected)</label>
+    <FormModal
+      title="Generate Exposure Reduction Plan"
+      onClose={onClose}
+      contentClassName="w-full max-w-2xl rounded-xl border border-gray-800 bg-gray-900 p-5"
+    >
+      <FormField label="Plan Budget (max remediations selected)">
         <input
           type="number"
           value={planBudget}
           onChange={(e) => setPlanBudget(Number(e.target.value))}
-          className="mb-4 w-32 rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200"
+          className="w-32 rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200"
         />
+      </FormField>
 
-        <Panel title="Candidate Remediations">
-          <div className="max-h-64 space-y-3 overflow-y-auto">
-            {candidates.map((c, i) => (
-              <div key={i} className="grid grid-cols-12 gap-2">
-                <input
-                  placeholder="Remediation ID"
-                  value={c.remediation_id}
-                  onChange={(e) => updateCandidate(i, { remediation_id: e.target.value })}
-                  className="col-span-4 rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-xs text-gray-200"
-                />
-                <input
-                  placeholder="Affected asset refs (comma-separated)"
-                  value={c.affected_asset_refs.join(",")}
-                  onChange={(e) =>
-                    updateCandidate(i, {
-                      affected_asset_refs: e.target.value.split(",").map((s) => s.trim()).filter(Boolean),
-                    })
-                  }
-                  className="col-span-5 rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-xs text-gray-200"
-                />
-                <input
-                  type="number"
-                  step="0.1"
-                  placeholder="Base reduction"
-                  value={c.estimated_base_reduction}
-                  onChange={(e) => updateCandidate(i, { estimated_base_reduction: Number(e.target.value) })}
-                  className="col-span-2 rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-xs text-gray-200"
-                />
-                <button
-                  onClick={() => removeCandidate(i)}
-                  disabled={candidates.length === 1}
-                  className="col-span-1 rounded-md border border-gray-700 px-1 py-1.5 text-xs text-gray-400 hover:text-red-300 disabled:opacity-30"
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
-          </div>
-          <button
-            onClick={addCandidate}
-            className="mt-3 rounded-md border border-gray-700 px-3 py-1 text-xs text-gray-300 hover:border-red-800 hover:text-red-300"
-          >
-            + Add Candidate
-          </button>
-        </Panel>
-
-        {error && <p className="mt-3 text-xs text-red-400">{error}</p>}
-        <div className="mt-4 flex justify-end gap-2">
-          <button onClick={onClose} className="rounded-md border border-gray-700 px-3 py-1.5 text-xs text-gray-300">
-            Cancel
-          </button>
-          <button
-            disabled={busy}
-            onClick={submit}
-            className="rounded-md border border-red-800 bg-red-950/50 px-3 py-1.5 text-xs text-red-300 hover:bg-red-900/50 disabled:opacity-50"
-          >
-            {busy ? "Generating…" : "Generate Plan"}
-          </button>
+      <Panel title="Candidate Remediations" className="mt-4">
+        <div className="max-h-64 space-y-3 overflow-y-auto">
+          {candidates.map((c, i) => (
+            <div key={i} className="grid grid-cols-12 gap-2">
+              <input
+                aria-label={`Remediation ID for candidate ${i + 1}`}
+                placeholder="Remediation ID"
+                value={c.remediation_id}
+                onChange={(e) => updateCandidate(i, { remediation_id: e.target.value })}
+                className="col-span-4 rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-xs text-gray-200"
+              />
+              <input
+                aria-label={`Affected asset refs for candidate ${i + 1}`}
+                placeholder="Affected asset refs (comma-separated)"
+                value={c.affected_asset_refs.join(",")}
+                onChange={(e) =>
+                  updateCandidate(i, {
+                    affected_asset_refs: e.target.value.split(",").map((s) => s.trim()).filter(Boolean),
+                  })
+                }
+                className="col-span-5 rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-xs text-gray-200"
+              />
+              <input
+                aria-label={`Base reduction for candidate ${i + 1}`}
+                type="number"
+                step="0.1"
+                placeholder="Base reduction"
+                value={c.estimated_base_reduction}
+                onChange={(e) => updateCandidate(i, { estimated_base_reduction: Number(e.target.value) })}
+                className="col-span-2 rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-xs text-gray-200"
+              />
+              <button
+                type="button"
+                aria-label={`Remove candidate ${i + 1}`}
+                onClick={() => removeCandidate(i)}
+                disabled={candidates.length === 1}
+                className="col-span-1 rounded-md border border-gray-700 px-1 py-1.5 text-xs text-gray-400 hover:text-red-300 disabled:opacity-30"
+              >
+                ✕
+              </button>
+            </div>
+          ))}
         </div>
+        <button
+          type="button"
+          onClick={addCandidate}
+          className="mt-3 rounded-md border border-gray-700 px-3 py-1 text-xs text-gray-300 hover:border-red-800 hover:text-red-300"
+        >
+          + Add Candidate
+        </button>
+      </Panel>
+
+      {error && (
+        <p role="alert" className="mt-3 text-xs text-red-400">
+          {error}
+        </p>
+      )}
+      <div className="mt-4 flex justify-end gap-2">
+        <button onClick={onClose} className="rounded-md border border-gray-700 px-3 py-1.5 text-xs text-gray-300">
+          Cancel
+        </button>
+        <button
+          disabled={busy}
+          onClick={submit}
+          className="rounded-md border border-red-800 bg-red-950/50 px-3 py-1.5 text-xs text-red-300 hover:bg-red-900/50 disabled:opacity-50"
+        >
+          {busy ? "Generating…" : "Generate Plan"}
+        </button>
       </div>
-    </div>
+    </FormModal>
   );
 }

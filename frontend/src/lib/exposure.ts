@@ -24,14 +24,17 @@ export interface ExposureScore {
   computed_at: string;
 }
 
+// Matches `ExposureProfileDTO` (backend/src/exposure/application/dtos/
+// exposure_dtos.py) exactly — verified against the live endpoint. No
+// severity-bucket counts exist in this domain; `tenant_exposure_score`
+// is the average of `asset_scores`, not a weighted/bucketed score.
 export interface ExposureProfile {
   tenant_id: string;
-  total_assets: number;
-  avg_score: number;
-  critical_count: number;
-  high_count: number;
-  medium_count: number;
-  low_count: number;
+  asset_scores: Record<string, number>;
+  tenant_exposure_score: number;
+  recomputing: boolean;
+  recomputation_failed_at: string | null;
+  metadata: Record<string, unknown>;
 }
 
 export interface ExposureWeights {

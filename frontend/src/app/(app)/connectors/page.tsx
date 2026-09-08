@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   disableConnector,
   enableConnector,
@@ -14,10 +14,20 @@ import {
 import { registerDirectoryConnector } from "@/lib/directorySecurity";
 import { registerNetworkConnector } from "@/lib/networkExposure";
 import { registerCloudConnector } from "@/lib/cloudSecurity";
+import {
+  AsyncContent,
+  DataConsole,
+  FormField,
+  KpiTile,
+  Panel,
+  PageHeader,
+  StatusPill,
+  useAsync,
+  type ConsoleColumn,
+} from "@/components/cc";
 
 export default function ConnectorsPage() {
-  const [connectors, setConnectors] = useState<Connector[] | null>(null);
-  const [error, setError] = useState("");
+  const connectorsState = useAsync(() => listConnectors(), []);
   const [actionError, setActionError] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
 
@@ -45,14 +55,11 @@ export default function ConnectorsPage() {
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [runs, setRuns] = useState<DiscoveryRun[] | null>(null);
+  const [showRegisterForms, setShowRegisterForms] = useState(false);
 
   function load() {
-    listConnectors()
-      .then(setConnectors)
-      .catch(() => setError("UNAVAILABLE — failed to load connectors."));
+    connectorsState.reload();
   }
-
-  useEffect(load, []);
 
   async function register() {
     setRegistering(true);
@@ -173,8 +180,9 @@ export default function ConnectorsPage() {
   }
 
   async function openRuns(connectorId: string) {
-    setSelectedId(connectorId);
+    setSelectedId(connectorId === selectedId ? null : connectorId);
     setRuns(null);
+    if (connectorId === selectedId) return;
     try {
       const r = await listDiscoveryRuns(connectorId);
       setRuns(r);
@@ -183,242 +191,155 @@ export default function ConnectorsPage() {
     }
   }
 
-  return (
-    <div>
-      <h1 className="text-2xl font-bold text-white">Connectors</h1>
-      <p className="mt-1 text-sm text-gray-400">
-        Tenant-owned discovery connectors. Discovery resolves inventory
-        identity only — it never executes an attack or grants campaign
-        authorization.
-      </p>
+  const connectors = connectorsState.data ?? [];
+  const total = connectors.length;
+  const enabledCount = connectors.filter((c) => c.status === "enabled").length;
+  const disabledCount = connectors.filter((c) => c.status !== "enabled").length;
+  const errorCount = connectors.filter((c) => c.last_discovery_status === "failed").length;
+  const typeCounts = connectors.reduce<Record<string, number>>((acc, c) => {
+    acc[c.connector_type] = (acc[c.connector_type] ?? 0) + 1;
+    return acc;
+  }, {});
 
-      <div className="mt-4 rounded-xl border border-gray-800 bg-gray-900 p-4">
-        <div className="text-sm font-medium text-gray-300">Register connector</div>
-        <div className="mt-2 flex gap-2">
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Connector name (e.g. 'RedForge Targets')"
-            className="flex-1 rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500"
-          />
+  const columns: ConsoleColumn<Connector>[] = [
+    {
+      key: "name",
+      header: "Name",
+      render: (c) => (
+        <div>
+          <span className="font-medium text-gray-100">{c.name}</span>
+          <span className="ml-2 text-[10px] text-gray-600">{c.connector_type}</span>
+        </div>
+      ),
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (c) => <StatusPill status={c.status === "enabled" ? "active" : "not_configured"} />,
+    },
+    {
+      key: "last_discovery",
+      header: "Last discovery",
+      render: (c) => (
+        <span className="text-xs">
+          {c.last_discovery_status ? (
+            <span
+              className={
+                c.last_discovery_status === "failed"
+                  ? "font-mono text-red-400"
+                  : "font-mono text-gray-300"
+              }
+            >
+              {c.last_discovery_status}
+            </span>
+          ) : (
+            <span className="text-gray-600">never run</span>
+          )}
+          {c.last_discovery_completed_at && (
+            <span className="ml-1 text-gray-600">
+              at {new Date(c.last_discovery_completed_at).toLocaleString()}
+            </span>
+          )}
+        </span>
+      ),
+    },
+    {
+      key: "actions",
+      header: "Actions",
+      render: (c) => (
+        <div className="flex gap-2 text-xs" onClick={(e) => e.stopPropagation()}>
           <button
-            onClick={register}
-            disabled={registering || !name}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
+            onClick={() => discover(c.id)}
+            disabled={busyId === c.id || c.status !== "enabled"}
+            className="rounded bg-blue-600 px-2 py-1 font-medium text-white hover:bg-blue-500 disabled:opacity-50"
           >
-            {registering ? "Registering…" : "Register"}
+            {busyId === c.id ? "Working…" : "Run discovery"}
+          </button>
+          <button
+            onClick={() => toggle(c)}
+            disabled={busyId === c.id}
+            className="rounded border border-gray-700 px-2 py-1 text-gray-400 hover:text-white disabled:opacity-50"
+          >
+            {c.status === "enabled" ? "Disable" : "Enable"}
+          </button>
+          <button
+            onClick={() => openRuns(c.id)}
+            className="rounded border border-gray-700 px-2 py-1 text-gray-400 hover:text-white"
+          >
+            {selectedId === c.id ? "Hide runs" : "Discovery runs"}
           </button>
         </div>
-      </div>
+      ),
+    },
+  ];
 
-      <div className="mt-4 rounded-xl border border-gray-800 bg-gray-900 p-4">
-        <div className="text-sm font-medium text-gray-300">Register directory connector (LDAP)</div>
-        <p className="mt-1 text-xs text-gray-500">
-          Read-only visibility only — never changes passwords, unlocks accounts,
-          or modifies group membership. Credential reference must be configured
-          through an approved server-side secret workflow (an environment
-          variable name); the bind password itself is never submitted here.
-        </p>
-        <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-          <input
-            value={dirName}
-            onChange={(e) => setDirName(e.target.value)}
-            placeholder="Connector name"
-            className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500"
-          />
-          <input
-            value={serverUri}
-            onChange={(e) => setServerUri(e.target.value)}
-            placeholder="ldaps://ldap.example.com"
-            className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500"
-          />
-          <input
-            value={baseDn}
-            onChange={(e) => setBaseDn(e.target.value)}
-            placeholder="Base DN (dc=example,dc=com)"
-            className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500"
-          />
-          <input
-            value={bindDn}
-            onChange={(e) => setBindDn(e.target.value)}
-            placeholder="Bind DN (cn=svc,dc=example,dc=com)"
-            className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500"
-          />
-          <input
-            value={credentialRef}
-            onChange={(e) => setCredentialRef(e.target.value)}
-            placeholder="Credential reference (env var name)"
-            className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500"
-          />
-          <label className="flex items-center gap-2 text-sm text-gray-400">
-            <input
-              type="checkbox"
-              checked={useStartTls}
-              onChange={(e) => setUseStartTls(e.target.checked)}
-            />
-            Use StartTLS
-          </label>
-        </div>
-        <button
-          onClick={registerDirectory}
-          disabled={registeringDirectory || !dirName || !serverUri || !baseDn || !bindDn || !credentialRef}
-          className="mt-3 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
-        >
-          {registeringDirectory ? "Registering…" : "Register directory connector"}
-        </button>
-      </div>
+  return (
+    <div>
+      <PageHeader
+        title="Connectors"
+        subtitle="Tenant-owned discovery connectors. Discovery resolves inventory identity only — it never executes an attack or grants campaign authorization."
+        actions={
+          <button
+            onClick={() => setShowRegisterForms((v) => !v)}
+            className="rounded-lg border border-gray-700 px-3 py-1.5 text-sm text-gray-300 hover:text-white"
+          >
+            {showRegisterForms ? "Hide register forms" : "Register connector"}
+          </button>
+        }
+      />
 
-      <div className="mt-4 rounded-xl border border-gray-800 bg-gray-900 p-4">
-        <div className="text-sm font-medium text-gray-300">Register network connector</div>
-        <p className="mt-1 text-xs text-gray-500">
-          Bounded, read-only TCP-connect discovery only — never NSE scripts,
-          exploits, or arbitrary scanner flags. Default routes (0.0.0.0/0) and
-          oversized ranges are rejected at discovery time regardless of what
-          is registered here.
-        </p>
-        <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
-          <input
-            value={netName}
-            onChange={(e) => setNetName(e.target.value)}
-            placeholder="Connector name"
-            className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500"
-          />
-          <input
-            value={netCidr}
-            onChange={(e) => setNetCidr(e.target.value)}
-            placeholder="CIDR (e.g. 10.0.0.0/28)"
-            className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500"
-          />
-          <input
-            value={netPorts}
-            onChange={(e) => setNetPorts(e.target.value)}
-            placeholder="Ports (comma-separated)"
-            className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500"
-          />
-        </div>
-        <button
-          onClick={registerNetwork}
-          disabled={registeringNetwork || !netName || !netCidr}
-          className="mt-3 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
-        >
-          {registeringNetwork ? "Registering…" : "Register network connector"}
-        </button>
-      </div>
-
-      <div className="mt-4 rounded-xl border border-gray-800 bg-gray-900 p-4">
-        <div className="text-sm font-medium text-gray-300">Register cloud connector (AWS)</div>
-        <p className="mt-1 text-xs text-gray-500">
-          Read-only AWS discovery only — never modifies resources, policies,
-          or IAM. The secret access key is never submitted here; provide a
-          credential reference (an environment variable name) configured
-          through an approved server-side secret workflow.
-        </p>
-        <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-          <input
-            value={cloudName}
-            onChange={(e) => setCloudName(e.target.value)}
-            placeholder="Connector name"
-            className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500"
-          />
-          <input
-            value={cloudRegion}
-            onChange={(e) => setCloudRegion(e.target.value)}
-            placeholder="Region (e.g. us-east-1)"
-            className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500"
-          />
-          <input
-            value={cloudAccessKeyId}
-            onChange={(e) => setCloudAccessKeyId(e.target.value)}
-            placeholder="Access key ID"
-            className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500"
-          />
-          <input
-            value={cloudCredentialRef}
-            onChange={(e) => setCloudCredentialRef(e.target.value)}
-            placeholder="Secret access key credential reference (env var name)"
-            className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500"
-          />
-        </div>
-        <button
-          onClick={registerCloud}
-          disabled={registeringCloud || !cloudName || !cloudRegion || !cloudAccessKeyId || !cloudCredentialRef}
-          className="mt-3 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
-        >
-          {registeringCloud ? "Registering…" : "Register cloud connector"}
-        </button>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        <KpiTile label="Total connectors" value={total} />
+        <KpiTile label="Enabled" value={enabledCount} tone={enabledCount > 0 ? "ok" : "default"} />
+        <KpiTile
+          label="Disabled"
+          value={disabledCount}
+          tone={disabledCount > 0 ? "warning" : "default"}
+        />
+        <KpiTile
+          label="Last discovery failed"
+          value={errorCount}
+          tone={errorCount > 0 ? "danger" : "default"}
+        />
+        <KpiTile
+          label="By type"
+          value={
+            Object.keys(typeCounts).length === 0
+              ? "—"
+              : Object.entries(typeCounts)
+                  .map(([t, n]) => `${t}: ${n}`)
+                  .join(", ")
+          }
+        />
       </div>
 
       {actionError && (
-        <div className="mt-4 rounded-lg border border-red-800 bg-red-950 px-4 py-3 text-sm text-red-300">
+        <div role="alert" className="mt-4 rounded-lg border border-red-800 bg-red-950 px-4 py-3 text-sm text-red-300">
           {actionError}
         </div>
       )}
 
-      {error ? (
-        <div className="mt-6 rounded-lg border border-red-800 bg-red-950 px-4 py-3 text-sm text-red-300">
-          {error}
-        </div>
-      ) : connectors === null ? (
-        <div className="mt-6 text-gray-400">Loading…</div>
-      ) : connectors.length === 0 ? (
-        <div className="mt-6 rounded-xl border border-gray-800 bg-gray-900 p-8 text-center text-sm text-gray-500">
-          No connectors registered yet.
-        </div>
-      ) : (
-        <div className="mt-6 space-y-3">
-          {connectors.map((c) => (
-            <div key={c.id} className="rounded-xl border border-gray-800 bg-gray-900 p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="font-medium text-white">{c.name}</span>
-                  <span className="ml-2 text-xs text-gray-600">{c.connector_type}</span>
-                </div>
-                <span
-                  className={`rounded px-2 py-0.5 text-xs font-medium ${
-                    c.status === "enabled"
-                      ? "bg-green-950 text-green-400"
-                      : "bg-gray-800 text-gray-500"
-                  }`}
-                >
-                  {c.status}
-                </span>
-              </div>
-              <div className="mt-2 text-xs text-gray-500">
-                Last discovery:{" "}
-                {c.last_discovery_status ? (
-                  <span className="font-mono">{c.last_discovery_status}</span>
-                ) : (
-                  "never run"
-                )}
-                {c.last_discovery_completed_at && (
-                  <> at {new Date(c.last_discovery_completed_at).toLocaleString()}</>
-                )}
-              </div>
-              <div className="mt-3 flex gap-3 text-xs">
-                <button
-                  onClick={() => discover(c.id)}
-                  disabled={busyId === c.id || c.status !== "enabled"}
-                  className="rounded bg-blue-600 px-3 py-1.5 font-medium text-white hover:bg-blue-500 disabled:opacity-50"
-                >
-                  {busyId === c.id ? "Working…" : "Run discovery"}
-                </button>
-                <button
-                  onClick={() => toggle(c)}
-                  disabled={busyId === c.id}
-                  className="rounded border border-gray-700 px-3 py-1.5 text-gray-400 hover:text-white disabled:opacity-50"
-                >
-                  {c.status === "enabled" ? "Disable" : "Enable"}
-                </button>
-                <button
-                  onClick={() => openRuns(c.id)}
-                  className="rounded border border-gray-700 px-3 py-1.5 text-gray-400 hover:text-white"
-                >
-                  Discovery runs
-                </button>
-              </div>
-
-              {selectedId === c.id && (
-                <div className="mt-3 border-t border-gray-800 pt-3">
+      <Panel title="Registered connectors" className="mt-6">
+        <AsyncContent
+          state={connectorsState}
+          empty={(data) => data.length === 0}
+          emptyLabel="No connectors registered yet."
+        >
+          {(data) => (
+            <>
+              <DataConsole
+                columns={columns}
+                rows={data}
+                rowKey={(c) => c.id}
+                onRowClick={(c) => openRuns(c.id)}
+                selectedKey={selectedId}
+                emptyLabel="No connectors registered yet."
+              />
+              {selectedId && (
+                <div className="mt-4 border-t border-gray-800 pt-4">
+                  <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    Discovery runs
+                  </div>
                   {runs === null ? (
                     <div className="text-xs text-gray-500">Loading runs…</div>
                   ) : runs.length === 0 ? (
@@ -462,8 +383,207 @@ export default function ConnectorsPage() {
                   )}
                 </div>
               )}
+            </>
+          )}
+        </AsyncContent>
+      </Panel>
+
+      {showRegisterForms && (
+        <div className="mt-6 space-y-4">
+          <Panel title="Register generic connector">
+            <div className="flex items-end gap-2">
+              <div className="flex-1">
+                <FormField label="Connector name" required>
+                  <input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="e.g. RedForge Targets"
+                    className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500"
+                  />
+                </FormField>
+              </div>
+              <button
+                onClick={register}
+                disabled={registering || !name}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
+              >
+                {registering ? "Registering…" : "Register"}
+              </button>
             </div>
-          ))}
+          </Panel>
+
+          <Panel title="Register directory connector (LDAP)">
+            <p className="text-xs text-gray-500">
+              Read-only visibility only — never changes passwords, unlocks accounts,
+              or modifies group membership. Credential reference must be configured
+              through an approved server-side secret workflow (an environment
+              variable name); the bind password itself is never submitted here.
+            </p>
+            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <FormField label="Connector name" required>
+                <input
+                  value={dirName}
+                  onChange={(e) => setDirName(e.target.value)}
+                  placeholder="e.g. Corp LDAP"
+                  className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500"
+                />
+              </FormField>
+              <FormField label="Server URI" required>
+                <input
+                  value={serverUri}
+                  onChange={(e) => setServerUri(e.target.value)}
+                  placeholder="ldaps://ldap.example.com"
+                  className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500"
+                />
+              </FormField>
+              <FormField label="Base DN" required>
+                <input
+                  value={baseDn}
+                  onChange={(e) => setBaseDn(e.target.value)}
+                  placeholder="dc=example,dc=com"
+                  className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500"
+                />
+              </FormField>
+              <FormField label="Bind DN" required>
+                <input
+                  value={bindDn}
+                  onChange={(e) => setBindDn(e.target.value)}
+                  placeholder="cn=svc,dc=example,dc=com"
+                  className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500"
+                />
+              </FormField>
+              <FormField
+                label="Credential reference"
+                required
+                hint="Environment variable name — the bind password itself is never submitted here."
+              >
+                <input
+                  value={credentialRef}
+                  onChange={(e) => setCredentialRef(e.target.value)}
+                  placeholder="e.g. LDAP_BIND_PASSWORD"
+                  autoComplete="off"
+                  className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500"
+                />
+              </FormField>
+              <label className="flex items-center gap-2 text-sm text-gray-400">
+                <input
+                  type="checkbox"
+                  checked={useStartTls}
+                  onChange={(e) => setUseStartTls(e.target.checked)}
+                />
+                Use StartTLS
+              </label>
+            </div>
+            <button
+              onClick={registerDirectory}
+              disabled={
+                registeringDirectory || !dirName || !serverUri || !baseDn || !bindDn || !credentialRef
+              }
+              className="mt-3 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
+            >
+              {registeringDirectory ? "Registering…" : "Register directory connector"}
+            </button>
+          </Panel>
+
+          <Panel title="Register network connector">
+            <p className="text-xs text-gray-500">
+              Bounded, read-only TCP-connect discovery only — never NSE scripts,
+              exploits, or arbitrary scanner flags. Default routes (0.0.0.0/0) and
+              oversized ranges are rejected at discovery time regardless of what
+              is registered here.
+            </p>
+            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+              <FormField label="Connector name" required>
+                <input
+                  value={netName}
+                  onChange={(e) => setNetName(e.target.value)}
+                  placeholder="e.g. Corp Network"
+                  className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500"
+                />
+              </FormField>
+              <FormField label="CIDR" required>
+                <input
+                  value={netCidr}
+                  onChange={(e) => setNetCidr(e.target.value)}
+                  placeholder="10.0.0.0/28"
+                  className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500"
+                />
+              </FormField>
+              <FormField label="Ports" hint="Comma-separated.">
+                <input
+                  value={netPorts}
+                  onChange={(e) => setNetPorts(e.target.value)}
+                  placeholder="22,80,443"
+                  className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500"
+                />
+              </FormField>
+            </div>
+            <button
+              onClick={registerNetwork}
+              disabled={registeringNetwork || !netName || !netCidr}
+              className="mt-3 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
+            >
+              {registeringNetwork ? "Registering…" : "Register network connector"}
+            </button>
+          </Panel>
+
+          <Panel title="Register cloud connector (AWS)">
+            <p className="text-xs text-gray-500">
+              Read-only AWS discovery only — never modifies resources, policies,
+              or IAM. The secret access key is never submitted here; provide a
+              credential reference (an environment variable name) configured
+              through an approved server-side secret workflow.
+            </p>
+            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <FormField label="Connector name" required>
+                <input
+                  value={cloudName}
+                  onChange={(e) => setCloudName(e.target.value)}
+                  placeholder="e.g. Prod AWS Account"
+                  className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500"
+                />
+              </FormField>
+              <FormField label="Region" required>
+                <input
+                  value={cloudRegion}
+                  onChange={(e) => setCloudRegion(e.target.value)}
+                  placeholder="us-east-1"
+                  className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500"
+                />
+              </FormField>
+              <FormField label="Access key ID" required>
+                <input
+                  value={cloudAccessKeyId}
+                  onChange={(e) => setCloudAccessKeyId(e.target.value)}
+                  placeholder="AKIA…"
+                  autoComplete="off"
+                  className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500"
+                />
+              </FormField>
+              <FormField
+                label="Secret access key credential reference"
+                required
+                hint="Environment variable name — the secret access key itself is never submitted here."
+              >
+                <input
+                  value={cloudCredentialRef}
+                  onChange={(e) => setCloudCredentialRef(e.target.value)}
+                  placeholder="e.g. AWS_SECRET_ACCESS_KEY"
+                  autoComplete="off"
+                  className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder-gray-500"
+                />
+              </FormField>
+            </div>
+            <button
+              onClick={registerCloud}
+              disabled={
+                registeringCloud || !cloudName || !cloudRegion || !cloudAccessKeyId || !cloudCredentialRef
+              }
+              className="mt-3 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
+            >
+              {registeringCloud ? "Registering…" : "Register cloud connector"}
+            </button>
+          </Panel>
         </div>
       )}
     </div>

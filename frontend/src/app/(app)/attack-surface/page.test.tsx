@@ -4,9 +4,13 @@ import { api } from "@/lib/api";
 import AttackSurfacePage from "./page";
 import type { AttackSurfaceSummary, SecurityCorrelation } from "@/lib/securityCorrelations";
 
-vi.mock("@/lib/api", () => ({
-  api: { get: vi.fn(), post: vi.fn() },
-}));
+vi.mock("@/lib/api", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/api")>();
+  return {
+    ...actual,
+    api: { get: vi.fn(), post: vi.fn() },
+  };
+});
 
 const SUMMARY: AttackSurfaceSummary = {
   assets_with_active_conditions: 3,
@@ -67,7 +71,7 @@ describe("AttackSurfacePage overview", () => {
     vi.mocked(api.get).mockRejectedValue(new Error("network down"));
     render(<AttackSurfacePage />);
     await waitFor(() => {
-      expect(screen.getByText(/UNAVAILABLE/i)).toBeInTheDocument();
+      expect(screen.getAllByText(/network down/i).length).toBeGreaterThan(0);
     });
   });
 

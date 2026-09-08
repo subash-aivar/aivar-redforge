@@ -23,9 +23,7 @@ class ThreatHuntContainer:
     candidates: IThreatHuntCandidateRepository
     configs: IThreatHuntConfigurationRepository
 
-    def __init__(
-        self, session_factory: async_sessionmaker[AsyncSession] | None = None
-    ) -> None:
+    def __init__(self, session_factory: async_sessionmaker[AsyncSession] | None = None) -> None:
         if session_factory is not None:
             from threat_hunt.infrastructure.persistence.postgres_repositories import (
                 PgThreatHuntCandidateRepository,

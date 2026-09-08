@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import { api } from "@/lib/api";
 import ExposureManagementPage from "./page";
 import type { SecurityCondition, SecurityConditionSummary } from "@/lib/securityConditions";
@@ -87,5 +87,40 @@ describe("ExposureManagementPage condition rendering", () => {
     await waitFor(() => {
       expect(screen.getByText("RESOLVED")).toBeInTheDocument();
     });
+  });
+});
+
+describe("ExposureManagementPage detail drawer", () => {
+  async function openDrawer() {
+    mockApi(SUMMARY, [makeCondition()]);
+    render(<ExposureManagementPage />);
+    const row = await screen.findByText("Sensitive service observed");
+    const trigger = row.closest("button")!;
+    trigger.focus();
+    fireEvent.click(trigger);
+    await waitFor(() => {
+      expect(screen.getByRole("dialog", { name: "Sensitive service observed" })).toBeInTheDocument();
+    });
+    return trigger;
+  }
+
+  it("opens as a labelled dialog with real accessibility semantics", async () => {
+    await openDrawer();
+    const dialog = screen.getByRole("dialog", { name: "Sensitive service observed" });
+    expect(dialog).toHaveAttribute("aria-modal", "true");
+  });
+
+  it("Escape closes the drawer and returns focus to the trigger", async () => {
+    const trigger = await openDrawer();
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("dialog", { name: "Sensitive service observed" })).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
+  });
+
+  it("Close button closes the drawer without resolving the condition", async () => {
+    await openDrawer();
+    fireEvent.click(screen.getByText("Close"));
+    expect(screen.queryByRole("dialog", { name: "Sensitive service observed" })).not.toBeInTheDocument();
+    expect(api.post).not.toHaveBeenCalled();
   });
 });

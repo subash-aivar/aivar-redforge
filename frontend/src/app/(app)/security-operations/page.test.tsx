@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, waitFor, cleanup } from "@testing-library/react";
 import * as securityOperations from "@/lib/securityOperations";
+import { EventBusProvider } from "@/components/platform/EventBusProvider";
 import SecurityOperationsPage from "./page";
 import type {
   ExecutionTelemetrySummary,
@@ -22,6 +23,16 @@ vi.mock("@/lib/securityOperations", async () => {
   };
 });
 
+vi.mock("@/lib/ddos", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/ddos")>("@/lib/ddos");
+  return { ...actual, listIncidents: vi.fn().mockResolvedValue([]) };
+});
+
+vi.mock("@/lib/behavior", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/behavior")>("@/lib/behavior");
+  return { ...actual, listDetections: vi.fn().mockResolvedValue([]) };
+});
+
 vi.mock("@/lib/useSecurityOperationsStream", () => ({
   useSecurityOperationsStream: vi.fn(() => ({
     connectionState: "connected",
@@ -29,6 +40,14 @@ vi.mock("@/lib/useSecurityOperationsStream", () => ({
     lastEventReceivedAt: null,
   })),
 }));
+
+function renderPage() {
+  return render(
+    <EventBusProvider>
+      <SecurityOperationsPage />
+    </EventBusProvider>
+  );
+}
 
 afterEach(() => {
   cleanup();
@@ -120,7 +139,7 @@ function mockClients(opts: {
 describe("SecurityOperationsPage summary", () => {
   it("renders backend-derived summary counts, not fabricated", async () => {
     mockClients({ summary: makeSummary({ active_targets: 7 }) });
-    render(<SecurityOperationsPage />);
+    renderPage();
     await waitFor(() => {
       expect(screen.getByText("7")).toBeInTheDocument();
     });
@@ -133,7 +152,7 @@ describe("SecurityOperationsPage summary", () => {
     vi.mocked(securityOperations.listRuntimeComponents).mockRejectedValue(
       new Error("network down")
     );
-    render(<SecurityOperationsPage />);
+    renderPage();
     await waitFor(() => {
       expect(screen.getByText(/UNAVAILABLE|network down/i)).toBeInTheDocument();
     });
@@ -143,7 +162,7 @@ describe("SecurityOperationsPage summary", () => {
 describe("SecurityOperationsPage change feed", () => {
   it("renders an explicit empty state, not a blank list", async () => {
     mockClients({ changes: [] });
-    render(<SecurityOperationsPage />);
+    renderPage();
     await waitFor(() => {
       expect(screen.getByText(/No changes in this period/i)).toBeInTheDocument();
     });
@@ -151,7 +170,7 @@ describe("SecurityOperationsPage change feed", () => {
 
   it("renders crisp backend-provided titles verbatim", async () => {
     mockClients({ changes: [makeEvent({ title: "443/tcp became reachable" })] });
-    render(<SecurityOperationsPage />);
+    renderPage();
     await waitFor(() => {
       expect(screen.getByText("443/tcp became reachable")).toBeInTheDocument();
     });
@@ -161,7 +180,7 @@ describe("SecurityOperationsPage change feed", () => {
 describe("SecurityOperationsPage active executions", () => {
   it("renders an explicit empty state, not a blank list", async () => {
     mockClients({ executions: [] });
-    render(<SecurityOperationsPage />);
+    renderPage();
     await waitFor(() => {
       expect(screen.getByText(/No recent executions/i)).toBeInTheDocument();
     });
@@ -169,7 +188,7 @@ describe("SecurityOperationsPage active executions", () => {
 
   it("links each execution row to its telemetry detail page", async () => {
     mockClients({ executions: [makeExecution({ id: "exec-42" })] });
-    render(<SecurityOperationsPage />);
+    renderPage();
     await waitFor(() => {
       const link = screen.getByRole("link", { name: /api.example.internal/i });
       expect(link).toHaveAttribute("href", "/security-operations/executions/exec-42");
@@ -182,9 +201,39 @@ describe("SecurityOperationsPage runtime components", () => {
     mockClients({
       runtime: [makeRuntimeComponent({ status: "some_future_status" as never })],
     });
-    render(<SecurityOperationsPage />);
+    renderPage();
     await waitFor(() => {
       expect(screen.getByText("database")).toBeInTheDocument();
     });
+  });
+});
+
+describe("SecurityOperationsPage change feed drill-down", () => {
+  it("links a change event to the real detail page for a known entity_type", async () => {
+    mockClients({
+      changes: [
+        makeEvent({
+          title: "Investigation case opened",
+          entity_type: "investigation_case",
+          entity_id: "case-9",
+        }),
+      ],
+    });
+    renderPage();
+    await waitFor(() => {
+      const link = screen.getByRole("link", { name: /Investigation case opened/i });
+      expect(link).toHaveAttribute("href", "/investigations/case-9");
+    });
+  });
+
+  it("renders no link for an entity_type with no known real route", async () => {
+    mockClients({
+      changes: [makeEvent({ title: "Runtime component degraded", entity_type: "runtime_component" })],
+    });
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText("Runtime component degraded")).toBeInTheDocument();
+    });
+    expect(screen.queryByRole("link", { name: /Runtime component degraded/i })).not.toBeInTheDocument();
   });
 });

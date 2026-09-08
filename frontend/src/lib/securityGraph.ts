@@ -49,9 +49,12 @@ export interface SecurityRelationshipPath {
   edge_ids: string[];
 }
 
-export async function getOverview(nodeKind?: string): Promise<GraphOverview> {
-  const q = nodeKind ? `?node_kind=${encodeURIComponent(nodeKind)}` : "";
-  return api.get<GraphOverview>(`/api/v1/security-graph${q}`);
+export async function getOverview(nodeKind?: string, limit?: number): Promise<GraphOverview> {
+  const q = new URLSearchParams();
+  if (nodeKind) q.set("node_kind", nodeKind);
+  if (limit != null) q.set("limit", String(limit));
+  const qs = q.toString();
+  return api.get<GraphOverview>(`/api/v1/security-graph${qs ? `?${qs}` : ""}`);
 }
 
 export async function getNode(nodeId: string): Promise<NodeDetail> {

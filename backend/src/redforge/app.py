@@ -216,6 +216,115 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             app.state.risk_engine_container = risk_engine_container
             logger.info("risk_engine_container_started")
 
+        async def _start_threat_actor_intel() -> None:
+            sf = _session_factory
+            if sf is None:
+                logger.warning("threat_actor_intel_no_session_factory")
+                return
+            from threat_actor_intel.infrastructure.container import ThreatActorIntelContainer
+
+            threat_actor_intel_container = ThreatActorIntelContainer(session_factory=sf)
+            app.state.threat_actor_intel_container = threat_actor_intel_container
+            logger.info("threat_actor_intel_container_started")
+
+        async def _start_ioc_intelligence() -> None:
+            sf = _session_factory
+            if sf is None:
+                logger.warning("ioc_intelligence_no_session_factory")
+                return
+            from ioc_intelligence.infrastructure.container import IocIntelContainer
+
+            ioc_intel_container = IocIntelContainer(session_factory=sf)
+            app.state.ioc_intel_container = ioc_intel_container
+            logger.info("ioc_intel_container_started")
+
+        async def _start_attack_pattern_intel() -> None:
+            sf = _session_factory
+            if sf is None:
+                logger.warning("attack_pattern_intel_no_session_factory")
+                return
+            from attack_pattern_intel.infrastructure.container import AttackPatternIntelContainer
+
+            attack_pattern_intel_container = AttackPatternIntelContainer(session_factory=sf)
+            app.state.attack_pattern_intel_container = attack_pattern_intel_container
+            logger.info("attack_pattern_intel_container_started")
+
+        async def _start_intelligence_relationships() -> None:
+            sf = _session_factory
+            if sf is None:
+                logger.warning("intelligence_relationships_no_session_factory")
+                return
+            from intelligence_relationships.infrastructure.container import (
+                IntelligenceRelationshipsContainer,
+            )
+
+            intelligence_relationships_container = IntelligenceRelationshipsContainer(
+                session_factory=sf
+            )
+            app.state.intelligence_relationships_container = (
+                intelligence_relationships_container
+            )
+            logger.info("intelligence_relationships_container_started")
+
+        async def _start_malware_intel() -> None:
+            sf = _session_factory
+            if sf is None:
+                logger.warning("malware_intel_no_session_factory")
+                return
+            from malware_intel.infrastructure.container import MalwareIntelContainer
+
+            malware_intel_container = MalwareIntelContainer(session_factory=sf)
+            app.state.malware_intel_container = malware_intel_container
+            logger.info("malware_intel_container_started")
+
+        async def _start_campaign_intel() -> None:
+            sf = _session_factory
+            if sf is None:
+                logger.warning("campaign_intel_no_session_factory")
+                return
+            from campaign_intel.infrastructure.container import CampaignIntelContainer
+
+            campaign_intel_container = CampaignIntelContainer(session_factory=sf)
+            app.state.campaign_intel_container = campaign_intel_container
+            logger.info("campaign_intel_container_started")
+
+        async def _start_tool_intel() -> None:
+            sf = _session_factory
+            if sf is None:
+                logger.warning("tool_intel_no_session_factory")
+                return
+            from tool_intel.infrastructure.container import ToolIntelContainer
+
+            tool_intel_container = ToolIntelContainer(session_factory=sf)
+            app.state.tool_intel_container = tool_intel_container
+            logger.info("tool_intel_container_started")
+
+        async def _start_infrastructure_intel() -> None:
+            sf = _session_factory
+            if sf is None:
+                logger.warning("infrastructure_intel_no_session_factory")
+                return
+            from infrastructure_intel.infrastructure.container import (
+                InfrastructureIntelContainer,
+            )
+
+            infrastructure_intel_container = InfrastructureIntelContainer(session_factory=sf)
+            app.state.infrastructure_intel_container = infrastructure_intel_container
+            logger.info("infrastructure_intel_container_started")
+
+        async def _start_threat_report_intel() -> None:
+            sf = _session_factory
+            if sf is None:
+                logger.warning("threat_report_intel_no_session_factory")
+                return
+            from threat_report_intel.infrastructure.container import (
+                ThreatReportIntelContainer,
+            )
+
+            threat_report_intel_container = ThreatReportIntelContainer(session_factory=sf)
+            app.state.threat_report_intel_container = threat_report_intel_container
+            logger.info("threat_report_intel_container_started")
+
         async def _start_attack_surface_management() -> None:
             sf = _session_factory
             if sf is None:
@@ -713,6 +822,19 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         coordinator.register_startup("engagement", _start_engagement)
         coordinator.register_startup("operation", _start_operation)
         coordinator.register_startup("risk_engine", _start_risk_engine)
+        coordinator.register_startup("threat_actor_intel", _start_threat_actor_intel)
+        coordinator.register_startup("ioc_intelligence", _start_ioc_intelligence)
+        coordinator.register_startup("attack_pattern_intel", _start_attack_pattern_intel)
+        coordinator.register_startup(
+            "intelligence_relationships", _start_intelligence_relationships
+        )
+        coordinator.register_startup("malware_intel", _start_malware_intel)
+        coordinator.register_startup("campaign_intel", _start_campaign_intel)
+        coordinator.register_startup("tool_intel", _start_tool_intel)
+        coordinator.register_startup(
+            "infrastructure_intel", _start_infrastructure_intel
+        )
+        coordinator.register_startup("threat_report_intel", _start_threat_report_intel)
         coordinator.register_startup("attack_surface_management", _start_attack_surface_management)
         coordinator.register_startup("scanning", _start_scanning)
         coordinator.register_startup("execution", _start_execution)
@@ -1117,6 +1239,56 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
         coordinator.register_startup("reporting_scheduler", _start_reporting_scheduler)
 
+        async def _start_ioc_expiry_scheduler() -> None:
+            # M51.2 Slice 2.1: promotes the previously external-cron-only
+            # `POST /iocs/maintenance/expire-lapsed` sweep to the same
+            # in-process periodic-runner pattern already used platform-wide
+            # for exactly this shape of job (global, non-per-tenant,
+            # idempotent bulk operation) — see regulatory_notification_
+            # scheduler/reporting_scheduler above. Horizontally safe: two
+            # app instances each running this tick concurrently rely on
+            # `IOCApplicationService.expire_lapsed_iocs`'s own per-row
+            # optimistic-concurrency handling (row_version), not on a
+            # separate claim/lease table, since the underlying operation
+            # is idempotent and cheap enough that a lease adds no real
+            # safety over what OCC already guarantees. The endpoint
+            # remains available too (manual trigger / external cron), and
+            # calls the exact same application-service method.
+            sf = _session_factory
+            if sf is None:
+                logger.warning("ioc_expiry_scheduler_no_session_factory")
+                return
+
+            async def _tick() -> None:
+                from ioc_intelligence.application._auth import IocIntelRole
+
+                container = app.state.ioc_intel_container
+                session = container.new_session()
+                try:
+                    svc = container.build_service(session)
+                    expired_count = await svc.expire_lapsed_iocs(
+                        actor_roles=(IocIntelRole.PLATFORM_ADMIN.value,)
+                    )
+                    if expired_count:
+                        logger.info(
+                            "ioc_expiry_scheduler_tick_completed",
+                            expired_count=expired_count,
+                        )
+                finally:
+                    await session.close()
+
+            runner = TenantPeriodicRunner(
+                "ioc_expiry_scheduler",
+                _tick,
+                per_tenant=False,
+                poll_interval_s=getattr(settings, "runtime_ioc_expiry_scheduler_poll_s", 300.0),
+            )
+            await runner.start()
+            runtime.ioc_expiry_scheduler_runner = runner  # type: ignore[attr-defined]
+            logger.info("ioc_expiry_scheduler_started")
+
+        coordinator.register_startup("ioc_expiry_scheduler", _start_ioc_expiry_scheduler)
+
         async def _start_threat_hunt_scheduler() -> None:
             sf = _session_factory
             if sf is None:
@@ -1235,6 +1407,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "automated_action_scheduler_runner",
             "autonomous_intelligence_scheduler_runner",
             "exposure_reporting_scheduler_runner",
+            "ioc_expiry_scheduler_runner",
             "incident_scheduler_runner",
             "playbook_scheduler_runner",
             "posture_forecasting_scheduler_runner",
@@ -1339,10 +1512,37 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     from engagement.api.exception_handlers import register_engagement_exception_handlers
     from evidence.api.exception_handlers import register_evidence_exception_handlers
     from execution.api.exception_handlers import register_execution_exception_handlers
+    from ioc_intelligence.api.exception_handlers import (
+        register_ioc_intelligence_exception_handlers,
+    )
+    from attack_pattern_intel.api.exception_handlers import (
+        register_attack_pattern_intel_exception_handlers,
+    )
+    from intelligence_relationships.api.exception_handlers import (
+        register_intelligence_relationships_exception_handlers,
+    )
+    from malware_intel.api.exception_handlers import (
+        register_malware_intel_exception_handlers,
+    )
+    from campaign_intel.api.exception_handlers import (
+        register_campaign_intel_exception_handlers,
+    )
+    from tool_intel.api.exception_handlers import (
+        register_tool_intel_exception_handlers,
+    )
+    from infrastructure_intel.api.exception_handlers import (
+        register_infrastructure_intel_exception_handlers,
+    )
+    from threat_report_intel.api.exception_handlers import (
+        register_threat_report_intel_exception_handlers,
+    )
     from operation.api.exception_handlers import register_operation_exception_handlers
     from payload.api.exception_handlers import register_payload_exception_handlers
     from red_team_operator.api.exception_handlers import register_operator_exception_handlers
     from risk_engine.api.exception_handlers import register_risk_engine_exception_handlers
+    from threat_actor_intel.api.exception_handlers import (
+        register_threat_actor_intel_exception_handlers,
+    )
     from vulnerability.api.exception_handlers import register_vulnerability_exception_handlers
     from vulnerability.api.scanning.exception_handlers import (
         register_scanning_exception_handlers,
@@ -1359,6 +1559,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     register_evidence_exception_handlers(app)
     register_payload_exception_handlers(app)
     register_risk_engine_exception_handlers(app)
+    register_threat_actor_intel_exception_handlers(app)
+    register_ioc_intelligence_exception_handlers(app)
+    register_attack_pattern_intel_exception_handlers(app)
+    register_intelligence_relationships_exception_handlers(app)
+    register_malware_intel_exception_handlers(app)
+    register_campaign_intel_exception_handlers(app)
+    register_tool_intel_exception_handlers(app)
+    register_infrastructure_intel_exception_handlers(app)
+    register_threat_report_intel_exception_handlers(app)
     register_attack_surface_management_exception_handlers(app)
 
     # Configure OpenTelemetry (after app creation so auto-instrumentation works)

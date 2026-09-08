@@ -3,6 +3,8 @@
 import { useState } from "react";
 import {
   AsyncContent,
+  FormField,
+  FormModal,
   KpiTile,
   PageHeader,
   Panel,
@@ -123,62 +125,68 @@ function GenerateForecastModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-sm rounded-xl border border-gray-800 bg-gray-900 p-5">
-        <h3 className="mb-3 text-sm font-semibold text-gray-100">Generate Posture Forecast</h3>
+    <FormModal title="Generate Posture Forecast" onClose={onClose}>
+      <div className="space-y-3">
+        <FormField label="Baseline Exposure Score (0-10)">
+          <input
+            type="number"
+            step="0.1"
+            min={0}
+            max={10}
+            value={baseline}
+            onChange={(e) => setBaseline(Number(e.target.value))}
+            className="w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200"
+          />
+        </FormField>
 
-        <label className="mb-1 block text-xs text-gray-500">Baseline Exposure Score (0-10)</label>
-        <input
-          type="number"
-          step="0.1"
-          min={0}
-          max={10}
-          value={baseline}
-          onChange={(e) => setBaseline(Number(e.target.value))}
-          className="mb-3 w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200"
-        />
+        <FormField label="Remediation Velocity (per day)">
+          <input
+            type="number"
+            step="0.1"
+            value={velocity}
+            onChange={(e) => setVelocity(Number(e.target.value))}
+            className="w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200"
+          />
+        </FormField>
 
-        <label className="mb-1 block text-xs text-gray-500">Remediation Velocity (per day)</label>
-        <input
-          type="number"
-          step="0.1"
-          value={velocity}
-          onChange={(e) => setVelocity(Number(e.target.value))}
-          className="mb-3 w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200"
-        />
+        <FormField label="Open Critical Findings">
+          <input
+            type="number"
+            min={0}
+            value={criticalCount}
+            onChange={(e) => setCriticalCount(Number(e.target.value))}
+            className="w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200"
+          />
+        </FormField>
 
-        <label className="mb-1 block text-xs text-gray-500">Open Critical Findings</label>
-        <input
-          type="number"
-          min={0}
-          value={criticalCount}
-          onChange={(e) => setCriticalCount(Number(e.target.value))}
-          className="mb-3 w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200"
-        />
-
-        <label className="mb-1 block text-xs text-gray-500">Open High Findings</label>
-        <input
-          type="number"
-          min={0}
-          value={highCount}
-          onChange={(e) => setHighCount(Number(e.target.value))}
-          className="mb-4 w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200"
-        />
-
-        {error && <p className="mb-3 text-xs text-red-400">{error}</p>}
-        <div className="flex justify-end gap-2">
-          <button onClick={onClose} className="rounded-md border border-gray-700 px-3 py-1.5 text-xs text-gray-300">
-            Cancel
-          </button>
-          <button
-            disabled={busy}
-            onClick={submit}
-            className="rounded-md border border-red-800 bg-red-950/50 px-3 py-1.5 text-xs text-red-300 hover:bg-red-900/50 disabled:opacity-50"
-          >
-            {busy ? "Generating…" : "Generate"}
-          </button>
-        </div>
+        <FormField label="Open High Findings">
+          <input
+            type="number"
+            min={0}
+            value={highCount}
+            onChange={(e) => setHighCount(Number(e.target.value))}
+            className="w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200"
+          />
+        </FormField>
       </div>
-    </div>
+
+      {error && (
+        <p role="alert" className="mt-3 text-xs text-red-400">
+          {error}
+        </p>
+      )}
+      <div className="mt-4 flex justify-end gap-2">
+        <button onClick={onClose} className="rounded-md border border-gray-700 px-3 py-1.5 text-xs text-gray-300">
+          Cancel
+        </button>
+        <button
+          disabled={busy}
+          onClick={submit}
+          className="rounded-md border border-red-800 bg-red-950/50 px-3 py-1.5 text-xs text-red-300 hover:bg-red-900/50 disabled:opacity-50"
+        >
+          {busy ? "Generating…" : "Generate"}
+        </button>
+      </div>
+    </FormModal>
   );
 }

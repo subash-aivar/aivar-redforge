@@ -12,38 +12,19 @@ from __future__ import annotations
 
 from enum import StrEnum, unique
 
+# IndicatorType and ProviderName are the neutral shared-kernel vocabularies
+# (M51.2 Phase A.1 R1/R2) — re-exported here so every existing consumer of
+# `redforge.domain.threat_intel.value_objects` keeps working unchanged and
+# still receives the exact same type object `ioc_intelligence` uses.
+from redforge.shared.ioc_vocabulary import IndicatorType, ProviderName
 
-@unique
-class IndicatorType(StrEnum):
-    """Closed set of indicator kinds RedForge ever queries externally.
-
-    File hashes are included for schema completeness but are only ever
-    populated if RedForge itself genuinely observes one — never invented.
-    """
-
-    IP = "ip"
-    DOMAIN = "domain"
-    URL = "url"
-    HASH = "hash"
-
-
-@unique
-class ProviderName(StrEnum):
-    """Closed set of external/local intelligence sources. Adding a new
-    provider means adding a value here plus an adapter — never a free-text
-    provider name, so evidence rows always trace to one verified source."""
-
-    ABUSEIPDB = "abuseipdb"
-    ALIENVAULT_OTX = "alienvault_otx"
-    SPAMHAUS_DROP = "spamhaus_drop"
-    RDAP = "rdap"
-    MAXMIND_GEOLITE_LOCAL = "maxmind_geolite_local"
-    IPINFO_LITE = "ipinfo_lite"
-    # Optional adapters — ship disabled by default; see
-    # docs/M18_INTELLIGENCE_PROVIDER_DECISION_MATRIX.md for the exact
-    # licensing/quota reasoning behind the disabled default.
-    GREYNOISE_COMMUNITY = "greynoise_community"
-    ABUSECH = "abusech"
+__all__ = [
+    "EgressDecision",
+    "EnrichmentKind",
+    "IndicatorType",
+    "ProviderHealthStatus",
+    "ProviderName",
+]
 
 
 @unique

@@ -6,6 +6,7 @@ import pytest
 from fastapi import FastAPI, Header
 from fastapi.testclient import TestClient
 
+from redforge.api.dependencies import get_organization_service
 from redforge.api.security import TenantContext, get_tenant_context
 from redforge.domain.identity.value_objects import MembershipRole, Permission
 from redforge.shared.identifiers import EntityId
@@ -130,6 +131,19 @@ async def test_llm_isolation(i: int) -> None:
         await llm.generate(HuntLLMPrompt(uuid4(), "t", "c"), uuid4())
 
 
+class _OrgStub:
+    """Stubs `OrganizationService.get_by_id` so `require_permission`'s
+    suspension check doesn't need a real `organizations` table row —
+    matches `tests/attack_surface_management/api/conftest.py`'s
+    `_OrgStub` precedent."""
+
+    async def get_by_id(self, organization_id: str) -> object:
+        class _Org:
+            status = "active"
+
+        return _Org()
+
+
 def _override_tenant_context(
     x_tenant_id: str = Header(..., alias="X-Tenant-Id"),
 ) -> TenantContext:
@@ -149,6 +163,7 @@ def client() -> TestClient:
     c = ThreatHuntContainer()
     app.dependency_overrides[get_container] = lambda: c
     app.dependency_overrides[get_tenant_context] = _override_tenant_context
+    app.dependency_overrides[get_organization_service] = lambda: _OrgStub()
     return TestClient(app)
 
 
@@ -161,7 +176,7 @@ def test_api_health(client: TestClient, i: int) -> None:
 def test_api_generate(client: TestClient, conf: float) -> None:
     r = client.post(
         "/threat-hunt/candidates",
-        headers={"X-Tenant-Id": str(EntityId.generate()), "X-Roles": "system,ai:operator"},
+        headers={"X-Tenant-Id": str(EntityId.generate())},
         json={"anomaly_signal_ids": ["s1"], "confidence_score": conf},
     )
     assert r.status_code == 201

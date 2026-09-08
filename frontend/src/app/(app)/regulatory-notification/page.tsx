@@ -1,9 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   AsyncContent,
   DataConsole,
+  FormField,
+  FormModal,
   InvestigationDrawer,
   KpiTile,
   PageHeader,
@@ -30,8 +33,19 @@ import {
 import { getMe } from "@/lib/auth";
 
 export default function RegulatoryNotificationPage() {
+  return (
+    <Suspense fallback={<PageHeader title="Regulatory Notification" />}>
+      <RegulatoryNotificationInner />
+    </Suspense>
+  );
+}
+
+function RegulatoryNotificationInner() {
+  const incidentIdParam = useSearchParams().get("incidentId");
   const deadlines = useAsync(() => getDeadlineDashboard(), []);
-  const [tab, setTab] = useState<"deadlines" | "incident" | "jurisdictions">("deadlines");
+  const [tab, setTab] = useState<"deadlines" | "incident" | "jurisdictions">(
+    incidentIdParam ? "incident" : "deadlines"
+  );
   const [selected, setSelected] = useState<DeadlineDashboardEntry | null>(null);
   const [showStartClocks, setShowStartClocks] = useState(false);
 
@@ -97,7 +111,7 @@ export default function RegulatoryNotificationPage() {
         </AsyncContent>
       )}
 
-      {tab === "incident" && <IncidentLookupTab />}
+      {tab === "incident" && <IncidentLookupTab initialIncidentId={incidentIdParam ?? undefined} />}
       {tab === "jurisdictions" && <JurisdictionsTab />}
 
       {selected && (
@@ -121,19 +135,20 @@ export default function RegulatoryNotificationPage() {
   );
 }
 
-function IncidentLookupTab() {
-  const [incidentId, setIncidentId] = useState("");
+function IncidentLookupTab({ initialIncidentId }: { initialIncidentId?: string }) {
+  const [incidentId, setIncidentId] = useState(initialIncidentId ?? "");
   const [notifications, setNotifications] = useState<IncidentNotification[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<IncidentNotification | null>(null);
 
-  async function search() {
-    if (!incidentId.trim()) return;
+  async function search(idOverride?: string) {
+    const id = (idOverride ?? incidentId).trim();
+    if (!id) return;
     setLoading(true);
     setError(null);
     try {
-      const rows = await listForIncident(incidentId.trim());
+      const rows = await listForIncident(id);
       setNotifications(rows);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Lookup failed");
@@ -141,6 +156,17 @@ function IncidentLookupTab() {
       setLoading(false);
     }
   }
+
+  // Cross-module pivot from the Incident Response drawer
+  // (`/regulatory-notification?incidentId=<real incident_id>`) — auto-run
+  // the existing incident lookup instead of leaving the operator to
+  // re-type the ID they already had selected.
+  useEffect(() => {
+    if (initialIncidentId) {
+      search(initialIncidentId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialIncidentId]);
 
   const cols: ConsoleColumn<IncidentNotification>[] = [
     { key: "regime", header: "Regime", width: "20%", render: (r) => r.regime.replace(/_/g, " ") },
@@ -161,7 +187,7 @@ function IncidentLookupTab() {
           className="w-64 rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200"
         />
         <button
-          onClick={search}
+          onClick={() => search()}
           disabled={loading}
           className="rounded-md border border-gray-700 px-3 py-1.5 text-xs text-gray-300 hover:border-red-800 hover:text-red-300 disabled:opacity-50"
         >
@@ -362,48 +388,56 @@ function StartClocksModal({ onClose, onStarted }: { onClose: () => void; onStart
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-md rounded-xl border border-gray-800 bg-gray-900 p-5">
-        <h3 className="mb-3 text-sm font-semibold text-gray-100">Start Regulatory Notification Clocks</h3>
-        <label className="mb-1 block text-xs text-gray-500">Incident ID</label>
-        <input
-          value={incidentId}
-          onChange={(e) => setIncidentId(e.target.value)}
-          className="mb-3 w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200"
-        />
-        <label className="mb-1 block text-xs text-gray-500">
-          Regimes (leave empty to auto-derive from configured jurisdictions)
-        </label>
-        <div className="mb-4 flex flex-wrap gap-1.5">
-          {REGULATORY_REGIMES.map((r) => (
-            <button
-              key={r}
-              onClick={() => toggleRegime(r)}
-              className={`rounded-full border px-2.5 py-1 text-[11px] ${
-                selectedRegimes.includes(r)
-                  ? "border-red-700 bg-red-950/50 text-red-300"
-                  : "border-gray-700 text-gray-400 hover:text-gray-200"
-              }`}
-            >
-              {r.replace(/_/g, " ")}
-            </button>
-          ))}
-        </div>
-        {error && <p className="mb-3 text-xs text-red-400">{error}</p>}
-        <div className="flex justify-end gap-2">
-          <button onClick={onClose} className="rounded-md border border-gray-700 px-3 py-1.5 text-xs text-gray-300">
-            Cancel
-          </button>
-          <button
-            disabled={busy}
-            onClick={submit}
-            className="rounded-md border border-red-800 bg-red-950/50 px-3 py-1.5 text-xs text-red-300 hover:bg-red-900/50 disabled:opacity-50"
-          >
-            {busy ? "Starting…" : "Start Clocks"}
-          </button>
-        </div>
+    <FormModal title="Start Regulatory Notification Clocks" onClose={onClose}>
+      <div className="space-y-3">
+        <FormField label="Incident ID" required>
+          <input
+            value={incidentId}
+            onChange={(e) => setIncidentId(e.target.value)}
+            className="w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200"
+          />
+        </FormField>
+        <fieldset>
+          <legend className="mb-1 block text-xs text-gray-500">
+            Regimes (leave empty to auto-derive from configured jurisdictions)
+          </legend>
+          <div className="flex flex-wrap gap-1.5">
+            {REGULATORY_REGIMES.map((r) => (
+              <button
+                key={r}
+                type="button"
+                aria-pressed={selectedRegimes.includes(r)}
+                onClick={() => toggleRegime(r)}
+                className={`rounded-full border px-2.5 py-1 text-[11px] ${
+                  selectedRegimes.includes(r)
+                    ? "border-red-700 bg-red-950/50 text-red-300"
+                    : "border-gray-700 text-gray-400 hover:text-gray-200"
+                }`}
+              >
+                {r.replace(/_/g, " ")}
+              </button>
+            ))}
+          </div>
+        </fieldset>
       </div>
-    </div>
+      {error && (
+        <p role="alert" className="mt-3 text-xs text-red-400">
+          {error}
+        </p>
+      )}
+      <div className="mt-4 flex justify-end gap-2">
+        <button onClick={onClose} className="rounded-md border border-gray-700 px-3 py-1.5 text-xs text-gray-300">
+          Cancel
+        </button>
+        <button
+          disabled={busy}
+          onClick={submit}
+          className="rounded-md border border-red-800 bg-red-950/50 px-3 py-1.5 text-xs text-red-300 hover:bg-red-900/50 disabled:opacity-50"
+        >
+          {busy ? "Starting…" : "Start Clocks"}
+        </button>
+      </div>
+    </FormModal>
   );
 }
 

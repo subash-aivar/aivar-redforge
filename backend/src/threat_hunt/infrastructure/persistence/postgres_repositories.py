@@ -58,19 +58,27 @@ async def _load_candidate(
     session: AsyncSession, row: ThreatHuntCandidateModel
 ) -> ThreatHuntCandidate:
     signal_rows = (
-        await session.execute(
-            select(ThreatHuntAnomalySignalRefModel).where(
-                ThreatHuntAnomalySignalRefModel.candidate_id == row.id
+        (
+            await session.execute(
+                select(ThreatHuntAnomalySignalRefModel).where(
+                    ThreatHuntAnomalySignalRefModel.candidate_id == row.id
+                )
             )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     technique_rows = (
-        await session.execute(
-            select(ThreatHuntTechniqueRefModel).where(
-                ThreatHuntTechniqueRefModel.candidate_id == row.id
+        (
+            await session.execute(
+                select(ThreatHuntTechniqueRefModel).where(
+                    ThreatHuntTechniqueRefModel.candidate_id == row.id
+                )
             )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     return ThreatHuntCandidate(
         candidate_id=CandidateId(row.id),
         tenant_id=TenantId.from_uuid(row.tenant_id),
@@ -141,21 +149,25 @@ class PgThreatHuntCandidateRepository(IThreatHuntCandidateRepository):
     ) -> list[ThreatHuntCandidate]:
         async with self._session_factory() as session:
             rows = (
-                await session.execute(
-                    select(ThreatHuntCandidateModel)
-                    .where(
-                        ThreatHuntCandidateModel.tenant_id == tenant_id.value,
-                        ThreatHuntCandidateModel.candidate_status.in_(
-                            [
-                                ThreatHuntCandidateStatus.CANDIDATE.value,
-                                ThreatHuntCandidateStatus.UNDER_REVIEW.value,
-                            ]
-                        ),
+                (
+                    await session.execute(
+                        select(ThreatHuntCandidateModel)
+                        .where(
+                            ThreatHuntCandidateModel.tenant_id == tenant_id.value,
+                            ThreatHuntCandidateModel.candidate_status.in_(
+                                [
+                                    ThreatHuntCandidateStatus.CANDIDATE.value,
+                                    ThreatHuntCandidateStatus.UNDER_REVIEW.value,
+                                ]
+                            ),
+                        )
+                        .order_by(ThreatHuntCandidateModel.generated_at)
+                        .limit(limit)
                     )
-                    .order_by(ThreatHuntCandidateModel.generated_at)
-                    .limit(limit)
                 )
-            ).scalars().all()
+                .scalars()
+                .all()
+            )
             return [await _load_candidate(session, r) for r in rows]
 
     async def find_by_id(

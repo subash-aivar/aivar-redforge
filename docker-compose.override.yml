@@ -12,3 +12,12 @@ services:
       REDFORGE_DEBUG: "true"
       REDFORGE_LOG_FORMAT: "console"
       REDFORGE_LOG_LEVEL: "DEBUG"
+      # Platform Super Admin bootstrap is intentionally NOT enabled here.
+      # To provision the first platform Super Admin against this stack,
+      # set REDFORGE_PLATFORM_BOOTSTRAP_ENABLED=true and
+      # REDFORGE_PLATFORM_BOOTSTRAP_PRINCIPAL_EMAIL=<email> in a local,
+      # untracked override (e.g. `docker compose run -e ...` or a
+      # docker-compose.local.yml you do not commit), restart the backend
+      # service, complete the steps in
+      # docs/RUNBOOK_PLATFORM_SUPER_ADMIN_BOOTSTRAP.md, then unset both
+      # vars and restart again.

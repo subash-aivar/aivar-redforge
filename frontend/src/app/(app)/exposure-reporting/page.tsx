@@ -4,6 +4,8 @@ import { useState } from "react";
 import {
   AsyncContent,
   DataConsole,
+  FormField,
+  FormModal,
   InvestigationDrawer,
   KpiTile,
   PageHeader,
@@ -42,18 +44,6 @@ export default function ExposureReportingPage() {
   const [busy, setBusy] = useState(false);
   const [showGenerate, setShowGenerate] = useState(false);
   const [showMap, setShowMap] = useState(false);
-
-  async function handleGenerate(reportType: string) {
-    setBusy(true);
-    try {
-      const me = await getMe().catch(() => null);
-      await generateReport({ report_type: reportType, generated_by: me?.email || "console" });
-      reports.reload();
-      setShowGenerate(false);
-    } finally {
-      setBusy(false);
-    }
-  }
 
   async function handleDeliver(report: ExposureReportDTO) {
     setBusy(true);
@@ -210,7 +200,13 @@ export default function ExposureReportingPage() {
       )}
 
       {showGenerate && (
-        <GenerateReportModal onClose={() => setShowGenerate(false)} onGenerate={handleGenerate} busy={busy} />
+        <GenerateReportModal
+          onClose={() => setShowGenerate(false)}
+          onGenerated={() => {
+            reports.reload();
+            setShowGenerate(false);
+          }}
+        />
       )}
 
       {showMap && (
@@ -315,42 +311,60 @@ function MappingsTab({ state }: { state: ReturnType<typeof useAsync<BusinessImpa
 
 function GenerateReportModal({
   onClose,
-  onGenerate,
-  busy,
+  onGenerated,
 }: {
   onClose: () => void;
-  onGenerate: (reportType: string) => void;
-  busy: boolean;
+  onGenerated: () => void;
 }) {
   const [reportType, setReportType] = useState(REPORT_TYPES[0]);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit() {
+    setBusy(true);
+    setError(null);
+    try {
+      const me = await getMe().catch(() => null);
+      await generateReport({ report_type: reportType, generated_by: me?.email || "console" });
+      onGenerated();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to generate report");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-sm rounded-xl border border-gray-800 bg-gray-900 p-5">
-        <h3 className="mb-3 text-sm font-semibold text-gray-100">Generate Exposure Report</h3>
-        <label className="mb-1 block text-xs text-gray-500">Report Type</label>
+    <FormModal title="Generate Exposure Report" onClose={onClose}>
+      <FormField label="Report Type" required>
         <select
           value={reportType}
           onChange={(e) => setReportType(e.target.value)}
-          className="mb-4 w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200"
+          className="w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200"
         >
           {REPORT_TYPES.map((t) => (
             <option key={t} value={t}>{t.replace(/_/g, " ")}</option>
           ))}
         </select>
-        <div className="flex justify-end gap-2">
-          <button onClick={onClose} className="rounded-md border border-gray-700 px-3 py-1.5 text-xs text-gray-300">
-            Cancel
-          </button>
-          <button
-            disabled={busy}
-            onClick={() => onGenerate(reportType)}
-            className="rounded-md border border-red-800 bg-red-950/50 px-3 py-1.5 text-xs text-red-300 hover:bg-red-900/50 disabled:opacity-50"
-          >
-            {busy ? "Generating…" : "Generate"}
-          </button>
-        </div>
+      </FormField>
+      {error && (
+        <p role="alert" className="mt-3 text-xs text-red-400">
+          {error}
+        </p>
+      )}
+      <div className="mt-4 flex justify-end gap-2">
+        <button onClick={onClose} className="rounded-md border border-gray-700 px-3 py-1.5 text-xs text-gray-300">
+          Cancel
+        </button>
+        <button
+          disabled={busy}
+          onClick={submit}
+          className="rounded-md border border-red-800 bg-red-950/50 px-3 py-1.5 text-xs text-red-300 hover:bg-red-900/50 disabled:opacity-50"
+        >
+          {busy ? "Generating…" : "Generate"}
+        </button>
       </div>
-    </div>
+    </FormModal>
   );
 }
 
@@ -391,46 +405,52 @@ function CreateMappingModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-sm rounded-xl border border-gray-800 bg-gray-900 p-5">
-        <h3 className="mb-3 text-sm font-semibold text-gray-100">Add Business Impact Mapping</h3>
-        <label className="mb-1 block text-xs text-gray-500">Asset Reference ID</label>
-        <input
-          value={assetRefId}
-          onChange={(e) => setAssetRefId(e.target.value)}
-          className="mb-3 w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200"
-          placeholder="asset-ref-id"
-        />
-        <label className="mb-1 block text-xs text-gray-500">Criticality</label>
-        <select
-          value={criticality}
-          onChange={(e) => setCriticality(e.target.value)}
-          className="mb-3 w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200"
-        >
-          {CRITICALITY_LEVELS.map((c) => <option key={c} value={c}>{c}</option>)}
-        </select>
-        <label className="mb-1 block text-xs text-gray-500">Impact Domain</label>
-        <select
-          value={impactDomain}
-          onChange={(e) => setImpactDomain(e.target.value)}
-          className="mb-4 w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200"
-        >
-          {IMPACT_DOMAINS.map((d) => <option key={d} value={d}>{d}</option>)}
-        </select>
-        {error && <p className="mb-3 text-xs text-red-400">{error}</p>}
-        <div className="flex justify-end gap-2">
-          <button onClick={onClose} className="rounded-md border border-gray-700 px-3 py-1.5 text-xs text-gray-300">
-            Cancel
-          </button>
-          <button
-            disabled={busy}
-            onClick={submit}
-            className="rounded-md border border-red-800 bg-red-950/50 px-3 py-1.5 text-xs text-red-300 hover:bg-red-900/50 disabled:opacity-50"
+    <FormModal title="Add Business Impact Mapping" onClose={onClose}>
+      <div className="space-y-3">
+        <FormField label="Asset Reference ID" required>
+          <input
+            value={assetRefId}
+            onChange={(e) => setAssetRefId(e.target.value)}
+            className="w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200"
+            placeholder="asset-ref-id"
+          />
+        </FormField>
+        <FormField label="Criticality">
+          <select
+            value={criticality}
+            onChange={(e) => setCriticality(e.target.value)}
+            className="w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200"
           >
-            {busy ? "Saving…" : "Save"}
-          </button>
-        </div>
+            {CRITICALITY_LEVELS.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </FormField>
+        <FormField label="Impact Domain">
+          <select
+            value={impactDomain}
+            onChange={(e) => setImpactDomain(e.target.value)}
+            className="w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200"
+          >
+            {IMPACT_DOMAINS.map((d) => <option key={d} value={d}>{d}</option>)}
+          </select>
+        </FormField>
       </div>
-    </div>
+      {error && (
+        <p role="alert" className="mt-3 text-xs text-red-400">
+          {error}
+        </p>
+      )}
+      <div className="mt-4 flex justify-end gap-2">
+        <button onClick={onClose} className="rounded-md border border-gray-700 px-3 py-1.5 text-xs text-gray-300">
+          Cancel
+        </button>
+        <button
+          disabled={busy}
+          onClick={submit}
+          className="rounded-md border border-red-800 bg-red-950/50 px-3 py-1.5 text-xs text-red-300 hover:bg-red-900/50 disabled:opacity-50"
+        >
+          {busy ? "Saving…" : "Save"}
+        </button>
+      </div>
+    </FormModal>
   );
 }

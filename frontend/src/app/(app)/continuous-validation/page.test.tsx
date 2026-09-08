@@ -206,6 +206,26 @@ describe("ContinuousValidationPage lifecycle actions", () => {
   });
 });
 
+describe("ContinuousValidationPage policy detail dialog semantics", () => {
+  it("opens as a labelled dialog and Escape closes it, returning focus to the trigger", async () => {
+    mockApi({ policies: [makePolicy({ lifecycle: "active" })] });
+    render(<ContinuousValidationPage />);
+    await waitFor(() => screen.getByText("ACTIVE"));
+    const trigger = screen.getByText("ACTIVE").closest("button")!;
+    trigger.focus();
+    fireEvent.click(trigger);
+
+    await waitFor(() => {
+      expect(screen.getByRole("dialog", { name: "Continuous Validation Policy" })).toBeInTheDocument();
+    });
+    expect(screen.getByRole("dialog")).toHaveAttribute("aria-modal", "true");
+
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
+  });
+});
+
 describe("ContinuousValidationPage create form", () => {
   it("requires a canonical target before submission", async () => {
     mockApi({});

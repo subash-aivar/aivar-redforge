@@ -1,66 +1,95 @@
+/**
+ * AI Agent Governance API client — `ai_agent_governance` bounded context.
+ *
+ * REPOSITORY AUDIT FINDING (Slice 5): the previous version of this
+ * file was entirely fictional — `/policies`, `/violations`, `/agents`
+ * do not exist anywhere in the backend. The real routes are
+ * `/envelopes` (draft), `/envelopes/{id}/actions`,
+ * `/envelopes/{id}/approve`, `/envelopes/{id}/revise`,
+ * `/envelopes/{id}/suspend`, `/actions/report`,
+ * `/deviations/{id}/review`, `/envelopes/{id}/advisories` — verified
+ * against `backend/src/ai_agent_governance/api/v1/routes.py` and the
+ * real `EnvelopeDTO`/`DeviationDTO`/`AdvisoryDTO` dataclasses.
+ *
+ * This context is entirely command-based — there is NO list/get
+ * endpoint for envelopes at all, only `advisories` (by envelope ID).
+ * This is a real backend gap, not a frontend oversight: an operator
+ * cannot discover envelope IDs from this API. This client exposes
+ * exactly what's real; the page built on it is honest about that gap
+ * rather than fabricating a list.
+ */
 import { api } from "@/lib/api";
 
-export interface AgentPolicy {
-  policy_id: string;
+export interface Envelope {
+  envelope_id: string;
   tenant_id: string;
-  name: string;
-  description: string;
-  status: string;
-  rules: PolicyRule[];
-  created_at: string;
-  updated_at: string;
+  ai_system_asset_id: string;
+  state: string;
+  envelope_version: number;
+  action_categories: string[];
+  requires_human_approval_for: string[];
+  approved_by: string | null;
 }
 
-export interface PolicyRule {
-  rule_id: string;
-  rule_type: string;
-  action: string;
-  condition: string;
-  severity: string;
-}
-
-export interface GovernanceViolation {
-  violation_id: string;
-  policy_id: string;
-  agent_id: string;
-  rule_id: string;
-  severity: string;
-  description: string;
-  detected_at: string;
-  status: string;
-}
-
-export interface AgentRegistration {
-  agent_id: string;
+export interface Deviation {
+  deviation_id: string;
   tenant_id: string;
-  name: string;
-  agent_type: string;
-  status: string;
-  capabilities: string[];
-  policies: string[];
-  registered_at: string;
+  ai_system_asset_id: string;
+  deviation_type: string;
+  severity: string;
+  review_state: string;
+  envelope_version: number;
+  review_notes: string;
 }
 
-export function listPolicies(): Promise<AgentPolicy[]> {
-  return api.get<AgentPolicy[]>("/api/v1/ai-agent-governance/policies");
+export interface ReportActionResult {
+  status: "compliant" | "deviation" | "duplicate";
+  deviation: Deviation | null;
 }
 
-export function getPolicy(id: string): Promise<AgentPolicy> {
-  return api.get<AgentPolicy>(`/api/v1/ai-agent-governance/policies/${id}`);
+export interface Advisory {
+  envelope_id: string;
+  deviation_type: string;
+  confirmed_benign_count: number;
+  recommendation: string;
 }
 
-export function listViolations(): Promise<GovernanceViolation[]> {
-  return api.get<GovernanceViolation[]>("/api/v1/ai-agent-governance/violations");
+export function draftEnvelope(body: {
+  asset_id: string;
+  max_data_sensitivity?: string;
+  requires_human_approval_for?: string[];
+}): Promise<Envelope> {
+  return api.post<Envelope>("/api/v1/ai-agent-governance/envelopes", body);
 }
 
-export function listAgents(): Promise<AgentRegistration[]> {
-  return api.get<AgentRegistration[]>("/api/v1/ai-agent-governance/agents");
+export function addAction(envelopeId: string, category: string, description = ""): Promise<Envelope> {
+  return api.post<Envelope>(`/api/v1/ai-agent-governance/envelopes/${envelopeId}/actions`, {
+    category,
+    description,
+  });
 }
 
-export function registerAgent(body: {
-  name: string;
-  agent_type: string;
-  capabilities: string[];
-}): Promise<AgentRegistration> {
-  return api.post<AgentRegistration>("/api/v1/ai-agent-governance/agents", body);
+export function approveEnvelope(envelopeId: string, approverId: string): Promise<Envelope> {
+  return api.post<Envelope>(`/api/v1/ai-agent-governance/envelopes/${envelopeId}/approve`, {
+    approver_id: approverId,
+  });
+}
+
+export function suspendEnvelope(envelopeId: string, reason: string): Promise<Envelope> {
+  return api.post<Envelope>(`/api/v1/ai-agent-governance/envelopes/${envelopeId}/suspend`, { reason });
+}
+
+export function reviewDeviation(
+  deviationId: string,
+  decision: string,
+  notes = ""
+): Promise<Deviation> {
+  return api.post<Deviation>(`/api/v1/ai-agent-governance/deviations/${deviationId}/review`, {
+    decision,
+    notes,
+  });
+}
+
+export function getAdvisories(envelopeId: string): Promise<Advisory[]> {
+  return api.get<Advisory[]>(`/api/v1/ai-agent-governance/envelopes/${envelopeId}/advisories`);
 }

@@ -6,6 +6,13 @@ from ai_agent_governance.api.v1 import router as ai_agent_governance_router
 from ai_posture.api.v1 import router as ai_posture_router
 from ai_supply_chain.api.v1 import router as ai_supply_chain_router
 from analytics.api.v1 import router as analytics_router
+from attack_pattern_intel.api.v1 import router as attack_pattern_intel_router
+from intelligence_relationships.api.v1 import router as intelligence_relationships_router
+from malware_intel.api.v1 import router as malware_intel_router
+from campaign_intel.api.v1 import router as campaign_intel_router
+from tool_intel.api.v1 import router as tool_intel_router
+from infrastructure_intel.api.v1 import router as infrastructure_intel_router
+from threat_report_intel.api.v1 import router as threat_report_intel_router
 from attack_surface_management.api.v1 import router as attack_surface_management_router
 from automated_action.api.v1 import router as automated_action_router
 from autonomous_intelligence.api.v1 import router as autonomous_intelligence_router
@@ -18,6 +25,7 @@ from exposure.api.v1 import router as exposure_router
 from exposure_reporting.api.v1 import router as exposure_reporting_router
 from incident.api.v1 import router as incident_router
 from integration_hub.api.v1 import router as integration_hub_router
+from ioc_intelligence.api.v1 import router as ioc_intelligence_router
 from lessons_learned.api.v1 import router as lessons_learned_router
 from ml_pipeline.api.v1 import router as ml_pipeline_router
 from operation.api.v1 import router as operation_router
@@ -91,6 +99,7 @@ from regulatory_notification.api.v1 import router as regulatory_notification_rou
 from remediation_impact.api.v1 import router as remediation_impact_router
 from reporting.api.v1 import router as reporting_router
 from risk_engine.api.v1 import router as risk_engine_router
+from threat_actor_intel.api.v1 import router as threat_actor_intel_router
 from threat_hunt.api.v1 import router as threat_hunt_router
 from vulnerability.api.v1 import router as vulnerability_router
 
@@ -177,6 +186,17 @@ router.include_router(regulatory_notification_router, tags=["regulatory-notifica
 router.include_router(lessons_learned_router, tags=["lessons-learned"])
 router.include_router(operation_router, tags=["operations"])
 router.include_router(risk_engine_router, tags=["risk-engine"])
+router.include_router(threat_actor_intel_router, tags=["threat-actor-intel"])
+router.include_router(ioc_intelligence_router, tags=["ioc-intelligence"])
+router.include_router(attack_pattern_intel_router, tags=["attack-pattern-intel"])
+router.include_router(
+    intelligence_relationships_router, tags=["intelligence-relationships"]
+)
+router.include_router(malware_intel_router, tags=["malware-intel"])
+router.include_router(campaign_intel_router, tags=["campaign-intel"])
+router.include_router(tool_intel_router, tags=["tool-intel"])
+router.include_router(infrastructure_intel_router, tags=["infrastructure-intel"])
+router.include_router(threat_report_intel_router, tags=["threat-report-intel"])
 router.include_router(attack_surface_management_router, tags=["attack-surface-management"])
 router.include_router(execution_router, tags=["execution"])
 router.include_router(operator_router, tags=["red-team-operators"])

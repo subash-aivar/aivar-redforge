@@ -39,9 +39,9 @@ export interface ExposureReportingDashboard {
   mapped_asset_count: number;
   unmapped_asset_count: number;
   dominant_amplifier: string | null;
-  kpi: Record<string, number>;
+  kpi: Record<string, number | string | null>;
   top_assets: Array<{ asset_ref_id: string; score: number }>;
-  business_impact_mapped: number;
+  business_impact_mapped: boolean;
   data_freshness_warning: boolean;
   generated_at: string;
 }

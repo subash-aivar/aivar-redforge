@@ -46,18 +46,24 @@ export default function ExposureDashboardPage() {
         }
       />
 
-      {/* KPI tiles */}
+      {/* KPI tiles — only fields the exposure profile actually returns
+          (asset_scores + their average); no severity breakdown exists
+          in this domain, so none is fabricated here. */}
       <AsyncContent state={profile}>
-        {(p) => (
-          <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
-            <KpiTile label="Total Assets" value={p.total_assets} />
-            <KpiTile label="Avg Score" value={p.avg_score.toFixed(1)} />
-            <KpiTile label="Critical" value={p.critical_count} tone="danger" />
-            <KpiTile label="High" value={p.high_count} tone="danger" />
-            <KpiTile label="Medium" value={p.medium_count} tone="warning" />
-            <KpiTile label="Low" value={p.low_count} tone="ok" />
-          </div>
-        )}
+        {(p) => {
+          const assetCount = Object.keys(p.asset_scores).length;
+          return (
+            <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <KpiTile label="Assets Scored" value={assetCount} />
+              <KpiTile label="Tenant Exposure Score" value={p.tenant_exposure_score.toFixed(1)} />
+              <KpiTile
+                label="Recomputation"
+                value={p.recomputing ? "Running" : p.recomputation_failed_at ? "Failed" : "Idle"}
+                tone={p.recomputation_failed_at ? "danger" : p.recomputing ? "warning" : "ok"}
+              />
+            </div>
+          );
+        }}
       </AsyncContent>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">

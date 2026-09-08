@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useLivePoll } from "@/lib/useLivePoll";
+import { PageHeader } from "@/components/cc";
 import {
   getDDoSPosture,
   listActiveIncidents,
@@ -47,27 +49,22 @@ export default function DDoSOverviewPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const [p, inc, recs] = await Promise.all([
-          getDDoSPosture(),
-          listActiveIncidents(),
-          listPendingRecommendations(),
-        ]);
-        setPosture(p);
-        setIncidents(inc);
-        setPending(recs);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Failed to load DDoS data");
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-    const iv = setInterval(load, 30_000);
-    return () => clearInterval(iv);
-  }, []);
+  useLivePoll(async () => {
+    try {
+      const [p, inc, recs] = await Promise.all([
+        getDDoSPosture(),
+        listActiveIncidents(),
+        listPendingRecommendations(),
+      ]);
+      setPosture(p);
+      setIncidents(inc);
+      setPending(recs);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load DDoS data");
+    } finally {
+      setLoading(false);
+    }
+  }, 30_000);
 
   if (loading) {
     return (
@@ -90,33 +87,30 @@ export default function DDoSOverviewPage() {
 
   return (
     <div className="space-y-8 p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-white">DDoS Defense Center</h1>
-          <p className="mt-1 text-sm text-gray-400">
-            Evidence-based detection from telemetry aggregation · Operator-gated mitigation
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <Link
-            href="/ddos/protected-resources"
-            className="rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-sm font-medium text-gray-200 hover:bg-gray-700"
-          >
-            Protected Resources
-          </Link>
-          <Link
-            href="/ddos/mitigation"
-            className={`rounded-lg border px-4 py-2 text-sm font-medium ${
-              pending.length > 0
-                ? "border-orange-700 bg-orange-950 text-orange-300 hover:bg-orange-900"
-                : "border-gray-700 bg-gray-800 text-gray-200 hover:bg-gray-700"
-            }`}
-          >
-            Mitigation Center {pending.length > 0 && `(${pending.length} pending)`}
-          </Link>
-        </div>
-      </div>
+      <PageHeader
+        title="DDoS Defense Center"
+        subtitle="Evidence-based detection from telemetry aggregation · Operator-gated mitigation"
+        actions={
+          <div className="flex gap-3">
+            <Link
+              href="/ddos/protected-resources"
+              className="rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-sm font-medium text-gray-200 hover:bg-gray-700"
+            >
+              Protected Resources
+            </Link>
+            <Link
+              href="/ddos/mitigation"
+              className={`rounded-lg border px-4 py-2 text-sm font-medium ${
+                pending.length > 0
+                  ? "border-orange-700 bg-orange-950 text-orange-300 hover:bg-orange-900"
+                  : "border-gray-700 bg-gray-800 text-gray-200 hover:bg-gray-700"
+              }`}
+            >
+              Mitigation Center {pending.length > 0 && `(${pending.length} pending)`}
+            </Link>
+          </div>
+        }
+      />
 
       {/* Active alert banner */}
       {(critCount > 0 || highCount > 0) && (

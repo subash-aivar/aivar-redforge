@@ -21,6 +21,12 @@ export type SourceDomain =
   // lifecycle events and, since M18, network drift events merged into the
   // feed); the client union previously omitted it.
   | "network_security"
+  // ddos (M19), behavior (M20), investigation (M21) — real backend
+  // source domains (see redforge.domain.security_operations.value_objects
+  // .SourceDomain) the client union had drifted out of sync with.
+  | "ddos"
+  | "behavior"
+  | "investigation"
   | "unknown";
 
 export type OperationalImportance = "info" | "notice" | "warning" | "high" | "critical";

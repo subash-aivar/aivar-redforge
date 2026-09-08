@@ -5,7 +5,7 @@ from typing import Any
 from uuid import UUID
 
 from lessons_learned.application._auth import require_at_least
-from lessons_learned.application.exceptions import ApplicationNotFoundError
+from lessons_learned.application.exceptions import ApplicationError, ApplicationNotFoundError
 from lessons_learned.domain.aggregates.lessons_learned import LessonsLearned
 from lessons_learned.domain.aggregates.post_incident_report import PostIncidentReport
 from lessons_learned.domain.services.campaign_advisory_service import (
@@ -189,6 +189,10 @@ class LessonsApplicationService:
 
     async def get(self, tenant_id: TenantId, incident_id: str) -> dict[str, Any]:
         tenant = tenant_id
+        try:
+            UUID(incident_id)
+        except ValueError as exc:
+            raise ApplicationError("incident_id must be a valid UUID") from exc
         ll = await self._ll.find_by_incident(tenant, incident_id)
         if ll is None:
             raise ApplicationNotFoundError("ll")

@@ -7,7 +7,9 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from threat_hunt.api.dependencies import get_container, roles_header, tenant_id_header
+from redforge.api.security import TenantContext, require_permission
+from redforge.domain.identity.value_objects import Permission
+from threat_hunt.api.dependencies import get_container, tenant_id_header, trusted_roles
 from threat_hunt.application.commands.hunt_commands import (
     GenerateThreatHuntCandidate,
     PromoteThreatHuntCandidate,
@@ -57,8 +59,9 @@ async def health() -> dict[str, str]:
 @router.get("/candidates")
 async def list_candidates(
     tenant_id: TenantId = Depends(tenant_id_header),
-    roles: tuple[str, ...] = Depends(roles_header),
+    roles: tuple[str, ...] = Depends(trusted_roles),
     container: ThreatHuntContainer = Depends(get_container),
+    _tenant: TenantContext = Depends(require_permission(Permission.THREAT_HUNT_READ)),
 ) -> list[dict[str, Any]]:
     try:
         return [asdict(r) for r in await container.app.queue(tenant_id, roles)]
@@ -70,8 +73,9 @@ async def list_candidates(
 async def generate(
     body: GenerateBody,
     tenant_id: TenantId = Depends(tenant_id_header),
-    roles: tuple[str, ...] = Depends(roles_header),
+    roles: tuple[str, ...] = Depends(trusted_roles),
     container: ThreatHuntContainer = Depends(get_container),
+    _tenant: TenantContext = Depends(require_permission(Permission.THREAT_HUNT_MANAGE)),
 ) -> dict[str, Any]:
     try:
         dto = await container.app.generate(
@@ -95,8 +99,9 @@ async def promote(
     candidate_id: UUID,
     body: PromoteBody,
     tenant_id: TenantId = Depends(tenant_id_header),
-    roles: tuple[str, ...] = Depends(roles_header),
+    roles: tuple[str, ...] = Depends(trusted_roles),
     container: ThreatHuntContainer = Depends(get_container),
+    _tenant: TenantContext = Depends(require_permission(Permission.THREAT_HUNT_MANAGE)),
 ) -> dict[str, Any]:
     try:
         dto = await container.app.promote(
@@ -118,8 +123,9 @@ async def reject(
     candidate_id: UUID,
     body: RejectBody,
     tenant_id: TenantId = Depends(tenant_id_header),
-    roles: tuple[str, ...] = Depends(roles_header),
+    roles: tuple[str, ...] = Depends(trusted_roles),
     container: ThreatHuntContainer = Depends(get_container),
+    _tenant: TenantContext = Depends(require_permission(Permission.THREAT_HUNT_MANAGE)),
 ) -> dict[str, Any]:
     try:
         dto = await container.app.reject(

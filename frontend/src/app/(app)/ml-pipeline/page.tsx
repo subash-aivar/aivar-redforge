@@ -4,6 +4,8 @@ import { useState } from "react";
 import {
   AsyncContent,
   DataConsole,
+  FormField,
+  FormModal,
   InvestigationDrawer,
   KpiTile,
   PageHeader,
@@ -440,42 +442,47 @@ function TrainModelModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-sm rounded-xl border border-gray-800 bg-gray-900 p-5">
-        <h3 className="mb-3 text-sm font-semibold text-gray-100">Schedule Model Training</h3>
-        <label className="mb-1 block text-xs text-gray-500">Model Type</label>
-        <select
-          value={modelType}
-          onChange={(e) => setModelType(e.target.value as typeof modelType)}
-          className="mb-3 w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200"
-        >
-          {ML_MODEL_TYPES.map((t) => (
-            <option key={t} value={t}>{t.replace(/_/g, " ")}</option>
-          ))}
-        </select>
-        <label className="mb-1 block text-xs text-gray-500">Dataset ID (optional)</label>
-        <input
-          value={datasetId}
-          onChange={(e) => setDatasetId(e.target.value)}
-          className="mb-4 w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200"
-        />
-        <p className="mb-4 text-[11px] text-gray-600">
-          If no training rows are supplied, synthetic separable data is used to validate the pipeline.
-        </p>
-        {error && <p className="mb-3 text-xs text-red-400">{error}</p>}
-        <div className="flex justify-end gap-2">
-          <button onClick={onClose} className="rounded-md border border-gray-700 px-3 py-1.5 text-xs text-gray-300">
-            Cancel
-          </button>
-          <button
-            disabled={busy}
-            onClick={submit}
-            className="rounded-md border border-red-800 bg-red-950/50 px-3 py-1.5 text-xs text-red-300 hover:bg-red-900/50 disabled:opacity-50"
+    <FormModal title="Schedule Model Training" onClose={onClose}>
+      <div className="space-y-3">
+        <FormField label="Model Type">
+          <select
+            value={modelType}
+            onChange={(e) => setModelType(e.target.value as typeof modelType)}
+            className="w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200"
           >
-            {busy ? "Scheduling…" : "Train"}
-          </button>
-        </div>
+            {ML_MODEL_TYPES.map((t) => (
+              <option key={t} value={t}>{t.replace(/_/g, " ")}</option>
+            ))}
+          </select>
+        </FormField>
+        <FormField
+          label="Dataset ID (optional)"
+          hint="If no training rows are supplied, synthetic separable data is used to validate the pipeline."
+        >
+          <input
+            value={datasetId}
+            onChange={(e) => setDatasetId(e.target.value)}
+            className="w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200"
+          />
+        </FormField>
       </div>
-    </div>
+      {error && (
+        <p role="alert" className="mt-3 text-xs text-red-400">
+          {error}
+        </p>
+      )}
+      <div className="mt-4 flex justify-end gap-2">
+        <button onClick={onClose} className="rounded-md border border-gray-700 px-3 py-1.5 text-xs text-gray-300">
+          Cancel
+        </button>
+        <button
+          disabled={busy}
+          onClick={submit}
+          className="rounded-md border border-red-800 bg-red-950/50 px-3 py-1.5 text-xs text-red-300 hover:bg-red-900/50 disabled:opacity-50"
+        >
+          {busy ? "Scheduling…" : "Train"}
+        </button>
+      </div>
+    </FormModal>
   );
 }

@@ -173,6 +173,170 @@ class Permission(StrEnum):
     INTEGRATION_HUB_READ = "integration_hub:read"
     INTEGRATION_HUB_MANAGE = "integration_hub:manage"
 
+    # threat_actor_intel (M51.1) — ThreatActor is a global reference
+    # model (ADR-M51.1-02); READ covers global/tenant reads, ASSOCIATE
+    # covers a tenant's own association create/retract, ADMIN covers
+    # global ThreatActor register/mutate (platform-admin-tier action).
+    #
+    # ASSOCIATE role placement (M51.1 Phase 4.5 explicit review): granted
+    # to MEMBER as well as ANALYST/SECURITY_MANAGER/ADMIN/OWNER — never
+    # to VIEWER. This mirrors the existing VALIDATIONS_RUN/
+    # AUTHORIZATIONS_CREATE precedent (an operational, tenant-scoped,
+    # reversible action any acting member can perform day to day), NOT
+    # the INVESTIGATIONS_MANAGE/COMPLIANCE_MANAGE precedent (program-
+    # governance actions MEMBER is deliberately denied). Creating/
+    # retracting a tenant's own evidence-backed association neither
+    # mutates the global ThreatActor record nor affects another tenant
+    # — retraction is always available as a correction, so this is a
+    # low-risk, reversible action, unlike security-program lifecycle
+    # changes. ADMIN (global ThreatActor register/mutate) remains
+    # restricted to ADMIN/OWNER/SECURITY_MANAGER only.
+    THREAT_INTEL_READ = "threat_intel:read"
+    THREAT_INTEL_ASSOCIATE = "threat_intel:associate"
+    THREAT_INTEL_ADMIN = "threat_intel:admin"
+
+    # ioc_intelligence (M51.2 Phase A4) — IOC is the canonical observable
+    # IOC domain owner. These three permissions gate TENANT-scoped
+    # operations only: READ (tenant + global reads — reading approved
+    # shared global intelligence is not itself a sensitive operation),
+    # OBSERVE (create a new tenant-scoped IOC observation), MANAGE
+    # (mutate an existing tenant IOC: add source attribution/evidence,
+    # lifecycle transitions, epistemic-state transitions, dispute,
+    # refute, refresh, supersede, revoke). Global IOC observation/
+    # mutation deliberately has NO tenant Permission at all — it is
+    # gated exclusively by `PlatformPermission.PLATFORM_IOC_INTEL_MANAGE`
+    # via `require_platform_permission` (see `redforge.domain.
+    # platform_identity.value_objects`), so no ordinary organization
+    # OWNER/ADMIN/SECURITY_MANAGER membership can ever satisfy it —
+    # only a persisted, active PlatformAssignment can.
+    #
+    # MEMBER is deliberately denied OBSERVE/MANAGE here (unlike
+    # THREAT_INTEL_ASSOCIATE's MEMBER grant) — the M51.2 Phase A4
+    # mission's explicit role matrix names only VIEWER/ANALYST/
+    # SECURITY_MANAGER+ADMIN+OWNER/platform-admin, so MEMBER defaults to
+    # least privilege (READ only) rather than an unreviewed grant.
+    IOC_INTEL_READ = "ioc_intel:read"
+    IOC_INTEL_OBSERVE = "ioc_intel:observe"
+    IOC_INTEL_MANAGE = "ioc_intel:manage"
+
+    # attack_pattern_intel (M51.3 Phase B1) — RedForge-native ATT&CK
+    # pattern intelligence (evidence-first lifecycle, detection
+    # guidance, mitigation references, procedure examples, relationship
+    # metadata, version history) layered over the canonical
+    # `threat_intel` MITRE technique/tactic catalog via an opaque
+    # technique_id reference. These three permissions gate TENANT-scoped
+    # operations only, mirroring `IOC_INTEL_READ/OBSERVE/MANAGE`'s exact
+    # split: READ (tenant + global reads), OBSERVE (create a new
+    # tenant-scoped AttackPattern), MANAGE (mutate an existing tenant
+    # AttackPattern: add guidance/mitigation/procedure/relationship,
+    # lifecycle transitions). Global AttackPattern observation/mutation
+    # has NO tenant Permission at all — gated exclusively by
+    # `PlatformPermission.PLATFORM_ATTACK_PATTERN_MANAGE`.
+    ATTACK_PATTERN_READ = "attack_pattern_intel:read"
+    ATTACK_PATTERN_OBSERVE = "attack_pattern_intel:observe"
+    ATTACK_PATTERN_MANAGE = "attack_pattern_intel:manage"
+
+    # Intelligence Relationships (M51.4 Phase C1) — RedForge-native,
+    # typed, evidence-first edges between threat intelligence entities
+    # (IOC, malware, tool, threat actor, campaign, attack pattern,
+    # infrastructure). These three permissions gate TENANT-scoped
+    # operations only, mirroring `ATTACK_PATTERN_READ/OBSERVE/MANAGE`'s
+    # exact split: READ (tenant + global reads), OBSERVE (create a new
+    # tenant-scoped relationship), MANAGE (mutate an existing tenant
+    # relationship: add evidence/attribution, epistemic transitions,
+    # lifecycle transitions). Global relationship observation/mutation
+    # has NO tenant Permission at all — gated exclusively by
+    # `PlatformPermission.PLATFORM_RELATIONSHIP_MANAGE`.
+    RELATIONSHIP_READ = "intelligence_relationships:read"
+    RELATIONSHIP_OBSERVE = "intelligence_relationships:observe"
+    RELATIONSHIP_MANAGE = "intelligence_relationships:manage"
+
+    # Malware Intelligence (M51.5 Phase D1) — RedForge-native malware
+    # identity, family/variant taxonomy, aliases, platforms,
+    # capabilities, evidence-first lifecycle and version history. These
+    # three permissions gate TENANT-scoped operations only, mirroring
+    # `ATTACK_PATTERN_READ/OBSERVE/MANAGE`'s exact split: READ (tenant +
+    # global reads), OBSERVE (create a new tenant-scoped Malware),
+    # MANAGE (mutate an existing tenant Malware: add alias/platform/
+    # capability/citation/attribution, lifecycle transitions). Global
+    # Malware observation/mutation has NO tenant Permission at all —
+    # gated exclusively by
+    # `PlatformPermission.PLATFORM_MALWARE_MANAGE`.
+    MALWARE_READ = "malware_intel:read"
+    MALWARE_OBSERVE = "malware_intel:observe"
+    MALWARE_MANAGE = "malware_intel:manage"
+
+    # Adversary-Campaign Intelligence (campaign_intel). Threat-intel
+    # records of REAL-WORLD adversary campaigns — NOT RedForge's own
+    # red-team campaign orchestration (`src/campaign`), which is an
+    # unrelated bounded context with its own permissions. These three
+    # gate TENANT-scoped operations only, mirroring `MALWARE_READ/
+    # OBSERVE/MANAGE`'s exact split: READ (tenant + global reads),
+    # OBSERVE (create a new tenant-scoped Campaign), MANAGE (mutate an
+    # existing tenant Campaign: add alias/objective/region/sector/
+    # citation/attribution, real-world status transitions, record
+    # lifecycle transitions). Global Campaign observation/mutation has
+    # NO tenant Permission at all — gated exclusively by
+    # `PlatformPermission.PLATFORM_CAMPAIGN_MANAGE`.
+    CAMPAIGN_READ = "campaign_intel:read"
+    CAMPAIGN_OBSERVE = "campaign_intel:observe"
+    CAMPAIGN_MANAGE = "campaign_intel:manage"
+
+    # Adversary-Tool Intelligence (M51.5 Phase D3). Governs RedForge's
+    # own threat-intelligence records of ADVERSARY TOOLS (Mimikatz,
+    # Cobalt Strike, PsExec) — NOT AI-agent function/tool-calling
+    # (`redforge.domain.agents`), which is an unrelated concept that
+    # merely shares the English word "tool". These three gate
+    # TENANT-scoped operations only, mirroring `CAMPAIGN_READ/OBSERVE/
+    # MANAGE`'s exact split: READ (tenant + global reads), OBSERVE
+    # (create a new tenant-scoped Tool), MANAGE (mutate an existing
+    # tenant Tool: add alias/platform/capability/citation/attribution,
+    # record lifecycle transitions). Global Tool observation/mutation
+    # has NO tenant Permission at all — gated exclusively by
+    # `PlatformPermission.PLATFORM_TOOL_MANAGE`.
+    TOOL_READ = "tool_intel:read"
+    TOOL_OBSERVE = "tool_intel:observe"
+    TOOL_MANAGE = "tool_intel:manage"
+
+    # Adversary-Infrastructure Intelligence — RedForge's own
+    # threat-intelligence records of the HOSTING / OWNERSHIP FOOTPRINT
+    # ENTITY behind adversary infrastructure (an ASN, a hosting
+    # provider, a cloud tenancy, or a domain/IP/URL considered AS
+    # INFRASTRUCTURE). NOT atomic indicator observations — those remain
+    # `ioc_intelligence`'s (IOC_INTEL_*). NOT RedForge's own scanned
+    # attack surface (`attack_surface_management`), cloud account
+    # registrations (`cloud_security`) or AI asset inventory, all of
+    # which are unrelated concepts. These three gate TENANT-scoped
+    # operations only, mirroring `TOOL_READ/OBSERVE/MANAGE`'s exact
+    # split: READ (tenant + global reads), OBSERVE (create a new
+    # tenant-scoped Infrastructure record), MANAGE (mutate an existing
+    # tenant record: set hosting/cloud provider, add region, set
+    # network ownership, add citation/attribution, record lifecycle
+    # transitions). Global observation/mutation has NO tenant
+    # Permission at all — gated exclusively by
+    # `PlatformPermission.PLATFORM_INFRASTRUCTURE_MANAGE`.
+    INFRASTRUCTURE_READ = "infrastructure_intel:read"
+    INFRASTRUCTURE_OBSERVE = "infrastructure_intel:observe"
+    INFRASTRUCTURE_MANAGE = "infrastructure_intel:manage"
+
+    # Threat-Report Intelligence — RedForge's own catalogue records OF
+    # PUBLISHED THREAT-INTELLIGENCE REPORTS (a vendor advisory, a CERT
+    # flash, a research analysis: who published it, when, under what TLP
+    # marking). NOT RedForge's own generated reports (`reporting` /
+    # `analytics`) and NOT outbound regulatory filings
+    # (`regulatory_notification`), which are unrelated concepts sharing
+    # the English word "report". These three gate TENANT-scoped
+    # operations only, mirroring `INFRASTRUCTURE_READ/OBSERVE/MANAGE`'s
+    # exact split: READ (tenant + global reads), OBSERVE (create a new
+    # tenant-scoped ThreatReport record), MANAGE (mutate an existing
+    # tenant record: add reference/citation/attribution, record
+    # lifecycle transitions). Global observation/mutation has NO tenant
+    # Permission at all — gated exclusively by
+    # `PlatformPermission.PLATFORM_THREAT_REPORT_MANAGE`.
+    THREAT_REPORT_READ = "threat_report_intel:read"
+    THREAT_REPORT_OBSERVE = "threat_report_intel:observe"
+    THREAT_REPORT_MANAGE = "threat_report_intel:manage"
+
 
 @unique
 class MembershipRole(StrEnum):
@@ -226,190 +390,299 @@ class MembershipRole(StrEnum):
 # feature is actually built, not a rewrite of the enforcement path.
 ROLE_PERMISSIONS: dict[MembershipRole, frozenset[Permission]] = {
     MembershipRole.OWNER: frozenset(Permission),
-    MembershipRole.ADMIN: frozenset({
-        Permission.ORG_READ,
-        Permission.ORG_MANAGE,
-        Permission.MEMBERS_READ,
-        Permission.MEMBERS_INVITE,
-        Permission.MEMBERS_MANAGE,
-        Permission.TARGETS_READ,
-        Permission.TARGETS_CREATE,
-        Permission.TARGETS_MANAGE,
-        Permission.VALIDATIONS_READ,
-        Permission.VALIDATIONS_RUN,
-        Permission.VALIDATIONS_MANAGE,
-        Permission.EVIDENCE_READ,
-        Permission.FINDINGS_READ,
-        Permission.AUTHORIZATIONS_READ,
-        Permission.AUTHORIZATIONS_CREATE,
-        Permission.AUTHORIZATIONS_APPROVE,
-        Permission.AUTHORIZATIONS_APPROVE_CREDENTIAL,
-        Permission.AUTHORIZATIONS_EVALUATE,
-        Permission.SECURITY_OPERATIONS_READ,
-        Permission.NETWORK_SECURITY_READ,
-        Permission.NETWORK_SECURITY_MANAGE,
-        Permission.ROLES_READ,
-        Permission.ROLES_MANAGE,
-        Permission.GROUPS_READ,
-        Permission.GROUPS_MANAGE,
-        Permission.DDOS_READ,
-        Permission.DDOS_MANAGE,
-        Permission.DDOS_MITIGATION_APPROVE,
-        Permission.BEHAVIOR_READ,
-        Permission.BEHAVIOR_MANAGE,
-        Permission.INVESTIGATIONS_READ,
-        Permission.INVESTIGATIONS_MANAGE,
-        Permission.COMPLIANCE_READ,
-        Permission.COMPLIANCE_MANAGE,
-        Permission.REDTEAM_READER,
-        Permission.REDTEAM_ANALYST,
-        Permission.REDTEAM_OPERATOR,
-        Permission.REDTEAM_PLANNER,
-        Permission.REDTEAM_APPROVER,
-        Permission.REDTEAM_ADMIN,
-        Permission.REDTEAM_CISO,
-        Permission.REDTEAM_AUDITOR,
-        Permission.INCIDENT_READ,
-        Permission.INCIDENT_MANAGE,
-        Permission.THREAT_HUNT_READ,
-        Permission.THREAT_HUNT_MANAGE,
-        Permission.ANALYTICS_READ,
-        Permission.ANALYTICS_MANAGE,
-        Permission.PLAYBOOKS_READ,
-        Permission.PLAYBOOKS_MANAGE,
-        Permission.AI_POSTURE_READ,
-        Permission.AI_POSTURE_MANAGE,
-        Permission.INTEGRATION_HUB_READ,
-        Permission.INTEGRATION_HUB_MANAGE,
-    }),
-    MembershipRole.SECURITY_MANAGER: frozenset({
-        Permission.ORG_READ,
-        Permission.MEMBERS_READ,
-        Permission.TARGETS_READ,
-        Permission.TARGETS_CREATE,
-        Permission.TARGETS_MANAGE,
-        Permission.VALIDATIONS_READ,
-        Permission.VALIDATIONS_RUN,
-        Permission.VALIDATIONS_MANAGE,
-        Permission.EVIDENCE_READ,
-        Permission.FINDINGS_READ,
-        Permission.AUTHORIZATIONS_READ,
-        Permission.AUTHORIZATIONS_CREATE,
-        Permission.AUTHORIZATIONS_APPROVE,
-        Permission.AUTHORIZATIONS_EVALUATE,
-        Permission.SECURITY_OPERATIONS_READ,
-        Permission.NETWORK_SECURITY_READ,
-        Permission.NETWORK_SECURITY_MANAGE,
-        Permission.DDOS_READ,
-        Permission.DDOS_MANAGE,
-        Permission.DDOS_MITIGATION_APPROVE,
-        Permission.BEHAVIOR_READ,
-        Permission.BEHAVIOR_MANAGE,
-        Permission.INVESTIGATIONS_READ,
-        Permission.INVESTIGATIONS_MANAGE,
-        Permission.COMPLIANCE_READ,
-        Permission.COMPLIANCE_MANAGE,
-        Permission.REDTEAM_READER,
-        Permission.REDTEAM_ANALYST,
-        Permission.REDTEAM_OPERATOR,
-        Permission.REDTEAM_PLANNER,
-        Permission.REDTEAM_APPROVER,
-        Permission.REDTEAM_ADMIN,
-        Permission.REDTEAM_AUDITOR,
-        Permission.INCIDENT_READ,
-        Permission.INCIDENT_MANAGE,
-        Permission.THREAT_HUNT_READ,
-        Permission.THREAT_HUNT_MANAGE,
-        Permission.ANALYTICS_READ,
-        Permission.ANALYTICS_MANAGE,
-        Permission.PLAYBOOKS_READ,
-        Permission.PLAYBOOKS_MANAGE,
-        Permission.AI_POSTURE_READ,
-        Permission.AI_POSTURE_MANAGE,
-        Permission.INTEGRATION_HUB_READ,
-        Permission.INTEGRATION_HUB_MANAGE,
-    }),
-    MembershipRole.ANALYST: frozenset({
-        Permission.ORG_READ,
-        Permission.MEMBERS_READ,
-        Permission.TARGETS_READ,
-        Permission.VALIDATIONS_READ,
-        Permission.VALIDATIONS_RUN,
-        Permission.EVIDENCE_READ,
-        Permission.FINDINGS_READ,
-        Permission.AUTHORIZATIONS_READ,
-        Permission.AUTHORIZATIONS_CREATE,
-        Permission.AUTHORIZATIONS_EVALUATE,
-        Permission.SECURITY_OPERATIONS_READ,
-        Permission.NETWORK_SECURITY_READ,
-        Permission.DDOS_READ,
-        Permission.BEHAVIOR_READ,
-        Permission.INVESTIGATIONS_READ,
-        Permission.COMPLIANCE_READ,
-        Permission.COMPLIANCE_MANAGE,
-        Permission.REDTEAM_READER,
-        Permission.REDTEAM_ANALYST,
-        Permission.REDTEAM_OPERATOR,
-        Permission.REDTEAM_PLANNER,
-        Permission.REDTEAM_AUDITOR,
-        Permission.INCIDENT_READ,
-        Permission.THREAT_HUNT_READ,
-        Permission.ANALYTICS_READ,
-        Permission.PLAYBOOKS_READ,
-        Permission.AI_POSTURE_READ,
-        Permission.INTEGRATION_HUB_READ,
-    }),
-    MembershipRole.MEMBER: frozenset({
-        Permission.ORG_READ,
-        Permission.MEMBERS_READ,
-        Permission.TARGETS_READ,
-        Permission.TARGETS_CREATE,
-        Permission.VALIDATIONS_READ,
-        Permission.VALIDATIONS_RUN,
-        Permission.EVIDENCE_READ,
-        Permission.FINDINGS_READ,
-        Permission.AUTHORIZATIONS_READ,
-        Permission.AUTHORIZATIONS_CREATE,
-        Permission.AUTHORIZATIONS_EVALUATE,
-        Permission.SECURITY_OPERATIONS_READ,
-        Permission.NETWORK_SECURITY_READ,
-        Permission.DDOS_READ,
-        Permission.BEHAVIOR_READ,
-        Permission.INVESTIGATIONS_READ,
-        Permission.COMPLIANCE_READ,
-        Permission.REDTEAM_READER,
-        Permission.REDTEAM_ANALYST,
-        Permission.REDTEAM_OPERATOR,
-        Permission.REDTEAM_AUDITOR,
-        Permission.INCIDENT_READ,
-        Permission.THREAT_HUNT_READ,
-        Permission.ANALYTICS_READ,
-        Permission.PLAYBOOKS_READ,
-        Permission.AI_POSTURE_READ,
-        Permission.INTEGRATION_HUB_READ,
-    }),
-    MembershipRole.VIEWER: frozenset({
-        Permission.ORG_READ,
-        Permission.MEMBERS_READ,
-        Permission.TARGETS_READ,
-        Permission.VALIDATIONS_READ,
-        Permission.EVIDENCE_READ,
-        Permission.FINDINGS_READ,
-        Permission.AUTHORIZATIONS_READ,
-        Permission.SECURITY_OPERATIONS_READ,
-        Permission.NETWORK_SECURITY_READ,
-        Permission.DDOS_READ,
-        Permission.BEHAVIOR_READ,
-        Permission.INVESTIGATIONS_READ,
-        Permission.COMPLIANCE_READ,
-        Permission.REDTEAM_READER,
-        Permission.REDTEAM_AUDITOR,
-        Permission.INCIDENT_READ,
-        Permission.THREAT_HUNT_READ,
-        Permission.ANALYTICS_READ,
-        Permission.AI_POSTURE_READ,
-        Permission.INTEGRATION_HUB_READ,
-    }),
+    MembershipRole.ADMIN: frozenset(
+        {
+            Permission.ORG_READ,
+            Permission.ORG_MANAGE,
+            Permission.MEMBERS_READ,
+            Permission.MEMBERS_INVITE,
+            Permission.MEMBERS_MANAGE,
+            Permission.TARGETS_READ,
+            Permission.TARGETS_CREATE,
+            Permission.TARGETS_MANAGE,
+            Permission.VALIDATIONS_READ,
+            Permission.VALIDATIONS_RUN,
+            Permission.VALIDATIONS_MANAGE,
+            Permission.EVIDENCE_READ,
+            Permission.FINDINGS_READ,
+            Permission.AUTHORIZATIONS_READ,
+            Permission.AUTHORIZATIONS_CREATE,
+            Permission.AUTHORIZATIONS_APPROVE,
+            Permission.AUTHORIZATIONS_APPROVE_CREDENTIAL,
+            Permission.AUTHORIZATIONS_EVALUATE,
+            Permission.SECURITY_OPERATIONS_READ,
+            Permission.NETWORK_SECURITY_READ,
+            Permission.NETWORK_SECURITY_MANAGE,
+            Permission.ROLES_READ,
+            Permission.ROLES_MANAGE,
+            Permission.GROUPS_READ,
+            Permission.GROUPS_MANAGE,
+            Permission.DDOS_READ,
+            Permission.DDOS_MANAGE,
+            Permission.DDOS_MITIGATION_APPROVE,
+            Permission.BEHAVIOR_READ,
+            Permission.BEHAVIOR_MANAGE,
+            Permission.INVESTIGATIONS_READ,
+            Permission.INVESTIGATIONS_MANAGE,
+            Permission.COMPLIANCE_READ,
+            Permission.COMPLIANCE_MANAGE,
+            Permission.REDTEAM_READER,
+            Permission.REDTEAM_ANALYST,
+            Permission.REDTEAM_OPERATOR,
+            Permission.REDTEAM_PLANNER,
+            Permission.REDTEAM_APPROVER,
+            Permission.REDTEAM_ADMIN,
+            Permission.REDTEAM_CISO,
+            Permission.REDTEAM_AUDITOR,
+            Permission.INCIDENT_READ,
+            Permission.INCIDENT_MANAGE,
+            Permission.THREAT_HUNT_READ,
+            Permission.THREAT_HUNT_MANAGE,
+            Permission.ANALYTICS_READ,
+            Permission.ANALYTICS_MANAGE,
+            Permission.PLAYBOOKS_READ,
+            Permission.PLAYBOOKS_MANAGE,
+            Permission.AI_POSTURE_READ,
+            Permission.AI_POSTURE_MANAGE,
+            Permission.INTEGRATION_HUB_READ,
+            Permission.INTEGRATION_HUB_MANAGE,
+            Permission.THREAT_INTEL_READ,
+            Permission.THREAT_INTEL_ASSOCIATE,
+            Permission.THREAT_INTEL_ADMIN,
+            Permission.IOC_INTEL_READ,
+            Permission.IOC_INTEL_OBSERVE,
+            Permission.IOC_INTEL_MANAGE,
+            Permission.ATTACK_PATTERN_READ,
+            Permission.ATTACK_PATTERN_OBSERVE,
+            Permission.ATTACK_PATTERN_MANAGE,
+            Permission.RELATIONSHIP_READ,
+            Permission.RELATIONSHIP_OBSERVE,
+            Permission.RELATIONSHIP_MANAGE,
+            Permission.MALWARE_READ,
+            Permission.MALWARE_OBSERVE,
+            Permission.MALWARE_MANAGE,
+            Permission.CAMPAIGN_READ,
+            Permission.CAMPAIGN_OBSERVE,
+            Permission.CAMPAIGN_MANAGE,
+            Permission.TOOL_READ,
+            Permission.TOOL_OBSERVE,
+            Permission.TOOL_MANAGE,
+            Permission.INFRASTRUCTURE_READ,
+            Permission.INFRASTRUCTURE_OBSERVE,
+            Permission.INFRASTRUCTURE_MANAGE,
+            Permission.THREAT_REPORT_READ,
+            Permission.THREAT_REPORT_OBSERVE,
+            Permission.THREAT_REPORT_MANAGE,
+        }
+    ),
+    MembershipRole.SECURITY_MANAGER: frozenset(
+        {
+            Permission.ORG_READ,
+            Permission.MEMBERS_READ,
+            Permission.TARGETS_READ,
+            Permission.TARGETS_CREATE,
+            Permission.TARGETS_MANAGE,
+            Permission.VALIDATIONS_READ,
+            Permission.VALIDATIONS_RUN,
+            Permission.VALIDATIONS_MANAGE,
+            Permission.EVIDENCE_READ,
+            Permission.FINDINGS_READ,
+            Permission.AUTHORIZATIONS_READ,
+            Permission.AUTHORIZATIONS_CREATE,
+            Permission.AUTHORIZATIONS_APPROVE,
+            Permission.AUTHORIZATIONS_EVALUATE,
+            Permission.SECURITY_OPERATIONS_READ,
+            Permission.NETWORK_SECURITY_READ,
+            Permission.NETWORK_SECURITY_MANAGE,
+            Permission.DDOS_READ,
+            Permission.DDOS_MANAGE,
+            Permission.DDOS_MITIGATION_APPROVE,
+            Permission.BEHAVIOR_READ,
+            Permission.BEHAVIOR_MANAGE,
+            Permission.INVESTIGATIONS_READ,
+            Permission.INVESTIGATIONS_MANAGE,
+            Permission.COMPLIANCE_READ,
+            Permission.COMPLIANCE_MANAGE,
+            Permission.REDTEAM_READER,
+            Permission.REDTEAM_ANALYST,
+            Permission.REDTEAM_OPERATOR,
+            Permission.REDTEAM_PLANNER,
+            Permission.REDTEAM_APPROVER,
+            Permission.REDTEAM_ADMIN,
+            Permission.REDTEAM_AUDITOR,
+            Permission.INCIDENT_READ,
+            Permission.INCIDENT_MANAGE,
+            Permission.THREAT_HUNT_READ,
+            Permission.THREAT_HUNT_MANAGE,
+            Permission.ANALYTICS_READ,
+            Permission.ANALYTICS_MANAGE,
+            Permission.PLAYBOOKS_READ,
+            Permission.PLAYBOOKS_MANAGE,
+            Permission.AI_POSTURE_READ,
+            Permission.AI_POSTURE_MANAGE,
+            Permission.INTEGRATION_HUB_READ,
+            Permission.INTEGRATION_HUB_MANAGE,
+            Permission.THREAT_INTEL_READ,
+            Permission.THREAT_INTEL_ASSOCIATE,
+            Permission.THREAT_INTEL_ADMIN,
+            Permission.IOC_INTEL_READ,
+            Permission.IOC_INTEL_OBSERVE,
+            Permission.IOC_INTEL_MANAGE,
+            Permission.ATTACK_PATTERN_READ,
+            Permission.ATTACK_PATTERN_OBSERVE,
+            Permission.ATTACK_PATTERN_MANAGE,
+            Permission.RELATIONSHIP_READ,
+            Permission.RELATIONSHIP_OBSERVE,
+            Permission.RELATIONSHIP_MANAGE,
+            Permission.MALWARE_READ,
+            Permission.MALWARE_OBSERVE,
+            Permission.MALWARE_MANAGE,
+            Permission.CAMPAIGN_READ,
+            Permission.CAMPAIGN_OBSERVE,
+            Permission.CAMPAIGN_MANAGE,
+            Permission.TOOL_READ,
+            Permission.TOOL_OBSERVE,
+            Permission.TOOL_MANAGE,
+            Permission.INFRASTRUCTURE_READ,
+            Permission.INFRASTRUCTURE_OBSERVE,
+            Permission.INFRASTRUCTURE_MANAGE,
+            Permission.THREAT_REPORT_READ,
+            Permission.THREAT_REPORT_OBSERVE,
+            Permission.THREAT_REPORT_MANAGE,
+        }
+    ),
+    MembershipRole.ANALYST: frozenset(
+        {
+            Permission.ORG_READ,
+            Permission.MEMBERS_READ,
+            Permission.TARGETS_READ,
+            Permission.VALIDATIONS_READ,
+            Permission.VALIDATIONS_RUN,
+            Permission.EVIDENCE_READ,
+            Permission.FINDINGS_READ,
+            Permission.AUTHORIZATIONS_READ,
+            Permission.AUTHORIZATIONS_CREATE,
+            Permission.AUTHORIZATIONS_EVALUATE,
+            Permission.SECURITY_OPERATIONS_READ,
+            Permission.NETWORK_SECURITY_READ,
+            Permission.DDOS_READ,
+            Permission.BEHAVIOR_READ,
+            Permission.INVESTIGATIONS_READ,
+            Permission.COMPLIANCE_READ,
+            Permission.COMPLIANCE_MANAGE,
+            Permission.REDTEAM_READER,
+            Permission.REDTEAM_ANALYST,
+            Permission.REDTEAM_OPERATOR,
+            Permission.REDTEAM_PLANNER,
+            Permission.REDTEAM_AUDITOR,
+            Permission.INCIDENT_READ,
+            Permission.THREAT_HUNT_READ,
+            Permission.ANALYTICS_READ,
+            Permission.PLAYBOOKS_READ,
+            Permission.AI_POSTURE_READ,
+            Permission.INTEGRATION_HUB_READ,
+            Permission.THREAT_INTEL_READ,
+            Permission.THREAT_INTEL_ASSOCIATE,
+            Permission.IOC_INTEL_READ,
+            Permission.IOC_INTEL_OBSERVE,
+            Permission.IOC_INTEL_MANAGE,
+            Permission.ATTACK_PATTERN_READ,
+            Permission.ATTACK_PATTERN_OBSERVE,
+            Permission.ATTACK_PATTERN_MANAGE,
+            Permission.RELATIONSHIP_READ,
+            Permission.RELATIONSHIP_OBSERVE,
+            Permission.RELATIONSHIP_MANAGE,
+            Permission.MALWARE_READ,
+            Permission.MALWARE_OBSERVE,
+            Permission.MALWARE_MANAGE,
+            Permission.CAMPAIGN_READ,
+            Permission.CAMPAIGN_OBSERVE,
+            Permission.CAMPAIGN_MANAGE,
+            Permission.TOOL_READ,
+            Permission.TOOL_OBSERVE,
+            Permission.TOOL_MANAGE,
+            Permission.INFRASTRUCTURE_READ,
+            Permission.INFRASTRUCTURE_OBSERVE,
+            Permission.INFRASTRUCTURE_MANAGE,
+            Permission.THREAT_REPORT_READ,
+            Permission.THREAT_REPORT_OBSERVE,
+            Permission.THREAT_REPORT_MANAGE,
+        }
+    ),
+    MembershipRole.MEMBER: frozenset(
+        {
+            Permission.ORG_READ,
+            Permission.MEMBERS_READ,
+            Permission.TARGETS_READ,
+            Permission.TARGETS_CREATE,
+            Permission.VALIDATIONS_READ,
+            Permission.VALIDATIONS_RUN,
+            Permission.EVIDENCE_READ,
+            Permission.FINDINGS_READ,
+            Permission.AUTHORIZATIONS_READ,
+            Permission.AUTHORIZATIONS_CREATE,
+            Permission.AUTHORIZATIONS_EVALUATE,
+            Permission.SECURITY_OPERATIONS_READ,
+            Permission.NETWORK_SECURITY_READ,
+            Permission.DDOS_READ,
+            Permission.BEHAVIOR_READ,
+            Permission.INVESTIGATIONS_READ,
+            Permission.COMPLIANCE_READ,
+            Permission.REDTEAM_READER,
+            Permission.REDTEAM_ANALYST,
+            Permission.REDTEAM_OPERATOR,
+            Permission.REDTEAM_AUDITOR,
+            Permission.INCIDENT_READ,
+            Permission.THREAT_HUNT_READ,
+            Permission.ANALYTICS_READ,
+            Permission.PLAYBOOKS_READ,
+            Permission.AI_POSTURE_READ,
+            Permission.INTEGRATION_HUB_READ,
+            Permission.THREAT_INTEL_READ,
+            Permission.THREAT_INTEL_ASSOCIATE,
+            Permission.IOC_INTEL_READ,
+            Permission.ATTACK_PATTERN_READ,
+            Permission.RELATIONSHIP_READ,
+            Permission.MALWARE_READ,
+            Permission.CAMPAIGN_READ,
+            Permission.TOOL_READ,
+            Permission.INFRASTRUCTURE_READ,
+            Permission.THREAT_REPORT_READ,
+        }
+    ),
+    MembershipRole.VIEWER: frozenset(
+        {
+            Permission.ORG_READ,
+            Permission.MEMBERS_READ,
+            Permission.TARGETS_READ,
+            Permission.VALIDATIONS_READ,
+            Permission.EVIDENCE_READ,
+            Permission.FINDINGS_READ,
+            Permission.AUTHORIZATIONS_READ,
+            Permission.SECURITY_OPERATIONS_READ,
+            Permission.NETWORK_SECURITY_READ,
+            Permission.DDOS_READ,
+            Permission.BEHAVIOR_READ,
+            Permission.INVESTIGATIONS_READ,
+            Permission.COMPLIANCE_READ,
+            Permission.REDTEAM_READER,
+            Permission.REDTEAM_AUDITOR,
+            Permission.INCIDENT_READ,
+            Permission.THREAT_HUNT_READ,
+            Permission.ANALYTICS_READ,
+            Permission.AI_POSTURE_READ,
+            Permission.INTEGRATION_HUB_READ,
+            Permission.THREAT_INTEL_READ,
+            Permission.IOC_INTEL_READ,
+            Permission.ATTACK_PATTERN_READ,
+            Permission.RELATIONSHIP_READ,
+            Permission.MALWARE_READ,
+            Permission.CAMPAIGN_READ,
+            Permission.TOOL_READ,
+            Permission.INFRASTRUCTURE_READ,
+            Permission.THREAT_REPORT_READ,
+        }
+    ),
 }
 
 

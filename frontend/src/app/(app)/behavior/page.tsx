@@ -1,7 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, useCallback } from "react";
+import { useState, useCallback } from "react";
+import { useLivePoll } from "@/lib/useLivePoll";
+import { RealtimeTimestamp } from "@/components/platform/LiveIndicators";
+import { PageHeader } from "@/components/cc";
 import {
   getBehaviorPosture,
   listDetections,
@@ -112,11 +115,7 @@ export default function BehaviorOverviewPage() {
     }
   }, []);
 
-  useEffect(() => {
-    load();
-    const iv = setInterval(load, 30_000);
-    return () => clearInterval(iv);
-  }, [load]);
+  useLivePoll(load, 30_000);
 
   if (loading) {
     return (
@@ -153,48 +152,45 @@ export default function BehaviorOverviewPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-white">NDR Operations Center</h1>
-            <div className="flex items-center gap-1.5 rounded-full border border-emerald-700 bg-emerald-950 px-2.5 py-1 text-xs font-medium text-emerald-400">
-              <LivePulse />
-              LIVE
+      <PageHeader
+        title="NDR Operations Center"
+        subtitle="Behavioral anomaly detection — evidence-driven, no fabricated signals"
+        actions={
+          <div className="text-right">
+            <div className="flex items-center justify-end gap-2">
+              <div className="flex items-center gap-1.5 rounded-full border border-emerald-700 bg-emerald-950 px-2.5 py-1 text-xs font-medium text-emerald-400">
+                <LivePulse />
+                LIVE
+              </div>
+              {lastRefresh && (
+                <div className="text-xs text-gray-600">
+                  <RealtimeTimestamp iso={lastRefresh.toISOString()} prefix="Updated " />
+                </div>
+              )}
+            </div>
+            <div className="mt-1 flex gap-2">
+              <Link
+                href="/behavior/detections"
+                className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-1.5 text-xs font-medium text-gray-300 hover:bg-gray-800"
+              >
+                All Detections
+              </Link>
+              <Link
+                href="/behavior/entities"
+                className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-1.5 text-xs font-medium text-gray-300 hover:bg-gray-800"
+              >
+                Entity Risk
+              </Link>
+              <Link
+                href="/behavior/network"
+                className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-1.5 text-xs font-medium text-gray-300 hover:bg-gray-800"
+              >
+                Network Graph
+              </Link>
             </div>
           </div>
-          <p className="mt-1 text-sm text-gray-400">
-            Behavioral anomaly detection — evidence-driven, no fabricated signals
-          </p>
-        </div>
-        <div className="text-right">
-          {lastRefresh && (
-            <div className="text-xs text-gray-600">
-              Updated {lastRefresh.toLocaleTimeString()}
-            </div>
-          )}
-          <div className="mt-1 flex gap-2">
-            <Link
-              href="/behavior/detections"
-              className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-1.5 text-xs font-medium text-gray-300 hover:bg-gray-800"
-            >
-              All Detections
-            </Link>
-            <Link
-              href="/behavior/entities"
-              className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-1.5 text-xs font-medium text-gray-300 hover:bg-gray-800"
-            >
-              Entity Risk
-            </Link>
-            <Link
-              href="/behavior/network"
-              className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-1.5 text-xs font-medium text-gray-300 hover:bg-gray-800"
-            >
-              Network Graph
-            </Link>
-          </div>
-        </div>
-      </div>
+        }
+      />
 
       {/* Global Posture Header */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-6">

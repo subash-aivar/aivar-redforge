@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import { FormField, FormModal } from "@/components/cc";
 import { stepUp } from "@/lib/platform";
 
 /**
@@ -13,20 +14,35 @@ import { stepUp } from "@/lib/platform";
 export function useStepUp() {
   const [open, setOpen] = useState(false);
   const [code, setCode] = useState("");
+  const [codeError, setCodeError] = useState("");
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
   const resolverRef = useRef<((token: string | null) => void) | null>(null);
+  const codeInputRef = useRef<HTMLInputElement>(null);
 
   const requestStepUp = useCallback((): Promise<string | null> => {
     setOpen(true);
     setCode("");
+    setCodeError("");
     setError("");
     return new Promise((resolve) => {
       resolverRef.current = resolve;
     });
   }, []);
 
-  async function confirm() {
+  function cancel() {
+    setOpen(false);
+    resolverRef.current?.(null);
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (code.trim().length < 6) {
+      setCodeError("Enter your current 6-digit MFA code.");
+      codeInputRef.current?.focus();
+      return;
+    }
+    setCodeError("");
     setPending(true);
     setError("");
     try {
@@ -41,43 +57,56 @@ export function useStepUp() {
     }
   }
 
-  function cancel() {
-    setOpen(false);
-    resolverRef.current?.(null);
-  }
-
   const modal = open ? (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div className="w-full max-w-sm rounded-xl border border-purple-800 bg-gray-900 p-6">
+    <FormModal
+      title="Step-up verification required"
+      onClose={cancel}
+      hideTitle
+      contentClassName="w-full max-w-sm rounded-xl border border-purple-800 bg-gray-900 p-6"
+    >
+      <form onSubmit={handleSubmit} noValidate>
         <h3 className="text-lg font-semibold text-white">Step-up verification required</h3>
         <p className="mt-1 text-sm text-gray-400">
           This is a high-impact action. Enter your current MFA code to continue.
         </p>
-        <input
-          value={code}
-          onChange={(e) => setCode(e.target.value)}
-          placeholder="6-digit code"
-          autoFocus
-          className="mt-4 w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none"
-        />
-        {error && <div className="mt-2 text-sm text-red-400">{error}</div>}
+        <div className="mt-4">
+          <FormField label="MFA code" required error={codeError || undefined}>
+            <input
+              ref={codeInputRef}
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              placeholder="6-digit code"
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={6}
+              className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none"
+            />
+          </FormField>
+        </div>
+        {error && (
+          <p role="alert" className="mt-2 text-sm text-red-400">
+            {error}
+          </p>
+        )}
         <div className="mt-4 flex gap-3">
           <button
-            onClick={confirm}
+            type="submit"
             disabled={pending || code.length < 6}
             className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-500 disabled:opacity-50"
           >
             {pending ? "Verifying…" : "Verify"}
           </button>
           <button
+            type="button"
             onClick={cancel}
             className="rounded-lg border border-gray-700 px-4 py-2 text-sm text-gray-400 hover:text-white"
           >
             Cancel
           </button>
         </div>
-      </div>
-    </div>
+      </form>
+    </FormModal>
   ) : null;
 
   return { requestStepUp, stepUpModal: modal };

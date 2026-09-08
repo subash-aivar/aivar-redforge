@@ -67,7 +67,10 @@
   .animate-scan-line,
   .animate-fade-in-up,
   .animate-ring-pop,
-  .animate-check-draw {
+  .animate-check-draw,
+  .animate-pulse,
+  .animate-spin,
+  .animate-bounce {
     animation: none !important;
   }
 }

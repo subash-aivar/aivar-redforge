@@ -11,11 +11,15 @@ domain entity and value object in RedForge depends on:
 
 from redforge.shared.entity import BaseEntity
 from redforge.shared.identifiers import EntityId
+from redforge.shared.ioc_vocabulary import IOC_INTERNAL_SOURCE_SYSTEM, IndicatorType, ProviderName
 from redforge.shared.timestamps import AuditTimestamps, utc_now
 
 __all__ = [
+    "IOC_INTERNAL_SOURCE_SYSTEM",
     "AuditTimestamps",
     "BaseEntity",
     "EntityId",
+    "IndicatorType",
+    "ProviderName",
     "utc_now",
 ]

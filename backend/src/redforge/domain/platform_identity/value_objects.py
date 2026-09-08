@@ -90,6 +90,74 @@ class PlatformPermission(StrEnum):
     PLATFORM_COMPLIANCE_CATALOG_READ = "platform:compliance_catalog:read"
     PLATFORM_COMPLIANCE_CATALOG_MANAGE = "platform:compliance_catalog:manage"
 
+    # IOC Intelligence — Global Observation (M51.2 Phase A4). Gates
+    # global (tenant_id=None) IOC observation/mutation exclusively —
+    # mirrors PLATFORM_THREAT_INTEL_*/PLATFORM_THREAT_FUSION_* exactly.
+    # Deliberately NOT satisfiable by any organization Permission
+    # (IOC_INTEL_READ/OBSERVE/MANAGE): those gate tenant-scoped IOC
+    # operations only. No ordinary organization OWNER/ADMIN/
+    # SECURITY_MANAGER membership can ever authorize a global IOC
+    # mutation — only a persisted, ACTIVE PlatformAssignment can.
+    PLATFORM_IOC_INTEL_READ = "platform:ioc_intel:read"
+    PLATFORM_IOC_INTEL_MANAGE = "platform:ioc_intel:manage"
+
+    # AttackPattern Intelligence — Global Observation (M51.3 Phase B1).
+    # Gates global (tenant_id=None) AttackPattern observation/mutation
+    # exclusively — mirrors PLATFORM_IOC_INTEL_*  exactly. Deliberately
+    # NOT satisfiable by any organization Permission (ATTACK_PATTERN_READ/
+    # OBSERVE/MANAGE): those gate tenant-scoped operations only.
+    PLATFORM_ATTACK_PATTERN_READ = "platform:attack_pattern_intel:read"
+    PLATFORM_ATTACK_PATTERN_MANAGE = "platform:attack_pattern_intel:manage"
+
+    # Intelligence Relationships — Global Observation (M51.4 Phase C1).
+    # Gates global (tenant_id=None) relationship observation/mutation
+    # exclusively — mirrors PLATFORM_ATTACK_PATTERN_* exactly.
+    # Deliberately NOT satisfiable by any organization Permission
+    # (RELATIONSHIP_READ/OBSERVE/MANAGE): those gate tenant-scoped
+    # operations only.
+    PLATFORM_RELATIONSHIP_READ = "platform:intelligence_relationships:read"
+    PLATFORM_RELATIONSHIP_MANAGE = "platform:intelligence_relationships:manage"
+
+    # Malware Intelligence — Global Observation (M51.5 Phase D1). Gates
+    # global (tenant_id=None) Malware observation/mutation exclusively —
+    # mirrors PLATFORM_ATTACK_PATTERN_* exactly. Deliberately NOT
+    # satisfiable by any organization Permission (MALWARE_READ/OBSERVE/
+    # MANAGE): those gate tenant-scoped operations only.
+    PLATFORM_MALWARE_READ = "platform:malware_intel:read"
+    PLATFORM_MALWARE_MANAGE = "platform:malware_intel:manage"
+
+    # Adversary-Campaign Intelligence — Global Observation. Gates global
+    # (tenant_id=None) Campaign observation/mutation exclusively —
+    # mirrors PLATFORM_MALWARE_* exactly. Deliberately NOT satisfiable
+    # by any organization Permission (CAMPAIGN_READ/OBSERVE/MANAGE):
+    # those gate tenant-scoped operations only.
+    PLATFORM_CAMPAIGN_READ = "platform:campaign_intel:read"
+    PLATFORM_CAMPAIGN_MANAGE = "platform:campaign_intel:manage"
+
+    # Adversary-Tool Intelligence — Global Observation. Gates global
+    # (tenant_id=None) Tool observation/mutation exclusively — mirrors
+    # PLATFORM_CAMPAIGN_* exactly. Deliberately NOT satisfiable by any
+    # organization Permission (TOOL_READ/OBSERVE/MANAGE): those gate
+    # tenant-scoped operations only.
+    PLATFORM_TOOL_READ = "platform:tool_intel:read"
+    PLATFORM_TOOL_MANAGE = "platform:tool_intel:manage"
+
+    # Adversary-Infrastructure Intelligence — Global Observation. Gates
+    # global (tenant_id=None) Infrastructure observation/mutation
+    # exclusively — mirrors PLATFORM_TOOL_* exactly. Deliberately NOT
+    # satisfiable by any organization Permission (INFRASTRUCTURE_READ/
+    # OBSERVE/MANAGE): those gate tenant-scoped operations only.
+    PLATFORM_INFRASTRUCTURE_READ = "platform:infrastructure_intel:read"
+    PLATFORM_INFRASTRUCTURE_MANAGE = "platform:infrastructure_intel:manage"
+
+    # Threat-Report Intelligence — Global Observation. Gates global
+    # (tenant_id=None) ThreatReport observation/mutation exclusively —
+    # mirrors PLATFORM_INFRASTRUCTURE_* exactly. Deliberately NOT
+    # satisfiable by any organization Permission (THREAT_REPORT_READ/
+    # OBSERVE/MANAGE): those gate tenant-scoped operations only.
+    PLATFORM_THREAT_REPORT_READ = "platform:threat_report_intel:read"
+    PLATFORM_THREAT_REPORT_MANAGE = "platform:threat_report_intel:manage"
+
 
 # Role -> Permission mapping for the platform control plane.
 #
@@ -121,44 +189,74 @@ class PlatformPermission(StrEnum):
 #                      never mutate platform state.
 PLATFORM_ROLE_PERMISSIONS: dict[PlatformRole, frozenset[PlatformPermission]] = {
     PlatformRole.SUPER_ADMIN: frozenset(PlatformPermission),
-    PlatformRole.SECURITY_ADMIN: frozenset({
-        PlatformPermission.PLATFORM_USERS_READ,
-        PlatformPermission.PLATFORM_USERS_SUSPEND,
-        PlatformPermission.PLATFORM_USERS_REACTIVATE,
-        PlatformPermission.PLATFORM_ORGANIZATIONS_READ,
-        PlatformPermission.PLATFORM_ORGANIZATIONS_SUSPEND,
-        PlatformPermission.PLATFORM_ORGANIZATIONS_REACTIVATE,
-        PlatformPermission.PLATFORM_ACCESS_READ,
-        PlatformPermission.PLATFORM_AUDIT_READ,
-        PlatformPermission.PLATFORM_SECURITY_READ,
-        PlatformPermission.PLATFORM_THREAT_INTEL_READ,
-        PlatformPermission.PLATFORM_THREAT_INTEL_MANAGE,
-        PlatformPermission.PLATFORM_FEED_SYNC_READ,
-        PlatformPermission.PLATFORM_FEED_SYNC_MANAGE,
-        PlatformPermission.PLATFORM_THREAT_FUSION_READ,
-        PlatformPermission.PLATFORM_THREAT_FUSION_MANAGE,
-        PlatformPermission.PLATFORM_ATTACK_PATH_READ,
-        PlatformPermission.PLATFORM_ATTACK_PATH_MANAGE,
-        PlatformPermission.PLATFORM_COMPLIANCE_CATALOG_READ,
-        PlatformPermission.PLATFORM_COMPLIANCE_CATALOG_MANAGE,
-    }),
-    PlatformRole.SUPPORT: frozenset({
-        PlatformPermission.PLATFORM_USERS_READ,
-        PlatformPermission.PLATFORM_ORGANIZATIONS_READ,
-        PlatformPermission.PLATFORM_ACCESS_READ,
-    }),
-    PlatformRole.AUDITOR: frozenset({
-        PlatformPermission.PLATFORM_USERS_READ,
-        PlatformPermission.PLATFORM_ORGANIZATIONS_READ,
-        PlatformPermission.PLATFORM_ACCESS_READ,
-        PlatformPermission.PLATFORM_AUDIT_READ,
-        PlatformPermission.PLATFORM_SECURITY_READ,
-        PlatformPermission.PLATFORM_THREAT_INTEL_READ,
-        PlatformPermission.PLATFORM_FEED_SYNC_READ,
-        PlatformPermission.PLATFORM_THREAT_FUSION_READ,
-        PlatformPermission.PLATFORM_ATTACK_PATH_READ,
-        PlatformPermission.PLATFORM_COMPLIANCE_CATALOG_READ,
-    }),
+    PlatformRole.SECURITY_ADMIN: frozenset(
+        {
+            PlatformPermission.PLATFORM_USERS_READ,
+            PlatformPermission.PLATFORM_USERS_SUSPEND,
+            PlatformPermission.PLATFORM_USERS_REACTIVATE,
+            PlatformPermission.PLATFORM_ORGANIZATIONS_READ,
+            PlatformPermission.PLATFORM_ORGANIZATIONS_SUSPEND,
+            PlatformPermission.PLATFORM_ORGANIZATIONS_REACTIVATE,
+            PlatformPermission.PLATFORM_ACCESS_READ,
+            PlatformPermission.PLATFORM_AUDIT_READ,
+            PlatformPermission.PLATFORM_SECURITY_READ,
+            PlatformPermission.PLATFORM_THREAT_INTEL_READ,
+            PlatformPermission.PLATFORM_THREAT_INTEL_MANAGE,
+            PlatformPermission.PLATFORM_FEED_SYNC_READ,
+            PlatformPermission.PLATFORM_FEED_SYNC_MANAGE,
+            PlatformPermission.PLATFORM_THREAT_FUSION_READ,
+            PlatformPermission.PLATFORM_THREAT_FUSION_MANAGE,
+            PlatformPermission.PLATFORM_ATTACK_PATH_READ,
+            PlatformPermission.PLATFORM_ATTACK_PATH_MANAGE,
+            PlatformPermission.PLATFORM_COMPLIANCE_CATALOG_READ,
+            PlatformPermission.PLATFORM_COMPLIANCE_CATALOG_MANAGE,
+            PlatformPermission.PLATFORM_IOC_INTEL_READ,
+            PlatformPermission.PLATFORM_IOC_INTEL_MANAGE,
+            PlatformPermission.PLATFORM_ATTACK_PATTERN_READ,
+            PlatformPermission.PLATFORM_ATTACK_PATTERN_MANAGE,
+            PlatformPermission.PLATFORM_RELATIONSHIP_READ,
+            PlatformPermission.PLATFORM_RELATIONSHIP_MANAGE,
+            PlatformPermission.PLATFORM_MALWARE_READ,
+            PlatformPermission.PLATFORM_MALWARE_MANAGE,
+            PlatformPermission.PLATFORM_CAMPAIGN_READ,
+            PlatformPermission.PLATFORM_CAMPAIGN_MANAGE,
+            PlatformPermission.PLATFORM_TOOL_READ,
+            PlatformPermission.PLATFORM_TOOL_MANAGE,
+            PlatformPermission.PLATFORM_INFRASTRUCTURE_READ,
+            PlatformPermission.PLATFORM_INFRASTRUCTURE_MANAGE,
+            PlatformPermission.PLATFORM_THREAT_REPORT_READ,
+            PlatformPermission.PLATFORM_THREAT_REPORT_MANAGE,
+        }
+    ),
+    PlatformRole.SUPPORT: frozenset(
+        {
+            PlatformPermission.PLATFORM_USERS_READ,
+            PlatformPermission.PLATFORM_ORGANIZATIONS_READ,
+            PlatformPermission.PLATFORM_ACCESS_READ,
+        }
+    ),
+    PlatformRole.AUDITOR: frozenset(
+        {
+            PlatformPermission.PLATFORM_USERS_READ,
+            PlatformPermission.PLATFORM_ORGANIZATIONS_READ,
+            PlatformPermission.PLATFORM_ACCESS_READ,
+            PlatformPermission.PLATFORM_AUDIT_READ,
+            PlatformPermission.PLATFORM_SECURITY_READ,
+            PlatformPermission.PLATFORM_THREAT_INTEL_READ,
+            PlatformPermission.PLATFORM_FEED_SYNC_READ,
+            PlatformPermission.PLATFORM_THREAT_FUSION_READ,
+            PlatformPermission.PLATFORM_ATTACK_PATH_READ,
+            PlatformPermission.PLATFORM_COMPLIANCE_CATALOG_READ,
+            PlatformPermission.PLATFORM_IOC_INTEL_READ,
+            PlatformPermission.PLATFORM_ATTACK_PATTERN_READ,
+            PlatformPermission.PLATFORM_RELATIONSHIP_READ,
+            PlatformPermission.PLATFORM_MALWARE_READ,
+            PlatformPermission.PLATFORM_CAMPAIGN_READ,
+            PlatformPermission.PLATFORM_TOOL_READ,
+            PlatformPermission.PLATFORM_INFRASTRUCTURE_READ,
+            PlatformPermission.PLATFORM_THREAT_REPORT_READ,
+        }
+    ),
 }
 
 # Roles that PlatformAccessService.grant() will accept. All four M2 roles

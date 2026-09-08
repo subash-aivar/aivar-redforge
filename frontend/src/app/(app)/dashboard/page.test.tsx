@@ -1,22 +1,27 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, waitFor, cleanup } from "@testing-library/react";
-import * as api from "@/lib/api";
 import * as platform from "@/lib/platform";
+import { socDashboardAggregator } from "@/components/dashboard/aggregation/socDashboardAggregator";
 import DashboardPage from "./page";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
 }));
 
-vi.mock("@/lib/api", async () => {
-  const actual = await vi.importActual<typeof import("@/lib/api")>("@/lib/api");
-  return { ...actual, api: { ...actual.api, get: vi.fn() } };
-});
-
 vi.mock("@/lib/platform", async () => {
   const actual = await vi.importActual<typeof import("@/lib/platform")>("@/lib/platform");
   return { ...actual, getBootstrapStatus: vi.fn(), bootstrapSuperAdmin: vi.fn() };
 });
+
+// The page's only data dependency is the aggregator (see the
+// Dashboard Aggregation Layer architecture note) — mocked here at
+// that boundary. `socDashboardAggregator`'s own real data-shaping
+// logic (severity counting, graceful degradation per source, the
+// "awaiting platform integration" panels) has its own dedicated test
+// file, `socDashboardAggregator.test.ts`.
+vi.mock("@/components/dashboard/aggregation/socDashboardAggregator", () => ({
+  socDashboardAggregator: { id: "soc-overview", load: vi.fn() },
+}));
 
 afterEach(() => {
   cleanup();
@@ -25,46 +30,60 @@ afterEach(() => {
 
 describe("DashboardPage", () => {
   it("renders the shell immediately, never gated behind a blocking loading state", () => {
-    vi.mocked(api.api.get).mockReturnValue(new Promise(() => {})); // never resolves
+    vi.mocked(socDashboardAggregator.load).mockReturnValue(new Promise(() => {})); // never resolves
     vi.mocked(platform.getBootstrapStatus).mockReturnValue(new Promise(() => {}));
 
     render(<DashboardPage />);
 
-    expect(screen.getByText("Security Overview")).toBeInTheDocument();
+    expect(screen.getByText("Security Operations Command Center")).toBeInTheDocument();
     expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
+    expect(screen.queryByText(/Loading/)).not.toBeInTheDocument();
   });
 
-  it("every dashboard-data endpoint failing still renders the shell with empty/default metrics — never a blank or stuck page", async () => {
-    vi.mocked(api.api.get).mockRejectedValue(new Error("network error"));
+  it("an aggregator failure renders an error state with retry, never a blank or stuck page", async () => {
+    vi.mocked(socDashboardAggregator.load).mockRejectedValue(new Error("network error"));
     vi.mocked(platform.getBootstrapStatus).mockResolvedValue({ available: false });
 
     render(<DashboardPage />);
 
     await waitFor(() => {
-      // Promise.allSettled never rejects the outer chain, so the page
-      // renders normally with all-empty defaults rather than hanging —
-      // this assertion is what actually protects that contract.
-      expect(
-        screen.getByText("No AI targets registered. Register a target to begin security validation.")
-      ).toBeInTheDocument();
+      expect(screen.getByText("Failed to load dashboard data.")).toBeInTheDocument();
     });
+    expect(screen.getByText("Retry")).toBeInTheDocument();
     expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
-    expect(screen.getAllByText("0").length).toBeGreaterThan(0);
   });
 
-  it("a partial failure (e.g. findings endpoint down, others fine) still renders the other metrics from whichever calls succeeded", async () => {
+  it("renders the composed widget spec once the aggregator resolves", async () => {
     vi.mocked(platform.getBootstrapStatus).mockResolvedValue({ available: false });
-    vi.mocked(api.api.get).mockImplementation((path: string) => {
-      if (path === "/api/v1/findings") return Promise.reject(new Error("findings down"));
-      if (path === "/api/v1/health") return Promise.resolve({ status: "healthy", version: "0.1.0" });
-      return Promise.resolve([]);
+    vi.mocked(socDashboardAggregator.load).mockResolvedValue({
+      id: "soc-overview",
+      widgets: [
+        {
+          type: "kpi",
+          span: 1,
+          viewModel: { id: "k1", label: "Critical Findings", value: 3, sublabel: "Require action" },
+        },
+      ],
     });
 
     render(<DashboardPage />);
 
     await waitFor(() => {
-      expect(screen.getByText("healthy")).toBeInTheDocument();
+      expect(screen.getByText("Critical Findings")).toBeInTheDocument();
     });
-    expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
+    expect(screen.getByText("3")).toBeInTheDocument();
+  });
+
+  it("loads with the default 24h time range on first render", async () => {
+    vi.mocked(platform.getBootstrapStatus).mockResolvedValue({ available: false });
+    vi.mocked(socDashboardAggregator.load).mockResolvedValue({ id: "soc-overview", widgets: [] });
+
+    render(<DashboardPage />);
+
+    await waitFor(() =>
+      expect(socDashboardAggregator.load).toHaveBeenCalledWith(
+        expect.objectContaining({ timeRange: "24h" })
+      )
+    );
   });
 });

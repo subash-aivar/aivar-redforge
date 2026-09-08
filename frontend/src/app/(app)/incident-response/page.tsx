@@ -16,12 +16,15 @@ import {
 import {
   closeIncident,
   getActiveDashboard,
+  listIncidents,
   severityTone,
   type Incident,
 } from "@/lib/incident-response";
 
 export default function IncidentResponsePage() {
+  const [tab, setTab] = useState<"active" | "history">("active");
   const dashboard = useAsync(() => getActiveDashboard(), []);
+  const allIncidents = useAsync(() => listIncidents(), []);
   const [selected, setSelected] = useState<Incident | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -37,6 +40,7 @@ export default function IncidentResponsePage() {
       await closeIncident(incident.incident_id, resolutionType);
       setSelected(null);
       dashboard.reload();
+      allIncidents.reload();
     } catch (e) {
       setActionError(e instanceof Error ? e.message : "Close failed");
     } finally {
@@ -64,6 +68,15 @@ export default function IncidentResponsePage() {
     ) },
   ];
 
+  const historyColumns: ConsoleColumn<Incident>[] = [
+    ...columns.slice(0, 3),
+    { key: "closed", header: "Closed At", width: "16%", render: (r) => fmtTime(r.closed_at) },
+    { key: "resolution", header: "Resolution", width: "16%", render: (r) => r.resolution_type ?? "—" },
+    { key: "id", header: "ID", width: "16%", render: (r) => (
+      <span className="font-mono text-[11px] text-gray-500">{r.incident_id.slice(0, 10)}…</span>
+    ) },
+  ];
+
   return (
     <>
       <PageHeader
@@ -72,7 +85,10 @@ export default function IncidentResponsePage() {
         actions={
           <button
             type="button"
-            onClick={() => dashboard.reload()}
+            onClick={() => {
+              dashboard.reload();
+              allIncidents.reload();
+            }}
             className="rounded-md border border-gray-700 px-3 py-1.5 text-xs text-gray-300 hover:border-red-800 hover:text-red-300"
           >
             Refresh
@@ -80,32 +96,77 @@ export default function IncidentResponsePage() {
         }
       />
 
-      <AsyncContent state={dashboard} emptyLabel="No active incidents.">
-        {(data) => (
-          <>
-            <div className="mb-6 grid gap-4 sm:grid-cols-3">
-              <KpiTile
-                label="Active Incidents"
-                value={data.active_count}
-                tone={data.active_count > 0 ? "warning" : "ok"}
-              />
-              <KpiTile label="P1 (Critical)" value={data.p1_count} tone={data.p1_count > 0 ? "danger" : "ok"} />
-              <KpiTile label="P2 (High)" value={data.p2_count} tone={data.p2_count > 0 ? "warning" : "ok"} />
-            </div>
+      <div className="mb-4 flex gap-1 rounded-lg border border-gray-800 bg-gray-900 p-1">
+        {(["active", "history"] as const).map((t) => (
+          <button
+            key={t}
+            type="button"
+            onClick={() => setTab(t)}
+            className={`rounded-md px-4 py-1.5 text-xs font-medium capitalize ${
+              tab === t ? "bg-red-950/60 text-red-300" : "text-gray-400 hover:text-gray-200"
+            }`}
+          >
+            {t === "active" ? "Active Incidents" : "History (All Incidents)"}
+          </button>
+        ))}
+      </div>
 
-            <Panel title="Active Incidents">
-              <DataConsole
-                columns={columns}
-                rows={data.incidents}
-                rowKey={(r) => r.incident_id}
-                onRowClick={(r) => setSelected(r)}
-                selectedKey={selected?.incident_id ?? null}
-                emptyLabel="No active incidents."
-              />
-            </Panel>
-          </>
-        )}
-      </AsyncContent>
+      {tab === "active" && (
+        <AsyncContent state={dashboard} emptyLabel="No active incidents.">
+          {(data) => (
+            <>
+              <div className="mb-6 grid gap-4 sm:grid-cols-3">
+                <KpiTile
+                  label="Active Incidents"
+                  value={data.active_count}
+                  tone={data.active_count > 0 ? "warning" : "ok"}
+                />
+                <KpiTile label="P1 (Critical)" value={data.p1_count} tone={data.p1_count > 0 ? "danger" : "ok"} />
+                <KpiTile label="P2 (High)" value={data.p2_count} tone={data.p2_count > 0 ? "warning" : "ok"} />
+              </div>
+
+              <Panel title="Active Incidents">
+                <DataConsole
+                  columns={columns}
+                  rows={data.incidents}
+                  rowKey={(r) => r.incident_id}
+                  onRowClick={(r) => setSelected(r)}
+                  selectedKey={selected?.incident_id ?? null}
+                  emptyLabel="No active incidents."
+                />
+              </Panel>
+            </>
+          )}
+        </AsyncContent>
+      )}
+
+      {tab === "history" && (
+        <AsyncContent state={allIncidents} emptyLabel="No incidents recorded.">
+          {(rows) => {
+            const closed = rows.filter((r) => r.closed_at !== null);
+            const open = rows.filter((r) => r.closed_at === null);
+            return (
+              <>
+                <div className="mb-6 grid gap-4 sm:grid-cols-3">
+                  <KpiTile label="Total Incidents" value={rows.length} />
+                  <KpiTile label="Closed" value={closed.length} tone="ok" />
+                  <KpiTile label="Open" value={open.length} tone={open.length > 0 ? "warning" : "ok"} />
+                </div>
+                <Panel title="All Incidents (Active + Closed)">
+                  <DataConsole
+                    columns={historyColumns}
+                    rows={rows}
+                    rowKey={(r) => r.incident_id}
+                    onRowClick={(r) => setSelected(r)}
+                    selectedKey={selected?.incident_id ?? null}
+                    emptyLabel="No incidents recorded."
+                  />
+                </Panel>
+              </>
+            );
+          }}
+        </AsyncContent>
+      )}
 
       <InvestigationDrawer
         open={selected !== null}
@@ -149,6 +210,20 @@ export default function IncidentResponsePage() {
                       },
                     ]
                   : []),
+              ]
+            : []
+        }
+        links={
+          selected
+            ? [
+                {
+                  label: "View Regulatory Notifications",
+                  href: `/regulatory-notification?incidentId=${encodeURIComponent(selected.incident_id)}`,
+                },
+                {
+                  label: "View Lessons Learned",
+                  href: `/lessons-learned?incidentId=${encodeURIComponent(selected.incident_id)}`,
+                },
               ]
             : []
         }

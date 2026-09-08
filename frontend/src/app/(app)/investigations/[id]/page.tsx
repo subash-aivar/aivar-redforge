@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { FormField, FormModal } from "@/components/cc";
 import {
   getInvestigation,
   getInvestigationTimeline,
@@ -48,9 +49,11 @@ export default function InvestigationDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actioning, setActioning] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [resolveOpen, setResolveOpen] = useState(false);
   const [resolveReason, setResolveReason] = useState(RESOLUTION_REASONS[0]);
   const [resolveNotes, setResolveNotes] = useState("");
+  const [resolveError, setResolveError] = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
@@ -77,23 +80,44 @@ export default function InvestigationDetailPage() {
 
   async function handleAcknowledge() {
     setActioning(true);
+    setActionError(null);
     try { await acknowledgeInvestigation(id); await load(); }
-    catch { /* ignore */ } finally { setActioning(false); }
+    catch (e) { setActionError(e instanceof Error ? e.message : "Acknowledge failed"); }
+    finally { setActioning(false); }
   }
 
   async function handleStartInvestigation() {
     setActioning(true);
+    setActionError(null);
     try { await startInvestigation(id); await load(); }
-    catch { /* ignore */ } finally { setActioning(false); }
+    catch (e) { setActionError(e instanceof Error ? e.message : "Start investigation failed"); }
+    finally { setActioning(false); }
   }
 
-  async function handleResolve() {
+  function openResolveModal() {
+    setResolveReason(RESOLUTION_REASONS[0]);
+    setResolveNotes("");
+    setResolveError(null);
+    setResolveOpen(true);
+  }
+
+  function closeResolveModal() {
+    setResolveOpen(false);
+  }
+
+  async function handleResolve(e: React.FormEvent) {
+    e.preventDefault();
     setActioning(true);
+    setResolveError(null);
     try {
       await resolveInvestigation(id, resolveReason, resolveNotes);
       setResolveOpen(false);
       await load();
-    } catch { /* ignore */ } finally { setActioning(false); }
+    } catch (err) {
+      setResolveError(err instanceof Error ? err.message : "Resolve failed");
+    } finally {
+      setActioning(false);
+    }
   }
 
   function eventTypeLabel(type: string): string {
@@ -151,7 +175,7 @@ export default function InvestigationDetailPage() {
           )}
           {inv.status !== "RESOLVED" && (
             <button
-              onClick={() => setResolveOpen(true)}
+              onClick={openResolveModal}
               disabled={actioning}
               className="rounded border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-300 hover:bg-gray-700 disabled:opacity-50"
             >
@@ -160,6 +184,12 @@ export default function InvestigationDetailPage() {
           )}
         </div>
       </div>
+
+      {actionError && (
+        <div role="alert" className="rounded-lg border border-red-800 bg-red-900/20 p-3 text-sm text-red-300">
+          {actionError}
+        </div>
+      )}
 
       {/* Case metadata */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
@@ -384,12 +414,10 @@ export default function InvestigationDetailPage() {
 
       {/* Resolve modal */}
       {resolveOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
-          <div className="w-full max-w-md rounded-xl border border-gray-700 bg-gray-900 p-6 shadow-xl">
-            <h2 className="mb-4 text-base font-semibold text-white">Resolve Investigation</h2>
+        <FormModal title="Resolve Investigation" onClose={closeResolveModal}>
+          <form onSubmit={handleResolve} noValidate>
             <div className="space-y-4">
-              <div>
-                <label className="mb-1 block text-xs font-medium text-gray-400">Resolution Reason</label>
+              <FormField label="Resolution reason" required>
                 <select
                   value={resolveReason}
                   onChange={(e) => setResolveReason(e.target.value)}
@@ -399,9 +427,8 @@ export default function InvestigationDetailPage() {
                     <option key={r} value={r}>{r.replace(/_/g, " ")}</option>
                   ))}
                 </select>
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-gray-400">Notes (optional)</label>
+              </FormField>
+              <FormField label="Notes">
                 <textarea
                   value={resolveNotes}
                   onChange={(e) => setResolveNotes(e.target.value)}
@@ -410,25 +437,31 @@ export default function InvestigationDetailPage() {
                   placeholder="Additional context for the resolution…"
                   className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-200 placeholder-gray-600 focus:outline-none"
                 />
-              </div>
-              <div className="flex justify-end gap-3">
-                <button
-                  onClick={() => setResolveOpen(false)}
-                  className="rounded border border-gray-700 bg-gray-800 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleResolve}
-                  disabled={actioning}
-                  className="rounded border border-green-700 bg-green-900/30 px-4 py-2 text-sm font-medium text-green-300 hover:bg-green-900/50 disabled:opacity-50"
-                >
-                  Resolve Case
-                </button>
-              </div>
+              </FormField>
             </div>
-          </div>
-        </div>
+            {resolveError && (
+              <p role="alert" className="mt-3 text-sm text-red-400">
+                {resolveError}
+              </p>
+            )}
+            <div className="mt-4 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={closeResolveModal}
+                className="rounded border border-gray-700 bg-gray-800 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={actioning}
+                className="rounded border border-green-700 bg-green-900/30 px-4 py-2 text-sm font-medium text-green-300 hover:bg-green-900/50 disabled:opacity-50"
+              >
+                {actioning ? "Resolving…" : "Resolve Case"}
+              </button>
+            </div>
+          </form>
+        </FormModal>
       )}
     </div>
   );

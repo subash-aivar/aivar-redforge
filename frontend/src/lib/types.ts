@@ -59,6 +59,16 @@ export interface RiskIncident {
   created_at: string;
 }
 
+// `GET /api/v1/risk-incidents` returns this paginated envelope, not a
+// bare array — verified against the live endpoint. Every consumer must
+// read `.items`, not the response itself.
+export interface RiskIncidentList {
+  items: RiskIncident[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
 export interface Campaign {
   campaign_id: string;
   graph_id: string;

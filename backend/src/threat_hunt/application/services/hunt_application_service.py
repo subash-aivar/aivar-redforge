@@ -87,6 +87,6 @@ class HuntApplicationService:
     async def queue(
         self, tenant_id: TenantId, roles: tuple[str, ...], limit: int = 50
     ) -> list[ThreatHuntCandidateDTO]:
-        require_any(roles, "soc:detection_engineer", "ai:operator")
+        require_any(roles, "soc:detection_engineer", "ai:operator", "threat_hunt:read_access")
         rows = await self._candidates.find_pending_review(self._tenant(tenant_id), limit)
         return [self._dto(r) for r in rows]

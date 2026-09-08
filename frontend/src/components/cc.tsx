@@ -11,7 +11,8 @@
  * dedicated primitive so no panel ever silently fabricates content.
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { cloneElement, isValidElement, useCallback, useEffect, useId, useRef, useState } from "react";
+import type { InputHTMLAttributes, ReactElement } from "react";
 import { ApiError } from "@/lib/api";
 
 // ── Async data hook with explicit permission/error/empty states ──────────────
@@ -74,12 +75,12 @@ export function PageHeader({
   actions?: React.ReactNode;
 }) {
   return (
-    <div className="mb-6 flex items-start justify-between gap-4">
-      <div>
+    <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+      <div className="min-w-0">
         <h1 className="text-2xl font-bold tracking-tight text-gray-100">{title}</h1>
         {subtitle && <p className="mt-1 text-sm text-gray-500">{subtitle}</p>}
       </div>
-      {actions && <div className="flex items-center gap-2">{actions}</div>}
+      {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
     </div>
   );
 }
@@ -142,15 +143,94 @@ export function KpiTile({
   );
 }
 
+// ── Form field (accessible label/hint/error wrapper) ────────────────────────
+
+/**
+ * Wraps a single native `<input>`/`<select>`/`<textarea>` with a real
+ * `<label>`, optional hint, and optional error — the platform's one
+ * answer to "placeholder text was the only label" (a verified,
+ * repository-wide defect: dozens of pages used bare
+ * `<input placeholder="...">` with no programmatic name). Injects
+ * `id`/`aria-invalid`/`aria-describedby`/`aria-required` onto the
+ * child via `cloneElement` so callers don't have to wire three ids by
+ * hand per field — the id is auto-generated (`useId`) unless the child
+ * already sets one. Owns no validation logic itself: `error` is
+ * whatever string the caller's own (unchanged) validation already
+ * produced.
+ */
+export function FormField({
+  label,
+  required,
+  hint,
+  error,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  hint?: string;
+  error?: string | null;
+  children: ReactElement<InputHTMLAttributes<HTMLElement>>;
+}) {
+  const autoId = useId();
+  const id = children.props.id ?? autoId;
+  const hintId = hint ? `${id}-hint` : undefined;
+  const errorId = error ? `${id}-error` : undefined;
+  const describedBy = [errorId, hintId].filter(Boolean).join(" ") || undefined;
+
+  const field = isValidElement(children)
+    ? cloneElement(children, {
+        id,
+        "aria-invalid": error ? true : undefined,
+        "aria-describedby": describedBy,
+        "aria-required": required || undefined,
+        required: required ?? children.props.required,
+      } as Partial<InputHTMLAttributes<HTMLElement>>)
+    : children;
+
+  return (
+    <div>
+      <label htmlFor={id} className="mb-1 block text-xs font-medium text-gray-400">
+        {label}
+        {required && (
+          <>
+            <span aria-hidden="true" className="ml-0.5 text-red-500">
+              *
+            </span>
+            <span className="sr-only"> (required)</span>
+          </>
+        )}
+      </label>
+      {field}
+      {hint && !error && (
+        <p id={hintId} className="mt-1 text-[11px] text-gray-600">
+          {hint}
+        </p>
+      )}
+      {error && (
+        <p id={errorId} role="alert" className="mt-1 text-[11px] text-red-400">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
 // ── State panels ─────────────────────────────────────────────────────────────
 
 export function LoadingRow({ label = "Loading…" }: { label?: string }) {
-  return <div className="py-6 text-center text-sm text-gray-500">{label}</div>;
+  return (
+    <div className="py-6 text-center text-sm text-gray-500" role="status" aria-live="polite">
+      {label}
+    </div>
+  );
 }
 
 export function ErrorRow({ message }: { message: string }) {
   return (
-    <div className="rounded-lg border border-red-900/60 bg-red-950/40 px-4 py-3 text-sm text-red-300">
+    <div
+      className="rounded-lg border border-red-900/60 bg-red-950/40 px-4 py-3 text-sm text-red-300"
+      role="alert"
+    >
       {message}
     </div>
   );
@@ -158,7 +238,10 @@ export function ErrorRow({ message }: { message: string }) {
 
 export function ForbiddenRow() {
   return (
-    <div className="rounded-lg border border-gray-800 bg-gray-900/60 px-4 py-6 text-center text-sm text-gray-400">
+    <div
+      className="rounded-lg border border-gray-800 bg-gray-900/60 px-4 py-6 text-center text-sm text-gray-400"
+      role="alert"
+    >
       You don&apos;t have permission to view this. Access is enforced by the backend;
       ask an organization administrator to grant the required permission.
     </div>
@@ -166,7 +249,11 @@ export function ForbiddenRow() {
 }
 
 export function EmptyRow({ label = "No data yet." }: { label?: string }) {
-  return <div className="py-6 text-center text-sm text-gray-500">{label}</div>;
+  return (
+    <div className="py-6 text-center text-sm text-gray-500" role="status" aria-live="polite">
+      {label}
+    </div>
+  );
 }
 
 /** Honest not-configured state for an external-telemetry integration. */
@@ -480,8 +567,22 @@ export function DataConsole<T>({
               <tr
                 key={key}
                 onClick={onRowClick ? () => onRowClick(row) : undefined}
+                onKeyDown={
+                  onRowClick
+                    ? (e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          onRowClick(row);
+                        }
+                      }
+                    : undefined
+                }
+                tabIndex={onRowClick ? 0 : undefined}
+                aria-selected={onRowClick ? selected : undefined}
                 className={`border-b border-gray-900 ${
-                  onRowClick ? "cursor-pointer hover:bg-gray-800/50" : ""
+                  onRowClick
+                    ? "cursor-pointer hover:bg-gray-800/50 focus:outline-none focus-visible:bg-gray-800/50 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-red-600"
+                    : ""
                 } ${selected ? "bg-gray-800/70" : ""}`}
               >
                 {columns.map((c) => (
@@ -570,6 +671,124 @@ export function PauseResumeButton({
   );
 }
 
+// ── Stacked-dialog Escape/Tab coordination ──────────────────────────────────
+//
+// FormModal and InvestigationDrawer can be open at the same time (e.g. a
+// reason-entry FormModal launched from a drawer's action button) — each
+// attaches its own `document` keydown listener for Escape-to-close and
+// Tab-trapping. Without coordination, one Escape press fires every
+// listener and closes every open layer at once. This tiny LIFO stack
+// tracks which dialog opened most recently; each dialog's handler only
+// acts when it is the topmost entry, so Escape/Tab always affects only
+// the layer currently on top — exactly one dialog closes per press.
+
+const dialogStack: (() => void)[] = [];
+
+function pushDialog(onClose: () => void): void {
+  dialogStack.push(onClose);
+}
+
+function popDialog(onClose: () => void): void {
+  const i = dialogStack.lastIndexOf(onClose);
+  if (i !== -1) dialogStack.splice(i, 1);
+}
+
+function isTopmostDialog(onClose: () => void): boolean {
+  return dialogStack[dialogStack.length - 1] === onClose;
+}
+
+// ── Form Modal ────────────────────────────────────────────────────────────────
+
+/**
+ * The platform's one small-form modal wrapper — a `fixed inset-0 z-50
+ * bg-black/60` centered dialog was previously hand-rolled per callsite
+ * (repeated 4× in `credential-vault/page.tsx` alone) with no
+ * `role="dialog"`, no Escape-to-close, and no focus trap/return. This
+ * reuses the exact focus-trap/Escape/return technique
+ * `InvestigationDrawer` already established rather than inventing a
+ * second pattern — same Tab-cycling `useEffect`, same
+ * focus-previously-active-element-on-close behavior.
+ */
+export function FormModal({
+  title,
+  onClose,
+  children,
+  contentClassName = "w-full max-w-sm rounded-xl border border-gray-800 bg-gray-900 p-5",
+  hideTitle = false,
+}: {
+  title: string;
+  onClose: () => void;
+  children: React.ReactNode;
+  /** Overrides the default `max-w-sm` sizing/spacing — e.g. a wider,
+   * scrollable detail dialog. Defaults to the exact classes every
+   * existing caller (Credential Vault) already relies on. */
+  contentClassName?: string;
+  /** The dialog's accessible name always comes from `title` (via
+   * `aria-label`) even when `hideTitle` suppresses the visible `<h3>`
+   * — for callers whose own children already render an equivalent
+   * visible heading. */
+  hideTitle?: boolean;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<Element | null>(null);
+
+  useEffect(() => {
+    triggerRef.current = document.activeElement;
+    const focusable = containerRef.current?.querySelectorAll<HTMLElement>(
+      'button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    focusable?.[0]?.focus();
+    pushDialog(onClose);
+
+    function onKeyDown(e: KeyboardEvent) {
+      if (!isTopmostDialog(onClose)) return;
+      if (e.key === "Escape") {
+        onClose();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const nodes = containerRef.current?.querySelectorAll<HTMLElement>(
+        'button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      if (!nodes || nodes.length === 0) return;
+      const first = nodes[0];
+      const last = nodes[nodes.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      popDialog(onClose);
+      if (triggerRef.current instanceof HTMLElement) triggerRef.current.focus();
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+      onClick={onClose}
+    >
+      <div
+        ref={containerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        className={contentClassName}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {!hideTitle && <h3 className="mb-3 text-sm font-semibold text-gray-100">{title}</h3>}
+        {children}
+      </div>
+    </div>
+  );
+}
+
 // ── Investigation Drawer ─────────────────────────────────────────────────────
 
 export interface DrawerField {
@@ -577,15 +796,25 @@ export interface DrawerField {
   value: React.ReactNode;
 }
 
-/** Reusable slide-in investigation panel for any selectable row: events,
- * conditions, drift signals, behavior signals, assets, ports/services,
- * relationships. Renders exactly the fields it is given — never invents
- * a field the caller didn't supply. */
+/**
+ * The platform's ONE investigation drawer. Repository audit (see the
+ * Enterprise Investigation Experience pass) found 28 pages already
+ * consume this component and 14 pages hand-roll their own
+ * `fixed inset-0 z-50` modal instead — confirming this is the correct
+ * component to converge on rather than build a second framework
+ * alongside it. This pass hardens it (focus trap, ESC-to-close,
+ * `role="dialog"`, return-focus-on-close, optional entity-ID copy
+ * action) so every page that already uses it — and every page that
+ * migrates onto it — gets the same accessible, keyboard-first
+ * investigation experience for free. Renders exactly the fields/links
+ * it is given — never invents a relationship the caller didn't supply.
+ */
 export function InvestigationDrawer({
   open,
   onClose,
   title,
   subtitle,
+  entityId,
   fields,
   links,
 }: {
@@ -593,20 +822,85 @@ export function InvestigationDrawer({
   onClose: () => void;
   title: string;
   subtitle?: string;
+  /** When supplied, renders a "Copy ID" quick action — a real, generic
+   * productivity feature that needs no backend relationship. */
+  entityId?: string;
   fields: DrawerField[];
   links?: { label: string; href: string }[];
 }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const triggerRef = useRef<Element | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    triggerRef.current = document.activeElement;
+    closeButtonRef.current?.focus();
+    setCopied(false);
+    pushDialog(onClose);
+
+    function onKeyDown(e: KeyboardEvent) {
+      if (!isTopmostDialog(onClose)) return;
+      if (e.key === "Escape") {
+        onClose();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const focusable = containerRef.current?.querySelectorAll<HTMLElement>(
+        'button, a[href], input, [tabindex]:not([tabindex="-1"])'
+      );
+      if (!focusable || focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      popDialog(onClose);
+      document.removeEventListener("keydown", onKeyDown);
+      if (triggerRef.current instanceof HTMLElement) triggerRef.current.focus();
+    };
+  }, [open, onClose]);
+
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-40 flex justify-end">
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative z-50 flex h-full w-full max-w-md flex-col overflow-y-auto border-l border-gray-800 bg-gray-950 shadow-2xl">
+      <div
+        ref={containerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        className="relative z-50 flex h-full w-full max-w-md flex-col overflow-y-auto border-l border-gray-800 bg-gray-950 shadow-2xl"
+      >
         <div className="flex items-start justify-between border-b border-gray-800 px-5 py-4">
           <div>
             <h3 className="text-sm font-semibold text-gray-100">{title}</h3>
             {subtitle && <p className="mt-0.5 text-xs text-gray-500">{subtitle}</p>}
+            {entityId && (
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard?.writeText(entityId).then(() => {
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 1500);
+                  });
+                }}
+                className="mt-1 font-mono text-[10px] text-gray-600 hover:text-gray-300"
+              >
+                {copied ? "Copied ✓" : `${entityId} · copy`}
+              </button>
+            )}
           </div>
           <button
+            ref={closeButtonRef}
             type="button"
             onClick={onClose}
             className="rounded-md border border-gray-800 px-2 py-1 text-xs text-gray-400 hover:text-gray-200"
@@ -626,22 +920,52 @@ export function InvestigationDrawer({
         </div>
         {links && links.length > 0 && (
           <div className="border-t border-gray-800 px-5 py-4">
-            <div className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-gray-500">
-              Drill down
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {links.map((l) => (
-                <a
-                  key={l.href}
-                  href={l.href}
-                  className="rounded-md border border-gray-800 bg-gray-900/60 px-2.5 py-1 text-xs text-red-300 hover:border-red-800 hover:bg-red-950/40"
-                >
-                  {l.label}
-                </a>
-              ))}
-            </div>
+            <RelatedEntitiesPanel links={links} />
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Platform Intelligence Layer — the ONE cross-module relationship
+ * viewer. Previously inlined only inside `InvestigationDrawer`; now
+ * exported standalone so any page can render the exact same "related
+ * entity" pivot chips without hand-rolling a second link list —
+ * e.g. `attack-surface/page.tsx`'s correlation drawer links a
+ * correlation's real `entity_ids` to the real asset register, and
+ * `risk/page.tsx` links a risk incident's real `finding_ids` to the
+ * real Findings page, both through this one component. Renders
+ * exactly the links it is given — every `href` must come from a real
+ * ID already returned by a real API; this component has no knowledge
+ * of any bounded context and cannot itself invent a relationship.
+ */
+export function RelatedEntitiesPanel({
+  links,
+  title = "Drill down",
+}: {
+  links: { label: string; href: string }[];
+  /** Pass "" to omit the header label — e.g. when this panel is
+   * already nested under a row that has its own label. */
+  title?: string;
+}) {
+  if (links.length === 0) return null;
+  return (
+    <div>
+      {title && (
+        <div className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-gray-500">{title}</div>
+      )}
+      <div className="flex flex-wrap gap-2">
+        {links.map((l) => (
+          <a
+            key={l.href}
+            href={l.href}
+            className="rounded-md border border-gray-800 bg-gray-900/60 px-2.5 py-1 text-xs text-red-300 hover:border-red-800 hover:bg-red-950/40"
+          >
+            {l.label}
+          </a>
+        ))}
       </div>
     </div>
   );

@@ -11,6 +11,13 @@ import type {
 
 vi.mock("@/lib/api", () => ({
   api: { get: vi.fn(), post: vi.fn() },
+  ApiError: class ApiError extends Error {
+    status: number;
+    constructor(status: number, message: string) {
+      super(message);
+      this.status = status;
+    }
+  },
 }));
 
 afterEach(() => {
@@ -168,7 +175,7 @@ describe("ValidationOperationsPage overview", () => {
     vi.mocked(api.get).mockRejectedValue(new Error("network down"));
     render(<ValidationOperationsPage />);
     await waitFor(() => {
-      expect(screen.getByText(/UNAVAILABLE/i)).toBeInTheDocument();
+      expect(screen.getAllByText(/UNAVAILABLE/i).length).toBeGreaterThan(0);
     });
   });
 });
@@ -260,6 +267,32 @@ describe("ValidationOperationsPage start-validation form", () => {
       expect(screen.getByText(/Select a canonical target/i)).toBeInTheDocument();
     });
     expect(api.post).not.toHaveBeenCalled();
+  });
+
+  it("the missing-target error is announced via role=alert and moves focus to the target selector", async () => {
+    mockApi({});
+    render(<ValidationOperationsPage />);
+    fireEvent.click(await screen.findByText("Start Validation"));
+    const submitButtons = await screen.findAllByText("Start Validation");
+    fireEvent.click(submitButtons[submitButtons.length - 1]);
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert")).toHaveTextContent("Select a canonical target.");
+    });
+    expect(document.activeElement?.tagName).toBe("SELECT");
+    expect(screen.getByLabelText("Canonical target", { exact: false })).toHaveFocus();
+  });
+
+  it("the target and profile selectors have real programmatic labels", async () => {
+    mockApi({});
+    const { container } = render(<ValidationOperationsPage />);
+    fireEvent.click(await screen.findByText("Start Validation"));
+
+    for (const name of ["Canonical target", "Validation profile"]) {
+      const field = screen.getByLabelText(name, { exact: false });
+      expect(field.id).toBeTruthy();
+      expect(container.querySelector(`label[for="${field.id}"]`)).not.toBeNull();
+    }
   });
 
   it("never offers a field for arbitrary steps, ports, or commands", async () => {

@@ -251,4 +251,119 @@ describe("AuthorizationPage create form", () => {
     });
     expect(api.post).not.toHaveBeenCalled();
   });
+
+  it("the action-class error is announced via role=alert and moves focus to the first checkbox", async () => {
+    mockApi({});
+    render(<AuthorizationPage />);
+    fireEvent.click(await screen.findByText("New Authorization"));
+    const submitButtons = await screen.findAllByText("Create Draft");
+    fireEvent.click(submitButtons[submitButtons.length - 1]);
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert")).toHaveTextContent("Select at least one action class.");
+    });
+    expect(document.activeElement).toHaveAttribute("type", "checkbox");
+  });
+
+  it("scope entity type and ID fields, and valid-from/valid-until, all have real programmatic labels", async () => {
+    mockApi({});
+    const { container } = render(<AuthorizationPage />);
+    fireEvent.click(await screen.findByText("New Authorization"));
+
+    for (const name of ["Scope entity type 1", "Scope entity ID 1", "Valid from", "Valid until"]) {
+      const field = screen.getByLabelText(name, { exact: false });
+      expect(field.id).toBeTruthy();
+      expect(container.querySelector(`label[for="${field.id}"]`)).not.toBeNull();
+    }
+  });
+
+  it("Valid from/until expose aria-required, since a submission with either empty is rejected", async () => {
+    mockApi({});
+    render(<AuthorizationPage />);
+    fireEvent.click(await screen.findByText("New Authorization"));
+
+    expect(screen.getByLabelText("Valid from", { exact: false })).toHaveAttribute("aria-required", "true");
+    expect(screen.getByLabelText("Valid until", { exact: false })).toHaveAttribute("aria-required", "true");
+  });
+
+  it("submitting valid input preserves the exact existing request payload", async () => {
+    mockApi({});
+    const created = { ...makeAuthorization(), id: "auth-new" };
+    vi.mocked(api.post).mockResolvedValue(created);
+    render(<AuthorizationPage />);
+    fireEvent.click(await screen.findByText("New Authorization"));
+
+    fireEvent.click(screen.getByLabelText(/SAFE_VALIDATION/i));
+    fireEvent.change(screen.getByLabelText("Scope entity ID 1", { exact: false }), {
+      target: { value: "target-1" },
+    });
+    fireEvent.change(screen.getByLabelText("Valid from", { exact: false }), { target: { value: "2026-01-01T00:00" } });
+    fireEvent.change(screen.getByLabelText("Valid until", { exact: false }), { target: { value: "2026-01-02T00:00" } });
+
+    const submitButtons = screen.getAllByText("Create Draft");
+    fireEvent.click(submitButtons[submitButtons.length - 1]);
+
+    await waitFor(() => {
+      expect(api.post).toHaveBeenCalledWith(
+        "/api/v1/authorizations",
+        expect.objectContaining({
+          action_classes: ["safe_validation"],
+          scope: [{ entity_type: "ai_target", entity_id: "target-1" }],
+        })
+      );
+    });
+  });
+
+  it("no duplicate field ids exist in the create-authorization form", async () => {
+    mockApi({});
+    const { container } = render(<AuthorizationPage />);
+    fireEvent.click(await screen.findByText("New Authorization"));
+
+    const ids = Array.from(container.querySelectorAll("[id]")).map((el) => el.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+});
+
+describe("AuthorizationPage detail dialog accessibility", () => {
+  it("renders as a labelled dialog, closes on Escape, and returns focus to the opening row", async () => {
+    mockApi({ authorizations: [makeAuthorization({ status: "draft" })] });
+    render(<AuthorizationPage />);
+    await waitFor(() => screen.getByText("DRAFT"));
+    const row = screen.getByText("DRAFT").closest("button")!;
+    row.focus();
+    fireEvent.click(row);
+
+    const dialog = await screen.findByRole("dialog", { name: /Authorization auth-1/ });
+    expect(dialog).toBeInTheDocument();
+
+    fireEvent.keyDown(document, { key: "Escape" });
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(row).toHaveFocus();
+  });
+
+  it("denied/expired/revoked states are rendered as their own distinct status, never as a success indicator", async () => {
+    mockApi({ authorizations: [makeAuthorization({ status: "revoked" })] });
+    render(<AuthorizationPage />);
+    await waitFor(() => {
+      expect(screen.getByText("REVOKED")).toBeInTheDocument();
+    });
+    expect(screen.queryByText("ACTIVE")).not.toBeInTheDocument();
+  });
+
+  it("self-approval remains blocked: Approve/Reject stay disabled and absent of a false-success affordance", async () => {
+    mockApi({
+      authorizations: [
+        makeAuthorization({ status: "pending_approval", requester_user_id: "user-current" }),
+      ],
+      currentUserId: "user-current",
+    });
+    render(<AuthorizationPage />);
+    await waitFor(() => screen.getByText("PENDING_APPROVAL"));
+    fireEvent.click(screen.getByText("PENDING_APPROVAL"));
+    await waitFor(() => {
+      expect(screen.getByText("Approve")).toBeDisabled();
+    });
+    expect(screen.getByText("Reject")).toBeDisabled();
+  });
 });

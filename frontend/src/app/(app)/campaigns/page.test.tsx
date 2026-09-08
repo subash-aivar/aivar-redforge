@@ -8,9 +8,13 @@ import {
   type CampaignDetail,
 } from "./campaign-graph";
 
-vi.mock("@/lib/api", () => ({
-  api: { get: vi.fn(), post: vi.fn() },
-}));
+vi.mock("@/lib/api", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/api")>();
+  return {
+    ...actual,
+    api: { get: vi.fn(), post: vi.fn() },
+  };
+});
 
 function makeDetail(
   graph_nodes: CampaignDetail["graph_nodes"]

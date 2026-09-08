@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { getSummary, type SecurityOperationsSummary, type OperationalEvent } from "@/lib/securityOperations";
-import { useSecurityOperationsStream } from "@/lib/useSecurityOperationsStream";
+import { usePlatformEventBus } from "@/components/platform/EventBusProvider";
 import { getCommandOverview, ZONE_LABELS } from "@/lib/commandCenter";
 import { listSecurityConditions, type SecurityCondition } from "@/lib/securityConditions";
 import { listSecurityCorrelations, type SecurityCorrelation } from "@/lib/securityCorrelations";
@@ -92,7 +92,7 @@ export default function CommandCenterOverviewPage() {
   const overview = useAsync(getCommandOverview, []);
   const summary = useAsync<SecurityOperationsSummary>(() => getSummary("24h"), []);
   const alerts = useAsync(loadAlertQueue, []);
-  const stream = useSecurityOperationsStream(true);
+  const stream = usePlatformEventBus();
 
   // ── Live Security Activity Console state ──────────────────────────────
   const [paused, setPaused] = useState(false);
@@ -266,11 +266,40 @@ export default function CommandCenterOverviewPage() {
         title="Security Operations Command Center"
         subtitle="Live, evidence-backed operational picture across identity, network, validation, and runtime. Every value traces to a real record."
         actions={
-          <span className="text-xs text-gray-500">
+          <span className="flex items-center gap-1.5 text-xs text-gray-500">
+            {stream.connectionState === "connected" && (
+              <span className="h-2 w-2 animate-pulse rounded-full bg-red-400" title="live" />
+            )}
             feed: <span className="text-gray-300">{stream.connectionState}</span>
           </span>
         }
       />
+
+      {/* Executive KPI wall — real counts straight from SecurityOperationsSummary,
+          distinct from the severity-dominant GlobalSecurityStrip below (which
+          surfaces posture/condition/correlation counts from getCommandOverview). */}
+      <div className="mb-6">
+        <AsyncContent state={summary}>
+          {(s) => (
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+              <KpiTile label="Active targets" value={s.active_targets} />
+              <KpiTile label="Canonical assets" value={s.canonical_assets} />
+              <KpiTile label="CV policies" value={s.active_continuous_validation_policies} />
+              <KpiTile label="Validations running" value={s.validations_running} />
+              <KpiTile
+                label="Blocked (period)"
+                value={s.validations_blocked_in_period}
+                tone={s.validations_blocked_in_period > 0 ? "warning" : "ok"}
+              />
+              <KpiTile
+                label="Failed (period)"
+                value={s.validations_failed_in_period}
+                tone={s.validations_failed_in_period > 0 ? "danger" : "ok"}
+              />
+            </div>
+          )}
+        </AsyncContent>
+      </div>
 
       <GlobalSecurityStrip metrics={stripMetrics} />
 
@@ -438,26 +467,20 @@ export default function CommandCenterOverviewPage() {
         <Panel title="High-risk assets (multiple active conditions)">
           <AsyncContent state={overview} empty={(o) => o.high_risk_assets.length === 0} emptyLabel="No assets carry multiple active conditions.">
             {(o) => (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-gray-800 text-left text-[11px] uppercase tracking-wider text-gray-500">
-                      <th className="py-2 pr-4">Asset</th>
-                      <th className="py-2 pr-4">Type</th>
-                      <th className="py-2 pr-4">Active conditions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {o.high_risk_assets.map((a) => (
-                      <tr key={a.asset_id} className="border-b border-gray-800/60">
-                        <td className="py-2 pr-4 text-gray-200">{a.asset_name}</td>
-                        <td className="py-2 pr-4 text-gray-400">{a.asset_type}</td>
-                        <td className="py-2 pr-4 tabular-nums text-red-300">{a.active_condition_count}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <DataConsole
+                columns={[
+                  { key: "asset", header: "Asset", render: (a) => <span className="text-gray-200">{a.asset_name}</span> },
+                  { key: "type", header: "Type", render: (a) => <span className="text-gray-400">{a.asset_type}</span> },
+                  {
+                    key: "conditions",
+                    header: "Active conditions",
+                    render: (a) => <span className="tabular-nums text-red-300">{a.active_condition_count}</span>,
+                  },
+                ]}
+                rows={o.high_risk_assets}
+                rowKey={(a) => a.asset_id}
+                emptyLabel="No assets carry multiple active conditions."
+              />
             )}
           </AsyncContent>
         </Panel>

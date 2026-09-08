@@ -4,6 +4,8 @@ import { useState } from "react";
 import {
   AsyncContent,
   DataConsole,
+  FormField,
+  FormModal,
   InvestigationDrawer,
   KpiTile,
   PageHeader,
@@ -93,7 +95,7 @@ function CredentialsTab() {
   ];
 
   return (
-    <AsyncContent state={credentials} empty={(d) => d.items.length === 0} emptyLabel="No credentials stored in the vault.">
+    <AsyncContent state={credentials}>
       {(data) => (
         <>
           <div className="mb-6 flex items-center justify-between">
@@ -223,23 +225,29 @@ function CredentialDetailDrawer({
       label: "Resolve Secret",
       value: (
         <div className="space-y-2">
-          <input
-            value={purpose}
-            onChange={(e) => setPurpose(e.target.value)}
-            placeholder="Purpose (required, audit-logged)"
-            className="w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-xs text-gray-200"
-          />
+          <FormField label="Purpose" required hint="Audit-logged with every resolve.">
+            <input
+              id="resolve-purpose"
+              value={purpose}
+              onChange={(e) => setPurpose(e.target.value)}
+              placeholder="e.g. rotating provider key"
+              className="w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-xs text-gray-200"
+            />
+          </FormField>
           <label className="flex items-center gap-2 text-xs text-gray-400">
             <input type="checkbox" checked={breakGlass} onChange={(e) => setBreakGlass(e.target.checked)} />
             Break-glass access
           </label>
           {breakGlass && (
-            <input
-              value={justification}
-              onChange={(e) => setJustification(e.target.value)}
-              placeholder="Justification (required for break-glass)"
-              className="w-full rounded-md border border-amber-800 bg-gray-950 px-2 py-1.5 text-xs text-gray-200"
-            />
+            <FormField label="Break-glass justification" required>
+              <input
+                id="resolve-justification"
+                value={justification}
+                onChange={(e) => setJustification(e.target.value)}
+                placeholder="Required for break-glass — reviewed in audit"
+                className="w-full rounded-md border border-amber-800 bg-gray-950 px-2 py-1.5 text-xs text-gray-200"
+              />
+            </FormField>
           )}
           <button
             onClick={handleResolve}
@@ -271,12 +279,15 @@ function CredentialDetailDrawer({
       label: "Lifecycle Actions",
       value: (
         <div className="space-y-2">
-          <input
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            placeholder="Reason / justification for disable, revoke, emergency-revoke"
-            className="w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-xs text-gray-200"
-          />
+          <FormField label="Reason" hint="Justification for disable, revoke, or emergency revoke.">
+            <input
+              id="lifecycle-reason"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="e.g. key leaked in logs"
+              className="w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-xs text-gray-200"
+            />
+          </FormField>
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => run(() => disableCredential(credentialId, reason || "disabled via console"), "Credential disabled.")}
@@ -314,13 +325,17 @@ function CredentialDetailDrawer({
       label: "Rotation",
       value: (
         <div className="space-y-2">
-          <input
-            type="password"
-            value={newSecret}
-            onChange={(e) => setNewSecret(e.target.value)}
-            placeholder="New secret value"
-            className="w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-xs text-gray-200"
-          />
+          <FormField label="New secret value" required>
+            <input
+              id="rotate-new-secret"
+              type="password"
+              autoComplete="new-password"
+              value={newSecret}
+              onChange={(e) => setNewSecret(e.target.value)}
+              placeholder="Enter the replacement secret"
+              className="w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-xs text-gray-200"
+            />
+          </FormField>
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => {
@@ -450,32 +465,80 @@ function CreateCredentialModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-sm rounded-xl border border-gray-800 bg-gray-900 p-5">
-        <h3 className="mb-3 text-sm font-semibold text-gray-100">New Credential</h3>
-        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" className="mb-2 w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200" />
-        <input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Category (e.g. API_KEY)" className="mb-2 w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200" />
-        <input value={subtype} onChange={(e) => setSubtype(e.target.value)} placeholder="Subtype" className="mb-2 w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200" />
+    <FormModal title="New Credential" onClose={onClose}>
+      <div className="space-y-2">
+        <FormField label="Name" required>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="e.g. Prod OpenAI API key"
+            className="w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200"
+          />
+        </FormField>
+        <FormField label="Category" required>
+          <input
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            placeholder="e.g. API_KEY"
+            className="w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200"
+          />
+        </FormField>
+        <FormField label="Subtype" required>
+          <input
+            value={subtype}
+            onChange={(e) => setSubtype(e.target.value)}
+            placeholder="e.g. openai"
+            className="w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200"
+          />
+        </FormField>
         {backends.length > 0 ? (
-          <select value={vaultBackendId} onChange={(e) => setVaultBackendId(e.target.value)} className="mb-2 w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200">
-            {backends.map((b) => (
-              <option key={b.backend_id} value={b.backend_id}>{b.name}</option>
-            ))}
-          </select>
+          <FormField label="Vault backend" required>
+            <select
+              value={vaultBackendId}
+              onChange={(e) => setVaultBackendId(e.target.value)}
+              className="w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200"
+            >
+              {backends.map((b) => (
+                <option key={b.backend_id} value={b.backend_id}>
+                  {b.name}
+                </option>
+              ))}
+            </select>
+          </FormField>
         ) : (
-          <p className="mb-2 text-xs text-amber-400">No vault backends registered. Register one first.</p>
+          <p className="text-xs text-amber-400">No vault backends registered. Register one first.</p>
         )}
-        <input type="password" value={secret} onChange={(e) => setSecret(e.target.value)} placeholder="Secret value" className="mb-2 w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200" />
-        <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Description (optional)" className="mb-4 w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200" />
-        {error && <p className="mb-3 text-xs text-red-400">{error}</p>}
-        <div className="flex justify-end gap-2">
-          <button onClick={onClose} className="rounded-md border border-gray-700 px-3 py-1.5 text-xs text-gray-300">Cancel</button>
-          <button disabled={busy} onClick={submit} className="rounded-md border border-red-800 bg-red-950/50 px-3 py-1.5 text-xs text-red-300 hover:bg-red-900/50 disabled:opacity-50">
-            {busy ? "Creating…" : "Create"}
-          </button>
-        </div>
+        <FormField label="Secret value" required>
+          <input
+            type="password"
+            autoComplete="new-password"
+            value={secret}
+            onChange={(e) => setSecret(e.target.value)}
+            placeholder="Enter the plaintext secret"
+            className="w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200"
+          />
+        </FormField>
+        <FormField label="Description">
+          <input
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Optional"
+            className="w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200"
+          />
+        </FormField>
       </div>
-    </div>
+      {error && (
+        <p role="alert" className="mt-3 text-xs text-red-400">
+          {error}
+        </p>
+      )}
+      <div className="mt-4 flex justify-end gap-2">
+        <button onClick={onClose} className="rounded-md border border-gray-700 px-3 py-1.5 text-xs text-gray-300">Cancel</button>
+        <button disabled={busy} onClick={submit} className="rounded-md border border-red-800 bg-red-950/50 px-3 py-1.5 text-xs text-red-300 hover:bg-red-900/50 disabled:opacity-50">
+          {busy ? "Creating…" : "Create"}
+        </button>
+      </div>
+    </FormModal>
   );
 }
 
@@ -486,6 +549,8 @@ function PoliciesTab() {
   const expirationPolicies = useAsync(() => listExpirationPolicies(), []);
   const [showCreateRotation, setShowCreateRotation] = useState(false);
   const [showCreateExpiration, setShowCreateExpiration] = useState(false);
+  const [selectedRotation, setSelectedRotation] = useState<RotationPolicyResponse | null>(null);
+  const [selectedExpiration, setSelectedExpiration] = useState<ExpirationPolicyResponse | null>(null);
 
   const rotationCols: ConsoleColumn<RotationPolicyResponse>[] = [
     { key: "name", header: "Name", width: "22%", render: (r) => <span className="text-gray-200">{r.name}</span> },
@@ -541,6 +606,27 @@ function PoliciesTab() {
 
   return (
     <div className="space-y-6">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <KpiTile
+          label="Rotation Policies"
+          value={rotationPolicies.data ? rotationPolicies.data.length : "—"}
+        />
+        <KpiTile
+          label="Auto-Rotate Enabled"
+          value={rotationPolicies.data ? rotationPolicies.data.filter((p) => p.auto_rotate).length : "—"}
+          tone="ok"
+        />
+        <KpiTile
+          label="Expiration Policies"
+          value={expirationPolicies.data ? expirationPolicies.data.length : "—"}
+        />
+        <KpiTile
+          label="Hard-Expire Enabled"
+          value={expirationPolicies.data ? expirationPolicies.data.filter((p) => p.hard_expire).length : "—"}
+          tone="warning"
+        />
+      </div>
+
       <Panel
         title="Rotation Policies"
         right={
@@ -550,7 +636,16 @@ function PoliciesTab() {
         }
       >
         <AsyncContent state={rotationPolicies} empty={(d) => d.length === 0} emptyLabel="No rotation policies configured.">
-          {(list) => <DataConsole columns={rotationCols} rows={list} rowKey={(r) => r.policy_id} emptyLabel="No rotation policies configured." />}
+          {(list) => (
+            <DataConsole
+              columns={rotationCols}
+              rows={list}
+              rowKey={(r) => r.policy_id}
+              onRowClick={setSelectedRotation}
+              selectedKey={selectedRotation?.policy_id}
+              emptyLabel="No rotation policies configured."
+            />
+          )}
         </AsyncContent>
       </Panel>
 
@@ -563,7 +658,16 @@ function PoliciesTab() {
         }
       >
         <AsyncContent state={expirationPolicies} empty={(d) => d.length === 0} emptyLabel="No expiration policies configured.">
-          {(list) => <DataConsole columns={expirationCols} rows={list} rowKey={(r) => r.policy_id} emptyLabel="No expiration policies configured." />}
+          {(list) => (
+            <DataConsole
+              columns={expirationCols}
+              rows={list}
+              rowKey={(r) => r.policy_id}
+              onRowClick={setSelectedExpiration}
+              selectedKey={selectedExpiration?.policy_id}
+              emptyLabel="No expiration policies configured."
+            />
+          )}
         </AsyncContent>
       </Panel>
 
@@ -583,6 +687,75 @@ function PoliciesTab() {
             expirationPolicies.reload();
             setShowCreateExpiration(false);
           }}
+        />
+      )}
+
+      {selectedRotation && (
+        <InvestigationDrawer
+          open
+          title={selectedRotation.name}
+          subtitle="Rotation Policy"
+          entityId={selectedRotation.policy_id}
+          onClose={() => setSelectedRotation(null)}
+          fields={[
+            { label: "Interval (days)", value: selectedRotation.interval_days ?? "—" },
+            { label: "Max Versions Kept", value: selectedRotation.max_versions_kept },
+            { label: "Notify Days Before", value: selectedRotation.notify_days_before },
+            { label: "Auto Rotate", value: selectedRotation.auto_rotate ? "Yes" : "No" },
+            { label: "Auto Commit", value: selectedRotation.auto_commit ? "Yes" : "No" },
+            { label: "Commit Window (hours)", value: selectedRotation.commit_window_hours },
+            { label: "Created / Updated", value: `${fmtTime(selectedRotation.created_at)} — ${fmtTime(selectedRotation.updated_at)}` },
+            {
+              label: "Actions",
+              value: (
+                <button
+                  onClick={async () => {
+                    if (confirm(`Delete rotation policy "${selectedRotation.name}"?`)) {
+                      await deleteRotationPolicy(selectedRotation.policy_id);
+                      setSelectedRotation(null);
+                      rotationPolicies.reload();
+                    }
+                  }}
+                  className="rounded-md border border-gray-700 px-3 py-1.5 text-xs text-gray-300 hover:border-red-800 hover:text-red-300"
+                >
+                  Delete Policy
+                </button>
+              ),
+            },
+          ]}
+        />
+      )}
+
+      {selectedExpiration && (
+        <InvestigationDrawer
+          open
+          title={selectedExpiration.name}
+          subtitle="Expiration Policy"
+          entityId={selectedExpiration.policy_id}
+          onClose={() => setSelectedExpiration(null)}
+          fields={[
+            { label: "TTL (days)", value: selectedExpiration.ttl_days },
+            { label: "Warn Days Before", value: selectedExpiration.warn_days_before },
+            { label: "Hard Expire", value: selectedExpiration.hard_expire ? "Yes" : "No" },
+            { label: "Created / Updated", value: `${fmtTime(selectedExpiration.created_at)} — ${fmtTime(selectedExpiration.updated_at)}` },
+            {
+              label: "Actions",
+              value: (
+                <button
+                  onClick={async () => {
+                    if (confirm(`Delete expiration policy "${selectedExpiration.name}"?`)) {
+                      await deleteExpirationPolicy(selectedExpiration.policy_id);
+                      setSelectedExpiration(null);
+                      expirationPolicies.reload();
+                    }
+                  }}
+                  className="rounded-md border border-gray-700 px-3 py-1.5 text-xs text-gray-300 hover:border-red-800 hover:text-red-300"
+                >
+                  Delete Policy
+                </button>
+              ),
+            },
+          ]}
         />
       )}
     </div>
@@ -622,29 +795,57 @@ function CreateRotationPolicyModal({ onClose, onCreated }: { onClose: () => void
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-sm rounded-xl border border-gray-800 bg-gray-900 p-5">
-        <h3 className="mb-3 text-sm font-semibold text-gray-100">New Rotation Policy</h3>
-        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Policy name" className="mb-2 w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200" />
-        <label className="mb-1 block text-xs text-gray-500">Interval (days)</label>
-        <input type="number" value={intervalDays} onChange={(e) => setIntervalDays(Number(e.target.value))} className="mb-2 w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200" />
-        <label className="mb-1 block text-xs text-gray-500">Max Versions Kept</label>
-        <input type="number" value={maxVersions} onChange={(e) => setMaxVersions(Number(e.target.value))} className="mb-2 w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200" />
-        <label className="mb-1 block text-xs text-gray-500">Notify Days Before</label>
-        <input type="number" value={notifyDays} onChange={(e) => setNotifyDays(Number(e.target.value))} className="mb-2 w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200" />
-        <label className="mb-4 flex items-center gap-2 text-xs text-gray-400">
+    <FormModal title="New Rotation Policy" onClose={onClose}>
+      <div className="space-y-2">
+        <FormField label="Policy name" required>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="e.g. 90-day API key rotation"
+            className="w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200"
+          />
+        </FormField>
+        <FormField label="Interval (days)">
+          <input
+            type="number"
+            value={intervalDays}
+            onChange={(e) => setIntervalDays(Number(e.target.value))}
+            className="w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200"
+          />
+        </FormField>
+        <FormField label="Max versions kept">
+          <input
+            type="number"
+            value={maxVersions}
+            onChange={(e) => setMaxVersions(Number(e.target.value))}
+            className="w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200"
+          />
+        </FormField>
+        <FormField label="Notify days before">
+          <input
+            type="number"
+            value={notifyDays}
+            onChange={(e) => setNotifyDays(Number(e.target.value))}
+            className="w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200"
+          />
+        </FormField>
+        <label className="flex items-center gap-2 text-xs text-gray-400">
           <input type="checkbox" checked={autoRotate} onChange={(e) => setAutoRotate(e.target.checked)} />
           Auto-rotate
         </label>
-        {error && <p className="mb-3 text-xs text-red-400">{error}</p>}
-        <div className="flex justify-end gap-2">
-          <button onClick={onClose} className="rounded-md border border-gray-700 px-3 py-1.5 text-xs text-gray-300">Cancel</button>
-          <button disabled={busy} onClick={submit} className="rounded-md border border-red-800 bg-red-950/50 px-3 py-1.5 text-xs text-red-300 hover:bg-red-900/50 disabled:opacity-50">
-            {busy ? "Creating…" : "Create"}
-          </button>
-        </div>
       </div>
-    </div>
+      {error && (
+        <p role="alert" className="mt-3 text-xs text-red-400">
+          {error}
+        </p>
+      )}
+      <div className="mt-4 flex justify-end gap-2">
+        <button onClick={onClose} className="rounded-md border border-gray-700 px-3 py-1.5 text-xs text-gray-300">Cancel</button>
+        <button disabled={busy} onClick={submit} className="rounded-md border border-red-800 bg-red-950/50 px-3 py-1.5 text-xs text-red-300 hover:bg-red-900/50 disabled:opacity-50">
+          {busy ? "Creating…" : "Create"}
+        </button>
+      </div>
+    </FormModal>
   );
 }
 
@@ -674,27 +875,49 @@ function CreateExpirationPolicyModal({ onClose, onCreated }: { onClose: () => vo
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-sm rounded-xl border border-gray-800 bg-gray-900 p-5">
-        <h3 className="mb-3 text-sm font-semibold text-gray-100">New Expiration Policy</h3>
-        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Policy name" className="mb-2 w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200" />
-        <label className="mb-1 block text-xs text-gray-500">TTL (days)</label>
-        <input type="number" value={ttlDays} onChange={(e) => setTtlDays(Number(e.target.value))} className="mb-2 w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200" />
-        <label className="mb-1 block text-xs text-gray-500">Warn Days Before</label>
-        <input type="number" value={warnDays} onChange={(e) => setWarnDays(Number(e.target.value))} className="mb-2 w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200" />
-        <label className="mb-4 flex items-center gap-2 text-xs text-gray-400">
+    <FormModal title="New Expiration Policy" onClose={onClose}>
+      <div className="space-y-2">
+        <FormField label="Policy name" required>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="e.g. 1-year credential TTL"
+            className="w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200"
+          />
+        </FormField>
+        <FormField label="TTL (days)">
+          <input
+            type="number"
+            value={ttlDays}
+            onChange={(e) => setTtlDays(Number(e.target.value))}
+            className="w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200"
+          />
+        </FormField>
+        <FormField label="Warn days before">
+          <input
+            type="number"
+            value={warnDays}
+            onChange={(e) => setWarnDays(Number(e.target.value))}
+            className="w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200"
+          />
+        </FormField>
+        <label className="flex items-center gap-2 text-xs text-gray-400">
           <input type="checkbox" checked={hardExpire} onChange={(e) => setHardExpire(e.target.checked)} />
           Hard expire (block use after TTL)
         </label>
-        {error && <p className="mb-3 text-xs text-red-400">{error}</p>}
-        <div className="flex justify-end gap-2">
-          <button onClick={onClose} className="rounded-md border border-gray-700 px-3 py-1.5 text-xs text-gray-300">Cancel</button>
-          <button disabled={busy} onClick={submit} className="rounded-md border border-red-800 bg-red-950/50 px-3 py-1.5 text-xs text-red-300 hover:bg-red-900/50 disabled:opacity-50">
-            {busy ? "Creating…" : "Create"}
-          </button>
-        </div>
       </div>
-    </div>
+      {error && (
+        <p role="alert" className="mt-3 text-xs text-red-400">
+          {error}
+        </p>
+      )}
+      <div className="mt-4 flex justify-end gap-2">
+        <button onClick={onClose} className="rounded-md border border-gray-700 px-3 py-1.5 text-xs text-gray-300">Cancel</button>
+        <button disabled={busy} onClick={submit} className="rounded-md border border-red-800 bg-red-950/50 px-3 py-1.5 text-xs text-red-300 hover:bg-red-900/50 disabled:opacity-50">
+          {busy ? "Creating…" : "Create"}
+        </button>
+      </div>
+    </FormModal>
   );
 }
 
@@ -703,6 +926,7 @@ function CreateExpirationPolicyModal({ onClose, onCreated }: { onClose: () => vo
 function BackendsTab() {
   const backends = useAsync(() => listVaultBackends(), []);
   const [showCreate, setShowCreate] = useState(false);
+  const [selected, setSelected] = useState<VaultBackendResponse | null>(null);
 
   const cols: ConsoleColumn<VaultBackendResponse>[] = [
     { key: "name", header: "Name", width: "24%", render: (r) => <span className="text-gray-200">{r.name}</span> },
@@ -732,13 +956,33 @@ function BackendsTab() {
 
   return (
     <>
-      <div className="mb-3 flex justify-end">
+      <div className="mb-4 flex items-center justify-between">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <KpiTile label="Vault Backends" value={backends.data ? backends.data.length : "—"} />
+          <KpiTile
+            label="Default Backend"
+            value={backends.data?.find((b) => b.is_default)?.name ?? "—"}
+          />
+          <KpiTile
+            label="Backend Types"
+            value={backends.data ? new Set(backends.data.map((b) => b.backend_type)).size : "—"}
+          />
+        </div>
         <button onClick={() => setShowCreate(true)} className="rounded-md border border-red-800 bg-red-950/50 px-3 py-1.5 text-xs text-red-300 hover:bg-red-900/50">
           Register Backend
         </button>
       </div>
       <AsyncContent state={backends} empty={(d) => d.length === 0} emptyLabel="No vault backends registered.">
-        {(list) => <DataConsole columns={cols} rows={list} rowKey={(r) => r.backend_id} emptyLabel="No vault backends registered." />}
+        {(list) => (
+          <DataConsole
+            columns={cols}
+            rows={list}
+            rowKey={(r) => r.backend_id}
+            onRowClick={setSelected}
+            selectedKey={selected?.backend_id}
+            emptyLabel="No vault backends registered."
+          />
+        )}
       </AsyncContent>
       {showCreate && (
         <RegisterBackendModal
@@ -747,6 +991,37 @@ function BackendsTab() {
             backends.reload();
             setShowCreate(false);
           }}
+        />
+      )}
+      {selected && (
+        <InvestigationDrawer
+          open
+          title={selected.name}
+          subtitle="Vault Backend"
+          entityId={selected.backend_id}
+          onClose={() => setSelected(null)}
+          fields={[
+            { label: "Backend Type", value: selected.backend_type },
+            { label: "Default Backend", value: selected.is_default ? "Yes" : "No" },
+            { label: "Created / Updated", value: `${fmtTime(selected.created_at)} — ${fmtTime(selected.updated_at)}` },
+            {
+              label: "Actions",
+              value: (
+                <button
+                  onClick={async () => {
+                    if (confirm(`Delete vault backend "${selected.name}"?`)) {
+                      await deleteVaultBackend(selected.backend_id);
+                      setSelected(null);
+                      backends.reload();
+                    }
+                  }}
+                  className="rounded-md border border-gray-700 px-3 py-1.5 text-xs text-gray-300 hover:border-red-800 hover:text-red-300"
+                >
+                  Delete Backend
+                </button>
+              ),
+            },
+          ]}
         />
       )}
     </>
@@ -778,23 +1053,40 @@ function RegisterBackendModal({ onClose, onCreated }: { onClose: () => void; onC
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-sm rounded-xl border border-gray-800 bg-gray-900 p-5">
-        <h3 className="mb-3 text-sm font-semibold text-gray-100">Register Vault Backend</h3>
-        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Backend name" className="mb-2 w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200" />
-        <input value={backendType} onChange={(e) => setBackendType(e.target.value)} placeholder="Backend type (e.g. AWS_KMS, LOCAL)" className="mb-2 w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200" />
-        <label className="mb-4 flex items-center gap-2 text-xs text-gray-400">
+    <FormModal title="Register Vault Backend" onClose={onClose}>
+      <div className="space-y-2">
+        <FormField label="Backend name" required>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="e.g. Prod AWS KMS"
+            className="w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200"
+          />
+        </FormField>
+        <FormField label="Backend type" required>
+          <input
+            value={backendType}
+            onChange={(e) => setBackendType(e.target.value)}
+            placeholder="e.g. AWS_KMS, LOCAL"
+            className="w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200"
+          />
+        </FormField>
+        <label className="flex items-center gap-2 text-xs text-gray-400">
           <input type="checkbox" checked={isDefault} onChange={(e) => setIsDefault(e.target.checked)} />
           Set as default backend
         </label>
-        {error && <p className="mb-3 text-xs text-red-400">{error}</p>}
-        <div className="flex justify-end gap-2">
-          <button onClick={onClose} className="rounded-md border border-gray-700 px-3 py-1.5 text-xs text-gray-300">Cancel</button>
-          <button disabled={busy} onClick={submit} className="rounded-md border border-red-800 bg-red-950/50 px-3 py-1.5 text-xs text-red-300 hover:bg-red-900/50 disabled:opacity-50">
-            {busy ? "Registering…" : "Register"}
-          </button>
-        </div>
       </div>
-    </div>
+      {error && (
+        <p role="alert" className="mt-3 text-xs text-red-400">
+          {error}
+        </p>
+      )}
+      <div className="mt-4 flex justify-end gap-2">
+        <button onClick={onClose} className="rounded-md border border-gray-700 px-3 py-1.5 text-xs text-gray-300">Cancel</button>
+        <button disabled={busy} onClick={submit} className="rounded-md border border-red-800 bg-red-950/50 px-3 py-1.5 text-xs text-red-300 hover:bg-red-900/50 disabled:opacity-50">
+          {busy ? "Registering…" : "Register"}
+        </button>
+      </div>
+    </FormModal>
   );
 }

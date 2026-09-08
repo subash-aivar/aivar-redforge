@@ -80,7 +80,7 @@ describe("NetworkSecurityPage", () => {
     render(<NetworkSecurityPage />);
 
     await waitFor(() => {
-      expect(screen.getByText("No network assets observed yet.")).toBeInTheDocument();
+      expect(screen.getByText(/No network assets observed yet\./)).toBeInTheDocument();
     });
   });
 
@@ -91,9 +91,7 @@ describe("NetworkSecurityPage", () => {
     render(<NetworkSecurityPage />);
 
     await waitFor(() => {
-      expect(
-        screen.getByText("UNAVAILABLE — failed to load network security data.")
-      ).toBeInTheDocument();
+      expect(screen.getByText("boom")).toBeInTheDocument();
     });
   });
 });

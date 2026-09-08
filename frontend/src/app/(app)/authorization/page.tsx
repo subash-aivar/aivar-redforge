@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { FormField, FormModal } from "@/components/cc";
 import {
   approveAuthorization,
   createAuthorization,
@@ -59,6 +60,10 @@ function CreateAuthorizationForm({
   const [validUntil, setValidUntil] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
+  const firstActionClassRef = useRef<HTMLInputElement>(null);
+  const firstScopeEntityIdRef = useRef<HTMLInputElement>(null);
+  const validFromRef = useRef<HTMLInputElement>(null);
+  const validUntilRef = useRef<HTMLInputElement>(null);
 
   function toggleActionClass(ac: string) {
     setActionClasses((prev) => {
@@ -86,15 +91,18 @@ function CreateAuthorizationForm({
     setFormError("");
     if (actionClasses.size === 0) {
       setFormError("Select at least one action class.");
+      firstActionClassRef.current?.focus();
       return;
     }
     const cleanScope = scope.filter((s) => s.entity_id.trim() !== "");
     if (cleanScope.length === 0) {
       setFormError("Add at least one scope entity.");
+      firstScopeEntityIdRef.current?.focus();
       return;
     }
     if (!validFrom || !validUntil) {
       setFormError("Set both a valid-from and valid-until time.");
+      (!validFrom ? validFromRef : validUntilRef).current?.focus();
       return;
     }
     setSubmitting(true);
@@ -117,6 +125,7 @@ function CreateAuthorizationForm({
     <form
       onSubmit={handleSubmit}
       className="mt-6 rounded-xl border border-gray-800 bg-gray-900 p-5"
+      noValidate
     >
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold text-white">New Authorization (DRAFT)</h2>
@@ -130,15 +139,15 @@ function CreateAuthorizationForm({
       </div>
 
       {formError ? (
-        <div className="mt-3 rounded-lg border border-red-800 bg-red-950 px-3 py-2 text-xs text-red-300">
+        <div role="alert" className="mt-3 rounded-lg border border-red-800 bg-red-950 px-3 py-2 text-xs text-red-300">
           {formError}
         </div>
       ) : null}
 
-      <div className="mt-4">
-        <div className="text-xs uppercase tracking-wide text-gray-500">Action classes</div>
+      <fieldset className="mt-4">
+        <legend className="text-xs uppercase tracking-wide text-gray-500">Action classes</legend>
         <div className="mt-2 flex flex-wrap gap-2">
-          {REQUESTABLE_ACTION_CLASSES.map((ac) => (
+          {REQUESTABLE_ACTION_CLASSES.map((ac, i) => (
             <label
               key={ac}
               className={`cursor-pointer rounded-lg border px-3 py-1.5 text-xs ${
@@ -148,6 +157,7 @@ function CreateAuthorizationForm({
               }`}
             >
               <input
+                ref={i === 0 ? firstActionClassRef : undefined}
                 type="checkbox"
                 className="mr-1.5"
                 checked={actionClasses.has(ac)}
@@ -157,36 +167,44 @@ function CreateAuthorizationForm({
             </label>
           ))}
         </div>
-      </div>
+      </fieldset>
 
-      <div className="mt-4">
-        <div className="text-xs uppercase tracking-wide text-gray-500">Scope</div>
+      <fieldset className="mt-4">
+        <legend className="text-xs uppercase tracking-wide text-gray-500">Scope</legend>
         <div className="mt-2 space-y-2">
           {scope.map((entry, i) => (
             <div key={i} className="flex gap-2">
-              <select
-                value={entry.entity_type}
-                onChange={(e) => updateScopeEntry(i, { entity_type: e.target.value })}
-                className="rounded-lg border border-gray-700 bg-gray-800 px-2 py-1.5 text-xs text-gray-300"
-              >
-                {SCOPE_ENTITY_TYPES.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
-                  </option>
-                ))}
-              </select>
-              <input
-                type="text"
-                placeholder="Canonical entity ID"
-                value={entry.entity_id}
-                onChange={(e) => updateScopeEntry(i, { entity_id: e.target.value })}
-                className="flex-1 rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs text-white placeholder-gray-500"
-              />
+              <FormField label={`Scope entity type ${i + 1}`}>
+                <select
+                  value={entry.entity_type}
+                  onChange={(e) => updateScopeEntry(i, { entity_type: e.target.value })}
+                  className="rounded-lg border border-gray-700 bg-gray-800 px-2 py-1.5 text-xs text-gray-300"
+                >
+                  {SCOPE_ENTITY_TYPES.map((t) => (
+                    <option key={t} value={t}>
+                      {t}
+                    </option>
+                  ))}
+                </select>
+              </FormField>
+              <div className="flex-1">
+                <FormField label={`Scope entity ID ${i + 1}`}>
+                  <input
+                    ref={i === 0 ? firstScopeEntityIdRef : undefined}
+                    type="text"
+                    placeholder="Canonical entity ID"
+                    value={entry.entity_id}
+                    onChange={(e) => updateScopeEntry(i, { entity_id: e.target.value })}
+                    className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs text-white placeholder-gray-500"
+                  />
+                </FormField>
+              </div>
               {scope.length > 1 ? (
                 <button
                   type="button"
                   onClick={() => removeScopeEntry(i)}
-                  className="text-gray-500 hover:text-red-400"
+                  aria-label={`Remove scope entity ${i + 1}`}
+                  className="self-start pt-6 text-gray-500 hover:text-red-400"
                 >
                   ✕
                 </button>
@@ -201,27 +219,27 @@ function CreateAuthorizationForm({
             + Add scope entity
           </button>
         </div>
-      </div>
+      </fieldset>
 
       <div className="mt-4 grid grid-cols-2 gap-3">
-        <div>
-          <div className="text-xs uppercase tracking-wide text-gray-500">Valid from</div>
+        <FormField label="Valid from" required>
           <input
+            ref={validFromRef}
             type="datetime-local"
             value={validFrom}
             onChange={(e) => setValidFrom(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs text-white"
+            className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs text-white"
           />
-        </div>
-        <div>
-          <div className="text-xs uppercase tracking-wide text-gray-500">Valid until</div>
+        </FormField>
+        <FormField label="Valid until" required>
           <input
+            ref={validUntilRef}
             type="datetime-local"
             value={validUntil}
             onChange={(e) => setValidUntil(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs text-white"
+            className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs text-white"
           />
-        </div>
+        </FormField>
       </div>
 
       <div className="mt-5 flex justify-end gap-3">
@@ -307,8 +325,8 @@ export default function AuthorizationPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold text-white">Authorization &amp; Execution Policy</h1>
           <p className="mt-1 text-sm text-gray-400">
             The control plane that decides ALLOW, DENY, or APPROVAL_REQUIRED for
@@ -318,14 +336,14 @@ export default function AuthorizationPage() {
         </div>
         <button
           onClick={() => setShowCreate(true)}
-          className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500"
+          className="shrink-0 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500"
         >
           New Authorization
         </button>
       </div>
 
       {error ? (
-        <div className="mt-6 rounded-lg border border-red-800 bg-red-950 px-4 py-3 text-sm text-red-300">
+        <div role="alert" className="mt-6 rounded-lg border border-red-800 bg-red-950 px-4 py-3 text-sm text-red-300">
           {error}
         </div>
       ) : null}
@@ -377,6 +395,7 @@ export default function AuthorizationPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
+              aria-label="Filter authorizations by lifecycle state"
               className="rounded-lg border border-gray-800 bg-gray-900 px-3 py-1.5 text-sm text-gray-300"
             >
               <option value="">All lifecycle states</option>
@@ -475,8 +494,15 @@ export default function AuthorizationPage() {
       )}
 
       {selected ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="max-h-[85vh] w-full max-w-xl overflow-y-auto rounded-xl border border-gray-800 bg-gray-900 p-6">
+        <FormModal
+          title={`Authorization ${selected.id}`}
+          hideTitle
+          contentClassName="max-h-[85vh] w-full max-w-xl overflow-y-auto rounded-xl border border-gray-800 bg-gray-900 p-6"
+          onClose={() => {
+            setSelected(null);
+            setActionError("");
+          }}
+        >
             <div className="flex items-start justify-between">
               <h2 className="text-lg font-semibold text-white">Authorization {selected.id}</h2>
               <button
@@ -484,6 +510,7 @@ export default function AuthorizationPage() {
                   setSelected(null);
                   setActionError("");
                 }}
+                aria-label="Close authorization detail"
                 className="text-gray-500 hover:text-gray-300"
               >
                 ✕
@@ -491,7 +518,7 @@ export default function AuthorizationPage() {
             </div>
 
             {actionError ? (
-              <div className="mt-3 rounded-lg border border-red-800 bg-red-950 px-3 py-2 text-xs text-red-300">
+              <div role="alert" className="mt-3 rounded-lg border border-red-800 bg-red-950 px-3 py-2 text-xs text-red-300">
                 {actionError}
               </div>
             ) : null}
@@ -624,8 +651,7 @@ export default function AuthorizationPage() {
                 Close
               </button>
             </div>
-          </div>
-        </div>
+        </FormModal>
       ) : null}
     </div>
   );

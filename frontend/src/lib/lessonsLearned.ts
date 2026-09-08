@@ -1,55 +1,50 @@
 import { api } from "@/lib/api";
 
-export interface LessonsLearnedReview {
-  review_id: string;
-  tenant_id: string;
+// Verified against `backend/src/lessons_learned/api/v1/routes.py` and
+// `LessonsApplicationService.get`/`create_for_incident` (application/
+// services/lessons_application_service.py) — the real read model is
+// keyed by `incident_id` only (`GET /lessons-learned/incident/{id}`);
+// there is no list-all-reviews endpoint, and `lessons`/`actions` are
+// integer counts on read, not full nested objects.
+
+export interface LessonsLearnedRecord {
+  ll_id: string;
+  status: string;
   incident_id: string;
-  status: string;
-  technique_ids: string[];
-  lessons: Lesson[];
-  actions: Action[];
-  created_at: string;
+  lessons: number;
+  actions: number;
+  quality_score: number;
+  techniques: string[];
 }
 
-export interface Lesson {
-  lesson_id: string;
-  category: string;
-  description: string;
-  impact_summary: string;
+export function getForIncident(incidentId: string): Promise<LessonsLearnedRecord> {
+  return api.get<LessonsLearnedRecord>(`/api/v1/lessons-learned/incident/${incidentId}`);
 }
 
-export interface Action {
-  action_id: string;
-  title: string;
-  description: string;
-  owner: string;
-  priority: string;
-  status: string;
-}
-
-export function listReviews(): Promise<LessonsLearnedReview[]> {
-  return api.get<LessonsLearnedReview[]>("/api/v1/lessons-learned");
-}
-
-export function getReview(reviewId: string): Promise<LessonsLearnedReview> {
-  return api.get<LessonsLearnedReview>(`/api/v1/lessons-learned/${reviewId}`);
-}
-
-export function createReview(incidentId: string, techniqueIds: string[] = []): Promise<LessonsLearnedReview> {
-  return api.post<LessonsLearnedReview>("/api/v1/lessons-learned", {
+export function createReview(
+  incidentId: string,
+  techniqueIds: string[] = []
+): Promise<{ ll_id: string; status: string }> {
+  return api.post<{ ll_id: string; status: string }>("/api/v1/lessons-learned", {
     incident_id: incidentId,
     technique_ids: techniqueIds,
   });
 }
 
-export function addLesson(reviewId: string, lesson: { category: string; description: string; impact_summary: string }): Promise<LessonsLearnedReview> {
-  return api.post<LessonsLearnedReview>(`/api/v1/lessons-learned/${reviewId}/lessons`, lesson);
+export function addLesson(
+  llId: string,
+  lesson: { category: string; description: string; impact_summary: string }
+): Promise<unknown> {
+  return api.post(`/api/v1/lessons-learned/${llId}/lessons`, lesson);
 }
 
-export function addAction(reviewId: string, action: { title: string; description: string; owner: string; priority: string }): Promise<LessonsLearnedReview> {
-  return api.post<LessonsLearnedReview>(`/api/v1/lessons-learned/${reviewId}/actions`, action);
+export function addAction(
+  llId: string,
+  action: { title: string; description: string; owner: string; priority: string }
+): Promise<unknown> {
+  return api.post(`/api/v1/lessons-learned/${llId}/actions`, action);
 }
 
-export function finalizeReview(reviewId: string): Promise<LessonsLearnedReview> {
-  return api.post<LessonsLearnedReview>(`/api/v1/lessons-learned/${reviewId}/finalize`, {});
+export function finalizeReview(llId: string, actor = "ui"): Promise<unknown> {
+  return api.post(`/api/v1/lessons-learned/${llId}/finalize`, { actor });
 }

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import type { Target } from "@/lib/types";
+import { InvestigationDrawer } from "@/components/cc";
 import {
   activatePolicy,
   createPolicy,
@@ -241,147 +242,121 @@ function PolicyDetail({
   const lifecycle = policy?.lifecycle;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <div className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-xl border border-gray-800 bg-gray-900 p-6">
-        <div className="flex items-start justify-between">
-          <h2 className="text-lg font-semibold text-white">Continuous Validation Policy</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-300">
-            ✕
-          </button>
-        </div>
-
-        {error ? (
-          <div className="mt-3 rounded-lg border border-red-800 bg-red-950 px-3 py-2 text-xs text-red-300">
-            {error}
-          </div>
-        ) : null}
-        {actionError ? (
-          <div className="mt-3 rounded-lg border border-red-800 bg-red-950 px-3 py-2 text-xs text-red-300">
-            {actionError}
-          </div>
-        ) : null}
-        {runResult ? (
-          <div className="mt-3 rounded-lg border border-emerald-800 bg-emerald-950 px-3 py-2 text-xs text-emerald-300">
-            {runResult}
-          </div>
-        ) : null}
-
-        {policy ? (
-          <>
-            <div className="mt-4 space-y-2 text-sm">
-              <div>
-                <span className="text-gray-500">Lifecycle: </span>
-                <span
-                  className={`rounded border px-2 py-0.5 text-xs font-medium ${lifecycleBadgeClass(policy.lifecycle)}`}
-                >
-                  {displayEnum(toCanonicalLifecycle(policy.lifecycle))}
-                </span>
-              </div>
-              <div>
-                <span className="text-gray-500">Target: </span>
-                <span className="text-gray-300">{policy.target_id}</span>
-              </div>
-              <div>
-                <span className="text-gray-500">Profile: </span>
-                <span className="text-gray-300">{displayEnum(policy.profile)}</span>
-                <span className="text-gray-500"> · Cadence: </span>
-                <span className="text-gray-300">{displayEnum(policy.cadence)}</span>
-              </div>
-              <div>
-                <span className="text-gray-500">Next due: </span>
-                <span className="text-gray-300">{formatDateTime(policy.next_due_at)}</span>
-                <span className="text-gray-500"> · Last scheduled: </span>
-                <span className="text-gray-300">{formatDateTime(policy.last_scheduled_at)}</span>
-              </div>
-            </div>
-
-            <div className="mt-4 flex flex-wrap gap-3 border-t border-gray-800 pt-4">
-              {lifecycle === "draft" ? (
-                <button
-                  disabled={actionBusy}
-                  onClick={() => handleAction(() => activatePolicy(policyId))}
-                  className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-500 disabled:opacity-50"
-                >
-                  Activate
-                </button>
-              ) : null}
-              {lifecycle === "active" ? (
-                <button
-                  disabled={actionBusy}
-                  onClick={() => handleAction(() => pausePolicy(policyId))}
-                  className="rounded-lg border border-amber-700 px-3 py-1.5 text-xs text-amber-400 hover:bg-amber-950 disabled:opacity-50"
-                >
-                  Pause
-                </button>
-              ) : null}
-              {lifecycle === "paused" ? (
-                <button
-                  disabled={actionBusy}
-                  onClick={() => handleAction(() => resumePolicy(policyId))}
-                  className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-500 disabled:opacity-50"
-                >
-                  Resume
-                </button>
-              ) : null}
-              {lifecycle !== "disabled" ? (
-                <button
-                  disabled={actionBusy}
-                  onClick={() => handleAction(() => disablePolicy(policyId))}
-                  className="rounded-lg border border-red-700 px-3 py-1.5 text-xs text-red-400 hover:bg-red-950 disabled:opacity-50"
-                >
-                  Disable
-                </button>
-              ) : null}
-              {lifecycle !== "disabled" ? (
-                <button
-                  disabled={actionBusy}
-                  onClick={handleRunNow}
-                  className="rounded-lg border border-gray-700 px-3 py-1.5 text-xs text-gray-300 hover:border-gray-600 disabled:opacity-50"
-                >
-                  Run Now
-                </button>
-              ) : null}
-              {lifecycle === "disabled" ? (
-                <div className="text-xs text-gray-600">
-                  Disabled policies are terminal — create a new policy to resume continuous
-                  validation for this target.
-                </div>
-              ) : null}
-            </div>
-
-            <div className="mt-4 border-t border-gray-800 pt-4">
-              <div className="text-xs uppercase tracking-wide text-gray-500">
-                Security Drift ({drift?.length ?? 0})
-              </div>
-              {drift === null ? (
-                <div className="mt-2 text-sm text-gray-500">Loading drift feed…</div>
-              ) : drift.length === 0 ? (
-                <div className="mt-2 text-sm text-gray-500">
-                  No drift detected yet for this policy.
-                </div>
-              ) : (
-                <div className="mt-2 space-y-2">
-                  {drift.map((d) => (
-                    <DriftEventRow key={d.id} event={d} />
-                  ))}
-                </div>
-              )}
-            </div>
-          </>
-        ) : (
-          <div className="mt-6 text-gray-400">Loading policy…</div>
-        )}
-
-        <div className="mt-6 flex justify-end">
-          <button
-            onClick={onClose}
-            className="rounded-lg border border-gray-700 px-4 py-2 text-sm text-gray-300 hover:border-gray-600"
-          >
-            Close
-          </button>
-        </div>
-      </div>
-    </div>
+    <InvestigationDrawer
+      open
+      onClose={onClose}
+      title="Continuous Validation Policy"
+      entityId={policyId}
+      fields={
+        policy
+          ? [
+              ...(error ? [{ label: "Error", value: <span className="text-red-400">{error}</span> }] : []),
+              ...(actionError
+                ? [{ label: "Action Error", value: <span className="text-red-400">{actionError}</span> }]
+                : []),
+              ...(runResult
+                ? [{ label: "Run Result", value: <span className="text-emerald-400">{runResult}</span> }]
+                : []),
+              {
+                label: "Lifecycle",
+                value: (
+                  <span
+                    className={`rounded border px-2 py-0.5 text-xs font-medium ${lifecycleBadgeClass(policy.lifecycle)}`}
+                  >
+                    {displayEnum(toCanonicalLifecycle(policy.lifecycle))}
+                  </span>
+                ),
+              },
+              { label: "Target", value: policy.target_id },
+              {
+                label: "Profile",
+                value: `${displayEnum(policy.profile)} · Cadence: ${displayEnum(policy.cadence)}`,
+              },
+              {
+                label: "Schedule",
+                value: `Next due: ${formatDateTime(policy.next_due_at)} · Last scheduled: ${formatDateTime(policy.last_scheduled_at)}`,
+              },
+              {
+                label: "Actions",
+                value:
+                  lifecycle === "disabled" ? (
+                    <div className="text-xs text-gray-600">
+                      Disabled policies are terminal — create a new policy to resume continuous
+                      validation for this target.
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {lifecycle === "draft" ? (
+                        <button
+                          type="button"
+                          disabled={actionBusy}
+                          onClick={() => handleAction(() => activatePolicy(policyId))}
+                          className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-500 disabled:opacity-50"
+                        >
+                          Activate
+                        </button>
+                      ) : null}
+                      {lifecycle === "active" ? (
+                        <button
+                          type="button"
+                          disabled={actionBusy}
+                          onClick={() => handleAction(() => pausePolicy(policyId))}
+                          className="rounded-lg border border-amber-700 px-3 py-1.5 text-xs text-amber-400 hover:bg-amber-950 disabled:opacity-50"
+                        >
+                          Pause
+                        </button>
+                      ) : null}
+                      {lifecycle === "paused" ? (
+                        <button
+                          type="button"
+                          disabled={actionBusy}
+                          onClick={() => handleAction(() => resumePolicy(policyId))}
+                          className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-500 disabled:opacity-50"
+                        >
+                          Resume
+                        </button>
+                      ) : null}
+                      <button
+                        type="button"
+                        disabled={actionBusy}
+                        onClick={() => handleAction(() => disablePolicy(policyId))}
+                        className="rounded-lg border border-red-700 px-3 py-1.5 text-xs text-red-400 hover:bg-red-950 disabled:opacity-50"
+                      >
+                        Disable
+                      </button>
+                      <button
+                        type="button"
+                        disabled={actionBusy}
+                        onClick={handleRunNow}
+                        className="rounded-lg border border-gray-700 px-3 py-1.5 text-xs text-gray-300 hover:border-gray-600 disabled:opacity-50"
+                      >
+                        Run Now
+                      </button>
+                    </div>
+                  ),
+              },
+              {
+                label: `Security Drift (${drift?.length ?? 0})`,
+                value:
+                  drift === null ? (
+                    <span className="text-gray-500">Loading drift feed…</span>
+                  ) : drift.length === 0 ? (
+                    <span className="text-gray-500">No drift detected yet for this policy.</span>
+                  ) : (
+                    <div className="space-y-2">
+                      {drift.map((d) => (
+                        <DriftEventRow key={d.id} event={d} />
+                      ))}
+                    </div>
+                  ),
+              },
+            ]
+          : [
+              ...(error ? [{ label: "Error", value: <span className="text-red-400">{error}</span> }] : []),
+              { label: "Status", value: <span className="text-gray-400">Loading policy…</span> },
+            ]
+      }
+    />
   );
 }
 

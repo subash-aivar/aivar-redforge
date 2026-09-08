@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   AsyncContent,
   DataConsole,
+  FormField,
+  FormModal,
   InvestigationDrawer,
   KpiTile,
   PageHeader,
@@ -25,6 +27,23 @@ export default function ThreatHuntPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
+  const [rejectReasonError, setRejectReasonError] = useState("");
+  const [rejectServerError, setRejectServerError] = useState("");
+  const [rejectSubmitting, setRejectSubmitting] = useState(false);
+  const rejectReasonRef = useRef<HTMLTextAreaElement>(null);
+
+  // Stable identity is required: InvestigationDrawer's focus-management
+  // effect depends on `onClose`, and any inline arrow function here
+  // would get a new identity on every ThreatHuntPage re-render — e.g.
+  // every keystroke in the reject-reason field below — re-running that
+  // effect and stealing focus back to the drawer's own Close button.
+  const closeDrawer = useCallback(() => {
+    setSelected(null);
+    setActionError(null);
+  }, []);
+
   async function handlePromote(c: ThreatHuntCandidate) {
     const versionId = window.prompt("Promoted rule version ID (UUID):");
     if (!versionId) return;
@@ -41,19 +60,41 @@ export default function ThreatHuntPage() {
     }
   }
 
-  async function handleReject(c: ThreatHuntCandidate) {
-    const reason = window.prompt("Rejection reason:");
-    if (!reason) return;
-    setBusy(true);
-    setActionError(null);
+  function openRejectModal() {
+    setRejectReason("");
+    setRejectReasonError("");
+    setRejectServerError("");
+    setShowRejectModal(true);
+  }
+
+  // Stable identity for the same reason as closeDrawer above — FormModal's
+  // own focus-management effect depends on `onClose`, and it must not
+  // re-run (and steal focus back to its first field) on every keystroke
+  // inside its own reason textarea.
+  const closeRejectModal = useCallback(() => {
+    setShowRejectModal(false);
+  }, []);
+
+  async function handleRejectSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!selected) return;
+    if (!rejectReason.trim()) {
+      setRejectReasonError("Rejection reason is required.");
+      rejectReasonRef.current?.focus();
+      return;
+    }
+    setRejectReasonError("");
+    setRejectServerError("");
+    setRejectSubmitting(true);
     try {
-      await rejectCandidate(c.candidate_id, "analyst", reason);
+      await rejectCandidate(selected.candidate_id, "analyst", rejectReason.trim());
+      setShowRejectModal(false);
       setSelected(null);
       candidates.reload();
     } catch (e) {
-      setActionError(e instanceof Error ? e.message : "Reject failed");
+      setRejectServerError(e instanceof Error ? e.message : "Reject failed");
     } finally {
-      setBusy(false);
+      setRejectSubmitting(false);
     }
   }
 
@@ -115,10 +156,7 @@ export default function ThreatHuntPage() {
 
       <InvestigationDrawer
         open={selected !== null}
-        onClose={() => {
-          setSelected(null);
-          setActionError(null);
-        }}
+        onClose={closeDrawer}
         title={selected ? `Candidate ${selected.candidate_id.slice(0, 12)}…` : ""}
         subtitle={selected?.status}
         fields={
@@ -129,7 +167,7 @@ export default function ThreatHuntPage() {
                 { label: "Detection Rule Format", value: selected.detection_rule_format },
                 { label: "Technique Coverage", value: selected.technique_coverage.join(", ") || "—" },
                 { label: "Anomaly Signal Count", value: selected.anomaly_signal_count },
-                ...(actionError ? [{ label: "Action Error", value: <span className="text-red-400">{actionError}</span> }] : []),
+                ...(actionError ? [{ label: "Action Error", value: <span role="alert" className="text-red-400">{actionError}</span> }] : []),
                 {
                   label: "Actions",
                   value: (
@@ -145,7 +183,7 @@ export default function ThreatHuntPage() {
                       <button
                         type="button"
                         disabled={busy}
-                        onClick={() => selected && handleReject(selected)}
+                        onClick={openRejectModal}
                         className="rounded-md border border-red-800 bg-red-950/40 px-3 py-1.5 text-xs font-semibold text-red-300 hover:bg-red-950/70 disabled:opacity-50"
                       >
                         Reject
@@ -157,6 +195,46 @@ export default function ThreatHuntPage() {
             : []
         }
       />
+
+      {showRejectModal && selected && (
+        <FormModal
+          title={`Reject Candidate ${selected.candidate_id.slice(0, 12)}…`}
+          onClose={closeRejectModal}
+        >
+          <form onSubmit={handleRejectSubmit} noValidate>
+            <FormField label="Rejection reason" required error={rejectReasonError || undefined}>
+              <textarea
+                ref={rejectReasonRef}
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                rows={3}
+                className="w-full rounded-md border border-gray-700 bg-gray-950 px-2 py-1.5 text-sm text-gray-200"
+              />
+            </FormField>
+            {rejectServerError && (
+              <p role="alert" className="mt-2 text-xs text-red-400">
+                {rejectServerError}
+              </p>
+            )}
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={closeRejectModal}
+                className="rounded-md border border-gray-700 px-3 py-1.5 text-xs text-gray-300"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={rejectSubmitting}
+                className="rounded-md border border-red-800 bg-red-950/50 px-3 py-1.5 text-xs text-red-300 hover:bg-red-900/50 disabled:opacity-50"
+              >
+                {rejectSubmitting ? "Rejecting…" : "Reject Candidate"}
+              </button>
+            </div>
+          </form>
+        </FormModal>
+      )}
     </>
   );
 }

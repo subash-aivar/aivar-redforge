@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen, waitFor, cleanup } from "@testing-library/react";
+import { render, screen, waitFor, cleanup, fireEvent } from "@testing-library/react";
 import * as auth from "@/lib/auth";
 import * as platform from "@/lib/platform";
 import { setToken, setOrganizationId, ApiError } from "@/lib/api";
@@ -108,5 +108,48 @@ describe("AppLayout", () => {
       expect(screen.getByText("DASHBOARD CONTENT")).toBeInTheDocument();
     });
     expect(screen.queryByText("Platform Control Plane")).not.toBeInTheDocument();
+  });
+
+  describe("mobile navigation trigger", () => {
+    async function renderAuthenticated() {
+      setToken("valid-token");
+      setOrganizationId("org-1");
+      vi.mocked(auth.getMe).mockResolvedValue({
+        user_id: "u1", email: "user@example.test", display_name: "Test User", status: "active",
+      });
+      vi.mocked(platform.getPlatformAccess).mockResolvedValue({
+        user_id: "u1", platform_roles: [], permissions: [], has_platform_access: false,
+      });
+      render(<AppLayout><div>DASHBOARD CONTENT</div></AppLayout>);
+      await waitFor(() => {
+        expect(screen.getByText("DASHBOARD CONTENT")).toBeInTheDocument();
+      });
+      return screen.getByRole("button", { name: "Open navigation" });
+    }
+
+    it("the trigger is present, md:hidden (mobile/tablet-only), and starts collapsed", async () => {
+      const trigger = await renderAuthenticated();
+      expect(trigger).toHaveClass("md:hidden");
+      expect(trigger).toHaveAttribute("aria-expanded", "false");
+      expect(trigger).toHaveAttribute("aria-controls", "app-mobile-nav");
+    });
+
+    it("clicking the trigger opens the drawer and flips aria-expanded", async () => {
+      const trigger = await renderAuthenticated();
+      fireEvent.click(trigger);
+      expect(trigger).toHaveAttribute("aria-expanded", "true");
+      expect(document.getElementById("app-mobile-nav")).toHaveAttribute("role", "dialog");
+    });
+
+    it("closing the drawer (Escape) returns focus to the trigger", async () => {
+      const trigger = await renderAuthenticated();
+      fireEvent.click(trigger);
+      expect(trigger).toHaveAttribute("aria-expanded", "true");
+
+      fireEvent.keyDown(document, { key: "Escape" });
+
+      expect(trigger).toHaveAttribute("aria-expanded", "false");
+      expect(document.activeElement).toBe(trigger);
+    });
   });
 });

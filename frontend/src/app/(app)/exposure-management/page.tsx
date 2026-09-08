@@ -8,6 +8,7 @@ import {
   type SecurityCondition,
   type SecurityConditionSummary,
 } from "@/lib/securityConditions";
+import { InvestigationDrawer } from "@/components/cc";
 
 const SEVERITY_STYLES: Record<string, string> = {
   critical: "bg-red-950 text-red-400",
@@ -191,112 +192,84 @@ export default function ExposureManagementPage() {
         </div>
       )}
 
-      {selected ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="max-h-[85vh] w-full max-w-xl overflow-y-auto rounded-xl border border-gray-800 bg-gray-900 p-6">
-            <div className="flex items-start justify-between">
-              <h2 className="text-lg font-semibold text-white">{selected.title}</h2>
-              <button
-                onClick={() => setSelected(null)}
-                className="text-gray-500 hover:text-gray-300"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="mt-4 space-y-2 text-sm">
-              <div>
-                <span className="text-gray-500">Rule ID: </span>
-                <span className="font-mono text-gray-300">{selected.stable_rule_id}</span>
-              </div>
-              <div>
-                <span className="text-gray-500">Affected asset: </span>
-                <span className="text-gray-300">{selected.affected_asset_id}</span>
-              </div>
-              <div>
-                <span className="text-gray-500">Evidence state: </span>
-                <span className="text-gray-300">{displayEnum(selected.evidence_state)}</span>
-              </div>
-              <div>
-                <span className="text-gray-500">Severity: </span>
-                <span className={`rounded px-2 py-0.5 text-xs ${severityBadge(selected.severity)}`}>
-                  {displayEnum(selected.severity)}
-                </span>
-              </div>
-              <div>
-                <span className="text-gray-500">Source: </span>
-                <span className="text-gray-300">{displayEnum(selected.source_category)}</span>
-              </div>
-              <div>
-                <span className="text-gray-500">Summary: </span>
-                <span className="text-gray-300">{selected.summary}</span>
-              </div>
-              {selected.remediation ? (
-                <div>
-                  <span className="text-gray-500">Remediation: </span>
-                  <span className="text-gray-300">{selected.remediation}</span>
-                </div>
-              ) : null}
-              {selected.canonical_references.length > 0 ? (
-                <div>
-                  <span className="text-gray-500">References: </span>
-                  <span className="text-gray-300">
-                    {selected.canonical_references.join(", ")}
-                  </span>
-                </div>
-              ) : null}
-              {selected.evidence.length > 0 ? (
-                <div>
-                  <div className="text-gray-500">Evidence:</div>
-                  <div className="mt-1 space-y-1">
-                    {selected.evidence.map((e, i) => (
-                      <div key={i} className="rounded bg-gray-950 px-2 py-1 font-mono text-xs text-gray-400">
-                        {e.label}: {e.value}
-                        {e.truncated === "true" ? " (truncated)" : ""}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-              <div>
-                <span className="text-gray-500">First observed: </span>
-                <span className="text-gray-300">
-                  {new Date(selected.first_observed_at).toLocaleString()}
-                </span>
-              </div>
-              <div>
-                <span className="text-gray-500">Last observed: </span>
-                <span className="text-gray-300">
-                  {new Date(selected.last_observed_at).toLocaleString()}
-                </span>
-              </div>
-              <div>
-                <span className="text-gray-500">Lifecycle: </span>
-                <span className="text-gray-300">
-                  {selected.lifecycle === "resolved" ? "RESOLVED" : "ACTIVE"}
-                </span>
-              </div>
-            </div>
-
-            <div className="mt-6 flex justify-end gap-3">
-              {selected.lifecycle === "active" ? (
-                <button
-                  onClick={() => handleResolve(selected.id)}
-                  disabled={resolving}
-                  className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-600 disabled:opacity-50"
-                >
-                  {resolving ? "Resolving…" : "Resolve"}
-                </button>
-              ) : null}
-              <button
-                onClick={() => setSelected(null)}
-                className="rounded-lg border border-gray-700 px-4 py-2 text-sm text-gray-300 hover:border-gray-600"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <InvestigationDrawer
+        open={selected !== null}
+        onClose={() => setSelected(null)}
+        title={selected?.title ?? ""}
+        subtitle={selected ? displayEnum(selected.severity) : undefined}
+        entityId={selected?.id}
+        fields={
+          selected
+            ? [
+                { label: "Rule ID", value: <span className="font-mono">{selected.stable_rule_id}</span> },
+                { label: "Affected asset", value: selected.affected_asset_id },
+                { label: "Evidence state", value: displayEnum(selected.evidence_state) },
+                {
+                  label: "Severity",
+                  value: (
+                    <span className={`rounded px-2 py-0.5 text-xs ${severityBadge(selected.severity)}`}>
+                      {displayEnum(selected.severity)}
+                    </span>
+                  ),
+                },
+                { label: "Source", value: displayEnum(selected.source_category) },
+                { label: "Summary", value: selected.summary },
+                ...(selected.remediation
+                  ? [{ label: "Remediation", value: selected.remediation }]
+                  : []),
+                ...(selected.canonical_references.length > 0
+                  ? [{ label: "References", value: selected.canonical_references.join(", ") }]
+                  : []),
+                ...(selected.evidence.length > 0
+                  ? [
+                      {
+                        label: "Evidence",
+                        value: (
+                          <div className="space-y-1">
+                            {selected.evidence.map((e, i) => (
+                              <div key={i} className="rounded bg-gray-950 px-2 py-1 font-mono text-xs text-gray-400">
+                                {e.label}: {e.value}
+                                {e.truncated === "true" ? " (truncated)" : ""}
+                              </div>
+                            ))}
+                          </div>
+                        ),
+                      },
+                    ]
+                  : []),
+                {
+                  label: "First observed",
+                  value: new Date(selected.first_observed_at).toLocaleString(),
+                },
+                {
+                  label: "Last observed",
+                  value: new Date(selected.last_observed_at).toLocaleString(),
+                },
+                {
+                  label: "Lifecycle",
+                  value: selected.lifecycle === "resolved" ? "RESOLVED" : "ACTIVE",
+                },
+                ...(selected.lifecycle === "active"
+                  ? [
+                      {
+                        label: "Actions",
+                        value: (
+                          <button
+                            type="button"
+                            onClick={() => handleResolve(selected.id)}
+                            disabled={resolving}
+                            className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-600 disabled:opacity-50"
+                          >
+                            {resolving ? "Resolving…" : "Resolve"}
+                          </button>
+                        ),
+                      },
+                    ]
+                  : []),
+              ]
+            : []
+        }
+      />
     </div>
   );
 }

@@ -8,7 +8,6 @@ import {
   KpiTile,
   PageHeader,
   StatusPill,
-  fmtTime,
   useAsync,
   type ConsoleColumn,
 } from "@/components/cc";
@@ -36,15 +35,13 @@ export default function AutomatedActionsPage() {
   }
 
   const columns: ConsoleColumn<AutomationExecution>[] = [
-    { key: "playbook", header: "Playbook", width: "20%", render: (r) => (
+    { key: "playbook", header: "Playbook", width: "22%", render: (r) => (
       <span className="font-mono text-[11px] text-gray-300">{r.playbook_id.slice(0, 10)}…</span>
     )},
-    { key: "status", header: "Status", width: "14%", render: (r) => <StatusPill status={r.status} /> },
-    { key: "source", header: "Source", width: "14%", render: (r) => r.source_context },
-    { key: "event", header: "Event Type", width: "16%", render: (r) => r.source_event_type },
-    { key: "steps", header: "Steps", width: "10%", render: (r) => `${r.steps.length}` },
-    { key: "created", header: "Created", width: "14%", render: (r) => fmtTime(r.created_at) },
-    { key: "completed", header: "Completed", width: "12%", render: (r) => fmtTime(r.completed_at) },
+    { key: "status", header: "Status", width: "16%", render: (r) => <StatusPill status={r.status} /> },
+    { key: "progress", header: "Progress", width: "16%", render: (r) => `${r.current_step} / ${r.total_steps}` },
+    { key: "operator", header: "Operator", width: "20%", render: (r) => r.operator_id },
+    { key: "failure", header: "Failure Reason", width: "26%", render: (r) => r.failure_reason ?? "—" },
   ];
 
   return (
@@ -86,22 +83,9 @@ export default function AutomatedActionsPage() {
           onClose={() => setSelected(null)}
           fields={[
             { label: "Status", value: <StatusPill status={selected.status} /> },
-            { label: "Source", value: selected.source_context },
-            { label: "Event", value: selected.source_event_type },
-            { label: "Created", value: fmtTime(selected.created_at) },
-            {
-              label: `Steps (${selected.steps.length})`,
-              value: (
-                <div className="divide-y divide-gray-800">
-                  {selected.steps.map((step) => (
-                    <div key={step.step_id} className="flex items-center justify-between py-2">
-                      <span className="text-sm text-gray-300">{step.step_type}</span>
-                      <StatusPill status={step.status} />
-                    </div>
-                  ))}
-                </div>
-              ),
-            },
+            { label: "Progress", value: `${selected.current_step} / ${selected.total_steps} steps` },
+            { label: "Operator", value: selected.operator_id },
+            { label: "Failure Reason", value: selected.failure_reason ?? "—" },
             ...((selected.status === "running" || selected.status === "pending")
               ? [{
                   label: "Actions",

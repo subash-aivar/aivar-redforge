@@ -37,7 +37,9 @@ Set these on the **backend** process before starting/restarting it:
 Both variables use the app's standard `REDFORGE_` env prefix
 (`redforge/core/config.py`), so they can be set the same way you already
 set `REDFORGE_DATABASE_URL` / `REDFORGE_JWT_SECRET` — `.env` file,
-container environment, secrets manager injection, etc.
+container environment, secrets manager injection, etc. Both are also
+documented (commented out, disabled by default) in `backend/.env.example`
+— that is the first place to look when setting up a new environment.
 
 **Restart required.** `Settings` is constructed once when `create_app()`
 runs (no caching decorator, but also no re-read after startup) — changing
@@ -220,7 +222,44 @@ un-grant the assignment that already exists.
 | Everything above looks right but bootstrap still 403s | The backend process serving your request is a different instance/replica than the one that has the env vars set (e.g. inconsistent rollout across replicas) | Confirm the env vars are set identically across every backend replica, and that all replicas have been restarted |
 | `alembic upgrade head` hasn't been run / bootstrap endpoint 500s | Database missing the `platform_bootstrap_state`/`platform_assignments`/`platform_audit_log` tables (migration `0011`) | Run migrations to head before attempting bootstrap |
 
-## 10. Production recommendations
+## 10. Recovering a stale or rebuilt development environment
+
+If a development environment is rebuilt from scratch (fresh `docker
+compose up` against a new/emptied `postgres_data` volume, a new local
+clone, or a new machine), platform administration is **not** carried
+over automatically — this is expected, not a bug:
+
+- Migration `0011` inserts the `platform_bootstrap_state` singleton row
+  as `consumed_at = NULL` every time it runs against a fresh schema.
+  Running `alembic upgrade head` against the new/empty database
+  therefore makes bootstrap available again from a clean slate — you do
+  not need to manually reset anything.
+- Any previously-bootstrapped `platform_assignments` row lived in the
+  old database and does not exist in the new one. There is no
+  migration/data step that "restores" a prior Super Admin — the correct
+  recovery is to repeat Steps 2–6 of this runbook end-to-end against the
+  new environment.
+- If the old `postgres_data` volume still exists and is simply not
+  currently mounted (e.g. you switched compose projects or volumes), the
+  faster recovery is to reattach that volume rather than re-bootstrap —
+  the existing account, password, and platform assignment are all still
+  valid in that case. Use `GET /api/v1/platform/bootstrap/status` to
+  tell the two situations apart: `{"available": true}` means this
+  database has never completed bootstrap (or bootstrap is disabled);
+  `{"available": false}` while you still cannot log in as your expected
+  admin means the assignment or account is present in a *different*
+  database than the one the backend is currently pointed at
+  (`REDFORGE_DATABASE_URL`) — check that first before assuming bootstrap
+  itself is broken.
+- If the account exists and its password is simply forgotten, that is a
+  normal password problem, not a bootstrap problem — use whatever
+  password-reset mechanism the deployed `auth` flow provides, or (dev
+  only) register a new account and use the grant/revoke flow from an
+  existing Super Admin. Never attempt to work around a forgotten
+  password by re-running bootstrap; bootstrap is one-time by design and
+  does not touch existing credentials.
+
+## 11. Production recommendations
 
 - **Automate Steps 2–7 as a documented, auditable one-time deploy task**
   (e.g. a runbook checklist item in your deploy playbook, or a scripted

@@ -1,9 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { api } from "@/lib/api";
 import {
-  CampaignDetailView,
+  AsyncContent,
+  DataConsole,
+  FormField,
+  InvestigationDrawer,
+  KpiTile,
+  Panel,
+  PageHeader,
+  fmtTime,
+  useAsync,
+  type ConsoleColumn,
+  type DrawerField,
+} from "@/components/cc";
+import {
+  toCanonicalNodeState,
   type CampaignSummary,
   type CampaignDetail,
 } from "./campaign-graph";
@@ -17,24 +30,28 @@ interface ProviderOption {
   auth_ref: string;
 }
 
+const STATE_TONE: Record<string, string> = {
+  completed: "text-green-400",
+  failed: "text-red-400",
+  cancelled: "text-gray-400",
+  running: "text-blue-400",
+};
+
 export default function CampaignsPage() {
-  const [campaigns, setCampaigns] = useState<CampaignSummary[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [apiError, setApiError] = useState("");
+  const campaignsState = useAsync<CampaignSummary[]>(
+    () => api.get<CampaignSummary[]>("/api/v1/red-team/campaigns"),
+    []
+  );
+  const [showCreate, setShowCreate] = useState(false);
   const [selected, setSelected] = useState<CampaignDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
-  const [showCreate, setShowCreate] = useState(false);
-
-  useEffect(() => {
-    api
-      .get<CampaignSummary[]>("/api/v1/red-team/campaigns")
-      .then(setCampaigns)
-      .catch((err) => setApiError(err.message || "Failed to load campaigns"))
-      .finally(() => setLoading(false));
-  }, []);
+  const [detailError, setDetailError] = useState("");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   async function openDetail(id: string) {
+    setSelectedId(id);
     setDetailLoading(true);
+    setDetailError("");
     try {
       const detail = await api.get<CampaignDetail>(
         `/api/v1/red-team/campaigns/${id}`
@@ -42,119 +59,198 @@ export default function CampaignsPage() {
       setSelected(detail);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to load campaign";
-      setApiError(msg);
+      setDetailError(msg);
     } finally {
       setDetailLoading(false);
     }
   }
 
-  function handleLaunched(c: CampaignSummary) {
-    setCampaigns((prev) => [c, ...prev]);
-    setShowCreate(false);
+  function closeDetail() {
+    setSelected(null);
+    setSelectedId(null);
   }
+
+  function handleLaunched() {
+    setShowCreate(false);
+    campaignsState.reload();
+  }
+
+  const campaigns = campaignsState.data ?? [];
+  const total = campaigns.length;
+  const runningCount = campaigns.filter((c) => c.state === "running").length;
+  const completedCount = campaigns.filter((c) => c.state === "completed").length;
+  const totalFindings = campaigns.reduce(
+    (sum, c) => sum + (c.completed_nodes ?? 0),
+    0
+  );
+
+  const columns: ConsoleColumn<CampaignSummary>[] = [
+    {
+      key: "name",
+      header: "Objective",
+      render: (c) => (
+        <div>
+          <span className="font-medium text-gray-100">{c.objective_name}</span>
+          {c.goal_achieved && (
+            <span className="ml-2 text-[10px] text-yellow-400">goal achieved</span>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: "state",
+      header: "State",
+      render: (c) => (
+        <span className={`font-mono text-xs font-semibold ${STATE_TONE[c.state] ?? "text-gray-400"}`}>
+          {c.state.toUpperCase()}
+        </span>
+      ),
+    },
+    {
+      key: "nodes",
+      header: "Nodes",
+      render: (c) => (
+        <span className="text-xs">
+          {c.completed_nodes}/{c.total_nodes} completed
+          {c.failed_nodes > 0 && (
+            <span className="ml-1 text-red-400">({c.failed_nodes} failed)</span>
+          )}
+        </span>
+      ),
+    },
+    {
+      key: "confidence",
+      header: "Confidence",
+      render: (c) => <span className="text-xs">{(c.intelligence_confidence * 100).toFixed(0)}%</span>,
+    },
+    {
+      key: "duration",
+      header: "Duration",
+      render: (c) => <span className="text-xs">{c.duration_ms}ms</span>,
+    },
+    {
+      key: "created",
+      header: "Created",
+      render: (c) => <span className="text-xs text-gray-500">{fmtTime(c.created_at)}</span>,
+    },
+  ];
+
+  const drawerFields: DrawerField[] = selected
+    ? [
+        { label: "State", value: selected.state.toUpperCase() },
+        { label: "Goal achieved", value: selected.goal_achieved ? "Yes" : "No" },
+        { label: "Target ID", value: selected.target_id },
+        { label: "Organization", value: selected.organization_id },
+        {
+          label: "Nodes",
+          value: `${selected.total_nodes} total · ${selected.nodes_executed} executed · ${selected.completed_nodes} completed · ${selected.failed_nodes} failed · ${selected.blocked_nodes} blocked`,
+        },
+        {
+          label: "Intelligence confidence",
+          value: `${(selected.intelligence_confidence * 100).toFixed(0)}%`,
+        },
+        { label: "Duration", value: `${selected.duration_ms}ms` },
+        ...(selected.failure_reason
+          ? [{ label: "Failure reason", value: selected.failure_reason }]
+          : []),
+        { label: "Created", value: fmtTime(selected.created_at) },
+        {
+          label: "Attack nodes",
+          value:
+            selected.graph_nodes.length === 0 ? (
+              "No attack nodes recorded."
+            ) : (
+              <div className="space-y-1.5">
+                {selected.graph_nodes.map((node) => (
+                  <div key={node.id} className="rounded border border-gray-800 bg-gray-900/60 px-2 py-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-xs">{node.id}</span>
+                      <span className="text-[10px] font-semibold text-gray-400">
+                        {toCanonicalNodeState(node.state)}
+                      </span>
+                    </div>
+                    {node.attack_category && (
+                      <div className="text-[11px] text-gray-500">{node.attack_category}</div>
+                    )}
+                    {(node.findings_count ?? 0) > 0 && (
+                      <div className="text-[11px] text-gray-500">{node.findings_count} findings</div>
+                    )}
+                    {node.failure_reason && (
+                      <div className="text-[11px] text-red-400">{node.failure_reason}</div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ),
+        },
+      ]
+    : [];
 
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Red Team Campaigns</h1>
-          <p className="mt-1 text-sm text-gray-400">
-            Autonomous AI security red-team operations
-          </p>
-        </div>
-        <button
-          onClick={() => setShowCreate(true)}
-          className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500"
-        >
-          Launch Campaign
-        </button>
+      <PageHeader
+        title="Red Team Campaigns"
+        subtitle="Autonomous AI security red-team operations"
+        actions={
+          <button
+            onClick={() => setShowCreate((v) => !v)}
+            className="rounded-lg border border-gray-700 px-3 py-1.5 text-sm text-gray-300 hover:text-white"
+          >
+            {showCreate ? "Hide launch form" : "Launch Campaign"}
+          </button>
+        }
+      />
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <KpiTile label="Total campaigns" value={total} />
+        <KpiTile label="Running" value={runningCount} tone={runningCount > 0 ? "ok" : "default"} />
+        <KpiTile label="Completed" value={completedCount} />
+        <KpiTile label="Completed nodes (all campaigns)" value={totalFindings} />
       </div>
 
       {showCreate && (
-        <LaunchCampaignForm
-          onClose={() => setShowCreate(false)}
-          onLaunched={handleLaunched}
-        />
+        <Panel title="Launch Red Team Campaign" className="mt-6">
+          <LaunchCampaignForm onClose={() => setShowCreate(false)} onLaunched={handleLaunched} />
+        </Panel>
       )}
 
-      {apiError && (
-        <div className="mt-4 rounded-lg border border-red-800 bg-red-950 px-4 py-3 text-sm text-red-300">
-          {apiError}
+      {detailError && (
+        <div role="alert" className="mt-4 rounded-lg border border-red-800 bg-red-950 px-4 py-3 text-sm text-red-300">
+          {detailError}
         </div>
       )}
 
-      {selected && (
-        <CampaignDetailView
-          detail={selected}
-          onClose={() => setSelected(null)}
-        />
-      )}
+      <Panel title="Campaigns" className="mt-6">
+        <AsyncContent
+          state={campaignsState}
+          empty={(data) => data.length === 0}
+          emptyLabel="No campaigns executed yet. Launch a red-team campaign to validate your AI system's security posture."
+        >
+          {(data) => (
+            <DataConsole
+              columns={columns}
+              rows={data}
+              rowKey={(c) => c.campaign_id}
+              onRowClick={(c) => openDetail(c.campaign_id)}
+              selectedKey={selectedId}
+              emptyLabel="No campaigns executed yet."
+            />
+          )}
+        </AsyncContent>
+        {detailLoading && (
+          <div className="mt-2 text-xs text-gray-500">Loading campaign detail…</div>
+        )}
+      </Panel>
 
-      {loading ? (
-        <div className="mt-8 text-center text-gray-400">Loading campaigns...</div>
-      ) : campaigns.length === 0 ? (
-        <div className="mt-8 rounded-xl border border-gray-800 bg-gray-900 p-8 text-center">
-          <p className="text-gray-400">No campaigns executed yet.</p>
-          <p className="mt-2 text-sm text-gray-500">
-            Launch a red-team campaign to validate your AI system&apos;s security posture.
-          </p>
-        </div>
-      ) : (
-        <div className="mt-6 space-y-3">
-          {campaigns.map((c) => (
-            <button
-              key={c.campaign_id}
-              onClick={() => openDetail(c.campaign_id)}
-              disabled={detailLoading}
-              className="w-full rounded-xl border border-gray-800 bg-gray-900 p-4 text-left hover:border-gray-600 transition disabled:opacity-50"
-            >
-              <div className="flex items-center justify-between">
-                <div className="font-medium text-white">{c.objective_name}</div>
-                <StateChip state={c.state} goalAchieved={c.goal_achieved} />
-              </div>
-              <div className="mt-2 flex gap-4 text-xs text-gray-500">
-                <span>Nodes: {c.total_nodes}</span>
-                <span>Executed: {c.nodes_executed}</span>
-                <span>Completed: {c.completed_nodes}</span>
-                <span>Failed: {c.failed_nodes}</span>
-                <span>Confidence: {(c.intelligence_confidence * 100).toFixed(0)}%</span>
-                <span>{c.duration_ms}ms</span>
-              </div>
-              {c.failure_reason && (
-                <div className="mt-1 text-xs text-red-400">{c.failure_reason}</div>
-              )}
-              <div className="mt-1 text-xs text-gray-600">
-                {new Date(c.created_at).toLocaleString()}
-              </div>
-            </button>
-          ))}
-        </div>
-      )}
+      <InvestigationDrawer
+        open={!!selected}
+        onClose={closeDetail}
+        title={selected ? `Campaign: ${selected.objective_name}` : ""}
+        subtitle={selected ? selected.campaign_id : undefined}
+        entityId={selected?.campaign_id}
+        fields={drawerFields}
+      />
     </div>
-  );
-}
-
-function StateChip({
-  state,
-  goalAchieved,
-}: {
-  state: string;
-  goalAchieved: boolean;
-}) {
-  const colors: Record<string, string> = {
-    completed: goalAchieved
-      ? "bg-yellow-950 text-yellow-400"
-      : "bg-green-950 text-green-400",
-    failed: "bg-red-950 text-red-400",
-    cancelled: "bg-gray-800 text-gray-400",
-    running: "bg-blue-950 text-blue-400",
-  };
-  const cls = colors[state] ?? "bg-gray-800 text-gray-400";
-  return (
-    <span className={`rounded px-2 py-0.5 text-xs font-medium ${cls}`}>
-      {state}
-      {goalAchieved ? " ✓" : ""}
-    </span>
   );
 }
 
@@ -176,28 +272,21 @@ function LaunchCampaignForm({
   const [error, setError] = useState("");
   const [launching, setLaunching] = useState(false);
 
-  const [providers, setProviders] = useState<ProviderOption[]>([]);
-  const [providersLoading, setProvidersLoading] = useState(true);
-  const [providersError, setProvidersError] = useState("");
-
-  useEffect(() => {
-    api
-      .get<ProviderOption[]>("/api/v1/providers")
-      .then((list) => {
-        setProviders(list);
+  const providersState = useAsync<ProviderOption[]>(
+    () =>
+      api.get<ProviderOption[]>("/api/v1/providers").then((list) => {
         const first = list.find((p) => p.enabled && p.credential_configured);
         if (first) setProviderId(first.id);
-      })
-      .catch((err) => {
-        setProvidersError(err.message || "Failed to load providers");
-      })
-      .finally(() => setProvidersLoading(false));
-  }, []);
+        return list;
+      }),
+    []
+  );
+  const providers = providersState.data ?? [];
 
   const selectedProvider = providers.find((p) => p.id === providerId) ?? null;
 
   function providerStatusMessage(): string | null {
-    if (providersLoading) return null;
+    if (providersState.loading) return null;
     if (providers.length === 0) return "No providers configured. Register a provider first.";
     if (!providerId) return "Select a provider to continue.";
     if (!selectedProvider) return null;
@@ -243,101 +332,107 @@ function LaunchCampaignForm({
   }
 
   return (
-    <div className="mt-6 rounded-xl border border-gray-700 bg-gray-900 p-6">
-      <h2 className="text-lg font-semibold text-white">Launch Red Team Campaign</h2>
-      <p className="mt-1 text-xs text-gray-500">
+    <div>
+      <p className="text-xs text-gray-500">
         Provider credentials are resolved server-side from a registered provider configuration.
         No credential material is submitted from the browser.
       </p>
       <form onSubmit={submit} className="mt-4 space-y-3">
-        <input
-          value={targetName}
-          onChange={(e) => setTargetName(e.target.value)}
-          placeholder="Target name"
-          required
-          className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-white placeholder-gray-500 focus:border-red-500 focus:outline-none"
-        />
-        <input
-          value={targetEndpoint}
-          onChange={(e) => setTargetEndpoint(e.target.value)}
-          placeholder="Target endpoint (e.g. https://api.openai.com/v1)"
-          required
-          className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-white placeholder-gray-500 focus:border-red-500 focus:outline-none"
-        />
-        <input
-          value={targetId}
-          onChange={(e) => setTargetId(e.target.value)}
-          placeholder="Target ID (optional — auto-generated if blank)"
-          className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-white placeholder-gray-500 focus:border-red-500 focus:outline-none"
-        />
+        <FormField label="Target name" required>
+          <input
+            value={targetName}
+            onChange={(e) => setTargetName(e.target.value)}
+            placeholder="e.g. Support Chatbot"
+            className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-white placeholder-gray-500 focus:border-red-500 focus:outline-none"
+          />
+        </FormField>
+        <FormField label="Target endpoint" required>
+          <input
+            type="url"
+            value={targetEndpoint}
+            onChange={(e) => setTargetEndpoint(e.target.value)}
+            placeholder="https://api.openai.com/v1"
+            className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-white placeholder-gray-500 focus:border-red-500 focus:outline-none"
+          />
+        </FormField>
+        <FormField label="Target ID" hint="Optional — auto-generated if blank.">
+          <input
+            value={targetId}
+            onChange={(e) => setTargetId(e.target.value)}
+            placeholder="Optional"
+            className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-white placeholder-gray-500 focus:border-red-500 focus:outline-none"
+          />
+        </FormField>
 
         {/* Provider selector — no raw credential fields */}
         <div>
-          <label className="mb-1 block text-xs font-medium text-gray-400">
-            Provider configuration
-          </label>
-          {providersLoading ? (
-            <div className="rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-sm text-gray-500">
+          {providersState.loading ? (
+            <div className="rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-sm text-gray-500" role="status">
               Loading providers...
             </div>
-          ) : providersError ? (
-            <div className="rounded-lg border border-red-800 bg-red-950 px-3 py-2 text-xs text-red-300">
-              {providersError}
+          ) : providersState.error ? (
+            <div role="alert" className="rounded-lg border border-red-800 bg-red-950 px-3 py-2 text-xs text-red-300">
+              {providersState.error}
             </div>
           ) : providers.length === 0 ? (
-            <div className="rounded-lg border border-yellow-800 bg-yellow-950 px-3 py-2 text-xs text-yellow-300">
+            <div role="status" className="rounded-lg border border-yellow-800 bg-yellow-950 px-3 py-2 text-xs text-yellow-300">
               No provider configured. Register a provider first.
             </div>
           ) : (
-            <select
-              value={providerId}
-              onChange={(e) => setProviderId(e.target.value)}
-              required
-              className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-white"
-            >
-              <option value="">Select a provider…</option>
-              {providers.map((p) => {
-                const credStatus = !p.credential_configured
-                  ? " — no credential"
-                  : "";
-                const enabledStatus = !p.enabled ? " [disabled]" : "";
-                return (
-                  <option key={p.id} value={p.id} disabled={!p.enabled || !p.credential_configured}>
-                    {p.name} ({p.provider_type}){credStatus}{enabledStatus}
-                  </option>
-                );
-              })}
-            </select>
+            <FormField label="Provider configuration" required>
+              <select
+                value={providerId}
+                onChange={(e) => setProviderId(e.target.value)}
+                className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-white"
+              >
+                <option value="">Select a provider…</option>
+                {providers.map((p) => {
+                  const credStatus = !p.credential_configured
+                    ? " — no credential"
+                    : "";
+                  const enabledStatus = !p.enabled ? " [disabled]" : "";
+                  return (
+                    <option key={p.id} value={p.id} disabled={!p.enabled || !p.credential_configured}>
+                      {p.name} ({p.provider_type}){credStatus}{enabledStatus}
+                    </option>
+                  );
+                })}
+              </select>
+            </FormField>
           )}
           {statusMsg && (
-            <div className="mt-1 rounded-lg border border-yellow-800 bg-yellow-950 px-3 py-2 text-xs text-yellow-300">
+            <div role="status" className="mt-1 rounded-lg border border-yellow-800 bg-yellow-950 px-3 py-2 text-xs text-yellow-300">
               {statusMsg}
             </div>
           )}
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <select
-            value={goal}
-            onChange={(e) => setGoal(e.target.value)}
-            className="rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-white"
-          >
-            <option value="jailbreak">Jailbreak</option>
-            <option value="prompt_injection">Prompt Injection</option>
-            <option value="data_extraction">Data Extraction</option>
-            <option value="goal_hijacking">Goal Hijacking</option>
-            <option value="sensitive_disclosure">Sensitive Disclosure</option>
-            <option value="policy_violation">Policy Violation</option>
-          </select>
-          <input
-            value={model}
-            onChange={(e) => setModel(e.target.value)}
-            placeholder="Model (e.g. gpt-4o-mini)"
-            className="rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-white placeholder-gray-500"
-          />
+          <FormField label="Attack goal">
+            <select
+              value={goal}
+              onChange={(e) => setGoal(e.target.value)}
+              className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-white"
+            >
+              <option value="jailbreak">Jailbreak</option>
+              <option value="prompt_injection">Prompt Injection</option>
+              <option value="data_extraction">Data Extraction</option>
+              <option value="goal_hijacking">Goal Hijacking</option>
+              <option value="sensitive_disclosure">Sensitive Disclosure</option>
+              <option value="policy_violation">Policy Violation</option>
+            </select>
+          </FormField>
+          <FormField label="Model">
+            <input
+              value={model}
+              onChange={(e) => setModel(e.target.value)}
+              placeholder="e.g. gpt-4o-mini"
+              className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-white placeholder-gray-500"
+            />
+          </FormField>
         </div>
 
-        {error && <div className="text-sm text-red-400">{error}</div>}
+        {error && <div role="alert" className="text-sm text-red-400">{error}</div>}
         <div className="flex gap-3">
           <button
             type="submit"
