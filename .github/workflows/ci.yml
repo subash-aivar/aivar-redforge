@@ -579,7 +579,21 @@ jobs:
           # finding is a reviewed, accepted risk, suppress it explicitly
           # with `--ignore-vuln <ID>` (documented, auditable) rather than
           # swallowing the exit code here.
-          pip-audit --strict --desc on
+          #
+          # `--skip-editable` (found remotely, Phase 0.2.1 Workstream
+          # 3.2): this project itself is `pip install -e .`-ed as
+          # package "redforge", which is not a published PyPI package —
+          # without this flag pip-audit tries to look "redforge" up on
+          # PyPI and fails immediately, before ever auditing any real
+          # third-party dependency. `--strict` (fail on ANY collection
+          # issue) is incompatible with that skip and was removed for
+          # the same reason — it turned the harmless, expected
+          # "redforge is editable, skipping" notice into a build
+          # failure by itself. Real vulnerabilities in actual
+          # dependencies still fail this step with `--skip-editable`
+          # alone (pip-audit's default, non-strict behavior) — verified
+          # locally to still report and fail on real CVEs.
+          pip-audit --skip-editable --desc on
 
       - name: Secret scanning (trufflehog)
         uses: trufflesecurity/trufflehog@main
