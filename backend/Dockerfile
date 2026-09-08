@@ -1,5 +1,5 @@
 # ─── Stage 1: Dependencies ─────────────────────────────────────────────────
-FROM python:3.12-slim AS dependencies
+FROM python:3.14-slim AS dependencies
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -14,10 +14,11 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 COPY pyproject.toml .
+COPY src/ src/
 RUN pip install --prefix=/install .
 
 # ─── Stage 2: Runtime ──────────────────────────────────────────────────────
-FROM python:3.12-slim AS runtime
+FROM python:3.14-slim AS runtime
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \

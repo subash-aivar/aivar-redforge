@@ -11,7 +11,15 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  PYTHON_VERSION: "3.12"
+  # Pre-existing defect found during this workstream's live Docker
+  # verification: the codebase (credential_vault) uses stdlib
+  # `uuid.uuid7`, added in Python 3.14 — 3.12 cannot import
+  # `redforge.api.v1` at all (credential_vault's router is imported
+  # unconditionally before edition filtering), so every job below would
+  # have failed at collection/startup time on 3.12, for both editions.
+  # Unrelated to Network Edition work; fixed here because it blocks any
+  # CI job from running at all. See backend/Dockerfile's matching fix.
+  PYTHON_VERSION: "3.14"
   REDFORGE_ENVIRONMENT: "test"
   REDFORGE_LOG_FORMAT: "console"
   REDFORGE_JWT_SECRET: "ci-test-secret-key-minimum-32-characters!"
@@ -288,11 +296,109 @@ jobs:
         if: always()
         run: docker rm -f redforge-test 2>/dev/null || true
 
-  # ─── Stage 5: OpenAPI Validation ─────────────────────────────────────────
-  openapi:
-    name: "OpenAPI Schema Validation"
+      # ── Network Defense edition image — same Dockerfile, PRODUCT_EDITION
+      # build arg only (ADR-0009: one Dockerfile, not a second one) ───────
+      - name: Build Network Defense Docker image
+        run: |
+          docker build -t redforge-backend-network-defense:ci \
+            --build-arg PRODUCT_EDITION=network_defense \
+            --build-arg BUILDKIT_INLINE_CACHE=1 .
+
+      - name: Start Network Defense container
+        run: |
+          docker run -d --name redforge-test-nd \
+            -p 8001:8000 \
+            -e REDFORGE_DATABASE_URL=sqlite+aiosqlite:// \
+            -e REDFORGE_ENVIRONMENT=test \
+            -e REDFORGE_JWT_SECRET=ci-test-secret-32-chars-minimum! \
+            -e REDFORGE_PRODUCT_EDITION=network_defense \
+            redforge-backend-network-defense:ci
+          sleep 5
+
+      - name: Verify Network Defense edition is live and excluded routes are absent
+        run: |
+          status=$(curl -sf http://localhost:8001/api/v1/runtime/status)
+          echo "$status" | jq .
+          echo "$status" | jq -e '.product_edition == "network_defense"' > /dev/null
+          # Full-only execution route must be a real 404 in this running
+          # container — not merely asserted in a unit test.
+          code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8001/api/v1/security-operations/executions)
+          [ "$code" = "404" ] || { echo "expected 404 for excluded route, got $code"; exit 1; }
+
+      - name: Cleanup Network Defense container
+        if: always()
+        run: docker rm -f redforge-test-nd 2>/dev/null || true
+
+  # ─── Stage 4b: Docker Compose edition consistency ────────────────────────
+  #
+  # Both editions build from the SAME docker-compose.yml + the SAME two
+  # Dockerfiles — docker-compose.network-defense.yml is an override
+  # overlay, not a second compose file with everything duplicated. This
+  # job proves the override actually merges cleanly (not just that it
+  # parses standalone — test_compose_edition_consistency.py, run in
+  # test-unit, already proves that) and that the merged, resolved config
+  # keeps frontend build arg and backend runtime env in agreement.
+  compose-validation:
+    name: "Docker Compose Edition Consistency"
     runs-on: ubuntu-latest
     needs: [lint]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate base compose file
+        run: docker compose -f docker-compose.yml config > /tmp/compose-base.yml
+
+      - name: Validate base compose sets no edition args (Full stays backward compatible)
+        run: |
+          grep -q "PRODUCT_EDITION" /tmp/compose-base.yml && exit 1
+          grep -q "REDFORGE_PRODUCT_EDITION" /tmp/compose-base.yml && exit 1
+          grep -q "NEXT_PUBLIC_PRODUCT_EDITION" /tmp/compose-base.yml && exit 1
+          exit 0
+
+      - name: Validate Network Defense overlay merges cleanly onto base
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.network-defense.yml config \
+            > /tmp/compose-merged.yml
+
+      - name: Validate merged config keeps frontend/backend edition values consistent
+        run: |
+          python3 -m pip install --quiet pyyaml
+          python3 - <<'EOF'
+          import yaml
+          with open("/tmp/compose-merged.yml") as f:
+              doc = yaml.safe_load(f)
+          backend = doc["services"]["backend"]
+          frontend = doc["services"]["frontend"]
+          backend_build_arg = backend["build"]["args"]["PRODUCT_EDITION"]
+          backend_runtime_env = backend["environment"]["REDFORGE_PRODUCT_EDITION"]
+          frontend_build_arg = frontend["build"]["args"]["PRODUCT_EDITION"]
+          assert backend_build_arg == "network_defense", backend_build_arg
+          assert backend_runtime_env == "network_defense", backend_runtime_env
+          assert frontend_build_arg == "network_defense", frontend_build_arg
+          assert backend_build_arg == backend_runtime_env == frontend_build_arg
+          print("OK: merged compose config is edition-consistent")
+          EOF
+
+  # ─── Stage 5: OpenAPI Validation (both product editions) ────────────────
+  #
+  # ADR-0009: `_Registration.editions` is the one source of truth for which
+  # routers mount per edition (backend/src/redforge/api/v1/__init__.py).
+  # This matrix proves Settings construction + application startup/import +
+  # OpenAPI construction succeed for BOTH "full" and "network_defense" —
+  # the router-surface CONTENTS (exact route sets, exclusions, required
+  # shared surfaces) are already exhaustively asserted by
+  # tests/unit/test_product_edition_router_surface.py and
+  # tests/unit/test_product_edition_architecture_guards.py (run in
+  # test-unit/test-all — see backend-edition-architecture below for a
+  # fast, dedicated, visible re-run of just those two files). This job's
+  # job is construction, not content.
+  openapi:
+    name: "OpenAPI Schema Validation (${{ matrix.edition }})"
+    runs-on: ubuntu-latest
+    needs: [lint]
+    strategy:
+      matrix:
+        edition: [full, network_defense]
     defaults:
       run:
         working-directory: backend
@@ -309,18 +415,34 @@ jobs:
         run: pip install -e .
 
       - name: Generate OpenAPI schema
+        env:
+          REDFORGE_PRODUCT_EDITION: ${{ matrix.edition }}
         run: |
           python -c "
-          import json
+          import json, os
           from redforge.app import create_app
           from redforge.core.config import Settings
           settings = Settings(database_url='sqlite+aiosqlite://')
+          assert settings.product_edition == os.environ['REDFORGE_PRODUCT_EDITION']
           app = create_app(settings)
           schema = app.openapi()
           with open('openapi.json', 'w') as f:
               json.dump(schema, f, indent=2)
+          print(f'Edition: {settings.product_edition}')
           print(f'Endpoints: {len(schema[\"paths\"])}')
           print(f'Version: {schema[\"info\"][\"version\"]}')
+          # Cheap, construction-level cross-check against the exhaustive
+          # content assertions in test_product_edition_router_surface.py —
+          # not a replacement for them, just fails fast in this job too.
+          executions_path = '/api/v1/security-operations/executions'
+          if settings.product_edition == 'network_defense':
+              assert executions_path not in schema['paths'], (
+                  'network_defense must not expose Full-only execution routes'
+              )
+              assert len(schema['paths']) < 500, 'network_defense route count looks too large'
+          else:
+              assert executions_path in schema['paths'], 'full must expose execution routes'
+              assert len(schema['paths']) > 900, 'full route count looks too small'
           "
 
       - name: Validate OpenAPI 3.x compliance
@@ -338,8 +460,55 @@ jobs:
       - name: Upload schema artifact
         uses: actions/upload-artifact@v4
         with:
-          name: openapi-schema
+          name: openapi-schema-${{ matrix.edition }}
           path: backend/openapi.json
+
+  # ─── Stage 5b: Backend edition architecture guards (dedicated, fast) ────
+  #
+  # A dedicated, fast (~seconds, no Postgres) re-run of just the two test
+  # files that are the actual source of truth for router-surface CONTENTS
+  # per edition (full backward-compat, network_defense strict subset,
+  # required/excluded surfaces, tag-independence, unknown-edition
+  # rejection). These files already run as part of test-unit/test-all;
+  # this job exists only to give this specific guarantee its own visible,
+  # independently-failing CI check name — not a second independent test
+  # suite.
+  backend-edition-architecture:
+    name: "Backend Edition Architecture Guards"
+    runs-on: ubuntu-latest
+    needs: [lint]
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: backend/pyproject.toml
+
+      - name: Install dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Router-surface + architecture guard tests
+        run: |
+          python -m pytest \
+            tests/unit/test_product_edition_router_surface.py \
+            tests/unit/test_product_edition_architecture_guards.py \
+            tests/unit/test_compose_edition_consistency.py \
+            -v --tb=short
+
+      - name: Invalid edition must fail application startup (real process)
+        run: |
+          if REDFORGE_PRODUCT_EDITION=not-a-real-edition \
+             python -c "from redforge.app import create_app; create_app()" 2>err.log; then
+            echo "FAIL: create_app() succeeded with an invalid edition"
+            exit 1
+          fi
+          grep -q "product_edition" err.log && echo "OK: startup failed on invalid product_edition, as expected"
+          cat err.log
 
   # ─── Stage 6: Security Scanning ──────────────────────────────────────────
   security:
@@ -387,3 +556,104 @@ jobs:
         with:
           name: sbom
           path: backend/sbom.json
+
+  # ─── Stage 7: Frontend Quality (edition-independent) ─────────────────────
+  #
+  # Previously absent from this canonical CI system entirely. One common
+  # job — TypeScript + the full vitest suite (which already includes the
+  # dashboard-composition and security-operations-composition edition
+  # tests as component-level tests, run once here rather than duplicated
+  # per edition since they mock `getProductEdition()` themselves).
+  frontend-quality:
+    name: "Frontend Quality (TypeScript + Tests)"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript
+        run: npm run typecheck
+
+      - name: Test suite (includes dashboard/security-operations edition-composition tests)
+        run: npm test
+
+  # ─── Stage 7b: Frontend Production Build (per edition) ──────────────────
+  #
+  # `NEXT_PUBLIC_*` is inlined at build time (see next.config.ts's own
+  # header comment), so an edition-composition regression can ONLY be
+  # caught by actually running `next build` per edition — a unit test
+  # mocking the env var is not sufficient proof by itself. This matrix is
+  # the real, no-shortcuts build gate for both editions.
+  frontend-build:
+    name: "Frontend Production Build (${{ matrix.edition }})"
+    runs-on: ubuntu-latest
+    needs: [frontend-quality]
+    strategy:
+      matrix:
+        edition: [full, network_defense]
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Production build
+        env:
+          NEXT_PUBLIC_PRODUCT_EDITION: ${{ matrix.edition }}
+        run: npm run build
+
+  # ─── Stage 7c: Frontend invalid edition must fail the build ─────────────
+  #
+  # `next.config.ts` is the guaranteed enforcement point (see its own
+  # header comment: a "use client" component's own throw in
+  # `lib/productEdition.ts` does not reliably fire during static
+  # generation, verified in Phase 0.2.1 Workstream 2). This proves an
+  # unrecognized `NEXT_PUBLIC_PRODUCT_EDITION` fails the REAL build
+  # process, not just a unit test of the validation function.
+  frontend-invalid-edition:
+    name: "Frontend Invalid Edition Fails Build"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build with invalid edition must fail
+        env:
+          NEXT_PUBLIC_PRODUCT_EDITION: "not-a-real-edition"
+        run: |
+          if npm run build; then
+            echo "FAIL: build succeeded with an invalid NEXT_PUBLIC_PRODUCT_EDITION"
+            exit 1
+          fi
+          echo "OK: build correctly failed for an invalid product edition"
