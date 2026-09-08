@@ -115,9 +115,9 @@ async def test_tenant_ioc_can_cite_a_real_security_condition_as_evidence(
         # belong to this IOC's tenant_id (org_id) must reject — proven
         # first so a false-positive "valid" below can't be an accident
         # of the adapter always returning True.
-        assert (
-            await validator.validate(tenant_id, f"SecurityCondition:{condition_id}") is False
-        ), "condition belongs to a different organization_id than tenant_id maps to — must reject"
+        assert await validator.validate(tenant_id, f"SecurityCondition:{condition_id}") is False, (
+            "condition belongs to a different organization_id than tenant_id maps to — must reject"
+        )
     finally:
         await session.close()
 
@@ -164,7 +164,9 @@ async def test_add_evidence_citation_against_a_genuinely_persisted_security_cond
                 actor_roles=ANALYST,
             )
         )
-        assert any(c.value == f"SecurityCondition:{condition_id}" for c in detail.evidence_citations)
+        assert any(
+            c.value == f"SecurityCondition:{condition_id}" for c in detail.evidence_citations
+        )
 
         # Reload independently (fresh session) to prove real persistence,
         # not just the in-memory aggregate returned by the call above.

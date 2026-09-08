@@ -197,7 +197,9 @@ _REGISTRATIONS: tuple[_Registration, ...] = (
     _Registration(command_center_router, ("command-center",), _FULL_ONLY),
     _Registration(threat_intel_router, ("threat-intel",), _BOTH),
     _Registration(
-        threat_intel_reference_data_router, ("threat-intel-reference-data",), _FULL_ONLY,
+        threat_intel_reference_data_router,
+        ("threat-intel-reference-data",),
+        _FULL_ONLY,
     ),
     _Registration(feed_sync_router, ("threat-intel-feed-sync",), _BOTH),
     _Registration(threat_fusion_router, ("threat-fusion",), _FULL_ONLY),
@@ -209,7 +211,9 @@ _REGISTRATIONS: tuple[_Registration, ...] = (
     _Registration(compliance_router, ("compliance",), _FULL_ONLY),
     _Registration(compliance_assessment_router, ("compliance-assessment",), _FULL_ONLY),
     _Registration(
-        compliance_recommendations_router, ("compliance-recommendations",), _FULL_ONLY,
+        compliance_recommendations_router,
+        ("compliance-recommendations",),
+        _FULL_ONLY,
     ),
     _Registration(compliance_console_router, ("compliance-console",), _FULL_ONLY),
     _Registration(credential_vault_router, ("credential-vault",), _BOTH),
@@ -240,7 +244,9 @@ _REGISTRATIONS: tuple[_Registration, ...] = (
     _Registration(ioc_intelligence_router, ("ioc-intelligence",), _BOTH),
     _Registration(attack_pattern_intel_router, ("attack-pattern-intel",), _BOTH),
     _Registration(
-        intelligence_relationships_router, ("intelligence-relationships",), _BOTH,
+        intelligence_relationships_router,
+        ("intelligence-relationships",),
+        _BOTH,
     ),
     _Registration(malware_intel_router, ("malware-intel",), _BOTH),
     _Registration(campaign_intel_router, ("campaign-intel",), _BOTH),
@@ -248,15 +254,23 @@ _REGISTRATIONS: tuple[_Registration, ...] = (
     _Registration(infrastructure_intel_router, ("infrastructure-intel",), _BOTH),
     _Registration(threat_report_intel_router, ("threat-report-intel",), _BOTH),
     _Registration(
-        attack_surface_management_router, ("attack-surface-management",), _FULL_ONLY,
+        attack_surface_management_router,
+        ("attack-surface-management",),
+        _FULL_ONLY,
     ),
     _Registration(execution_router, ("execution",), _FULL_ONLY),
     _Registration(operator_router, ("red-team-operators",), _FULL_ONLY),
     _Registration(
-        evidence_bc_router, ("red-team-evidence",), _FULL_ONLY, prefix="/red-team-evidence",
+        evidence_bc_router,
+        ("red-team-evidence",),
+        _FULL_ONLY,
+        prefix="/red-team-evidence",
     ),
     _Registration(
-        payload_router, ("red-team-payloads",), _FULL_ONLY, prefix="/red-team-payloads",
+        payload_router,
+        ("red-team-payloads",),
+        _FULL_ONLY,
+        prefix="/red-team-payloads",
     ),
 )
 

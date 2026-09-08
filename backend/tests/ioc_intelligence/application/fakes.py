@@ -111,9 +111,7 @@ class InMemoryIocRepository(IIocRepository):
             ]
         if confidence is not None:
             results = [
-                i
-                for i in results
-                if any(a.confidence == confidence for a in i.source_attributions)
+                i for i in results if any(a.confidence == confidence for a in i.source_attributions)
             ]
         if source_system:
             results = [

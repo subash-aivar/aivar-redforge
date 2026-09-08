@@ -261,9 +261,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             intelligence_relationships_container = IntelligenceRelationshipsContainer(
                 session_factory=sf
             )
-            app.state.intelligence_relationships_container = (
-                intelligence_relationships_container
-            )
+            app.state.intelligence_relationships_container = intelligence_relationships_container
             logger.info("intelligence_relationships_container_started")
 
         async def _start_malware_intel() -> None:
@@ -840,9 +838,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         coordinator.register_startup("malware_intel", _start_malware_intel)
         coordinator.register_startup("campaign_intel", _start_campaign_intel)
         coordinator.register_startup("tool_intel", _start_tool_intel)
-        coordinator.register_startup(
-            "infrastructure_intel", _start_infrastructure_intel
-        )
+        coordinator.register_startup("infrastructure_intel", _start_infrastructure_intel)
         coordinator.register_startup("threat_report_intel", _start_threat_report_intel)
         coordinator.register_startup("attack_surface_management", _start_attack_surface_management)
         coordinator.register_startup("scanning", _start_scanning)

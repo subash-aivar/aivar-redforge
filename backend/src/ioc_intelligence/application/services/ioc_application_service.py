@@ -404,9 +404,7 @@ class IOCApplicationService:
                     # the whole sweep — see docstring above. Never
                     # re-raised; always observable via this log line
                     # (never silent).
-                    _logger.warning(
-                        "ioc_expiry_sweep_row_skipped", ioc_id=str(ioc.ioc_id)
-                    )
+                    _logger.warning("ioc_expiry_sweep_row_skipped", ioc_id=str(ioc.ioc_id))
                     skipped += 1
                     continue
                 expired.append(ioc)

@@ -106,7 +106,9 @@ class TestNoForkedMigrationChain:
                 continue
             text = path.read_text(encoding="utf-8")
             rev_match = re.search(r'^revision:\s*str\s*=\s*"([^"]+)"', text, re.M)
-            down_match = re.search(r'^down_revision:\s*str(?:\s*\|\s*None)?\s*=\s*(.+)$', text, re.M)
+            down_match = re.search(
+                r"^down_revision:\s*str(?:\s*\|\s*None)?\s*=\s*(.+)$", text, re.M
+            )
             assert rev_match, f"{path.name}: no `revision` assignment found"
             revision = rev_match.group(1)
             assert revision not in revisions, f"duplicate revision id {revision!r}"
@@ -165,9 +167,7 @@ class TestNoNewDetectionPipelineOrSiemDependency:
             if not path.exists():
                 continue
             text = path.read_text(encoding="utf-8", errors="ignore")
-            assert not import_pattern.search(text), (
-                f"{path} imports siem_*, forbidden by ADR-0006"
-            )
+            assert not import_pattern.search(text), f"{path} imports siem_*, forbidden by ADR-0006"
 
     def test_no_siem_tagged_registration_carries_network_defense_edition(self) -> None:
         from redforge.api.v1 import _REGISTRATIONS

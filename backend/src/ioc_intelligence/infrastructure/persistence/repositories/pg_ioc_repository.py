@@ -284,9 +284,7 @@ class PgIocRepository(IIocRepository):
                 (IocModel.valid_until.is_(None)) | (IocModel.valid_until > func.now())
             )
         elif validity is ValidityFilter.LAPSED:
-            base = base.where(
-                IocModel.valid_until.is_not(None), IocModel.valid_until <= func.now()
-            )
+            base = base.where(IocModel.valid_until.is_not(None), IocModel.valid_until <= func.now())
         if confidence is not None:
             base = base.where(
                 exists(

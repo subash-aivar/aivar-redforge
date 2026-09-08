@@ -183,9 +183,7 @@ def upgrade() -> None:
         sa.Column("change_summary", sa.Text(), nullable=False),
         sa.Column("source", sa.String(128), nullable=False),
     )
-    op.create_index(
-        "ix_tool_intel_version_history_tool", "tool_intel_version_history", ["tool_id"]
-    )
+    op.create_index("ix_tool_intel_version_history_tool", "tool_intel_version_history", ["tool_id"])
     op.create_index(
         "uq_tool_intel_version_history_dedup",
         "tool_intel_version_history",

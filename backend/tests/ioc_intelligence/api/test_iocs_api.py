@@ -532,9 +532,7 @@ class TestServerSideSearchFilterSortSlice21:
                     "source_attributions": [_attribution(external_id=f"pulse-noise-{i}")],
                 },
             )
-        response = await client.get(
-            "/api/v1/iocs", params={"search": needle_value, "limit": 1}
-        )
+        response = await client.get("/api/v1/iocs", params={"search": needle_value, "limit": 1})
         body = response.json()
         assert body["total"] == 1
         assert body["items"][0]["canonical_key"] == f"ip:{needle_value}"

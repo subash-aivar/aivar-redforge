@@ -403,9 +403,7 @@ class TestListAndCount:
     Slice 2.1 closes."""
 
     @pytest.mark.asyncio
-    async def test_total_reflects_entire_filtered_dataset_not_page_size(
-        self, ioc_session
-    ) -> None:
+    async def test_total_reflects_entire_filtered_dataset_not_page_size(self, ioc_session) -> None:
         tenant_id = make_tenant_id()
         repo = PgIocRepository(ioc_session)
         for _ in range(5):
@@ -417,9 +415,7 @@ class TestListAndCount:
         assert total == 5
 
     @pytest.mark.asyncio
-    async def test_search_matches_canonical_value_across_entire_dataset(
-        self, ioc_session
-    ) -> None:
+    async def test_search_matches_canonical_value_across_entire_dataset(self, ioc_session) -> None:
         tenant_id = make_tenant_id()
         repo = PgIocRepository(ioc_session)
         needle = make_ioc(tenant_id=tenant_id, raw_value="198.51.100.77")
@@ -460,9 +456,7 @@ class TestListAndCount:
         repo = PgIocRepository(ioc_session)
         await repo.save(make_ioc(tenant_id=tenant_id, ioc_type=IocType.IP))
         await repo.save(
-            make_ioc(
-                tenant_id=tenant_id, ioc_type=IocType.DOMAIN, raw_value="example-slice21.com"
-            )
+            make_ioc(tenant_id=tenant_id, ioc_type=IocType.DOMAIN, raw_value="example-slice21.com")
         )
         await ioc_session.commit()
 

@@ -88,6 +88,5 @@ class ListIocsQuery:
             raise ApplicationValidationError(f"offset must be >= 0, got {self.offset!r}")
         if self.search is not None and len(self.search) > MAX_SEARCH_LENGTH:
             raise ApplicationValidationError(
-                f"search must be at most {MAX_SEARCH_LENGTH} characters, "
-                f"got {len(self.search)}"
+                f"search must be at most {MAX_SEARCH_LENGTH} characters, got {len(self.search)}"
             )

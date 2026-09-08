@@ -295,7 +295,9 @@ class TestFullIngestionAgainstRealLegacyTables:
         verify_session = ioc_session_factory()
         try:
             assert ((await PgIocRepository(verify_session).list_and_count(tenant_b))[0]) == []
-            assert ((await PgIocRepository(verify_session).list_and_count(tenant_a))[0]) == []  # not ingested yet
+            assert (
+                ((await PgIocRepository(verify_session).list_and_count(tenant_a))[0]) == []
+            )  # not ingested yet
         finally:
             await verify_session.close()
 

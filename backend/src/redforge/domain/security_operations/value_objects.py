@@ -54,13 +54,15 @@ class SourceDomain(StrEnum):
 # by `application/security_operations/stream_service.py` and
 # `change_feed_service.py` — the one shared filtering point for
 # `/changes`, `/events`, and `/events/stream` alike.
-NETWORK_DEFENSE_ALLOWED_DOMAINS: frozenset[SourceDomain] = frozenset({
-    SourceDomain.RUNTIME,
-    SourceDomain.NETWORK_SECURITY,
-    SourceDomain.DDOS,
-    SourceDomain.BEHAVIOR,
-    SourceDomain.INVESTIGATION,
-})
+NETWORK_DEFENSE_ALLOWED_DOMAINS: frozenset[SourceDomain] = frozenset(
+    {
+        SourceDomain.RUNTIME,
+        SourceDomain.NETWORK_SECURITY,
+        SourceDomain.DDOS,
+        SourceDomain.BEHAVIOR,
+        SourceDomain.INVESTIGATION,
+    }
+)
 
 
 @unique
